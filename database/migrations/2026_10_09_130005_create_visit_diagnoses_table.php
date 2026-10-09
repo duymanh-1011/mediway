@@ -4,8 +4,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-/*Không đặt unique() trên medical_visit_id, vì một lượt khám có thể có
-    nhiều chẩn đoán. Bảng này tham chiếu đến diseases, do đó bảng diseases phải tồn tại trước khi chạy migration.*/
+
 return new class extends Migration
 {
     public function up(): void

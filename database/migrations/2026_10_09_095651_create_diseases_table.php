@@ -24,7 +24,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->text('common_symptoms')->nullable();
             $table->text('professional_notes')->nullable();
-            $table->boolean('status')->default(true);
+            $table->string('status', 20)->default(true);
 
             $table->timestamps();
         });

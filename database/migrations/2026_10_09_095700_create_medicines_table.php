@@ -29,7 +29,7 @@ return new class extends Migration
             $table->text('warnings')->nullable();
             $table->text('common_side_effects')->nullable();
             $table->text('storage_instructions')->nullable();
-            $table->boolean('status')->default(true);
+            $table->string('status', 20)->default(true);
             $table->text('notes')->nullable();
 
             $table->timestamps();

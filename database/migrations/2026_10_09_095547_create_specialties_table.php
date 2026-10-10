@@ -19,7 +19,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('image_path')->nullable();
             $table->text('pre_visit_instructions')->nullable();
-            $table->boolean('status')->default(true);
+            $table->string('status', 20)->default(true);
             $table->text('notes')->nullable();
 
             $table->timestamps();

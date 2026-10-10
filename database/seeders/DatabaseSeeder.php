@@ -25,6 +25,18 @@ class DatabaseSeeder extends Seeder
 
             EmployeeSeeder::class,
             EmployeeDetailSeeder::class,
+            SpecialtySeeder::class,
+            
+            ExaminationRoomSeeder::class,
+            ServiceGroupSeeder::class,
+            MedicalServiceSeeder::class,
+            DiseaseGroupSeeder::class,
+            DiseaseSeeder::class,
+            MedicineSeeder::class,
+            AppointmentStatusSeeder::class,
+            DoctorScheduleSeeder::class,
+            AppointmentTimeSlotSeeder::class,
+            AppointmentSeeder::class,
         ]);
     }
 }

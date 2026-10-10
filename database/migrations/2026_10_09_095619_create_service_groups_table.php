@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->unsignedInteger('display_order')->default(0);
-            $table->boolean('status')->default(true);
+            $table->string('status', 20)->default(true);
             $table->text('notes')->nullable();
 
             $table->timestamps();

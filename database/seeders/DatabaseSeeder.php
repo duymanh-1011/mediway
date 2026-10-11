@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
             EmployeeSeeder::class,
             EmployeeDetailSeeder::class,
             SpecialtySeeder::class,
-            
+
             ExaminationRoomSeeder::class,
             ServiceGroupSeeder::class,
             MedicalServiceSeeder::class,
@@ -37,6 +37,14 @@ class DatabaseSeeder extends Seeder
             DoctorScheduleSeeder::class,
             AppointmentTimeSlotSeeder::class,
             AppointmentSeeder::class,
+
+            VisitStatusSeeder::class,
+            QueueStatusSeeder::class,
+            MedicalVisitSeeder::class,
+            ExaminationRoomQueueSeeder::class,
+            VisitClinicalNoteSeeder::class,
+            VisitDiagnosisSeeder::class,
+            VisitConclusionSeeder::class,
         ]);
     }
 }

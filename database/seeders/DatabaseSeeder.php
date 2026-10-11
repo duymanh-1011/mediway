@@ -45,6 +45,17 @@ class DatabaseSeeder extends Seeder
             VisitClinicalNoteSeeder::class,
             VisitDiagnosisSeeder::class,
             VisitConclusionSeeder::class,
+
+            ServiceStatusSeeder::class,
+            PaymentStatusSeeder::class,
+            ServiceOrderSeeder::class,
+            ServiceOrderItemSeeder::class,
+            ServiceResultSeeder::class,
+            PrescriptionSeeder::class,
+            PrescriptionItemSeeder::class,
+            PayableSeeder::class,
+            PaymentTransactionSeeder::class,
+            AuditLogSeeder::class,
         ]);
     }
 }

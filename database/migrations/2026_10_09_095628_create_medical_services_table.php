@@ -27,7 +27,7 @@ return new class extends Migration
             $table->text('preparation_instructions')->nullable();
             $table->text('precautions')->nullable();
             $table->unsignedInteger('display_order')->default(0);
-            $table->boolean('status')->default(true);
+            $table->string('status', 20)->default(true);
 
             $table->timestamps();
         });

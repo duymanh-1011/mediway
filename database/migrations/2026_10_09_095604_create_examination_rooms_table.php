@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('building')->nullable();
             $table->text('location_instructions')->nullable();
             $table->text('description')->nullable();
-            $table->boolean('status')->default(true);
+            $table->string('status', 20)->default(true);
             $table->text('notes')->nullable();
 
             $table->timestamps();

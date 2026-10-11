@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('disease_group_code')->unique();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->boolean('status')->default(true);
+            $table->string('status', 20)->default(true);
             $table->text('notes')->nullable();
 
             $table->timestamps();

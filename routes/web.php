@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\AuditLogController;
 
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
@@ -25,18 +26,28 @@ use App\Http\Controllers\Admin\DoctorScheduleController;
 use App\Http\Controllers\Admin\AppointmentTimeSlotController;
 use App\Http\Controllers\Admin\AppointmentController;
 
+use App\Http\Controllers\Admin\VisitStatusController;
+use App\Http\Controllers\Admin\QueueStatusController;
+use App\Http\Controllers\Admin\MedicalVisitController;
+use App\Http\Controllers\Admin\ExaminationRoomQueueController;
+use App\Http\Controllers\Admin\VisitClinicalNoteController;
+use App\Http\Controllers\Admin\MedicalVisitClinicalNoteController;
+use App\Http\Controllers\Admin\VisitDiagnosisController;
+use App\Http\Controllers\Admin\MedicalVisitDiagnosisController;
+use App\Http\Controllers\Admin\VisitConclusionController;
+use App\Http\Controllers\Admin\MedicalVisitConclusionController;
+
 use App\Http\Middleware\AdminMiddleware;
 
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('admin.login');
 });
 
 
 Route::prefix('admin')
     ->name('admin.')
     ->group(function () {
-
 
         /*
         |--------------------------------------------------------------------------
@@ -48,7 +59,6 @@ Route::prefix('admin')
             '/login',
             [AuthController::class, 'showLoginForm']
         )->name('login');
-
 
         Route::post(
             '/login',
@@ -66,7 +76,6 @@ Route::prefix('admin')
             AdminMiddleware::class
         )->group(function () {
 
-
             /*
             |--------------------------------------------------------------------------
             | Dashboard
@@ -77,6 +86,27 @@ Route::prefix('admin')
                 '/dashboard',
                 [DashboardController::class, 'index']
             )->name('dashboard');
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Nhật ký hoạt động
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/audit-logs',
+                [AuditLogController::class, 'index']
+            )->name(
+                'audit-logs.index'
+            );
+
+            Route::get(
+                '/audit-logs/{id}',
+                [AuditLogController::class, 'show']
+            )->name(
+                'audit-logs.show'
+            );
 
 
             /*
@@ -104,14 +134,12 @@ Route::prefix('admin')
                 'users.update-status'
             );
 
-
             Route::patch(
                 'users/{user}/reset-password',
                 [UserController::class, 'resetPassword']
             )->name(
                 'users.reset-password'
             );
-
 
             Route::resource(
                 'users',
@@ -133,7 +161,6 @@ Route::prefix('admin')
             )->name(
                 'administrators.update-status'
             );
-
 
             Route::resource(
                 'administrators',
@@ -160,7 +187,6 @@ Route::prefix('admin')
                 ->name(
                     'patients.document'
                 );
-
 
             Route::resource(
                 'patients',
@@ -202,7 +228,6 @@ Route::prefix('admin')
                     'doctors.document'
                 );
 
-
             Route::resource(
                 'doctors',
                 DoctorController::class
@@ -228,7 +253,6 @@ Route::prefix('admin')
                 ->name(
                     'employees.document'
                 );
-
 
             Route::resource(
                 'employees',
@@ -343,10 +367,6 @@ Route::prefix('admin')
             |--------------------------------------------------------------------------
             | Lịch làm việc bác sĩ
             |--------------------------------------------------------------------------
-            |
-            | Calendar phải đặt trước resource để Laravel không hiểu
-            | "calendar" là {doctorSchedule}.
-            |
             */
 
             Route::get(
@@ -355,7 +375,6 @@ Route::prefix('admin')
             )->name(
                 'doctor-schedules.calendar'
             );
-
 
             Route::resource(
                 'doctor-schedules',
@@ -376,14 +395,12 @@ Route::prefix('admin')
                 'doctor-schedules.time-slots.create'
             );
 
-
             Route::post(
                 '/doctor-schedules/{doctorSchedule}/time-slots',
                 [AppointmentTimeSlotController::class, 'store']
             )->name(
                 'doctor-schedules.time-slots.store'
             );
-
 
             Route::get(
                 '/appointment-time-slots/{appointmentTimeSlot}/edit',
@@ -392,14 +409,12 @@ Route::prefix('admin')
                 'appointment-time-slots.edit'
             );
 
-
             Route::put(
                 '/appointment-time-slots/{appointmentTimeSlot}',
                 [AppointmentTimeSlotController::class, 'update']
             )->name(
                 'appointment-time-slots.update'
             );
-
 
             Route::delete(
                 '/appointment-time-slots/{appointmentTimeSlot}',
@@ -416,12 +431,18 @@ Route::prefix('admin')
             */
 
             Route::post(
+                '/appointments/{appointment}/check-in',
+                [AppointmentController::class, 'checkIn']
+            )->name(
+                'appointments.check-in'
+            );
+
+            Route::post(
                 '/appointments/{appointment}/cancel',
                 [AppointmentController::class, 'cancel']
             )->name(
                 'appointments.cancel'
             );
-
 
             Route::resource(
                 'appointments',
@@ -430,6 +451,198 @@ Route::prefix('admin')
                 'index',
                 'create',
                 'store',
+                'show',
+                'edit',
+                'update',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Trạng thái lượt khám
+            |--------------------------------------------------------------------------
+            */
+
+            Route::resource(
+                'visit-statuses',
+                VisitStatusController::class
+            )->only([
+                'index',
+                'show',
+                'edit',
+                'update',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Trạng thái hàng đợi
+            |--------------------------------------------------------------------------
+            */
+
+            Route::resource(
+                'queue-statuses',
+                QueueStatusController::class
+            )->only([
+                'index',
+                'show',
+                'edit',
+                'update',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Lượt khám
+            |--------------------------------------------------------------------------
+            */
+
+            Route::patch(
+                '/visits/{medicalVisit}/status',
+                [MedicalVisitController::class, 'updateStatus']
+            )->name(
+                'visits.update-status'
+            );
+
+            Route::resource(
+                'visits',
+                MedicalVisitController::class
+            )->only([
+                'index',
+                'show',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Hàng đợi phòng khám
+            |--------------------------------------------------------------------------
+            */
+
+            Route::post(
+                '/queues/{queue}/call',
+                [ExaminationRoomQueueController::class, 'call']
+            )->name(
+                'queues.call'
+            );
+
+            Route::post(
+                '/queues/{queue}/start-service',
+                [ExaminationRoomQueueController::class, 'startService']
+            )->name(
+                'queues.start-service'
+            );
+
+            Route::post(
+                '/queues/{queue}/complete',
+                [ExaminationRoomQueueController::class, 'complete']
+            )->name(
+                'queues.complete'
+            );
+
+            Route::post(
+                '/queues/{queue}/skip',
+                [ExaminationRoomQueueController::class, 'skip']
+            )->name(
+                'queues.skip'
+            );
+
+            Route::resource(
+                'queues',
+                ExaminationRoomQueueController::class
+            )->only([
+                'index',
+                'show',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Nội dung khám
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/visits/{visit}/clinical-note/create',
+                [MedicalVisitClinicalNoteController::class, 'create']
+            )->name(
+                'visits.clinical-note.create'
+            );
+
+            Route::post(
+                '/visits/{visit}/clinical-note',
+                [MedicalVisitClinicalNoteController::class, 'store']
+            )->name(
+                'visits.clinical-note.store'
+            );
+
+            Route::resource(
+                'clinical-notes',
+                VisitClinicalNoteController::class
+            )->only([
+                'index',
+                'show',
+                'edit',
+                'update',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Chẩn đoán
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/visits/{visit}/diagnoses/create',
+                [MedicalVisitDiagnosisController::class, 'create']
+            )->name(
+                'visits.diagnoses.create'
+            );
+
+            Route::post(
+                '/visits/{visit}/diagnoses',
+                [MedicalVisitDiagnosisController::class, 'store']
+            )->name(
+                'visits.diagnoses.store'
+            );
+
+            Route::resource(
+                'diagnoses',
+                VisitDiagnosisController::class
+            )->only([
+                'index',
+                'show',
+                'edit',
+                'update',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Kết luận lượt khám
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/visits/{visit}/conclusion/create',
+                [MedicalVisitConclusionController::class, 'create']
+            )->name(
+                'visits.conclusion.create'
+            );
+
+            Route::post(
+                '/visits/{visit}/conclusion',
+                [MedicalVisitConclusionController::class, 'store']
+            )->name(
+                'visits.conclusion.store'
+            );
+
+            Route::resource(
+                'conclusions',
+                VisitConclusionController::class
+            )->only([
+                'index',
                 'show',
                 'edit',
                 'update',

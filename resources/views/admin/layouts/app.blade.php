@@ -11,6 +11,8 @@
 
     <title>@yield('title', 'Mediway Admin')</title>
 
+    @vite('resources/css/app.css')
+
     <style>
         :root {
             --sidebar-width: 270px;
@@ -53,6 +55,7 @@
             margin: 0;
 
             font-family:
+                'Instrument Sans',
                 Inter,
                 Arial,
                 Helvetica,
@@ -617,7 +620,24 @@
 </head>
 
 <body>
+<script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Thay '.admin-sidebar' bằng class hoặc id thực tế của thẻ div bao bọc sidebar bên bạn
+            const sidebar = document.querySelector('.admin-sidebar') || document.querySelector('aside');
+            if (!sidebar) return;
 
+            // Khôi phục vị trí cuộn cũ của sidebar khi load lại trang
+            const savedScrollPosition = localStorage.getItem('sidebar_scroll_pos');
+            if (savedScrollPosition) {
+                sidebar.scrollTop = savedScrollPosition;
+            }
+
+            // Lưu lại vị trí cuộn mỗi khi người dùng cuộn sidebar
+            sidebar.addEventListener('scroll', function () {
+                localStorage.setItem('sidebar_scroll_pos', sidebar.scrollTop);
+            });
+        });
+    </script>
 <div class="admin-wrapper">
 
     @include(

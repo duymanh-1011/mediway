@@ -190,43 +190,44 @@
         VẬN HÀNH KHÁM
         ====================================================== --}}
 
+
         <div class="sidebar-section">
 
-            <div class="sidebar-section-title">
-                Vận hành khám
-            </div>
+    <div class="sidebar-section-title">
+        Vận hành khám
+    </div>
 
-            <a href="#" class="sidebar-link">
-                <span class="sidebar-link-dot"></span>
+    <!-- 1. Lượt khám -->
+    <a href="{{ route('admin.visits.index') }}" class="sidebar-link {{ request()->routeIs('admin.visits.*') ? 'active' : '' }}">
+        <span class="sidebar-link-dot"></span>
+        Lượt khám
+    </a>
 
-                Lượt khám
-            </a>
+    <!-- 2. Hàng đợi phòng khám -->
+    <a href="{{ route('admin.queues.index') }}" class="sidebar-link {{ request()->routeIs('admin.queues.*') ? 'active' : '' }}">
+        <span class="sidebar-link-dot"></span>
+        Hàng đợi phòng khám
+    </a>
 
-            <a href="#" class="sidebar-link">
-                <span class="sidebar-link-dot"></span>
+    <!-- 3. Nội dung khám -->
+    <a href="{{ route('admin.clinical-notes.index') }}" class="sidebar-link {{ request()->routeIs('admin.clinical-notes.*') ? 'active' : '' }}">
+        <span class="sidebar-link-dot"></span>
+        Nội dung khám
+    </a>
 
-                Hàng đợi phòng khám
-            </a>
+    <!-- 4. Chẩn đoán -->
+    <a href="{{ route('admin.diagnoses.index') }}" class="sidebar-link {{ request()->routeIs('admin.diagnoses.*') ? 'active' : '' }}">
+        <span class="sidebar-link-dot"></span>
+        Chẩn đoán
+    </a>
 
-            <a href="#" class="sidebar-link">
-                <span class="sidebar-link-dot"></span>
+    <!-- 5. Kết luận -->
+    <a href="{{ route('admin.conclusions.index') }}" class="sidebar-link {{ request()->routeIs('admin.conclusions.*') ? 'active' : '' }}">
+        <span class="sidebar-link-dot"></span>
+        Kết luận
+    </a>
 
-                Nội dung khám
-            </a>
-
-            <a href="#" class="sidebar-link">
-                <span class="sidebar-link-dot"></span>
-
-                Chẩn đoán
-            </a>
-
-            <a href="#" class="sidebar-link">
-                <span class="sidebar-link-dot"></span>
-
-                Kết luận
-            </a>
-
-        </div>
+</div>
 
         {{-- =====================================================
         DỊCH VỤ

@@ -9,64 +9,58 @@
     >
 
     <title>Đăng nhập quản trị - Mediway</title>
+    @vite('resources/css/app.css')
 </head>
 
-<body>
+<body class="admin-login">
+    <main class="login-card">
+        <p class="login-brand">Mediway · Quản trị y tế</p>
+        <h1 class="login-title">Đăng nhập</h1>
+        <p class="login-description">Truy cập hệ thống quản trị vận hành khám chữa bệnh.</p>
 
-    <h1>Mediway Admin</h1>
-
-    <h2>Đăng nhập quản trị viên</h2>
-
-    @if ($errors->any())
-        <div>
+        @if ($errors->any())
+        <div class="login-alert" role="alert">
             @foreach ($errors->all() as $error)
                 <p>{{ $error }}</p>
             @endforeach
         </div>
-    @endif
+        @endif
 
-    @if (session('success'))
-        <p>{{ session('success') }}</p>
-    @endif
+        @if (session('success'))
+        <p class="login-alert login-alert-success" role="status">{{ session('success') }}</p>
+        @endif
 
-    <form
-        method="POST"
-        action="{{ route('admin.login.submit') }}"
-    >
-        @csrf
+        <form method="POST" action="{{ route('admin.login.submit') }}">
+            @csrf
 
-        <div>
-            <label for="phone">
-                Số điện thoại
-            </label>
+            <div class="login-field">
+                <label for="phone">Số điện thoại</label>
 
-            <input
-                type="text"
-                id="phone"
-                name="phone"
-                value="{{ old('phone') }}"
-                required
-                autofocus
-            >
-        </div>
+                <input
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    value="{{ old('phone') }}"
+                    autocomplete="username"
+                    required
+                    autofocus
+                >
+            </div>
 
-        <div>
-            <label for="password">
-                Mật khẩu
-            </label>
+            <div class="login-field">
+                <label for="password">Mật khẩu</label>
 
-            <input
-                type="password"
-                id="password"
-                name="password"
-                required
-            >
-        </div>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
 
-        <button type="submit">
-            Đăng nhập
-        </button>
-    </form>
-
+            <button type="submit" class="login-submit">Đăng nhập</button>
+        </form>
+    </main>
 </body>
 </html>

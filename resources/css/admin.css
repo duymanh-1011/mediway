@@ -1,0 +1,568 @@
+.admin-wrapper {
+    --admin-primary: #2563eb;
+    --admin-primary-hover: #1d4ed8;
+    --admin-border: #dbe3ed;
+    --admin-surface: #ffffff;
+    --admin-muted: #64748b;
+    --admin-text: #172033;
+    --admin-radius: 8px;
+}
+
+.admin-wrapper .sidebar-link {
+    transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.admin-wrapper .sidebar-link:hover {
+    transform: none;
+}
+
+.admin-wrapper .sidebar-link.active {
+    background: #1d4ed8;
+    box-shadow: none;
+}
+
+.admin-wrapper .admin-content > .p-6 {
+    padding: 0;
+}
+
+.admin-wrapper .admin-content :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea),
+.admin-wrapper .admin-content .audit-control {
+    height: 40px;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius);
+    background-color: var(--admin-surface);
+    color: var(--admin-text);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.admin-wrapper .admin-content textarea {
+    height: auto;
+    min-height: 88px;
+    resize: vertical;
+}
+
+.admin-wrapper .admin-content :is(input, select, textarea):focus,
+.admin-wrapper .admin-content .audit-control:focus {
+    border-color: var(--admin-primary);
+    outline: 0;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 12%);
+}
+
+.admin-wrapper .admin-content label {
+    color: #475569;
+}
+
+.admin-wrapper .admin-content .admin-button,
+.admin-wrapper .admin-content .audit-btn,
+.admin-wrapper .admin-content .audit-detail-btn,
+.admin-wrapper .admin-content .audit-page-btn,
+.admin-wrapper .admin-content .audit-back-btn,
+.admin-wrapper .admin-header .logout-button {
+    display: inline-flex;
+    height: auto;
+    min-height: 38px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid transparent;
+    border-radius: var(--admin-radius);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.admin-wrapper .admin-content .admin-button:hover,
+.admin-wrapper .admin-content .audit-btn:hover,
+.admin-wrapper .admin-content .audit-detail-btn:hover,
+.admin-wrapper .admin-content .audit-page-btn:hover,
+.admin-wrapper .admin-content .audit-back-btn:hover,
+.admin-wrapper .admin-header .logout-button:hover {
+    transform: none;
+}
+
+.admin-wrapper .admin-content :is(.admin-button, .audit-btn, .audit-detail-btn, .audit-page-btn, .audit-back-btn):focus-visible,
+.admin-wrapper .admin-header .logout-button:focus-visible {
+    outline: 3px solid rgb(37 99 235 / 24%);
+    outline-offset: 2px;
+}
+
+.admin-wrapper .admin-content :is(.admin-button, .audit-btn, .audit-detail-btn, .audit-page-btn, .audit-back-btn):disabled,
+.admin-wrapper .admin-content .audit-page-btn.disabled,
+.admin-wrapper .admin-header .logout-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.admin-wrapper .admin-content .admin-button--primary,
+.admin-wrapper .admin-content .audit-btn-primary {
+    border-color: var(--admin-primary);
+    background: var(--admin-primary);
+    color: #fff;
+}
+
+.admin-wrapper .admin-content .admin-button--primary:hover,
+.admin-wrapper .admin-content .audit-btn-primary:hover {
+    border-color: var(--admin-primary-hover);
+    background: var(--admin-primary-hover);
+    color: #fff;
+}
+
+.admin-wrapper .admin-content .admin-button--secondary,
+.admin-wrapper .admin-content .audit-btn-secondary,
+.admin-wrapper .admin-content .audit-page-btn,
+.admin-wrapper .admin-content .audit-back-btn,
+.admin-wrapper .admin-header .logout-button {
+    border-color: var(--admin-border);
+    background: #fff;
+    color: #475569;
+}
+
+.admin-wrapper .admin-content .admin-button--secondary:hover,
+.admin-wrapper .admin-content .audit-btn-secondary:hover,
+.admin-wrapper .admin-content .audit-page-btn:hover,
+.admin-wrapper .admin-content .audit-back-btn:hover,
+.admin-wrapper .admin-header .logout-button:hover {
+    border-color: #b8c6d8;
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+.admin-wrapper .admin-content .admin-button--danger {
+    border-color: #fecaca;
+    background: #fff;
+    color: #b91c1c;
+}
+
+.admin-wrapper .admin-content .admin-button--danger:hover {
+    border-color: #fca5a5;
+    background: #fef2f2;
+}
+
+.admin-wrapper .admin-content .admin-button--success {
+    border-color: #047857;
+    background: #047857;
+    color: #fff;
+}
+
+.admin-wrapper .admin-content .admin-button--success:hover {
+    border-color: #065f46;
+    background: #065f46;
+}
+
+.admin-wrapper .admin-content .admin-button--subtle,
+.admin-wrapper .admin-content .audit-detail-btn {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.admin-wrapper .admin-content .admin-button--subtle:hover,
+.admin-wrapper .admin-content .audit-detail-btn:hover {
+    border-color: #93c5fd;
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.admin-wrapper .admin-content .audit-back-btn {
+    width: fit-content;
+}
+
+.admin-wrapper .admin-content .audit-back-btn span {
+    font-size: inherit;
+}
+
+.admin-wrapper .admin-content .audit-page-btn.disabled {
+    color: #94a3b8;
+}
+
+.admin-wrapper .admin-content .admin-table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.admin-wrapper .admin-content .admin-table {
+    min-width: 720px;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.admin-wrapper .admin-content .admin-table th {
+    padding: 12px 14px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.045em;
+    white-space: nowrap;
+}
+
+.admin-wrapper .admin-content :is(.stat-card, .revenue-card) {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+}
+
+.admin-wrapper .admin-content .admin-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #edf1f6;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.admin-wrapper .admin-content .admin-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.admin-wrapper .admin-content .admin-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.admin-wrapper .admin-content .admin-table .admin-table-actions {
+    white-space: nowrap;
+}
+
+.admin-wrapper .admin-content .admin-badge {
+    display: inline-flex;
+    min-height: 24px;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.admin-wrapper .admin-content :is(.badge, .audit-badge, .admin-badge) {
+    display: inline-flex;
+    min-height: 24px;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.admin-wrapper .admin-content .admin-badge--success {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.admin-wrapper .admin-content .admin-badge--warning {
+    background: #fffbeb;
+    color: #a16207;
+}
+
+.admin-wrapper .admin-content .admin-badge--info {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.admin-wrapper .admin-content .admin-badge--danger {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.admin-wrapper .admin-content .admin-pagination {
+    overflow-x: auto;
+}
+
+.admin-wrapper .admin-content .admin-pagination nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.admin-wrapper .admin-content .admin-pagination a,
+.admin-wrapper .admin-content .admin-pagination span[aria-current] {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 11px;
+    border: 1px solid var(--admin-border);
+    border-radius: 7px;
+    background: #fff;
+    color: #475569;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+.admin-wrapper .admin-content .admin-pagination span[aria-current] {
+    border-color: var(--admin-primary);
+    background: var(--admin-primary);
+    color: #fff;
+}
+
+.admin-wrapper .admin-content .admin-pagination a:hover {
+    background: #f8fafc;
+}
+
+.admin-wrapper .admin-header .logout-button {
+    min-height: 36px;
+}
+
+.admin-login {
+    --login-primary: #2563eb;
+    --login-border: #dbe3ed;
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    padding: 24px;
+    background: #f4f7fb;
+    color: #172033;
+    font-family: Inter, Arial, Helvetica, sans-serif;
+}
+
+.admin-login *,
+.admin-login *::before,
+.admin-login *::after {
+    box-sizing: border-box;
+}
+
+.admin-login .login-card {
+    width: min(100%, 440px);
+    padding: 36px;
+    border: 1px solid var(--login-border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 12px 36px rgb(15 23 42 / 8%);
+}
+
+.admin-login .login-brand {
+    margin: 0 0 8px;
+    color: var(--login-primary);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.admin-login .login-title {
+    margin: 0 0 8px;
+    color: #0f172a;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.admin-login .login-description {
+    margin: 0 0 24px;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.admin-login .login-field {
+    margin-bottom: 18px;
+}
+
+.admin-login .login-field label {
+    display: block;
+    margin-bottom: 7px;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.admin-login .login-field input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--login-border);
+    border-radius: 8px;
+    background: #fff;
+    color: #172033;
+    font: inherit;
+}
+
+.admin-login .login-field input:focus {
+    border-color: var(--login-primary);
+    outline: 0;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 12%);
+}
+
+.admin-login .login-submit {
+    display: inline-flex;
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border: 1px solid var(--login-primary);
+    border-radius: 8px;
+    background: var(--login-primary);
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.admin-login .login-submit:hover {
+    background: #1d4ed8;
+}
+
+.admin-login .login-alert {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: 13px;
+}
+
+.admin-login .login-alert-success {
+    border-color: #a7f3d0;
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+@media (max-width: 1000px) {
+    .admin-wrapper {
+        --sidebar-width: 230px;
+    }
+}
+
+@media (max-width: 760px) {
+    .admin-wrapper.admin-wrapper {
+        display: block;
+    }
+
+    .admin-wrapper .admin-sidebar {
+        position: relative;
+        width: 100%;
+        max-height: 34vh;
+        border-right: 0;
+        border-bottom: 1px solid rgb(255 255 255 / 8%);
+    }
+
+    .admin-wrapper .sidebar-brand {
+        padding: 14px 18px 12px;
+    }
+
+    .admin-wrapper .sidebar-brand-title {
+        font-size: 19px;
+    }
+
+    .admin-wrapper .sidebar-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2px 12px;
+        padding: 10px 12px 14px;
+    }
+
+    .admin-wrapper .sidebar-section {
+        min-width: 0;
+        margin-bottom: 8px;
+    }
+
+    .admin-wrapper .sidebar-section-title {
+        padding: 6px 10px;
+    }
+
+    .admin-wrapper .admin-main {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .admin-wrapper .admin-header {
+        height: auto;
+        min-height: 60px;
+        gap: 12px;
+        padding: 10px 16px;
+    }
+
+    .admin-wrapper .header-left-title {
+        font-size: 13px;
+    }
+
+    .admin-wrapper .header-user {
+        gap: 8px;
+    }
+
+    .admin-wrapper .header-avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    .admin-wrapper .admin-content {
+        padding: 16px;
+    }
+
+    .admin-wrapper .admin-content .dashboard-grid,
+    .admin-wrapper .admin-content .dashboard-two-columns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-wrapper .admin-content .audit-filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-wrapper .admin-content .audit-detail-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 520px) {
+    .admin-wrapper .sidebar-nav {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-wrapper .admin-header {
+        align-items: flex-start;
+    }
+
+    .admin-wrapper .header-user-info {
+        display: none;
+    }
+
+    .admin-wrapper .admin-content .dashboard-grid,
+    .admin-wrapper .admin-content .dashboard-two-columns,
+    .admin-wrapper .admin-content .audit-filter-grid,
+    .admin-wrapper .admin-content .grid.grid-cols-2 {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-wrapper .admin-content .grid.grid-cols-12 > :is(.col-span-2, .col-span-4, .col-span-6) {
+        grid-column: 1 / -1;
+    }
+
+    .admin-wrapper .admin-content .audit-header,
+    .admin-wrapper .admin-content .audit-show-header {
+        flex-direction: column;
+    }
+
+    .admin-wrapper .admin-content .audit-filter-actions {
+        flex-wrap: wrap;
+    }
+
+    .admin-login {
+        padding: 16px;
+    }
+
+    .admin-login .login-card {
+        padding: 26px 22px;
+    }
+}

@@ -138,8 +138,13 @@
             </div>
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.specialties.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.specialties.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -147,8 +152,13 @@
             </a>
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.examination-rooms.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.examination-rooms.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -156,8 +166,13 @@
             </a>
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.service-groups.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.service-groups.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -165,8 +180,13 @@
             </a>
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.medical-services.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.medical-services.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 

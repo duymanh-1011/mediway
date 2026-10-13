@@ -60,6 +60,7 @@ Route::prefix('admin')
             [AuthController::class, 'showLoginForm']
         )->name('login');
 
+
         Route::post(
             '/login',
             [AuthController::class, 'login']
@@ -75,6 +76,7 @@ Route::prefix('admin')
         Route::middleware(
             AdminMiddleware::class
         )->group(function () {
+
 
             /*
             |--------------------------------------------------------------------------
@@ -100,6 +102,7 @@ Route::prefix('admin')
             )->name(
                 'audit-logs.index'
             );
+
 
             Route::get(
                 '/audit-logs/{id}',
@@ -134,12 +137,14 @@ Route::prefix('admin')
                 'users.update-status'
             );
 
+
             Route::patch(
                 'users/{user}/reset-password',
                 [UserController::class, 'resetPassword']
             )->name(
                 'users.reset-password'
             );
+
 
             Route::resource(
                 'users',
@@ -161,6 +166,7 @@ Route::prefix('admin')
             )->name(
                 'administrators.update-status'
             );
+
 
             Route::resource(
                 'administrators',
@@ -187,6 +193,7 @@ Route::prefix('admin')
                 ->name(
                     'patients.document'
                 );
+
 
             Route::resource(
                 'patients',
@@ -228,6 +235,7 @@ Route::prefix('admin')
                     'doctors.document'
                 );
 
+
             Route::resource(
                 'doctors',
                 DoctorController::class
@@ -253,6 +261,7 @@ Route::prefix('admin')
                 ->name(
                     'employees.document'
                 );
+
 
             Route::resource(
                 'employees',
@@ -376,6 +385,7 @@ Route::prefix('admin')
                 'doctor-schedules.calendar'
             );
 
+
             Route::resource(
                 'doctor-schedules',
                 DoctorScheduleController::class
@@ -395,12 +405,14 @@ Route::prefix('admin')
                 'doctor-schedules.time-slots.create'
             );
 
+
             Route::post(
                 '/doctor-schedules/{doctorSchedule}/time-slots',
                 [AppointmentTimeSlotController::class, 'store']
             )->name(
                 'doctor-schedules.time-slots.store'
             );
+
 
             Route::get(
                 '/appointment-time-slots/{appointmentTimeSlot}/edit',
@@ -409,12 +421,14 @@ Route::prefix('admin')
                 'appointment-time-slots.edit'
             );
 
+
             Route::put(
                 '/appointment-time-slots/{appointmentTimeSlot}',
                 [AppointmentTimeSlotController::class, 'update']
             )->name(
                 'appointment-time-slots.update'
             );
+
 
             Route::delete(
                 '/appointment-time-slots/{appointmentTimeSlot}',
@@ -437,12 +451,14 @@ Route::prefix('admin')
                 'appointments.check-in'
             );
 
+
             Route::post(
                 '/appointments/{appointment}/cancel',
                 [AppointmentController::class, 'cancel']
             )->name(
                 'appointments.cancel'
             );
+
 
             Route::resource(
                 'appointments',
@@ -504,6 +520,7 @@ Route::prefix('admin')
                 'visits.update-status'
             );
 
+
             Route::resource(
                 'visits',
                 MedicalVisitController::class
@@ -526,12 +543,14 @@ Route::prefix('admin')
                 'queues.call'
             );
 
+
             Route::post(
                 '/queues/{queue}/start-service',
                 [ExaminationRoomQueueController::class, 'startService']
             )->name(
                 'queues.start-service'
             );
+
 
             Route::post(
                 '/queues/{queue}/complete',
@@ -540,12 +559,14 @@ Route::prefix('admin')
                 'queues.complete'
             );
 
+
             Route::post(
                 '/queues/{queue}/skip',
                 [ExaminationRoomQueueController::class, 'skip']
             )->name(
                 'queues.skip'
             );
+
 
             Route::resource(
                 'queues',
@@ -569,12 +590,14 @@ Route::prefix('admin')
                 'visits.clinical-note.create'
             );
 
+
             Route::post(
                 '/visits/{visit}/clinical-note',
                 [MedicalVisitClinicalNoteController::class, 'store']
             )->name(
                 'visits.clinical-note.store'
             );
+
 
             Route::resource(
                 'clinical-notes',
@@ -600,12 +623,14 @@ Route::prefix('admin')
                 'visits.diagnoses.create'
             );
 
+
             Route::post(
                 '/visits/{visit}/diagnoses',
                 [MedicalVisitDiagnosisController::class, 'store']
             )->name(
                 'visits.diagnoses.store'
             );
+
 
             Route::resource(
                 'diagnoses',
@@ -631,12 +656,14 @@ Route::prefix('admin')
                 'visits.conclusion.create'
             );
 
+
             Route::post(
                 '/visits/{visit}/conclusion',
                 [MedicalVisitConclusionController::class, 'store']
             )->name(
                 'visits.conclusion.store'
             );
+
 
             Route::resource(
                 'conclusions',
@@ -661,5 +688,7 @@ Route::prefix('admin')
             )->name(
                 'logout'
             );
+
         });
+
     });

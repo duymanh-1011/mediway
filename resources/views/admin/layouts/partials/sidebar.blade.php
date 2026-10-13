@@ -322,13 +322,23 @@
                 Trạng thái hàng đợi
             </a>
 
-            <a href="#" class="sidebar-link">
+            <a href="{{ route('admin.service-statuses.index') }}" class="
+        sidebar-link
+        {{ request()->routeIs('admin.service-statuses.*')
+    ? 'active'
+    : '' }}
+    ">
                 <span class="sidebar-link-dot"></span>
 
                 Trạng thái dịch vụ
             </a>
 
-            <a href="#" class="sidebar-link">
+            <a href="{{ route('admin.payment-statuses.index') }}" class="
+        sidebar-link
+        {{ request()->routeIs('admin.payment-statuses.*')
+    ? 'active'
+    : '' }}
+    ">
                 <span class="sidebar-link-dot"></span>
 
                 Trạng thái thanh toán

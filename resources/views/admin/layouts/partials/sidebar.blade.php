@@ -1,16 +1,24 @@
+
 <aside class="admin-sidebar">
 
     {{-- THƯƠNG HIỆU --}}
     <div class="sidebar-brand">
-        <h1 class="sidebar-brand-title">Mediway</h1>
-        <div class="sidebar-brand-subtitle">Administration System</div>
+        <h1 class="sidebar-brand-title">
+            Mediway
+        </h1>
+
+        <div class="sidebar-brand-subtitle">
+            Administration System
+        </div>
     </div>
 
     <nav class="sidebar-nav">
 
         {{-- TỔNG QUAN --}}
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Tổng quan</div>
+            <div class="sidebar-section-title">
+                Tổng quan
+            </div>
 
             <a
                 href="{{ route('admin.dashboard') }}"
@@ -23,7 +31,9 @@
 
         {{-- HỆ THỐNG --}}
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Hệ thống</div>
+            <div class="sidebar-section-title">
+                Hệ thống
+            </div>
 
             <a
                 href="{{ route('admin.users.index') }}"
@@ -49,6 +59,7 @@
                 Quản trị viên
             </a>
 
+            {{-- Chưa triển khai --}}
             <a href="#" class="sidebar-link">
                 <span class="sidebar-link-dot"></span>
                 Nhật ký hoạt động
@@ -57,18 +68,26 @@
 
         {{-- NHÂN SỰ & BỆNH NHÂN --}}
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Nhân sự & bệnh nhân</div>
+            <div class="sidebar-section-title">
+                Nhân sự & bệnh nhân
+            </div>
 
-            <a href="#" class="sidebar-link">
+            {{-- NGÀY 3: QUẢN LÝ BỆNH NHÂN --}}
+            <a
+                href="{{ route('admin.patients.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.patients.*') ? 'active' : '' }}"
+            >
                 <span class="sidebar-link-dot"></span>
                 Bệnh nhân
             </a>
 
+            {{-- NGÀY 4: BÁC SĨ --}}
             <a href="#" class="sidebar-link">
                 <span class="sidebar-link-dot"></span>
                 Bác sĩ
             </a>
 
+            {{-- NGÀY 5: NHÂN VIÊN --}}
             <a href="#" class="sidebar-link">
                 <span class="sidebar-link-dot"></span>
                 Nhân viên
@@ -77,7 +96,9 @@
 
         {{-- DANH MỤC --}}
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Danh mục</div>
+            <div class="sidebar-section-title">
+                Danh mục
+            </div>
 
             <a href="#" class="sidebar-link">
                 <span class="sidebar-link-dot"></span>
@@ -90,7 +111,7 @@
             </a>
 
             <a href="#" class="sidebar-link">
-<span class="sidebar-link-dot"></span>
+                <span class="sidebar-link-dot"></span>
                 Nhóm dịch vụ
             </a>
 
@@ -117,7 +138,9 @@
 
         {{-- LỊCH & ĐẶT KHÁM --}}
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Lịch & đặt khám</div>
+            <div class="sidebar-section-title">
+                Lịch & đặt khám
+            </div>
 
             <a href="#" class="sidebar-link">
                 <span class="sidebar-link-dot"></span>
@@ -132,7 +155,9 @@
 
         {{-- VẬN HÀNH KHÁM --}}
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Vận hành khám</div>
+            <div class="sidebar-section-title">
+                Vận hành khám
+            </div>
 
             <a href="#" class="sidebar-link">
                 <span class="sidebar-link-dot"></span>
@@ -162,7 +187,9 @@
 
         {{-- DỊCH VỤ --}}
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Dịch vụ</div>
+            <div class="sidebar-section-title">
+                Dịch vụ
+            </div>
 
             <a href="#" class="sidebar-link">
                 <span class="sidebar-link-dot"></span>
@@ -177,7 +204,9 @@
 
         {{-- ĐƠN THUỐC --}}
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Đơn thuốc</div>
+            <div class="sidebar-section-title">
+                Đơn thuốc
+            </div>
 
             <a href="#" class="sidebar-link">
                 <span class="sidebar-link-dot"></span>
@@ -187,7 +216,9 @@
 
         {{-- THANH TOÁN --}}
         <div class="sidebar-section">
-<div class="sidebar-section-title">Thanh toán</div>
+            <div class="sidebar-section-title">
+                Thanh toán
+            </div>
 
             <a href="#" class="sidebar-link">
                 <span class="sidebar-link-dot"></span>
@@ -202,7 +233,9 @@
 
         {{-- CẤU HÌNH TRẠNG THÁI --}}
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Cấu hình trạng thái</div>
+            <div class="sidebar-section-title">
+                Cấu hình trạng thái
+            </div>
 
             <a href="#" class="sidebar-link">
                 <span class="sidebar-link-dot"></span>
@@ -231,4 +264,5 @@
         </div>
 
     </nav>
+
 </aside>

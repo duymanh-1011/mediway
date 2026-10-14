@@ -194,8 +194,13 @@
             </a>
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.disease-groups.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.disease-groups.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -203,8 +208,13 @@
             </a>
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.diseases.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.diseases.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -212,8 +222,13 @@
             </a>
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.medicines.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.medicines.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -401,8 +416,13 @@
             </div>
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.appointment-statuses.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.appointment-statuses.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 

@@ -53,10 +53,9 @@
             margin: 0;
 
             font-family:
-                Inter,
-                Arial,
-                Helvetica,
-                sans-serif;
+                "Times New Roman",
+                Times,
+                serif;
 
             background: var(--background);
             color: var(--text);

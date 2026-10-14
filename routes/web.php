@@ -8,6 +8,10 @@ use App\Http\Controllers\Admin\SpecialtyController;
 use App\Http\Controllers\Admin\ExaminationRoomController;
 use App\Http\Controllers\Admin\ServiceGroupController;
 use App\Http\Controllers\Admin\MedicalServiceController;
+use App\Http\Controllers\Admin\DiseaseGroupController;
+use App\Http\Controllers\Admin\DiseaseController;
+use App\Http\Controllers\Admin\MedicineController;
+use App\Http\Controllers\Admin\AppointmentStatusController;
 
 use App\Http\Middleware\AdminMiddleware;
 
@@ -60,6 +64,31 @@ Route::prefix('admin')
                 'medical-services',
                 MedicalServiceController::class
             );
+
+            Route::resource(
+                'disease-groups',
+                DiseaseGroupController::class
+            );
+
+            Route::resource(
+                'diseases',
+                DiseaseController::class
+            );
+
+            Route::resource(
+                'medicines',
+                MedicineController::class
+            );
+
+            Route::resource(
+                'appointment-statuses',
+                AppointmentStatusController::class
+            )->only([
+                'index',
+                'show',
+                'edit',
+                'update',
+            ]);
 
             Route::post(
                 '/logout',

@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\ServiceStatusController;
 use App\Http\Controllers\Admin\PaymentStatusController;
+use App\Http\Controllers\Admin\ServiceOrderController;
+use App\Http\Controllers\Admin\ServiceResultController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::get('/', function () {
@@ -30,7 +32,7 @@ Route::prefix('admin')
 
             Route::post('/logout', [AuthController::class, 'logout'])
                 ->name('logout');
-                
+
             Route::get('/audit-logs', [AuditLogController::class, 'index'])
                 ->name('audit-logs.index');
 
@@ -76,5 +78,22 @@ Route::prefix('admin')
                 '/payment-statuses/{id}',
                 [PaymentStatusController::class, 'update']
             )->name('payment-statuses.update');
+            Route::get('/service-orders', [ServiceOrderController::class, 'index'])
+                ->name('service-orders.index');
+
+            Route::get('/service-orders/{id}', [ServiceOrderController::class, 'show'])
+                ->name('service-orders.show');
+
+            Route::get('/service-results', [ServiceResultController::class, 'index'])
+                ->name('service-results.index');
+
+            Route::get('/service-results/{id}', [ServiceResultController::class, 'show'])
+                ->name('service-results.show');
+
+            Route::get('/service-results/{id}/edit', [ServiceResultController::class, 'edit'])
+                ->name('service-results.edit');
+
+            Route::patch('/service-results/{id}', [ServiceResultController::class, 'update'])
+                ->name('service-results.update');
         });
     });

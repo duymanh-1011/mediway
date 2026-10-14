@@ -238,19 +238,30 @@
                 Dịch vụ
             </div>
 
-            <a href="#" class="sidebar-link">
+            <a href="{{ route('admin.service-orders.index') }}" class="
+            sidebar-link
+            {{ request()->routeIs('admin.service-orders.*')
+    ? 'active'
+    : '' }}
+        ">
                 <span class="sidebar-link-dot"></span>
 
                 Chỉ định dịch vụ
             </a>
 
-            <a href="#" class="sidebar-link">
+            <a href="{{ route('admin.service-results.index') }}" class="
+            sidebar-link
+            {{ request()->routeIs('admin.service-results.*')
+    ? 'active'
+    : '' }}
+        ">
                 <span class="sidebar-link-dot"></span>
 
                 Kết quả dịch vụ
             </a>
 
         </div>
+
 
         {{-- =====================================================
         ĐƠN THUỐC

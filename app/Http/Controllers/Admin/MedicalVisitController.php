@@ -35,6 +35,7 @@ class MedicalVisitController extends Controller
             });
         }
 
+        // Mặc định lọc theo ngày demo chuẩn 2026-10-15
         $date = $request->input('date', '2026-10-15');
         $query->whereDate('medical_visits.checked_in_at', $date);
 
@@ -111,11 +112,31 @@ class MedicalVisitController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
-        $request->validate(['visit_status_id' => 'required|exists:visit_statuses,id']);
+        $request->validate([
+            'visit_status_id' => 'required|exists:visit_statuses,id'
+        ]);
+
+        $visit = DB::table('medical_visits')->where('id', $id)->first();
+        if (!$visit) {
+            return back()->with('error', 'Lượt khám không tồn tại.');
+        }
+
+        $newStatus = DB::table('visit_statuses')->where('id', $request->visit_status_id)->first();
+
+        // Kiểm tra logic: Nếu chuyển sang trạng thái COMPLETED nhưng chưa có kết luận chuyên môn -> Chặn lại
+        if ($newStatus->name === 'COMPLETED') {
+            $hasConclusion = DB::table('visit_conclusions')->where('medical_visit_id', $id)->exists();
+            if (!$hasConclusion) {
+                return back()->with('error', 'Không thể hoàn tất lượt khám khi chưa có Kết luận chuyên môn.');
+            }
+        }
+
         DB::table('medical_visits')->where('id', $id)->update([
             'visit_status_id' => $request->visit_status_id,
+            'examination_ended_at' => $newStatus->name === 'COMPLETED' ? now() : $visit->examination_ended_at,
             'updated_at' => now(),
         ]);
+
         return back()->with('success', 'Cập nhật trạng thái lượt khám thành công.');
     }
 }

@@ -44,16 +44,16 @@ class ExaminationRoomQueueController extends Controller
 
     public function callPatient($id)
     {
-        $status = DB::table('queue_statuses')->where('name', 'CALLED')->first();
-        if ($status) {
+        $statusCalled = DB::table('queue_statuses')->where('name', 'CALLED')->first();
+        if ($statusCalled) {
             DB::table('examination_room_queues')->where('id', $id)->update([
-                'queue_status_id' => $status->id,
+                'queue_status_id' => $statusCalled->id,
                 'called_at' => now(),
                 'call_count' => DB::raw('call_count + 1'),
                 'updated_at' => now(),
             ]);
         }
-        return back()->with('success', 'Đã gọi bệnh nhân.');
+        return back()->with('success', 'Đã gọi bệnh nhân vào phòng khám.');
     }
 
     public function startService($id)
@@ -78,15 +78,15 @@ class ExaminationRoomQueueController extends Controller
                 ]);
             }
         });
-        return back()->with('success', 'Đã bắt đầu khám.');
+        return back()->with('success', 'Đã bắt đầu tiến trình khám bệnh.');
     }
 
     public function complete($id)
     {
-        $status = DB::table('queue_statuses')->where('name', 'COMPLETED')->first();
-        if ($status) {
+        $statusCompleted = DB::table('queue_statuses')->where('name', 'COMPLETED')->first();
+        if ($statusCompleted) {
             DB::table('examination_room_queues')->where('id', $id)->update([
-                'queue_status_id' => $status->id,
+                'queue_status_id' => $statusCompleted->id,
                 'completed_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -96,13 +96,13 @@ class ExaminationRoomQueueController extends Controller
 
     public function skip($id)
     {
-        $status = DB::table('queue_statuses')->where('name', 'SKIPPED')->first();
-        if ($status) {
+        $statusSkipped = DB::table('queue_statuses')->where('name', 'SKIPPED')->first();
+        if ($statusSkipped) {
             DB::table('examination_room_queues')->where('id', $id)->update([
-                'queue_status_id' => $status->id,
+                'queue_status_id' => $statusSkipped->id,
                 'updated_at' => now(),
             ]);
         }
-        return back()->with('warning', 'Đã bỏ qua lượt.');
+        return back()->with('warning', 'Đã ghi nhận bỏ qua lượt chờ của bệnh nhân.');
     }
 }

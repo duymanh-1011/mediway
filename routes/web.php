@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ServiceStatusController;
 use App\Http\Controllers\Admin\PaymentStatusController;
 use App\Http\Controllers\Admin\ServiceOrderController;
 use App\Http\Controllers\Admin\ServiceResultController;
+use App\Http\Controllers\Admin\PrescriptionController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::get('/', function () {
@@ -95,5 +96,16 @@ Route::prefix('admin')
 
             Route::patch('/service-results/{id}', [ServiceResultController::class, 'update'])
                 ->name('service-results.update');
+            Route::get('/prescriptions', [PrescriptionController::class, 'index'])
+                ->name('prescriptions.index');
+
+            Route::get('/prescriptions/{id}', [PrescriptionController::class, 'show'])
+                ->name('prescriptions.show');
+
+            Route::get('/prescriptions/{id}/edit', [PrescriptionController::class, 'edit'])
+                ->name('prescriptions.edit');
+
+            Route::patch('/prescriptions/{id}', [PrescriptionController::class, 'update'])
+                ->name('prescriptions.update');
         });
     });

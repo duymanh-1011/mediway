@@ -273,7 +273,12 @@
                 Đơn thuốc
             </div>
 
-            <a href="#" class="sidebar-link">
+            <a href="{{ route('admin.prescriptions.index') }}" class="
+            sidebar-link
+            {{ request()->routeIs('admin.prescriptions.*')
+    ? 'active'
+    : '' }}
+        ">
                 <span class="sidebar-link-dot"></span>
 
                 Đơn thuốc

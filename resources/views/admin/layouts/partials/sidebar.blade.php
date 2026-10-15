@@ -248,8 +248,13 @@
             </div>
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.doctor-schedules.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.doctor-schedules.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 

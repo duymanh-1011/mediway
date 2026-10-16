@@ -10,7 +10,7 @@
 
 @section('content')
 
-    <div style="margin-bottom:24px;">
+    <div class="mb-6">
         <h1 class="page-title">
             Dashboard
         </h1>
@@ -241,7 +241,7 @@
 
     </div>
 
-    <div class="card" style="margin-top:24px;">
+    <div class="card mt-6">
 
         <div class="section-header">
 
@@ -257,7 +257,7 @@
 
         </div>
 
-        <div style="overflow-x:auto;">
+        <div class="admin-table-scroll">
 
             <table class="admin-table">
 
@@ -318,7 +318,7 @@
                     <tr>
                         <td
                             colspan="7"
-                            style="text-align:center; color:#6b7280;"
+                            class="py-10 text-center text-slate-500"
                         >
                             Chưa có nhật ký hoạt động.
                         </td>
@@ -435,6 +435,7 @@
 
     .admin-table {
         width: 100%;
+        min-width: 720px;
         border-collapse: collapse;
         font-size: 14px;
     }
@@ -473,12 +474,10 @@
     }
 
     @media (max-width: 700px) {
-
         .dashboard-grid,
         .dashboard-two-columns {
             grid-template-columns: 1fr;
         }
-
     }
 
 </style>

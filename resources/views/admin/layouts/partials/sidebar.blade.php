@@ -16,7 +16,7 @@
     <nav class="sidebar-nav">
 
         {{-- =====================================================
-            TỔNG QUAN
+        TỔNG QUAN
         ====================================================== --}}
 
         <div class="sidebar-section">
@@ -25,15 +25,12 @@
                 Tổng quan
             </div>
 
-            <a
-                href="{{ route('admin.dashboard') }}"
-                class="
+            <a href="{{ route('admin.dashboard') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.dashboard')
                         ? 'active'
                         : '' }}
-                "
-            >
+                ">
                 <span class="sidebar-link-dot"></span>
 
                 Dashboard
@@ -43,7 +40,7 @@
 
 
         {{-- =====================================================
-            HỆ THỐNG
+        HỆ THỐNG
         ====================================================== --}}
 
         <div class="sidebar-section">
@@ -96,11 +93,12 @@
                 Quản trị viên
             </a>
 
-
-            <a
-                href="#"
-                class="sidebar-link"
-            >
+            <a href="{{ route('admin.audit-logs.index') }}" class="
+                sidebar-link
+                {{ request()->routeIs('admin.audit-logs.*')
+                    ? 'active'
+                    : '' }}
+            ">
                 <span class="sidebar-link-dot"></span>
 
                 Nhật ký hoạt động
@@ -110,7 +108,7 @@
 
 
         {{-- =====================================================
-            NHÂN SỰ & BỆNH NHÂN
+        NHÂN SỰ & BỆNH NHÂN
         ====================================================== --}}
 
         <div class="sidebar-section">
@@ -223,7 +221,7 @@
 
 
         {{-- =====================================================
-            DANH MỤC
+        DANH MỤC
         ====================================================== --}}
 
         <div class="sidebar-section">
@@ -341,7 +339,7 @@
 
 
         {{-- =====================================================
-            LỊCH & ĐẶT KHÁM
+        LỊCH & ĐẶT KHÁM
         ====================================================== --}}
 
         <div class="sidebar-section">
@@ -384,7 +382,7 @@
 
 
         {{-- =====================================================
-            VẬN HÀNH KHÁM
+        VẬN HÀNH KHÁM
         ====================================================== --}}
 
         <div class="sidebar-section">
@@ -393,10 +391,14 @@
                 Vận hành khám
             </div>
 
-
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.visits.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.visits.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -405,8 +407,13 @@
 
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.queues.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.queues.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -415,8 +422,13 @@
 
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.clinical-notes.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.clinical-notes.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -425,8 +437,13 @@
 
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.diagnoses.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.diagnoses.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -435,8 +452,13 @@
 
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.conclusions.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.conclusions.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -447,7 +469,7 @@
 
 
         {{-- =====================================================
-            DỊCH VỤ
+        DỊCH VỤ
         ====================================================== --}}
 
         <div class="sidebar-section">
@@ -480,7 +502,7 @@
 
 
         {{-- =====================================================
-            ĐƠN THUỐC
+        ĐƠN THUỐC
         ====================================================== --}}
 
         <div class="sidebar-section">
@@ -503,7 +525,7 @@
 
 
         {{-- =====================================================
-            THANH TOÁN
+        THANH TOÁN
         ====================================================== --}}
 
         <div class="sidebar-section">
@@ -536,7 +558,7 @@
 
 
         {{-- =====================================================
-            CẤU HÌNH TRẠNG THÁI
+        CẤU HÌNH TRẠNG THÁI
         ====================================================== --}}
 
         <div class="sidebar-section">

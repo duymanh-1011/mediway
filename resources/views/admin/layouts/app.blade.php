@@ -11,6 +11,8 @@
 
     <title>@yield('title', 'Mediway Admin')</title>
 
+    @vite('resources/css/app.css')
+
     <style>
         :root {
             --sidebar-width: 270px;
@@ -616,6 +618,32 @@
 </head>
 
 <body>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const sidebar =
+            document.querySelector('.admin-sidebar')
+            || document.querySelector('aside');
+
+        if (!sidebar) {
+            return;
+        }
+
+        const savedScrollPosition =
+            localStorage.getItem('sidebar_scroll_pos');
+
+        if (savedScrollPosition) {
+            sidebar.scrollTop = savedScrollPosition;
+        }
+
+        sidebar.addEventListener('scroll', function () {
+            localStorage.setItem(
+                'sidebar_scroll_pos',
+                sidebar.scrollTop
+            );
+        });
+    });
+</script>
 
 <div class="admin-wrapper">
 

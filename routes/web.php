@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\PaymentStatusController;
 use App\Http\Controllers\Admin\ServiceOrderController;
 use App\Http\Controllers\Admin\ServiceResultController;
 use App\Http\Controllers\Admin\PrescriptionController;
+use App\Http\Controllers\Admin\PayableController;
+use App\Http\Controllers\Admin\PaymentTransactionController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::get('/', function () {
@@ -107,5 +109,28 @@ Route::prefix('admin')
 
             Route::patch('/prescriptions/{id}', [PrescriptionController::class, 'update'])
                 ->name('prescriptions.update');
+
+            Route::get('/payables', [PayableController::class, 'index'])
+                ->name('payables.index');
+
+            Route::get('/payables/{id}', [PayableController::class, 'show'])
+                ->name('payables.show');
+
+            Route::patch('/payables/{id}/status', [PayableController::class, 'updateStatus'])
+                ->name('payables.update-status');
+
+            Route::patch('/payables/{id}/cancel', [PayableController::class, 'cancel'])
+                ->name('payables.cancel');
+
+
+            Route::get(
+                '/payment-transactions',
+                [PaymentTransactionController::class, 'index']
+            )->name('payment-transactions.index');
+
+            Route::get(
+                '/payment-transactions/{id}',
+                [PaymentTransactionController::class, 'show']
+            )->name('payment-transactions.show');
         });
     });

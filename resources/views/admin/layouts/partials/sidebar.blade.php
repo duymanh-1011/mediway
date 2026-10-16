@@ -296,13 +296,24 @@
                 Thanh toán
             </div>
 
-            <a href="#" class="sidebar-link">
+            <a href="{{ route('admin.payables.index') }}" class="
+            sidebar-link
+            {{ request()->routeIs('admin.payables.*')
+    ? 'active'
+    : '' }}
+        ">
                 <span class="sidebar-link-dot"></span>
 
                 Khoản phải thanh toán
             </a>
 
-            <a href="#" class="sidebar-link">
+
+            <a href="{{ route('admin.payment-transactions.index') }}" class="
+            sidebar-link
+            {{ request()->routeIs('admin.payment-transactions.*')
+    ? 'active'
+    : '' }}
+        ">
                 <span class="sidebar-link-dot"></span>
 
                 Giao dịch thanh toán

@@ -4,6 +4,15 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
+
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\AdministratorController;
+use App\Http\Controllers\Admin\PatientController;
+use App\Http\Controllers\Admin\PersonalHealthRecordController;
+use App\Http\Controllers\Admin\DoctorController;
+use App\Http\Controllers\Admin\EmployeeController;
+
 use App\Http\Controllers\Admin\SpecialtyController;
 use App\Http\Controllers\Admin\ExaminationRoomController;
 use App\Http\Controllers\Admin\ServiceGroupController;
@@ -29,6 +38,12 @@ Route::prefix('admin')
     ->group(function () {
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Đăng nhập
+        |--------------------------------------------------------------------------
+        */
+
         Route::get(
             '/login',
             [AuthController::class, 'showLoginForm']
@@ -40,6 +55,12 @@ Route::prefix('admin')
             [AuthController::class, 'login']
         )->name('login.submit');
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Khu vực Admin
+        |--------------------------------------------------------------------------
+        */
 
         Route::middleware(
             AdminMiddleware::class
@@ -60,7 +81,166 @@ Route::prefix('admin')
 
             /*
             |--------------------------------------------------------------------------
-            | Danh mục khám
+            | Vai trò
+            |--------------------------------------------------------------------------
+            */
+
+            Route::resource(
+                'roles',
+                RoleController::class
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Tài khoản
+            |--------------------------------------------------------------------------
+            */
+
+            Route::patch(
+                'users/{user}/status',
+                [UserController::class, 'updateStatus']
+            )->name(
+                'users.update-status'
+            );
+
+
+            Route::patch(
+                'users/{user}/reset-password',
+                [UserController::class, 'resetPassword']
+            )->name(
+                'users.reset-password'
+            );
+
+
+            Route::resource(
+                'users',
+                UserController::class
+            )->except([
+                'destroy',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Quản trị viên
+            |--------------------------------------------------------------------------
+            */
+
+            Route::patch(
+                'administrators/{administrator}/status',
+                [AdministratorController::class, 'updateStatus']
+            )->name(
+                'administrators.update-status'
+            );
+
+
+            Route::resource(
+                'administrators',
+                AdministratorController::class
+            )->except([
+                'destroy',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Bệnh nhân
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                'patients/{patient}/documents/{type}',
+                [PatientController::class, 'document']
+            )
+                ->where(
+                    'type',
+                    'avatar|citizen-id-front|citizen-id-back|profile-pdf'
+                )
+                ->name(
+                    'patients.document'
+                );
+
+
+            Route::resource(
+                'patients',
+                PatientController::class
+            )->except([
+                'destroy',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Hồ sơ sức khỏe cá nhân
+            |--------------------------------------------------------------------------
+            */
+
+            Route::resource(
+                'personal-health-records',
+                PersonalHealthRecordController::class
+            )->except([
+                'destroy',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Bác sĩ
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                'doctors/{doctor}/documents/{type}',
+                [DoctorController::class, 'document']
+            )
+                ->where(
+                    'type',
+                    'avatar|citizen-id-front|citizen-id-back|practice-license|profile-pdf'
+                )
+                ->name(
+                    'doctors.document'
+                );
+
+
+            Route::resource(
+                'doctors',
+                DoctorController::class
+            )->except([
+                'destroy',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Nhân viên
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                'employees/{employee}/documents/{type}',
+                [EmployeeController::class, 'document']
+            )
+                ->where(
+                    'type',
+                    'avatar|citizen-id-front|citizen-id-back|profile-pdf'
+                )
+                ->name(
+                    'employees.document'
+                );
+
+
+            Route::resource(
+                'employees',
+                EmployeeController::class
+            )->except([
+                'destroy',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Chuyên khoa
             |--------------------------------------------------------------------------
             */
 
@@ -70,17 +250,35 @@ Route::prefix('admin')
             );
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Phòng khám
+            |--------------------------------------------------------------------------
+            */
+
             Route::resource(
                 'examination-rooms',
                 ExaminationRoomController::class
             );
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Nhóm dịch vụ
+            |--------------------------------------------------------------------------
+            */
+
             Route::resource(
                 'service-groups',
                 ServiceGroupController::class
             );
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Dịch vụ y tế
+            |--------------------------------------------------------------------------
+            */
 
             Route::resource(
                 'medical-services',
@@ -90,7 +288,7 @@ Route::prefix('admin')
 
             /*
             |--------------------------------------------------------------------------
-            | Bệnh và thuốc
+            | Nhóm bệnh
             |--------------------------------------------------------------------------
             */
 
@@ -100,11 +298,23 @@ Route::prefix('admin')
             );
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Danh mục bệnh
+            |--------------------------------------------------------------------------
+            */
+
             Route::resource(
                 'diseases',
                 DiseaseController::class
             );
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Thuốc
+            |--------------------------------------------------------------------------
+            */
 
             Route::resource(
                 'medicines',
@@ -133,6 +343,10 @@ Route::prefix('admin')
             |--------------------------------------------------------------------------
             | Lịch làm việc bác sĩ
             |--------------------------------------------------------------------------
+            |
+            | Calendar phải đặt trước resource để Laravel không hiểu
+            | "calendar" là {doctorSchedule}.
+            |
             */
 
             Route::get(
@@ -224,13 +438,15 @@ Route::prefix('admin')
 
             /*
             |--------------------------------------------------------------------------
-            | Logout
+            | Đăng xuất
             |--------------------------------------------------------------------------
             */
 
             Route::post(
                 '/logout',
                 [AuthController::class, 'logout']
-            )->name('logout');
+            )->name(
+                'logout'
+            );
         });
     });

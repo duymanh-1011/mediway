@@ -12,6 +12,7 @@
 
     </div>
 
+
     <nav class="sidebar-nav">
 
         {{-- =====================================================
@@ -40,6 +41,7 @@
 
         </div>
 
+
         {{-- =====================================================
             HỆ THỐNG
         ====================================================== --}}
@@ -51,31 +53,49 @@
             </div>
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.users.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.users.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
                 Tài khoản
             </a>
 
+
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.roles.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.roles.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
                 Vai trò
             </a>
 
+
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.administrators.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.administrators.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
                 Quản trị viên
             </a>
+
 
             <a
                 href="#"
@@ -88,6 +108,7 @@
 
         </div>
 
+
         {{-- =====================================================
             NHÂN SỰ & BỆNH NHÂN
         ====================================================== --}}
@@ -98,27 +119,100 @@
                 Nhân sự & bệnh nhân
             </div>
 
-            <a
-                href="#"
-                class="sidebar-link"
+
+            <details
+                class="sidebar-submenu"
+                {{ request()->routeIs(
+                    'admin.patients.*',
+                    'admin.personal-health-records.*'
+                ) ? 'open' : '' }}
             >
-                <span class="sidebar-link-dot"></span>
 
-                Bệnh nhân
-            </a>
+                <summary
+                    class="
+                        sidebar-link
+                        sidebar-submenu-toggle
+                        {{ request()->routeIs(
+                            'admin.patients.*',
+                            'admin.personal-health-records.*'
+                        ) ? 'active' : '' }}
+                    "
+                >
+                    <span class="sidebar-link-dot"></span>
+
+                    <span class="sidebar-submenu-label">
+                        Bệnh nhân
+                    </span>
+
+                    <span class="sidebar-submenu-chevron">
+                        ⌄
+                    </span>
+                </summary>
+
+
+                <div class="sidebar-submenu-items">
+
+                    <a
+                        href="{{ route('admin.patients.index') }}"
+                        class="
+                            sidebar-link
+                            sidebar-submenu-item
+                            {{ request()->routeIs('admin.patients.*')
+                                ? 'active'
+                                : '' }}
+                        "
+                    >
+                        <span class="sidebar-link-dot"></span>
+
+                        Danh sách bệnh nhân
+                    </a>
+
+
+                    <a
+                        href="{{ route(
+                            'admin.personal-health-records.index'
+                        ) }}"
+                        class="
+                            sidebar-link
+                            sidebar-submenu-item
+                            {{ request()->routeIs(
+                                'admin.personal-health-records.*'
+                            ) ? 'active' : '' }}
+                        "
+                    >
+                        <span class="sidebar-link-dot"></span>
+
+                        Lịch sử sức khỏe
+                    </a>
+
+                </div>
+
+            </details>
+
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.doctors.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.doctors.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
                 Bác sĩ
             </a>
 
+
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.employees.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.employees.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 
@@ -126,6 +220,7 @@
             </a>
 
         </div>
+
 
         {{-- =====================================================
             DANH MỤC
@@ -136,6 +231,7 @@
             <div class="sidebar-section-title">
                 Danh mục
             </div>
+
 
             <a
                 href="{{ route('admin.specialties.index') }}"
@@ -151,19 +247,21 @@
                 Chuyên khoa
             </a>
 
+
             <a
                 href="{{ route('admin.examination-rooms.index') }}"
                 class="
                     sidebar-link
-                    {{ request()->routeIs('admin.examination-rooms.*')
-                        ? 'active'
-                        : '' }}
+                    {{ request()->routeIs(
+                        'admin.examination-rooms.*'
+                    ) ? 'active' : '' }}
                 "
             >
                 <span class="sidebar-link-dot"></span>
 
                 Phòng khám
             </a>
+
 
             <a
                 href="{{ route('admin.service-groups.index') }}"
@@ -179,19 +277,21 @@
                 Nhóm dịch vụ
             </a>
 
+
             <a
                 href="{{ route('admin.medical-services.index') }}"
                 class="
                     sidebar-link
-                    {{ request()->routeIs('admin.medical-services.*')
-                        ? 'active'
-                        : '' }}
+                    {{ request()->routeIs(
+                        'admin.medical-services.*'
+                    ) ? 'active' : '' }}
                 "
             >
                 <span class="sidebar-link-dot"></span>
 
                 Dịch vụ y tế
             </a>
+
 
             <a
                 href="{{ route('admin.disease-groups.index') }}"
@@ -207,6 +307,7 @@
                 Nhóm bệnh
             </a>
 
+
             <a
                 href="{{ route('admin.diseases.index') }}"
                 class="
@@ -220,6 +321,7 @@
 
                 Danh mục bệnh
             </a>
+
 
             <a
                 href="{{ route('admin.medicines.index') }}"
@@ -237,6 +339,7 @@
 
         </div>
 
+
         {{-- =====================================================
             LỊCH & ĐẶT KHÁM
         ====================================================== --}}
@@ -247,19 +350,21 @@
                 Lịch & đặt khám
             </div>
 
+
             <a
                 href="{{ route('admin.doctor-schedules.index') }}"
                 class="
                     sidebar-link
-                    {{ request()->routeIs('admin.doctor-schedules.*')
-                        ? 'active'
-                        : '' }}
+                    {{ request()->routeIs(
+                        'admin.doctor-schedules.*'
+                    ) ? 'active' : '' }}
                 "
             >
                 <span class="sidebar-link-dot"></span>
 
                 Lịch làm việc bác sĩ
             </a>
+
 
             <a
                 href="{{ route('admin.appointments.index') }}"
@@ -277,6 +382,7 @@
 
         </div>
 
+
         {{-- =====================================================
             VẬN HÀNH KHÁM
         ====================================================== --}}
@@ -287,6 +393,7 @@
                 Vận hành khám
             </div>
 
+
             <a
                 href="#"
                 class="sidebar-link"
@@ -295,6 +402,7 @@
 
                 Lượt khám
             </a>
+
 
             <a
                 href="#"
@@ -305,6 +413,7 @@
                 Hàng đợi phòng khám
             </a>
 
+
             <a
                 href="#"
                 class="sidebar-link"
@@ -314,6 +423,7 @@
                 Nội dung khám
             </a>
 
+
             <a
                 href="#"
                 class="sidebar-link"
@@ -322,6 +432,7 @@
 
                 Chẩn đoán
             </a>
+
 
             <a
                 href="#"
@@ -334,6 +445,7 @@
 
         </div>
 
+
         {{-- =====================================================
             DỊCH VỤ
         ====================================================== --}}
@@ -344,6 +456,7 @@
                 Dịch vụ
             </div>
 
+
             <a
                 href="#"
                 class="sidebar-link"
@@ -352,6 +465,7 @@
 
                 Chỉ định dịch vụ
             </a>
+
 
             <a
                 href="#"
@@ -364,6 +478,7 @@
 
         </div>
 
+
         {{-- =====================================================
             ĐƠN THUỐC
         ====================================================== --}}
@@ -373,6 +488,7 @@
             <div class="sidebar-section-title">
                 Đơn thuốc
             </div>
+
 
             <a
                 href="#"
@@ -385,6 +501,7 @@
 
         </div>
 
+
         {{-- =====================================================
             THANH TOÁN
         ====================================================== --}}
@@ -395,6 +512,7 @@
                 Thanh toán
             </div>
 
+
             <a
                 href="#"
                 class="sidebar-link"
@@ -403,6 +521,7 @@
 
                 Khoản phải thanh toán
             </a>
+
 
             <a
                 href="#"
@@ -415,6 +534,7 @@
 
         </div>
 
+
         {{-- =====================================================
             CẤU HÌNH TRẠNG THÁI
         ====================================================== --}}
@@ -425,19 +545,23 @@
                 Cấu hình trạng thái
             </div>
 
+
             <a
-                href="{{ route('admin.appointment-statuses.index') }}"
+                href="{{ route(
+                    'admin.appointment-statuses.index'
+                ) }}"
                 class="
                     sidebar-link
-                    {{ request()->routeIs('admin.appointment-statuses.*')
-                        ? 'active'
-                        : '' }}
+                    {{ request()->routeIs(
+                        'admin.appointment-statuses.*'
+                    ) ? 'active' : '' }}
                 "
             >
                 <span class="sidebar-link-dot"></span>
 
                 Trạng thái lịch hẹn
             </a>
+
 
             <a
                 href="#"
@@ -448,6 +572,7 @@
                 Trạng thái lượt khám
             </a>
 
+
             <a
                 href="#"
                 class="sidebar-link"
@@ -457,6 +582,7 @@
                 Trạng thái hàng đợi
             </a>
 
+
             <a
                 href="#"
                 class="sidebar-link"
@@ -465,6 +591,7 @@
 
                 Trạng thái dịch vụ
             </a>
+
 
             <a
                 href="#"
@@ -480,3 +607,83 @@
     </nav>
 
 </aside>
+
+
+<style>
+
+    .sidebar-submenu {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .sidebar-submenu-toggle {
+        display: flex;
+        align-items: center;
+
+        width: 100%;
+
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+    }
+
+    .sidebar-submenu-toggle::-webkit-details-marker {
+        display: none;
+    }
+
+    .sidebar-submenu-toggle::marker {
+        content: '';
+    }
+
+    .sidebar-submenu-label {
+        flex: 1;
+    }
+
+    .sidebar-submenu-chevron {
+        margin-left: auto;
+
+        font-size: 20px;
+        line-height: 1;
+
+        opacity: 0.7;
+
+        transition:
+            transform 0.2s ease;
+    }
+
+    .sidebar-submenu[open]
+    .sidebar-submenu-chevron {
+        transform: rotate(180deg);
+    }
+
+    .sidebar-submenu-items {
+        display: flex;
+        flex-direction: column;
+
+        gap: 3px;
+
+        margin: 4px 0 8px 18px;
+        padding-left: 11px;
+
+        border-left:
+            1px solid
+            rgba(148, 163, 184, 0.25);
+    }
+
+    .sidebar-submenu-item {
+        min-height: 35px;
+        padding-left: 12px;
+
+        font-size: 12px;
+    }
+
+    .sidebar-submenu-item
+    .sidebar-link-dot {
+        width: 5px;
+        height: 5px;
+
+        flex-shrink: 0;
+    }
+
+</style>

@@ -1,0 +1,72 @@
+@extends('admin.layouts.app')
+
+@section('title', 'Chỉnh sửa bệnh nhân - Mediway')
+
+@section('breadcrumb')
+    Admin / Bệnh nhân / Chỉnh sửa
+@endsection
+
+@section('content')
+<div class="pf-page">
+    <div class="pf-heading">
+        <div>
+            <h1 class="page-title">Chỉnh sửa bệnh nhân</h1>
+            <p class="page-description">
+                {{ $patient->patient_code }} — {{ $patient->full_name }}
+            </p>
+        </div>
+
+        <a href="{{ route('admin.patients.show', $patient) }}"
+           class="pf-btn pf-light">
+            ← Chi tiết bệnh nhân
+        </a>
+    </div>
+
+    <div class="pf-card">
+        @if($errors->any())
+            <div class="pf-alert">
+                <strong>Vui lòng kiểm tra lại dữ liệu:</strong>
+                <ul>
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form
+            method="POST"
+            action="{{ route('admin.patients.update', $patient) }}"
+            enctype="multipart/form-data"
+        >
+            @csrf
+            @method('PUT')
+
+            @include('admin.patients._form')
+
+            <div class="pf-note">
+                Mã bệnh nhân được giữ nguyên để bảo toàn dữ liệu liên kết.
+                Nếu không chọn tệp mới, tài liệu hiện tại sẽ được giữ lại.
+
+                Khi chọn tệp mới và cập nhật thành công, hệ thống sẽ
+                thay thế đường dẫn trong hồ sơ và dọn tệp cũ.
+            </div>
+
+            <div class="pf-actions">
+                <a href="{{ route('admin.patients.show', $patient) }}"
+                   class="pf-btn pf-light">
+                    Hủy bỏ
+                </a>
+
+                <button type="submit" class="pf-btn pf-primary">
+                    Lưu thay đổi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection
+
+@push('styles')
+@include('admin.patients._styles')
+@endpush

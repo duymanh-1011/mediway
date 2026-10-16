@@ -1,70 +1,275 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateVisitDiagnosisRequest;
+use App\Models\Disease;
+use App\Models\VisitDiagnosis;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class VisitDiagnosisController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $query = DB::table('visit_diagnoses')
-            ->join('medical_visits', 'visit_diagnoses.medical_visit_id', '=', 'medical_visits.id')
-            ->join('patients', 'medical_visits.patient_id', '=', 'patients.id')
-            ->join('diseases', 'visit_diagnoses.disease_id', '=', 'diseases.id')
-            ->join('doctors', 'medical_visits.doctor_id', '=', 'doctors.id')
-            ->select(
-                'visit_diagnoses.*',
-                'medical_visits.visit_code',
-                'patients.patient_code',
-                'patients.full_name as patient_name',
-                'diseases.disease_code',
-                'diseases.name as disease_name',
-                'doctors.full_name as doctor_name'
-            );
+        $query = VisitDiagnosis::query()
+            ->with([
+                'disease',
+                'medicalVisit.patient',
+                'medicalVisit.doctor',
+                'medicalVisit.status',
+            ]);
 
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('medical_visits.visit_code', 'like', "%{$search}%")
-                  ->orWhere('patients.full_name', 'like', "%{$search}%")
-                  ->orWhere('diseases.name', 'like', "%{$search}%");
+            $search = trim(
+                (string) $request->input('search')
+            );
+
+            $query->where(function ($q) use ($search) {
+                $q->where(
+                    'diagnosis_description',
+                    'like',
+                    "%{$search}%"
+                )
+                    ->orWhere(
+                        'notes',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhereHas(
+                        'medicalVisit',
+                        function ($visitQuery) use ($search) {
+                            $visitQuery
+                                ->where(
+                                    'visit_code',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhereHas(
+                                    'patient',
+                                    function ($patientQuery) use ($search) {
+                                        $patientQuery
+                                            ->where(
+                                                'patient_code',
+                                                'like',
+                                                "%{$search}%"
+                                            )
+                                            ->orWhere(
+                                                'full_name',
+                                                'like',
+                                                "%{$search}%"
+                                            );
+                                    }
+                                );
+                        }
+                    )
+                    ->orWhereHas(
+                        'disease',
+                        function ($diseaseQuery) use ($search) {
+                            $diseaseQuery->where(
+                                'name',
+                                'like',
+                                "%{$search}%"
+                            );
+                        }
+                    );
             });
         }
 
-        if ($request->filled('diagnosis_type')) {
-            $query->where('visit_diagnoses.diagnosis_type', $request->diagnosis_type);
+        if ($request->filled('disease_id')) {
+            $query->where(
+                'disease_id',
+                $request->integer('disease_id')
+            );
         }
 
-        $diagnoses = $query->orderBy('visit_diagnoses.diagnosed_at', 'desc')->paginate(10)->withQueryString();
+        if ($request->filled('diagnosis_type')) {
+            $query->where(
+                'diagnosis_type',
+                $request->input('diagnosis_type')
+            );
+        }
 
-        return view('admin.diagnoses.index', compact('diagnoses'));
+        if ($request->filled('severity')) {
+            $query->where(
+                'severity',
+                $request->input('severity')
+            );
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate(
+                'diagnosed_at',
+                '>=',
+                $request->input('date_from')
+            );
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate(
+                'diagnosed_at',
+                '<=',
+                $request->input('date_to')
+            );
+        }
+
+        $diagnoses = $query
+            ->orderByDesc('diagnosed_at')
+            ->orderByDesc('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        $diseases = Disease::query()
+            ->orderBy('name')
+            ->get();
+
+        $diagnosisTypes = VisitDiagnosis::query()
+            ->whereNotNull('diagnosis_type')
+            ->where('diagnosis_type', '!=', '')
+            ->distinct()
+            ->orderBy('diagnosis_type')
+            ->pluck('diagnosis_type');
+
+        $severityLevels = VisitDiagnosis::query()
+            ->whereNotNull('severity')
+            ->where('severity', '!=', '')
+            ->distinct()
+            ->orderBy('severity')
+            ->pluck('severity');
+
+        return view(
+            'admin.diagnoses.index',
+            compact(
+                'diagnoses',
+                'diseases',
+                'diagnosisTypes',
+                'severityLevels'
+            )
+        );
     }
 
-    public function store(Request $request, $visitId)
-    {
-        $request->validate([
-            'disease_id' => 'required|exists:diseases,id',
-            'diagnosis_type' => 'required|in:PRIMARY,SECONDARY,PRELIMINARY,CONFIRMED',
+    public function show(
+        VisitDiagnosis $diagnosis
+    ): View {
+        $diagnosis->load([
+            'disease',
+            'medicalVisit.appointment',
+            'medicalVisit.patient',
+            'medicalVisit.doctor',
+            'medicalVisit.specialty',
+            'medicalVisit.examinationRoom',
+            'medicalVisit.status',
         ]);
 
-        DB::table('visit_diagnoses')->insert([
-            'medical_visit_id' => $visitId,
-            'disease_id' => $request->disease_id,
-            'diagnosis_type' => $request->diagnosis_type,
-            'severity' => $request->severity,
-            'diagnosis_description' => $request->diagnosis_description,
-            'diagnosed_at' => now(),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        return back()->with('success', 'Thêm chẩn đoán thành công.');
+        return view(
+            'admin.diagnoses.show',
+            compact('diagnosis')
+        );
     }
 
-    public function destroy($id)
-    {
-        DB::table('visit_diagnoses')->where('id', $id)->delete();
-        return back()->with('success', 'Đã xóa chẩn đoán.');
+    public function edit(
+        VisitDiagnosis $diagnosis
+    ): View {
+        $diagnosis->load([
+            'medicalVisit.patient',
+            'medicalVisit.doctor',
+            'medicalVisit.status',
+            'disease',
+        ]);
+
+        if (
+            $diagnosis->medicalVisit?->status?->name
+            ===
+            'COMPLETED'
+        ) {
+            abort(
+                403,
+                'Không thể chỉnh sửa chẩn đoán của lượt khám đã hoàn tất.'
+            );
+        }
+
+        $diseases = Disease::query()
+            ->orderBy('name')
+            ->get();
+
+        $diagnosisTypes = VisitDiagnosis::query()
+            ->whereNotNull('diagnosis_type')
+            ->where('diagnosis_type', '!=', '')
+            ->distinct()
+            ->orderBy('diagnosis_type')
+            ->pluck('diagnosis_type');
+
+        $severityLevels = VisitDiagnosis::query()
+            ->whereNotNull('severity')
+            ->where('severity', '!=', '')
+            ->distinct()
+            ->orderBy('severity')
+            ->pluck('severity');
+
+        return view(
+            'admin.diagnoses.edit',
+            compact(
+                'diagnosis',
+                'diseases',
+                'diagnosisTypes',
+                'severityLevels'
+            )
+        );
+    }
+
+    public function update(
+        UpdateVisitDiagnosisRequest $request,
+        VisitDiagnosis $diagnosis
+    ): RedirectResponse {
+        $diagnosis->load(
+            'medicalVisit.status'
+        );
+
+        if (
+            $diagnosis->medicalVisit?->status?->name
+            ===
+            'COMPLETED'
+        ) {
+            return back()->with(
+                'error',
+                'Không thể chỉnh sửa chẩn đoán của lượt khám đã hoàn tất.'
+            );
+        }
+
+        $data = $request->validated();
+
+        $diagnosis->update([
+            'disease_id' =>
+                $data['disease_id'],
+
+            'diagnosis_type' =>
+                $data['diagnosis_type'] ?? null,
+
+            'severity' =>
+                $data['severity'] ?? null,
+
+            'diagnosis_description' =>
+                $data['diagnosis_description'] ?? null,
+
+            'diagnosed_at' =>
+                $data['diagnosed_at']
+                ?? $diagnosis->diagnosed_at
+                ?? now(),
+
+            'notes' =>
+                $data['notes'] ?? null,
+        ]);
+
+        return redirect()
+            ->route(
+                'admin.diagnoses.show',
+                $diagnosis
+            )
+            ->with(
+                'success',
+                'Cập nhật chẩn đoán thành công.'
+            );
     }
 }

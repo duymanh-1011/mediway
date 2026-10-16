@@ -1,82 +1,321 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateVisitConclusionRequest;
+use App\Models\Doctor;
+use App\Models\VisitConclusion;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class VisitConclusionController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $query = DB::table('visit_conclusions')
-            ->join('medical_visits', 'visit_conclusions.medical_visit_id', '=', 'medical_visits.id')
-            ->join('patients', 'medical_visits.patient_id', '=', 'patients.id')
-            ->join('doctors', 'visit_conclusions.doctor_id', '=', 'doctors.id')
-            ->select(
-                'visit_conclusions.*',
-                'medical_visits.visit_code',
-                'patients.patient_code',
-                'patients.full_name as patient_name',
-                'doctors.full_name as doctor_name'
-            );
+        $query = VisitConclusion::query()
+            ->with([
+                'doctor',
+                'medicalVisit.patient',
+                'medicalVisit.doctor',
+                'medicalVisit.specialty',
+                'medicalVisit.examinationRoom',
+                'medicalVisit.status',
+            ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tìm kiếm
+        |--------------------------------------------------------------------------
+        */
 
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('medical_visits.visit_code', 'like', "%{$search}%")
-                  ->orWhere('patients.full_name', 'like', "%{$search}%")
-                  ->orWhere('visit_conclusions.professional_conclusion', 'like', "%{$search}%");
+            $search = trim(
+                (string) $request->input('search')
+            );
+
+            $query->where(function ($q) use ($search) {
+                $q->where(
+                    'professional_conclusion',
+                    'like',
+                    "%{$search}%"
+                )
+                    ->orWhere(
+                        'disposition',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'follow_up_reason',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhereHas(
+                        'medicalVisit',
+                        function ($visitQuery) use ($search) {
+                            $visitQuery
+                                ->where(
+                                    'visit_code',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhereHas(
+                                    'patient',
+                                    function ($patientQuery) use ($search) {
+                                        $patientQuery
+                                            ->where(
+                                                'patient_code',
+                                                'like',
+                                                "%{$search}%"
+                                            )
+                                            ->orWhere(
+                                                'full_name',
+                                                'like',
+                                                "%{$search}%"
+                                            );
+                                    }
+                                );
+                        }
+                    );
             });
         }
 
-        $conclusions = $query->orderBy('visit_conclusions.concluded_at', 'desc')->paginate(10)->withQueryString();
+        /*
+        |--------------------------------------------------------------------------
+        | Bác sĩ kết luận
+        |--------------------------------------------------------------------------
+        */
 
-        return view('admin.conclusions.index', compact('conclusions'));
+        if ($request->filled('doctor_id')) {
+            $query->where(
+                'doctor_id',
+                $request->integer('doctor_id')
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Hướng xử trí
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->filled('disposition')) {
+            $query->where(
+                'disposition',
+                $request->input('disposition')
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Có tái khám
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $request->filled('has_follow_up')
+            &&
+            in_array(
+                $request->input('has_follow_up'),
+                ['0', '1'],
+                true
+            )
+        ) {
+            $query->where(
+                'has_follow_up',
+                (bool) $request->integer('has_follow_up')
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Khoảng ngày kết luận
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->filled('date_from')) {
+            $query->whereDate(
+                'concluded_at',
+                '>=',
+                $request->input('date_from')
+            );
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate(
+                'concluded_at',
+                '<=',
+                $request->input('date_to')
+            );
+        }
+
+        $conclusions = $query
+            ->orderByDesc('concluded_at')
+            ->orderByDesc('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        $doctors = Doctor::query()
+            ->orderBy('full_name')
+            ->get();
+
+        $dispositions = VisitConclusion::query()
+            ->whereNotNull('disposition')
+            ->where('disposition', '!=', '')
+            ->distinct()
+            ->orderBy('disposition')
+            ->pluck('disposition');
+
+        return view(
+            'admin.conclusions.index',
+            compact(
+                'conclusions',
+                'doctors',
+                'dispositions'
+            )
+        );
     }
 
-    public function storeOrUpdate(Request $request, $visitId)
-    {
-        // Validate dữ liệu đầu vào theo chuẩn tài liệu
-        $request->validate([
-            'doctor_id' => 'required|exists:doctors,id',
-            'professional_conclusion' => 'required|string|min:5',
-            'has_follow_up' => 'required|boolean',
-            'follow_up_date' => 'required_if:has_follow_up,1|nullable|date|after_or_equal:today',
-        ], [
-            'professional_conclusion.required' => 'Kết luận chuyên môn không được để trống.',
-            'follow_up_date.after_or_equal' => 'Ngày tái khám không được nhỏ hơn ngày hiện tại.',
+    public function show(
+        VisitConclusion $conclusion
+    ): View {
+        $conclusion->load([
+            'doctor',
+            'medicalVisit.appointment',
+            'medicalVisit.patient',
+            'medicalVisit.doctor',
+            'medicalVisit.specialty',
+            'medicalVisit.examinationRoom',
+            'medicalVisit.status',
+            'medicalVisit.clinicalNote',
+            'medicalVisit.diagnoses.disease',
         ]);
 
-        DB::transaction(function () use ($request, $visitId) {
-            // 1. Lưu hoặc cập nhật kết luận lượt khám
-            DB::table('visit_conclusions')->updateOrInsert(
-                ['medical_visit_id' => $visitId],
-                [
-                    'doctor_id' => $request->doctor_id,
-                    'professional_conclusion' => $request->professional_conclusion,
-                    'disposition' => $request->disposition ?? 'OUTPATIENT',
-                    'treatment_plan' => $request->treatment_plan,
-                    'instructions' => $request->instructions,
-                    'has_follow_up' => $request->has_follow_up,
-                    'follow_up_date' => $request->has_follow_up ? $request->follow_up_date : null,
-                    'concluded_at' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
+        return view(
+            'admin.conclusions.show',
+            compact('conclusion')
+        );
+    }
+
+    public function edit(
+        VisitConclusion $conclusion
+    ): View {
+        $conclusion->load([
+            'doctor',
+            'medicalVisit.patient',
+            'medicalVisit.doctor',
+            'medicalVisit.status',
+        ]);
+
+        if (
+            $conclusion->medicalVisit?->status?->name
+            ===
+            'COMPLETED'
+        ) {
+            abort(
+                403,
+                'Không thể chỉnh sửa kết luận của lượt khám đã hoàn tất.'
             );
+        }
 
-            // 2. Tự động đồng bộ trạng thái lượt khám thành COMPLETED (Đã hoàn tất)
-            $completedStatus = DB::table('visit_statuses')->where('name', 'COMPLETED')->first();
-            if ($completedStatus) {
-                DB::table('medical_visits')->where('id', $visitId)->update([
-                    'visit_status_id' => $completedStatus->id,
-                    'examination_ended_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        });
+        $doctors = Doctor::query()
+            ->where('status', 'ACTIVE')
+            ->orderBy('full_name')
+            ->get();
 
-        return back()->with('success', 'Đã lưu kết luận chuyên môn và hoàn tất lượt khám thành công.');
+        $dispositions = VisitConclusion::query()
+            ->whereNotNull('disposition')
+            ->where('disposition', '!=', '')
+            ->distinct()
+            ->orderBy('disposition')
+            ->pluck('disposition');
+
+        return view(
+            'admin.conclusions.edit',
+            compact(
+                'conclusion',
+                'doctors',
+                'dispositions'
+            )
+        );
+    }
+
+    public function update(
+        UpdateVisitConclusionRequest $request,
+        VisitConclusion $conclusion
+    ): RedirectResponse {
+        $conclusion->load(
+            'medicalVisit.status'
+        );
+
+        if (
+            $conclusion->medicalVisit?->status?->name
+            ===
+            'COMPLETED'
+        ) {
+            return back()->with(
+                'error',
+                'Không thể chỉnh sửa kết luận của lượt khám đã hoàn tất.'
+            );
+        }
+
+        $data = $request->validated();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Nếu không tái khám thì xóa dữ liệu follow-up
+        |--------------------------------------------------------------------------
+        */
+
+        $hasFollowUp = (bool) $data['has_follow_up'];
+
+        $conclusion->update([
+            'doctor_id' =>
+                $data['doctor_id'],
+
+            'professional_conclusion' =>
+                $data['professional_conclusion'],
+
+            'disposition' =>
+                $data['disposition'] ?? null,
+
+            'treatment_plan' =>
+                $data['treatment_plan'] ?? null,
+
+            'instructions' =>
+                $data['instructions'] ?? null,
+
+            'has_follow_up' =>
+                $hasFollowUp,
+
+            'follow_up_date' =>
+                $hasFollowUp
+                    ? ($data['follow_up_date'] ?? null)
+                    : null,
+
+            'follow_up_reason' =>
+                $hasFollowUp
+                    ? ($data['follow_up_reason'] ?? null)
+                    : null,
+
+            'notes' =>
+                $data['notes'] ?? null,
+
+            'concluded_at' =>
+                $data['concluded_at']
+                ?? $conclusion->concluded_at
+                ?? now(),
+        ]);
+
+        return redirect()
+            ->route(
+                'admin.conclusions.show',
+                $conclusion
+            )
+            ->with(
+                'success',
+                'Cập nhật kết luận lượt khám thành công.'
+            );
     }
 }

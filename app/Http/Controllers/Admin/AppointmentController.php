@@ -10,6 +10,10 @@ use App\Models\Appointment;
 use App\Models\AppointmentStatus;
 use App\Models\AppointmentTimeSlot;
 use App\Models\Doctor;
+use App\Models\ExaminationRoomQueue;
+use App\Models\MedicalVisit;
+use App\Models\QueueStatus;
+use App\Models\VisitStatus;
 use App\Models\DoctorSchedule;
 use App\Models\ExaminationRoom;
 use App\Models\Patient;
@@ -465,7 +469,7 @@ class AppointmentController extends Controller
         ]);
 
         $medicalVisit =
-            DB::table('medical_visits')
+            MedicalVisit::query()
                 ->where(
                     'appointment_id',
                     $appointment->id
@@ -479,6 +483,340 @@ class AppointmentController extends Controller
                 'medicalVisit'
             )
         );
+    }
+
+    public function checkIn(
+        Appointment $appointment
+    ) {
+        $appointment->load(
+            'appointmentStatus'
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Nếu đã phát sinh lượt khám thì không tạo thêm
+        |--------------------------------------------------------------------------
+        */
+
+        $existingVisit =
+            MedicalVisit::query()
+                ->where(
+                    'appointment_id',
+                    $appointment->id
+                )
+                ->first();
+
+        if ($existingVisit) {
+            return redirect()
+                ->route(
+                    'admin.visits.show',
+                    $existingVisit
+                )
+                ->with(
+                    'error',
+                    'Lịch hẹn này đã được check-in và đã có lượt khám.'
+                );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Chỉ lịch BOOKED mới được check-in
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $appointment
+                ->appointmentStatus
+                ?->name
+            !==
+            'BOOKED'
+        ) {
+            return redirect()
+                ->route(
+                    'admin.appointments.show',
+                    $appointment
+                )
+                ->with(
+                    'error',
+                    'Chỉ lịch hẹn ở trạng thái BOOKED mới được check-in.'
+                );
+        }
+
+        $checkedInAppointmentStatus =
+            AppointmentStatus::query()
+                ->where(
+                    'name',
+                    'CHECKED_IN'
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->first();
+
+        $waitingVisitStatus =
+            VisitStatus::query()
+                ->where(
+                    'name',
+                    'WAITING'
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->first();
+
+        $waitingQueueStatus =
+            QueueStatus::query()
+                ->where(
+                    'name',
+                    'WAITING'
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->first();
+
+        if (!$checkedInAppointmentStatus) {
+            return redirect()
+                ->route(
+                    'admin.appointments.show',
+                    $appointment
+                )
+                ->with(
+                    'error',
+                    'Không tìm thấy trạng thái lịch hẹn CHECKED_IN đang hoạt động.'
+                );
+        }
+
+        if (!$waitingVisitStatus) {
+            return redirect()
+                ->route(
+                    'admin.appointments.show',
+                    $appointment
+                )
+                ->with(
+                    'error',
+                    'Không tìm thấy trạng thái lượt khám WAITING đang hoạt động.'
+                );
+        }
+
+        if (!$waitingQueueStatus) {
+            return redirect()
+                ->route(
+                    'admin.appointments.show',
+                    $appointment
+                )
+                ->with(
+                    'error',
+                    'Không tìm thấy trạng thái hàng đợi WAITING đang hoạt động.'
+                );
+        }
+
+        $oldValues =
+            $this->appointmentSnapshot(
+                $appointment
+            );
+
+        DB::beginTransaction();
+
+        try {
+            /*
+            |--------------------------------------------------------------------------
+            | Khóa appointment để tránh check-in trùng
+            |--------------------------------------------------------------------------
+            */
+
+            $lockedAppointment =
+                Appointment::query()
+                    ->whereKey(
+                        $appointment->id
+                    )
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+            $alreadyHasVisit =
+                MedicalVisit::query()
+                    ->where(
+                        'appointment_id',
+                        $lockedAppointment->id
+                    )
+                    ->exists();
+
+            if ($alreadyHasVisit) {
+                DB::rollBack();
+
+                $existingVisit =
+                    MedicalVisit::query()
+                        ->where(
+                            'appointment_id',
+                            $lockedAppointment->id
+                        )
+                        ->first();
+
+                return redirect()
+                    ->route(
+                        'admin.visits.show',
+                        $existingVisit
+                    )
+                    ->with(
+                        'error',
+                        'Lịch hẹn này đã được check-in trước đó.'
+                    );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Tạo lượt khám
+            |--------------------------------------------------------------------------
+            */
+
+            $medicalVisit =
+                MedicalVisit::create([
+                    'visit_code' =>
+                        $this->generateVisitCode(),
+
+                    'appointment_id' =>
+                        $lockedAppointment->id,
+
+                    'patient_id' =>
+                        $lockedAppointment->patient_id,
+
+                    'doctor_id' =>
+                        $lockedAppointment->doctor_id,
+
+                    'specialty_id' =>
+                        $lockedAppointment->specialty_id,
+
+                    'examination_room_id' =>
+                        $lockedAppointment
+                            ->examination_room_id,
+
+                    'visit_status_id' =>
+                        $waitingVisitStatus->id,
+
+                    'checked_in_at' =>
+                        now(),
+
+                    'examination_started_at' =>
+                        null,
+
+                    'examination_ended_at' =>
+                        null,
+
+                    'reception_source' =>
+                        'COUNTER',
+
+                    'reception_notes' =>
+                        'Check-in từ lịch hẹn '
+                        .
+                        $lockedAppointment
+                            ->appointment_code
+                        .
+                        '.',
+
+                    'examination_slip_pdf_path' =>
+                        null,
+                ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Tạo hàng đợi khám ban đầu
+            |--------------------------------------------------------------------------
+            */
+
+            ExaminationRoomQueue::create([
+                'medical_visit_id' =>
+                    $medicalVisit->id,
+
+                'queue_status_id' =>
+                    $waitingQueueStatus->id,
+
+                'queue_number' =>
+                    $this->nextQueueNumber(
+                        (int) $lockedAppointment
+                            ->examination_room_id
+                    ),
+
+                'queue_type' =>
+                    'INITIAL_EXAM',
+
+                'queued_at' =>
+                    now(),
+
+                'called_at' =>
+                    null,
+
+                'service_started_at' =>
+                    null,
+
+                'completed_at' =>
+                    null,
+
+                'call_count' =>
+                    0,
+
+                'notes' =>
+                    null,
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Cập nhật lịch hẹn sang CHECKED_IN
+            |--------------------------------------------------------------------------
+            */
+
+            $lockedAppointment->update([
+                'appointment_status_id' =>
+                    $checkedInAppointmentStatus->id,
+            ]);
+
+            $lockedAppointment->refresh();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Audit lịch hẹn
+            |--------------------------------------------------------------------------
+            */
+
+            $this->writeAuditLog(
+                action: 'CHECK_IN',
+                appointment: $lockedAppointment,
+                oldValues: $oldValues,
+                newValues: $this->appointmentSnapshot(
+                    $lockedAppointment
+                ),
+                description:
+                    'Quản trị viên check-in lịch hẹn '
+                    .
+                    $lockedAppointment
+                        ->appointment_code
+                    .
+                    ' và tạo lượt khám '
+                    .
+                    $medicalVisit->visit_code
+                    .
+                    '.'
+            );
+
+            DB::commit();
+
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+
+            throw $exception;
+        }
+
+        return redirect()
+            ->route(
+                'admin.visits.show',
+                $medicalVisit
+            )
+            ->with(
+                'success',
+                'Check-in thành công. Đã tạo lượt khám và đưa bệnh nhân vào hàng đợi.'
+            );
     }
 
     public function edit(
@@ -1259,6 +1597,78 @@ class AppointmentController extends Controller
     | Sinh mã appointment
     |--------------------------------------------------------------------------
     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sinh mã lượt khám
+    |--------------------------------------------------------------------------
+    */
+
+    private function generateVisitCode(): string
+    {
+        do {
+            $code =
+                'LK'
+                .
+                now()->format(
+                    'ymdHis'
+                )
+                .
+                strtoupper(
+                    Str::random(3)
+                );
+
+        } while (
+            MedicalVisit::query()
+                ->where(
+                    'visit_code',
+                    $code
+                )
+                ->exists()
+        );
+
+        return $code;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sinh số thứ tự hàng đợi theo phòng và ngày
+    |--------------------------------------------------------------------------
+    */
+
+    private function nextQueueNumber(
+        int $examinationRoomId
+    ): int {
+        $lastQueueNumber =
+            ExaminationRoomQueue::query()
+                ->whereDate(
+                    'queued_at',
+                    now()->toDateString()
+                )
+                ->whereHas(
+                    'medicalVisit',
+                    function ($query) use (
+                        $examinationRoomId
+                    ) {
+                        $query->where(
+                            'examination_room_id',
+                            $examinationRoomId
+                        );
+                    }
+                )
+                ->orderByDesc(
+                    'queue_number'
+                )
+                ->lockForUpdate()
+                ->value(
+                    'queue_number'
+                );
+
+        return
+            ((int) $lastQueueNumber)
+            +
+            1;
+    }
 
     private function generateAppointmentCode(): string
     {

@@ -1,120 +1,1222 @@
 @extends('admin.layouts.app')
 
-@section('content')
-<div class="admin-visit-detail">
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-wrap justify-between items-center gap-4">
-        <div>
-            <div class="flex items-center gap-3">
-                <h1 class="text-2xl font-bold text-slate-800">{{ $visit->patient_name }}</h1>
-                <span class="admin-badge admin-badge--info">{{ $visit->visit_code }}</span>
-            </div>
-            <p class="text-sm text-slate-500 mt-1">Mã BN: {{ $visit->patient_code }} | Phòng khám: {{ $visit->room_name }} | Bác sĩ: {{ $visit->doctor_name }}</p>
-        </div>
-        <a href="{{ route('admin.visits.index') }}" class="admin-button admin-button--secondary">Quay lại danh sách</a>
+@section(
+    'title',
+    'Chi tiết lượt khám - Mediway Admin'
+)
+
+@section('breadcrumb')
+
+    <div class="breadcrumb">
+        Admin /
+        Lượt khám /
+        {{ $medicalVisit->visit_code }}
     </div>
 
-    <div class="grid grid-cols-12 gap-6">
-        <!-- Thông tin nhanh -->
-        <div class="col-span-12 lg:col-span-4 space-y-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <h3 class="font-bold text-slate-800 text-base mb-3 border-b pb-2">Thông tin tiếp nhận</h3>
-                <div class="space-y-2 text-sm text-slate-600">
-                    <div><span class="text-slate-400">CCCD:</span> {{ $visit->citizen_id_number ?? 'N/A' }}</div>
-                    <div><span class="text-slate-400">Nhóm máu:</span> <span class="font-bold text-rose-600">{{ $visit->blood_type ?? 'N/A' }}</span></div>
-                    <div><span class="text-slate-400">Nguồn:</span> {{ $visit->reception_source }}</div>
-                    <div><span class="text-slate-400">Trạng thái:</span> <span class="font-semibold text-indigo-600">{{ $visit->status_name }}</span></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Các Form nghiệp vụ khám -->
-        <div class="col-span-12 lg:col-span-8 space-y-6">
-            <!-- Lâm sàng -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h3 class="font-bold text-slate-800 text-lg mb-4 text-indigo-600">1. Khám Lâm Sàng</h3>
-                <form action="{{ route('admin.clinical-notes.storeOrUpdate', $visit->id) }}" method="POST" class="space-y-4">
-                    @csrf
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="reason-for-visit" class="block text-xs font-semibold text-slate-600 mb-1">Lý do khám</label>
-                            <textarea id="reason-for-visit" name="reason_for_visit" class="w-full" rows="2">{{ $clinicalNote->reason_for_visit ?? '' }}</textarea>
-                        </div>
-                        <div>
-                            <label for="current-symptoms" class="block text-xs font-semibold text-slate-600 mb-1">Triệu chứng hiện tại</label>
-                            <textarea id="current-symptoms" name="current_symptoms" class="w-full" rows="2">{{ $clinicalNote->current_symptoms ?? '' }}</textarea>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="physical-examination" class="block text-xs font-semibold text-slate-600 mb-1">Khám lâm sàng</label>
-                        <textarea id="physical-examination" name="physical_examination" class="w-full" rows="2">{{ $clinicalNote->physical_examination ?? '' }}</textarea>
-                    </div>
-                    <div class="flex justify-end"><button type="submit" class="admin-button admin-button--primary">Lưu lâm sàng</button></div>
-                </form>
-            </div>
-
-            <!-- Chẩn đoán -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h3 class="font-bold text-slate-800 text-lg mb-4 text-indigo-600">2. Chẩn đoán bệnh</h3>
-                <div class="mb-4 space-y-2">
-                    @foreach($diagnoses as $diag)
-                    <div class="flex justify-between items-center p-3 bg-slate-50 border rounded-xl text-sm">
-                        <div>
-                            <span class="font-bold">{{ $diag->disease_code }} - {{ $diag->disease_name }}</span>
-                            <span class="ml-2 px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-xs">{{ $diag->diagnosis_type }}</span>
-                        </div>
-                        <form action="{{ route('admin.diagnoses.destroy', $diag->id) }}" method="POST">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="admin-button admin-button--danger">Xóa chẩn đoán</button>
-                        </form>
-                    </div>
-                    @endforeach
-                </div>
-                <form action="{{ route('admin.diagnoses.store', $visit->id) }}" method="POST" class="grid grid-cols-12 gap-3 items-end">
-                    @csrf
-                    <div class="col-span-6">
-                        <select name="disease_id" class="w-full">
-                            <option value="">-- Chọn bệnh --</option>
-                            @foreach($diseases as $dis)<option value="{{ $dis->id }}">{{ $dis->disease_code }} - {{ $dis->name }}</option>@endforeach
-                        </select>
-                    </div>
-                    <div class="col-span-4">
-                        <select name="diagnosis_type" class="w-full">
-                            <option value="PRIMARY">PRIMARY (Chính)</option>
-                            <option value="SECONDARY">SECONDARY (Phụ)</option>
-                            <option value="PRELIMINARY">PRELIMINARY (Sơ bộ)</option>
-                        </select>
-                    </div>
-                    <div class="col-span-2"><button type="submit" class="admin-button admin-button--primary w-full">Thêm chẩn đoán</button></div>
-                </form>
-            </div>
-
-            <!-- Kết luận -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h3 class="font-bold text-slate-800 text-lg mb-4 text-emerald-600">3. Kết luận & Hoàn tất</h3>
-                <form action="{{ route('admin.conclusions.storeOrUpdate', $visit->id) }}" method="POST" class="space-y-4">
-                    @csrf
-                    <input type="hidden" name="doctor_id" value="{{ $visit->doctor_id }}">
-                    <div>
-                        <label for="professional-conclusion" class="block text-xs font-semibold text-slate-600 mb-1">Kết luận chuyên môn *</label>
-                        <textarea id="professional-conclusion" name="professional_conclusion" required class="w-full" rows="2">{{ $conclusion->professional_conclusion ?? '' }}</textarea>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="has-follow-up" class="block text-xs font-semibold text-slate-600 mb-1">Tái khám?</label>
-                            <select id="has-follow-up" name="has_follow_up" class="w-full">
-                                <option value="0">Không</option>
-                                <option value="1" {{ isset($conclusion) && $conclusion->has_follow_up ? 'selected' : '' }}>Có</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="follow-up-date" class="block text-xs font-semibold text-slate-600 mb-1">Ngày tái khám</label>
-                            <input id="follow-up-date" type="date" name="follow_up_date" value="{{ $conclusion->follow_up_date ?? '' }}" class="w-full">
-                        </div>
-                    </div>
-                    <div class="flex justify-end"><button type="submit" class="admin-button admin-button--success">Lưu kết luận & hoàn tất</button></div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
+
+
+@section('content')
+
+    @php
+        $currentStatus = $medicalVisit->status?->name;
+
+        $completedStatus = $allowedVisitStatuses
+            ->firstWhere('name', 'COMPLETED');
+    @endphp
+
+
+    <div class="page-header">
+
+        <div>
+            <h1 class="page-title">
+                {{ $medicalVisit->visit_code }}
+            </h1>
+
+            <p class="page-description">
+                Chi tiết lượt khám và hồ sơ lâm sàng.
+            </p>
+        </div>
+
+
+        <div class="header-actions">
+
+            <a
+                href="{{ route('admin.visits.index') }}"
+                class="btn btn-secondary"
+            >
+                ← Danh sách
+            </a>
+
+
+            @if ($medicalVisit->appointment)
+
+                <a
+                    href="{{ route(
+                        'admin.appointments.show',
+                        $medicalVisit->appointment
+                    ) }}"
+                    class="btn btn-secondary"
+                >
+                    Xem lịch hẹn
+                </a>
+
+            @endif
+
+        </div>
+
+    </div>
+
+
+    {{-- TRẠNG THÁI LƯỢT KHÁM --}}
+
+    <div class="card status-card">
+
+        <h3 class="section-title">
+            Trạng thái lượt khám
+        </h3>
+
+
+        <div class="status-current">
+
+            <span>
+                Hiện tại:
+            </span>
+
+            <strong class="status-badge">
+                {{ $currentStatus ?? '—' }}
+            </strong>
+
+        </div>
+
+
+        @if ($allowedVisitStatuses->isNotEmpty())
+
+            <div class="status-actions">
+
+                <form
+                    method="POST"
+                    action="{{ route(
+                        'admin.visits.update-status',
+                        $medicalVisit
+                    ) }}"
+                    class="status-form"
+                >
+
+                    @csrf
+                    @method('PATCH')
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Chuyển trạng thái
+                        </label>
+
+                        <select
+                            name="visit_status_id"
+                            class="form-control"
+                            required
+                        >
+
+                            <option value="">
+                                -- Chọn trạng thái --
+                            </option>
+
+
+                            @foreach ($allowedVisitStatuses as $status)
+
+                                <option value="{{ $status->id }}">
+                                    {{ $status->name }}
+                                </option>
+
+                            @endforeach
+
+                        </select>
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        Cập nhật trạng thái
+                    </button>
+
+                </form>
+
+
+                @if ($completedStatus)
+
+                    <form
+                        method="POST"
+                        action="{{ route(
+                            'admin.visits.update-status',
+                            $medicalVisit
+                        ) }}"
+                        onsubmit="
+                            return confirm(
+                                'Xác nhận hoàn tất lượt khám này?'
+                            );
+                        "
+                    >
+
+                        @csrf
+                        @method('PATCH')
+
+                        <input
+                            type="hidden"
+                            name="visit_status_id"
+                            value="{{ $completedStatus->id }}"
+                        >
+
+                        <button
+                            type="submit"
+                            class="btn-complete"
+                        >
+                            ✓ Hoàn tất lượt khám
+                        </button>
+
+                    </form>
+
+                @endif
+
+            </div>
+
+        @else
+
+            <p class="muted-text">
+                Lượt khám không còn trạng thái tiếp theo.
+            </p>
+
+        @endif
+
+    </div>
+
+
+    {{-- THÔNG TIN LƯỢT KHÁM --}}
+
+    <div class="detail-grid">
+
+        <div class="card">
+
+            <h3 class="section-title">
+                Thông tin lượt khám
+            </h3>
+
+
+            <div class="detail-row">
+                <span>Mã lượt khám</span>
+
+                <strong>
+                    {{ $medicalVisit->visit_code }}
+                </strong>
+            </div>
+
+
+            <div class="detail-row">
+                <span>Nguồn tiếp nhận</span>
+
+                <strong>
+                    {{ $medicalVisit->reception_source ?? '—' }}
+                </strong>
+            </div>
+
+
+            <div class="detail-row">
+                <span>Check-in lúc</span>
+
+                <strong>
+                    {{ $medicalVisit
+                        ->checked_in_at
+                        ?->format('d/m/Y H:i')
+                        ?? '—' }}
+                </strong>
+            </div>
+
+
+            <div class="detail-row">
+                <span>Bắt đầu khám</span>
+
+                <strong>
+                    {{ $medicalVisit
+                        ->examination_started_at
+                        ?->format('d/m/Y H:i')
+                        ?? '—' }}
+                </strong>
+            </div>
+
+
+            <div class="detail-row">
+                <span>Kết thúc khám</span>
+
+                <strong>
+                    {{ $medicalVisit
+                        ->examination_ended_at
+                        ?->format('d/m/Y H:i')
+                        ?? '—' }}
+                </strong>
+            </div>
+
+
+            <div class="detail-row">
+                <span>Ghi chú tiếp nhận</span>
+
+                <strong>
+                    {{ $medicalVisit->reception_notes ?? '—' }}
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <h3 class="section-title">
+                Lịch hẹn nguồn
+            </h3>
+
+
+            @if ($medicalVisit->appointment)
+
+                <div class="detail-row">
+                    <span>Mã lịch hẹn</span>
+
+                    <strong>
+                        {{ $medicalVisit
+                            ->appointment
+                            ->appointment_code }}
+                    </strong>
+                </div>
+
+
+                <div class="detail-row">
+                    <span>Ngày khám</span>
+
+                    <strong>
+                        {{ $medicalVisit
+                            ->appointment
+                            ->appointment_date
+                            ?->format('d/m/Y')
+                            ?? '—' }}
+                    </strong>
+                </div>
+
+
+                <div class="detail-row">
+                    <span>Lý do khám</span>
+
+                    <strong>
+                        {{ $medicalVisit
+                            ->appointment
+                            ->reason_for_visit
+                            ?? '—' }}
+                    </strong>
+                </div>
+
+
+                <div style="margin-top: 15px;">
+
+                    <a
+                        href="{{ route(
+                            'admin.appointments.show',
+                            $medicalVisit->appointment
+                        ) }}"
+                        class="btn btn-secondary"
+                    >
+                        Xem chi tiết lịch hẹn
+                    </a>
+
+                </div>
+
+            @else
+
+                <p class="muted-text">
+                    Lượt khám này không có lịch hẹn nguồn.
+                </p>
+
+            @endif
+
+        </div>
+
+    </div>
+
+
+    {{-- BỆNH NHÂN + THÔNG TIN KHÁM --}}
+
+    <div class="detail-grid section-spacing">
+
+        <div class="card">
+
+            <h3 class="section-title">
+                Bệnh nhân
+            </h3>
+
+
+            <div class="detail-row">
+                <span>Mã bệnh nhân</span>
+
+                <strong>
+                    {{ $medicalVisit
+                        ->patient
+                        ?->patient_code
+                        ?? '—' }}
+                </strong>
+            </div>
+
+
+            <div class="detail-row">
+                <span>Họ tên</span>
+
+                <strong>
+                    {{ $medicalVisit
+                        ->patient
+                        ?->full_name
+                        ?? '—' }}
+                </strong>
+            </div>
+
+
+            <div class="detail-row">
+                <span>Ngày sinh</span>
+
+                <strong>
+                    {{ $medicalVisit
+                        ->patient
+                        ?->date_of_birth
+                        ?->format('d/m/Y')
+                        ?? '—' }}
+                </strong>
+            </div>
+
+
+            <div class="detail-row">
+                <span>Giới tính</span>
+
+                <strong>
+                    {{ $medicalVisit
+                        ->patient
+                        ?->gender
+                        ?? '—' }}
+                </strong>
+            </div>
+
+
+            @if ($medicalVisit->patient)
+
+                <div style="margin-top: 15px;">
+
+                    <a
+                        href="{{ route(
+                            'admin.patients.show',
+                            $medicalVisit->patient
+                        ) }}"
+                        class="btn btn-secondary"
+                    >
+                        Xem hồ sơ bệnh nhân
+                    </a>
+
+                </div>
+
+            @endif
+
+        </div>
+
+
+        <div class="card">
+
+            <h3 class="section-title">
+                Thông tin khám
+            </h3>
+
+
+            <div class="detail-row">
+                <span>Bác sĩ</span>
+
+                <strong>
+                    {{ $medicalVisit
+                        ->doctor
+                        ?->doctor_code
+                        ?? '—' }}
+
+                    -
+
+                    {{ $medicalVisit
+                        ->doctor
+                        ?->full_name
+                        ?? '—' }}
+                </strong>
+            </div>
+
+
+            <div class="detail-row">
+                <span>Chuyên khoa</span>
+
+                <strong>
+                    {{ $medicalVisit
+                        ->specialty
+                        ?->name
+                        ?? '—' }}
+                </strong>
+            </div>
+
+
+            <div class="detail-row">
+                <span>Phòng khám</span>
+
+                <strong>
+                    {{ $medicalVisit
+                        ->examinationRoom
+                        ?->room_code
+                        ?? '—' }}
+
+                    -
+
+                    {{ $medicalVisit
+                        ->examinationRoom
+                        ?->name
+                        ?? '—' }}
+                </strong>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {{-- HÀNG ĐỢI --}}
+
+    <div class="card section-spacing">
+
+        <div class="section-header">
+
+            <h3 class="section-title">
+                Hàng đợi phòng khám
+            </h3>
+
+            <a
+                href="{{ route('admin.queues.index') }}"
+                class="btn btn-secondary"
+            >
+                Danh sách hàng đợi
+            </a>
+
+        </div>
+
+
+        @if ($medicalVisit->queues->isNotEmpty())
+
+            <div class="table-wrapper">
+
+                <table class="admin-table">
+
+                    <thead>
+                        <tr>
+                            <th>Số</th>
+                            <th>Loại</th>
+                            <th>Trạng thái</th>
+                            <th>Vào hàng</th>
+                            <th>Được gọi</th>
+                            <th>Bắt đầu</th>
+                            <th>Hoàn tất</th>
+                            <th>Lần gọi</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+
+
+                    <tbody>
+
+                        @foreach ($medicalVisit->queues as $queue)
+
+                            <tr>
+
+                                <td>
+                                    {{ $queue->queue_number }}
+                                </td>
+
+                                <td>
+                                    {{ $queue->queue_type }}
+                                </td>
+
+                                <td>
+                                    {{ $queue
+                                        ->status
+                                        ?->name
+                                        ?? '—' }}
+                                </td>
+
+                                <td>
+                                    {{ $queue
+                                        ->queued_at
+                                        ?->format('d/m/Y H:i')
+                                        ?? '—' }}
+                                </td>
+
+                                <td>
+                                    {{ $queue
+                                        ->called_at
+                                        ?->format('d/m/Y H:i')
+                                        ?? '—' }}
+                                </td>
+
+                                <td>
+                                    {{ $queue
+                                        ->service_started_at
+                                        ?->format('d/m/Y H:i')
+                                        ?? '—' }}
+                                </td>
+
+                                <td>
+                                    {{ $queue
+                                        ->completed_at
+                                        ?->format('d/m/Y H:i')
+                                        ?? '—' }}
+                                </td>
+
+                                <td>
+                                    {{ $queue->call_count }}
+                                </td>
+
+                                <td>
+
+                                    <a
+                                        href="{{ route(
+                                            'admin.queues.show',
+                                            $queue
+                                        ) }}"
+                                        class="btn btn-secondary"
+                                    >
+                                        Chi tiết
+                                    </a>
+
+                                </td>
+
+                            </tr>
+
+                        @endforeach
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        @else
+
+            <p class="muted-text">
+                Chưa có hàng đợi.
+            </p>
+
+        @endif
+
+    </div>
+
+
+    {{-- NỘI DUNG KHÁM --}}
+
+    <div class="card section-spacing">
+
+        <h3 class="section-title">
+            Nội dung khám
+        </h3>
+
+
+        @if ($medicalVisit->clinicalNote)
+
+            <div class="clinical-grid">
+
+                <div class="clinical-item">
+                    <strong>Lý do khám</strong>
+
+                    <p>
+                        {{ $medicalVisit
+                            ->clinicalNote
+                            ->reason_for_visit
+                            ?? '—' }}
+                    </p>
+                </div>
+
+
+                <div class="clinical-item">
+                    <strong>Triệu chứng hiện tại</strong>
+
+                    <p>
+                        {{ $medicalVisit
+                            ->clinicalNote
+                            ->current_symptoms
+                            ?? '—' }}
+                    </p>
+                </div>
+
+
+                <div class="clinical-item">
+                    <strong>Nhận định ban đầu</strong>
+
+                    <p>
+                        {{ $medicalVisit
+                            ->clinicalNote
+                            ->initial_assessment
+                            ?? '—' }}
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="section-link">
+
+                <a
+                    href="{{ route(
+                        'admin.clinical-notes.show',
+                        $medicalVisit->clinicalNote
+                    ) }}"
+                    class="btn btn-secondary"
+                >
+                    Xem nội dung khám
+                </a>
+
+            </div>
+
+        @else
+
+            <p class="muted-text">
+                Chưa có nội dung khám.
+            </p>
+
+            @if ($currentStatus !== 'COMPLETED')
+
+                <div class="section-link">
+
+                    <a
+                        href="{{ route(
+                            'admin.visits.clinical-note.create',
+                            $medicalVisit
+                        ) }}"
+                        class="btn btn-primary"
+                    >
+                        + Thêm nội dung khám
+                    </a>
+
+                </div>
+
+            @endif
+
+        @endif
+
+    </div>
+
+
+    {{-- CHẨN ĐOÁN --}}
+
+    <div class="card section-spacing">
+
+        <h3 class="section-title">
+            Chẩn đoán
+        </h3>
+
+
+        @if ($medicalVisit->diagnoses->isNotEmpty())
+
+            <div class="table-wrapper">
+
+                <table class="admin-table">
+
+                    <thead>
+                        <tr>
+                            <th>Bệnh</th>
+                            <th>Loại</th>
+                            <th>Mức độ</th>
+                            <th>Mô tả</th>
+                            <th>Thời gian</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+
+
+                    <tbody>
+
+                        @foreach ($medicalVisit->diagnoses as $diagnosis)
+
+                            <tr>
+
+                                <td>
+                                    {{ $diagnosis
+                                        ->disease
+                                        ?->name
+                                        ?? '—' }}
+                                </td>
+
+                                <td>
+                                    {{ $diagnosis
+                                        ->diagnosis_type
+                                        ?? '—' }}
+                                </td>
+
+                                <td>
+                                    {{ $diagnosis
+                                        ->severity
+                                        ?? '—' }}
+                                </td>
+
+                                <td>
+                                    {{ $diagnosis
+                                        ->diagnosis_description
+                                        ?? '—' }}
+                                </td>
+
+                                <td>
+                                    {{ $diagnosis
+                                        ->diagnosed_at
+                                        ?->format('d/m/Y H:i')
+                                        ?? '—' }}
+                                </td>
+
+                                <td>
+
+                                    <a
+                                        href="{{ route(
+                                            'admin.diagnoses.show',
+                                            $diagnosis
+                                        ) }}"
+                                        class="btn btn-secondary"
+                                    >
+                                        Chi tiết
+                                    </a>
+
+                                </td>
+
+                            </tr>
+
+                        @endforeach
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        @else
+
+            <p class="muted-text">
+                Chưa có chẩn đoán.
+            </p>
+
+        @endif
+
+
+        @if ($currentStatus !== 'COMPLETED')
+
+            <div class="section-link">
+
+                <a
+                    href="{{ route(
+                        'admin.visits.diagnoses.create',
+                        $medicalVisit
+                    ) }}"
+                    class="btn btn-primary"
+                >
+                    + Thêm chẩn đoán
+                </a>
+
+            </div>
+
+        @endif
+
+    </div>
+
+
+    {{-- KẾT LUẬN --}}
+
+    <div class="card section-spacing">
+
+        <h3 class="section-title">
+            Kết luận lượt khám
+        </h3>
+
+
+        @if ($medicalVisit->conclusion)
+
+            <div class="clinical-grid">
+
+                <div class="clinical-item">
+                    <strong>
+                        Bác sĩ kết luận
+                    </strong>
+
+                    <p>
+                        {{ $medicalVisit
+                            ->conclusion
+                            ->doctor
+                            ?->full_name
+                            ?? '—' }}
+                    </p>
+                </div>
+
+
+                <div class="clinical-item">
+                    <strong>
+                        Kết luận chuyên môn
+                    </strong>
+
+                    <p>
+                        {{ $medicalVisit
+                            ->conclusion
+                            ->professional_conclusion
+                            ?? '—' }}
+                    </p>
+                </div>
+
+
+                <div class="clinical-item">
+                    <strong>
+                        Hướng xử trí
+                    </strong>
+
+                    <p>
+                        {{ $medicalVisit
+                            ->conclusion
+                            ->disposition
+                            ?? '—' }}
+                    </p>
+                </div>
+
+
+                <div class="clinical-item">
+                    <strong>
+                        Kế hoạch điều trị
+                    </strong>
+
+                    <p>
+                        {{ $medicalVisit
+                            ->conclusion
+                            ->treatment_plan
+                            ?? '—' }}
+                    </p>
+                </div>
+
+
+                <div class="clinical-item">
+                    <strong>
+                        Dặn dò
+                    </strong>
+
+                    <p>
+                        {{ $medicalVisit
+                            ->conclusion
+                            ->instructions
+                            ?? '—' }}
+                    </p>
+                </div>
+
+
+                <div class="clinical-item">
+                    <strong>
+                        Tái khám
+                    </strong>
+
+                    <p>
+
+                        @if ($medicalVisit->conclusion->has_follow_up)
+
+                            Có
+
+                            @if ($medicalVisit->conclusion->follow_up_date)
+
+                                -
+                                {{ $medicalVisit
+                                    ->conclusion
+                                    ->follow_up_date
+                                    ->format('d/m/Y') }}
+
+                            @endif
+
+                        @else
+
+                            Không
+
+                        @endif
+
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="section-link">
+
+                <a
+                    href="{{ route(
+                        'admin.conclusions.show',
+                        $medicalVisit->conclusion
+                    ) }}"
+                    class="btn btn-secondary"
+                >
+                    Xem kết luận
+                </a>
+
+            </div>
+
+        @else
+
+            <p class="muted-text">
+                Chưa có kết luận.
+            </p>
+
+            @if ($currentStatus !== 'COMPLETED')
+
+                <div class="section-link">
+
+                    <a
+                        href="{{ route(
+                            'admin.visits.conclusion.create',
+                            $medicalVisit
+                        ) }}"
+                        class="btn btn-primary"
+                    >
+                        + Thêm kết luận
+                    </a>
+
+                </div>
+
+            @endif
+
+        @endif
+
+    </div>
+
+@endsection
+
+
+@push('styles')
+
+<style>
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+
+    .header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+
+    .section-spacing {
+        margin-top: 20px;
+    }
+
+
+    .section-title {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+
+    .status-card {
+        margin-bottom: 20px;
+    }
+
+
+    .status-current {
+        margin-bottom: 18px;
+    }
+
+
+    .status-badge {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: #e2e8f0;
+    }
+
+
+    .status-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+
+    .status-form {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+
+    .form-group {
+        min-width: 260px;
+    }
+
+
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 700;
+    }
+
+
+    .form-control {
+        width: 100%;
+        padding: 9px 11px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+
+        font-family:
+            "Times New Roman",
+            Times,
+            serif;
+    }
+
+
+    .btn-complete {
+        padding: 10px 18px;
+        border: none;
+        border-radius: 8px;
+
+        background: #16a34a;
+        color: #ffffff;
+
+        font-family:
+            "Times New Roman",
+            Times,
+            serif;
+
+        font-size: 15px;
+        font-weight: 700;
+
+        cursor: pointer;
+    }
+
+
+    .btn-complete:hover {
+        opacity: 0.9;
+    }
+
+
+    .detail-grid {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 20px;
+    }
+
+
+    .detail-row {
+        display: grid;
+
+        grid-template-columns:
+            145px minmax(0, 1fr);
+
+        gap: 15px;
+
+        padding: 11px 0;
+
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+
+    .detail-row span {
+        color: #64748b;
+    }
+
+
+    .clinical-grid {
+        display: grid;
+
+        grid-template-columns:
+            repeat(
+                auto-fit,
+                minmax(250px, 1fr)
+            );
+
+        gap: 18px;
+    }
+
+
+    .clinical-item {
+        padding: 14px;
+
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+
+
+    .clinical-item p {
+        margin-bottom: 0;
+
+        line-height: 1.6;
+        white-space: pre-line;
+    }
+
+
+    .section-link {
+        margin-top: 16px;
+    }
+
+
+    .muted-text {
+        color: #64748b;
+    }
+
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+
+    @media (max-width: 800px) {
+
+        .page-header {
+            flex-direction: column;
+        }
+
+
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+
+        .status-actions,
+        .status-form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+
+        .form-group {
+            min-width: 0;
+        }
+
+    }
+
+</style>
+
+@endpush

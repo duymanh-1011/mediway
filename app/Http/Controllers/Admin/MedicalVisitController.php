@@ -1,142 +1,490 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateMedicalVisitStatusRequest;
+use App\Models\AppointmentStatus;
+use App\Models\Doctor;
+use App\Models\ExaminationRoom;
+use App\Models\MedicalVisit;
+use App\Models\Specialty;
+use App\Models\VisitStatus;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class MedicalVisitController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $query = DB::table('medical_visits')
-            ->join('patients', 'medical_visits.patient_id', '=', 'patients.id')
-            ->join('doctors', 'medical_visits.doctor_id', '=', 'doctors.id')
-            ->join('specialties', 'medical_visits.specialty_id', '=', 'specialties.id')
-            ->join('examination_rooms', 'medical_visits.examination_room_id', '=', 'examination_rooms.id')
-            ->join('visit_statuses', 'medical_visits.visit_status_id', '=', 'visit_statuses.id')
-            ->select(
-                'medical_visits.*',
-                'patients.patient_code',
-                'patients.full_name as patient_name',
-                'patients.gender as patient_gender',
-                'doctors.full_name as doctor_name',
-                'specialties.name as specialty_name',
-                'examination_rooms.name as room_name',
-                'visit_statuses.name as status_name'
-            );
+        $query = MedicalVisit::query()
+            ->with([
+                'appointment',
+                'patient',
+                'doctor',
+                'specialty',
+                'examinationRoom',
+                'status',
+            ]);
 
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('medical_visits.visit_code', 'like', "%{$search}%")
-                  ->orWhere('patients.patient_code', 'like', "%{$search}%")
-                  ->orWhere('patients.full_name', 'like', "%{$search}%");
+            $search = trim(
+                (string) $request->input('search')
+            );
+
+            $query->where(function ($q) use ($search) {
+                $q->where(
+                    'visit_code',
+                    'like',
+                    "%{$search}%"
+                )
+                    ->orWhereHas(
+                        'patient',
+                        function ($patientQuery) use ($search) {
+                            $patientQuery
+                                ->where(
+                                    'patient_code',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'full_name',
+                                    'like',
+                                    "%{$search}%"
+                                );
+                        }
+                    )
+                    ->orWhereHas(
+                        'doctor',
+                        function ($doctorQuery) use ($search) {
+                            $doctorQuery
+                                ->where(
+                                    'doctor_code',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'full_name',
+                                    'like',
+                                    "%{$search}%"
+                                );
+                        }
+                    )
+                    ->orWhereHas(
+                        'appointment',
+                        function ($appointmentQuery) use ($search) {
+                            $appointmentQuery->where(
+                                'appointment_code',
+                                'like',
+                                "%{$search}%"
+                            );
+                        }
+                    );
             });
         }
 
-        // Mặc định lọc theo ngày demo chuẩn 2026-10-15
-        $date = $request->input('date', '2026-10-15');
-        $query->whereDate('medical_visits.checked_in_at', $date);
-
         if ($request->filled('visit_status_id')) {
-            $query->where('medical_visits.visit_status_id', $request->visit_status_id);
+            $query->where(
+                'visit_status_id',
+                $request->integer('visit_status_id')
+            );
         }
 
         if ($request->filled('doctor_id')) {
-            $query->where('medical_visits.doctor_id', $request->doctor_id);
+            $query->where(
+                'doctor_id',
+                $request->integer('doctor_id')
+            );
         }
 
-        $visits = $query->orderBy('medical_visits.checked_in_at', 'desc')->paginate(10)->withQueryString();
-        $statuses = DB::table('visit_statuses')->where('is_active', true)->orderBy('process_order')->get();
-        $doctors = DB::table('doctors')->where('status', 'ACTIVE')->select('id', 'full_name', 'doctor_code')->get();
+        if ($request->filled('specialty_id')) {
+            $query->where(
+                'specialty_id',
+                $request->integer('specialty_id')
+            );
+        }
 
-        return view('admin.visits.index', compact('visits', 'statuses', 'doctors', 'date'));
-    }
+        if ($request->filled('examination_room_id')) {
+            $query->where(
+                'examination_room_id',
+                $request->integer('examination_room_id')
+            );
+        }
 
-    public function show($id)
-    {
-        $visit = DB::table('medical_visits')
-            ->join('patients', 'medical_visits.patient_id', '=', 'patients.id')
-            ->leftJoin('patient_details', 'patients.id', '=', 'patient_details.patient_id')
-            ->join('doctors', 'medical_visits.doctor_id', '=', 'doctors.id')
-            ->join('specialties', 'medical_visits.specialty_id', '=', 'specialties.id')
-            ->join('examination_rooms', 'medical_visits.examination_room_id', '=', 'examination_rooms.id')
-            ->join('visit_statuses', 'medical_visits.visit_status_id', '=', 'visit_statuses.id')
-            ->leftJoin('appointments', 'medical_visits.appointment_id', '=', 'appointments.id')
-            ->select(
-                'medical_visits.*',
-                'patients.patient_code', 'patients.full_name as patient_name', 'patients.date_of_birth', 'patients.gender',
-                'patient_details.citizen_id_number', 'patient_details.email', 'patient_details.blood_type',
-                'doctors.full_name as doctor_name', 'doctors.doctor_code',
-                'specialties.name as specialty_name',
-                'examination_rooms.name as room_name', 'examination_rooms.room_number',
-                'visit_statuses.name as status_name',
-                'appointments.appointment_code', 'appointments.reason_for_visit as booked_reason'
+        if ($request->filled('reception_source')) {
+            $query->where(
+                'reception_source',
+                $request->input('reception_source')
+            );
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate(
+                'checked_in_at',
+                '>=',
+                $request->input('date_from')
+            );
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate(
+                'checked_in_at',
+                '<=',
+                $request->input('date_to')
+            );
+        }
+
+        $medicalVisits = $query
+            ->orderByDesc('checked_in_at')
+            ->orderByDesc('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        $visitStatuses = VisitStatus::query()
+            ->orderBy('process_order')
+            ->get();
+
+        $doctors = Doctor::query()
+            ->orderBy('full_name')
+            ->get();
+
+        $specialties = Specialty::query()
+            ->orderBy('name')
+            ->get();
+
+        $examinationRooms = ExaminationRoom::query()
+            ->orderBy('name')
+            ->get();
+
+        $receptionSources = MedicalVisit::query()
+            ->whereNotNull('reception_source')
+            ->where(
+                'reception_source',
+                '!=',
+                ''
             )
-            ->where('medical_visits.id', $id)
-            ->first();
+            ->distinct()
+            ->orderBy('reception_source')
+            ->pluck('reception_source');
 
-        if (!$visit) {
-            return redirect()->route('admin.visits.index')->with('error', 'Không tìm thấy lượt khám.');
-        }
-
-        $clinicalNote = DB::table('visit_clinical_notes')->where('medical_visit_id', $id)->first();
-        $diagnoses = DB::table('visit_diagnoses')
-            ->join('diseases', 'visit_diagnoses.disease_id', '=', 'diseases.id')
-            ->select('visit_diagnoses.*', 'diseases.disease_code', 'diseases.name as disease_name')
-            ->where('visit_diagnoses.medical_visit_id', $id)
-            ->get();
-        $queues = DB::table('examination_room_queues')
-            ->join('queue_statuses', 'examination_room_queues.queue_status_id', '=', 'queue_statuses.id')
-            ->select('examination_room_queues.*', 'queue_statuses.name as status_name')
-            ->where('examination_room_queues.medical_visit_id', $id)
-            ->get();
-        $conclusion = DB::table('visit_conclusions')
-            ->leftJoin('doctors', 'visit_conclusions.doctor_id', '=', 'doctors.id')
-            ->select('visit_conclusions.*', 'doctors.full_name as doctor_name')
-            ->where('visit_conclusions.medical_visit_id', $id)
-            ->first();
-
-        $diseases = DB::table('diseases')->where('status', 'ACTIVE')->select('id', 'disease_code', 'name')->get();
-        $serviceOrders = DB::table('service_orders')->where('medical_visit_id', $id)->get();
-        $prescription = DB::table('prescriptions')->where('medical_visit_id', $id)->first();
-        $payables = DB::table('payables')
-            ->join('payment_statuses', 'payables.payment_status_id', '=', 'payment_statuses.id')
-            ->select('payables.*', 'payment_statuses.name as status_name')
-            ->where('payables.medical_visit_id', $id)
-            ->get();
-
-        return view('admin.visits.show', compact('visit', 'clinicalNote', 'diagnoses', 'queues', 'conclusion', 'diseases', 'serviceOrders', 'prescription', 'payables'));
+        return view(
+            'admin.visits.index',
+            compact(
+                'medicalVisits',
+                'visitStatuses',
+                'doctors',
+                'specialties',
+                'examinationRooms',
+                'receptionSources'
+            )
+        );
     }
 
-    public function updateStatus(Request $request, $id)
-    {
-        $request->validate([
-            'visit_status_id' => 'required|exists:visit_statuses,id'
+    /*
+    |--------------------------------------------------------------------------
+    | Chi tiết lượt khám
+    |--------------------------------------------------------------------------
+    |
+    | Route resource sinh tham số {visit},
+    | vì vậy tham số Controller phải là $visit để Laravel binding đúng.
+    |
+    */
+
+    public function show(
+        MedicalVisit $visit
+    ): View {
+        $medicalVisit = $visit;
+
+        $medicalVisit->load([
+            'appointment',
+            'patient.user',
+            'patient.detail',
+            'doctor.user',
+            'doctor.detail',
+            'specialty',
+            'examinationRoom',
+            'status',
+            'queues.status',
+            'clinicalNote',
+            'diagnoses.disease',
+            'conclusion.doctor',
         ]);
 
-        $visit = DB::table('medical_visits')->where('id', $id)->first();
-        if (!$visit) {
-            return back()->with('error', 'Lượt khám không tồn tại.');
+        $allowedStatusNames =
+            $this->allowedTransitions(
+                $medicalVisit->status?->name
+            );
+
+        $allowedVisitStatuses =
+            VisitStatus::query()
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->whereIn(
+                    'name',
+                    $allowedStatusNames
+                )
+                ->orderBy('process_order')
+                ->get();
+
+        return view(
+            'admin.visits.show',
+            compact(
+                'medicalVisit',
+                'allowedVisitStatuses'
+            )
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cập nhật trạng thái lượt khám
+    |--------------------------------------------------------------------------
+    |
+    | Route riêng của chức năng này dùng {medicalVisit},
+    | nên giữ tham số $medicalVisit.
+    |
+    */
+
+    public function updateStatus(
+        UpdateMedicalVisitStatusRequest $request,
+        MedicalVisit $medicalVisit
+    ): RedirectResponse {
+        $medicalVisit->load([
+            'status',
+            'appointment',
+        ]);
+
+        $currentStatus =
+            $medicalVisit->status;
+
+        if (!$currentStatus) {
+            return back()->with(
+                'error',
+                'Lượt khám chưa có trạng thái hợp lệ.'
+            );
         }
 
-        $newStatus = DB::table('visit_statuses')->where('id', $request->visit_status_id)->first();
+        if (!$currentStatus->allows_transition) {
+            return back()->with(
+                'error',
+                'Trạng thái hiện tại không cho phép chuyển tiếp.'
+            );
+        }
 
-        // Kiểm tra logic: Nếu chuyển sang trạng thái COMPLETED nhưng chưa có kết luận chuyên môn -> Chặn lại
-        if ($newStatus->name === 'COMPLETED') {
-            $hasConclusion = DB::table('visit_conclusions')->where('medical_visit_id', $id)->exists();
-            if (!$hasConclusion) {
-                return back()->with('error', 'Không thể hoàn tất lượt khám khi chưa có Kết luận chuyên môn.');
+        $newStatus =
+            VisitStatus::query()
+                ->whereKey(
+                    $request->integer(
+                        'visit_status_id'
+                    )
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->firstOrFail();
+
+        $allowedTransitions =
+            $this->allowedTransitions(
+                $currentStatus->name
+            );
+
+        if (
+            !in_array(
+                $newStatus->name,
+                $allowedTransitions,
+                true
+            )
+        ) {
+            return back()->with(
+                'error',
+                'Không thể chuyển từ trạng thái '
+                . $currentStatus->name
+                . ' sang '
+                . $newStatus->name
+                . '.'
+            );
+        }
+
+        DB::transaction(
+            function () use (
+                $medicalVisit,
+                $newStatus
+            ) {
+                $updateData = [
+                    'visit_status_id' =>
+                        $newStatus->id,
+                ];
+
+                /*
+                |--------------------------------------------------------------------------
+                | Bắt đầu khám
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $newStatus->name
+                    ===
+                    'IN_EXAMINATION'
+                ) {
+                    if (
+                        !$medicalVisit
+                            ->examination_started_at
+                    ) {
+                        $updateData[
+                            'examination_started_at'
+                        ] = now();
+                    }
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Hoàn tất khám
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $newStatus->name
+                    ===
+                    'COMPLETED'
+                ) {
+                    $updateData[
+                        'examination_ended_at'
+                    ] =
+                        $medicalVisit
+                            ->examination_ended_at
+                        ?? now();
+                }
+
+                $medicalVisit->update(
+                    $updateData
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | Đồng bộ trạng thái lịch hẹn
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $newStatus->name
+                    ===
+                    'IN_EXAMINATION'
+                ) {
+                    $this->syncAppointmentStatus(
+                        $medicalVisit,
+                        'IN_EXAMINATION'
+                    );
+                }
+
+                if (
+                    $newStatus->name
+                    ===
+                    'COMPLETED'
+                ) {
+                    $this->syncAppointmentStatus(
+                        $medicalVisit,
+                        'COMPLETED'
+                    );
+                }
             }
+        );
+
+        return redirect()
+            ->route(
+                'admin.visits.show',
+                $medicalVisit
+            )
+            ->with(
+                'success',
+                'Cập nhật trạng thái lượt khám thành công.'
+            );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Luồng trạng thái lượt khám
+    |--------------------------------------------------------------------------
+    */
+
+    private function allowedTransitions(
+        ?string $currentStatus
+    ): array {
+        return match ($currentStatus) {
+
+            'WAITING' => [
+                'IN_EXAMINATION',
+            ],
+
+            'IN_EXAMINATION' => [
+                'WAITING_FOR_SERVICE',
+                'COMPLETED',
+            ],
+
+            'WAITING_FOR_SERVICE' => [
+                'RETURNING',
+            ],
+
+            'RETURNING' => [
+                'WAITING_FOR_SERVICE',
+                'COMPLETED',
+            ],
+
+            'COMPLETED' => [],
+
+            default => [],
+        };
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Đồng bộ trạng thái lịch hẹn
+    |--------------------------------------------------------------------------
+    */
+
+    private function syncAppointmentStatus(
+        MedicalVisit $medicalVisit,
+        string $statusName
+    ): void {
+        if (
+            !$medicalVisit
+                ->appointment_id
+        ) {
+            return;
         }
 
-        DB::table('medical_visits')->where('id', $id)->update([
-            'visit_status_id' => $request->visit_status_id,
-            'examination_ended_at' => $newStatus->name === 'COMPLETED' ? now() : $visit->examination_ended_at,
-            'updated_at' => now(),
-        ]);
+        $appointmentStatus =
+            AppointmentStatus::query()
+                ->where(
+                    'name',
+                    $statusName
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->first();
 
-        return back()->with('success', 'Cập nhật trạng thái lượt khám thành công.');
+        if (!$appointmentStatus) {
+            return;
+        }
+
+        DB::table('appointments')
+            ->where(
+                'id',
+                $medicalVisit
+                    ->appointment_id
+            )
+            ->update([
+                'appointment_status_id' =>
+                    $appointmentStatus->id,
+
+                'updated_at' =>
+                    now(),
+            ]);
     }
 }

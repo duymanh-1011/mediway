@@ -8,14 +8,13 @@
 @section('breadcrumb')
 
     <div class="breadcrumb">
-
         Admin /
         Lịch & đặt khám /
         {{ $appointment->appointment_code }}
-
     </div>
 
 @endsection
+
 
 @section('content')
 
@@ -41,6 +40,11 @@
         $canCancel =
             $canEdit;
 
+        $canCheckIn =
+            !$medicalVisit
+            &&
+            $statusName === 'BOOKED';
+
     @endphp
 
 
@@ -58,6 +62,7 @@
 
         </div>
 
+
         <div class="header-actions">
 
             <a
@@ -68,6 +73,7 @@
             >
                 ← Danh sách
             </a>
+
 
             @if ($canEdit)
 
@@ -92,13 +98,78 @@
 
         <div class="notice-box">
 
-            Lịch hẹn này đã phát sinh lượt khám:
+            <div>
 
-            <strong>
-                {{ $medicalVisit->visit_code }}
-            </strong>
+                Lịch hẹn này đã phát sinh lượt khám:
 
-            nên thông tin đặt lịch được khóa để bảo toàn lịch sử.
+                <strong>
+                    {{ $medicalVisit->visit_code }}
+                </strong>
+
+            </div>
+
+
+            <div style="margin-top: 10px;">
+
+                <a
+                    href="{{ route(
+                        'admin.visits.show',
+                        $medicalVisit->id
+                    ) }}"
+                    class="btn btn-primary"
+                >
+                    Xem lượt khám
+                </a>
+
+            </div>
+
+        </div>
+
+    @endif
+
+
+    @if ($canCheckIn)
+
+        <div class="checkin-card">
+
+            <div>
+
+                <h3 class="section-title">
+                    Check-in bệnh nhân
+                </h3>
+
+                <p class="checkin-description">
+                    Xác nhận bệnh nhân đã đến bệnh viện.
+                    Hệ thống sẽ tạo lượt khám và đưa bệnh nhân
+                    vào hàng đợi phòng khám.
+                </p>
+
+            </div>
+
+
+            <form
+                method="POST"
+                action="{{ route(
+                    'admin.appointments.check-in',
+                    $appointment
+                ) }}"
+                onsubmit="
+                    return confirm(
+                        'Xác nhận check-in bệnh nhân cho lịch hẹn này?'
+                    );
+                "
+            >
+
+                @csrf
+
+                <button
+                    type="submit"
+                    class="btn-checkin"
+                >
+                    Check-in bệnh nhân
+                </button>
+
+            </form>
 
         </div>
 
@@ -113,9 +184,12 @@
                 Thông tin bệnh nhân
             </h3>
 
+
             <div class="detail-row">
 
-                <span>Mã bệnh nhân</span>
+                <span>
+                    Mã bệnh nhân
+                </span>
 
                 <strong>
                     {{ $appointment
@@ -126,9 +200,12 @@
 
             </div>
 
+
             <div class="detail-row">
 
-                <span>Họ tên</span>
+                <span>
+                    Họ tên
+                </span>
 
                 <strong>
                     {{ $appointment
@@ -139,9 +216,12 @@
 
             </div>
 
+
             <div class="detail-row">
 
-                <span>Ngày sinh</span>
+                <span>
+                    Ngày sinh
+                </span>
 
                 <strong>
                     {{ $appointment
@@ -153,9 +233,12 @@
 
             </div>
 
+
             <div class="detail-row">
 
-                <span>Giới tính</span>
+                <span>
+                    Giới tính
+                </span>
 
                 <strong>
                     {{ $appointment
@@ -175,21 +258,28 @@
                 Thông tin khám
             </h3>
 
+
             <div class="detail-row">
 
-                <span>Ngày khám</span>
+                <span>
+                    Ngày khám
+                </span>
 
                 <strong>
                     {{ $appointment
                         ->appointment_date
-                        ?->format('d/m/Y') }}
+                        ?->format('d/m/Y')
+                        ?? '—' }}
                 </strong>
 
             </div>
 
+
             <div class="detail-row">
 
-                <span>Khung giờ</span>
+                <span>
+                    Khung giờ
+                </span>
 
                 <strong>
 
@@ -217,21 +307,37 @@
 
             </div>
 
+
             <div class="detail-row">
 
-                <span>Bác sĩ</span>
+                <span>
+                    Bác sĩ
+                </span>
 
                 <strong>
-                    {{ $appointment->doctor?->doctor_code }}
+
+                    {{ $appointment
+                        ->doctor
+                        ?->doctor_code
+                        ?? '—' }}
+
                     -
-                    {{ $appointment->doctor?->full_name }}
+
+                    {{ $appointment
+                        ->doctor
+                        ?->full_name
+                        ?? '—' }}
+
                 </strong>
 
             </div>
 
+
             <div class="detail-row">
 
-                <span>Chuyên khoa</span>
+                <span>
+                    Chuyên khoa
+                </span>
 
                 <strong>
                     {{ $appointment
@@ -242,27 +348,37 @@
 
             </div>
 
+
             <div class="detail-row">
 
-                <span>Phòng khám</span>
+                <span>
+                    Phòng khám
+                </span>
 
                 <strong>
+
                     {{ $appointment
                         ->examinationRoom
-                        ?->room_code }}
+                        ?->room_code
+                        ?? '—' }}
 
                     -
 
                     {{ $appointment
                         ->examinationRoom
-                        ?->name }}
+                        ?->name
+                        ?? '—' }}
+
                 </strong>
 
             </div>
 
+
             <div class="detail-row">
 
-                <span>Trạng thái</span>
+                <span>
+                    Trạng thái
+                </span>
 
                 <strong>
                     {{ $statusName ?? '—' }}
@@ -281,9 +397,12 @@
             Nội dung đặt khám
         </h3>
 
+
         <div class="content-section">
 
-            <strong>Lý do khám</strong>
+            <strong>
+                Lý do khám
+            </strong>
 
             <p>
                 {{ $appointment->reason_for_visit }}
@@ -291,9 +410,12 @@
 
         </div>
 
+
         <div class="content-section">
 
-            <strong>Ghi chú bệnh nhân</strong>
+            <strong>
+                Ghi chú bệnh nhân
+            </strong>
 
             <p>
                 {{ $appointment->patient_notes ?? '—' }}
@@ -301,9 +423,12 @@
 
         </div>
 
+
         <div class="content-section">
 
-            <strong>Đặt lúc</strong>
+            <strong>
+                Đặt lúc
+            </strong>
 
             <p>
                 {{ $appointment
@@ -325,9 +450,12 @@
                 Thông tin hủy lịch
             </h3>
 
+
             <div class="detail-row">
 
-                <span>Thời gian hủy</span>
+                <span>
+                    Thời gian hủy
+                </span>
 
                 <strong>
                     {{ $appointment
@@ -338,9 +466,12 @@
 
             </div>
 
+
             <div class="detail-row">
 
-                <span>Lý do</span>
+                <span>
+                    Lý do
+                </span>
 
                 <strong>
                     {{ $appointment
@@ -368,6 +499,7 @@
                 CANCELLED, không xóa dữ liệu lịch sử.
             </p>
 
+
             <form
                 method="POST"
                 action="{{ route(
@@ -383,6 +515,7 @@
 
                 @csrf
 
+
                 <div class="form-group">
 
                     <label>
@@ -396,13 +529,17 @@
                         required
                     >{{ old('cancellation_reason') }}</textarea>
 
+
                     @error('cancellation_reason')
+
                         <div class="field-error">
                             {{ $message }}
                         </div>
+
                     @enderror
 
                 </div>
+
 
                 <button
                     type="submit"
@@ -427,14 +564,18 @@
     .page-header {
         display: flex;
         justify-content: space-between;
+        align-items: flex-start;
         gap: 20px;
         margin-bottom: 20px;
     }
 
+
     .header-actions {
         display: flex;
         gap: 8px;
+        flex-wrap: wrap;
     }
+
 
     .notice-box {
         margin-bottom: 20px;
@@ -447,23 +588,86 @@
         color: #92400e;
     }
 
+
+    .checkin-card {
+        margin-bottom: 20px;
+        padding: 18px 20px;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+
+        border: 1px solid #bbf7d0;
+        border-radius: 10px;
+
+        background: #f0fdf4;
+    }
+
+
+    .checkin-card .section-title {
+        color: #166534;
+    }
+
+
+    .checkin-description {
+        margin: 0;
+
+        color: #475569;
+        line-height: 1.6;
+    }
+
+
+    .btn-checkin {
+        padding: 10px 18px;
+
+        border: none;
+        border-radius: 8px;
+
+        background: #16a34a;
+        color: #ffffff;
+
+        font-family:
+            "Times New Roman",
+            Times,
+            serif;
+
+        font-size: 16px;
+        font-weight: 700;
+
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+
+    .btn-checkin:hover {
+        opacity: 0.9;
+    }
+
+
     .detail-grid {
         display: grid;
+
         grid-template-columns:
             repeat(2, minmax(0, 1fr));
+
         gap: 20px;
         margin-bottom: 20px;
     }
+
 
     .section-title {
         margin-top: 0;
         margin-bottom: 15px;
     }
 
+
     .detail-row {
         display: grid;
+
         grid-template-columns:
             140px minmax(0, 1fr);
+
         gap: 15px;
 
         padding: 11px 0;
@@ -471,9 +675,16 @@
         border-bottom: 1px solid #f1f5f9;
     }
 
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+
     .detail-row span {
         color: #64748b;
     }
+
 
     .information-card,
     .cancellation-card,
@@ -481,35 +692,49 @@
         margin-top: 20px;
     }
 
+
     .content-section {
         margin-bottom: 18px;
     }
+
+
+    .content-section:last-child {
+        margin-bottom: 0;
+    }
+
 
     .content-section p {
         margin-bottom: 0;
         line-height: 1.6;
     }
 
+
     .danger-title {
         color: #b91c1c;
     }
+
 
     .warning-text {
         color: #64748b;
     }
 
+
     .form-group {
         margin-bottom: 15px;
     }
 
+
     .form-group label {
         display: block;
         margin-bottom: 6px;
+
         font-weight: 700;
     }
 
+
     .form-control {
         width: 100%;
+
         padding: 10px 12px;
 
         border: 1px solid #cbd5e1;
@@ -521,10 +746,12 @@
             serif;
     }
 
+
     .field-error {
         margin-top: 5px;
         color: #dc2626;
     }
+
 
     .btn-danger {
         padding: 9px 15px;
@@ -543,10 +770,22 @@
         cursor: pointer;
     }
 
+
     @media (max-width: 800px) {
+
+        .page-header {
+            flex-direction: column;
+        }
+
 
         .detail-grid {
             grid-template-columns: 1fr;
+        }
+
+
+        .checkin-card {
+            flex-direction: column;
+            align-items: flex-start;
         }
 
     }

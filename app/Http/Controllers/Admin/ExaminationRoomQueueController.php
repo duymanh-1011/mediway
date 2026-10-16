@@ -1,108 +1,579 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppointmentStatus;
+use App\Models\Doctor;
+use App\Models\ExaminationRoom;
+use App\Models\ExaminationRoomQueue;
+use App\Models\QueueStatus;
+use App\Models\VisitStatus;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class ExaminationRoomQueueController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $query = DB::table('examination_room_queues')
-            ->join('medical_visits', 'examination_room_queues.medical_visit_id', '=', 'medical_visits.id')
-            ->join('patients', 'medical_visits.patient_id', '=', 'patients.id')
-            ->join('doctors', 'medical_visits.doctor_id', '=', 'doctors.id')
-            ->join('examination_rooms', 'medical_visits.examination_room_id', '=', 'examination_rooms.id')
-            ->join('queue_statuses', 'examination_room_queues.queue_status_id', '=', 'queue_statuses.id')
-            ->select(
-                'examination_room_queues.*',
-                'medical_visits.visit_code',
-                'patients.patient_code',
-                'patients.full_name as patient_name',
-                'doctors.full_name as doctor_name',
-                'examination_rooms.name as room_name',
-                'queue_statuses.name as status_name'
+        $query =
+            ExaminationRoomQueue::query()
+                ->with([
+                    'status',
+                    'medicalVisit.patient',
+                    'medicalVisit.doctor',
+                    'medicalVisit.examinationRoom',
+                ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tìm kiếm
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->filled('search')) {
+            $search =
+                trim(
+                    (string) $request->input(
+                        'search'
+                    )
+                );
+
+            $query->where(
+                function ($q) use ($search) {
+                    $q->where(
+                        'queue_number',
+                        'like',
+                        "%{$search}%"
+                    )
+                        ->orWhereHas(
+                            'medicalVisit',
+                            function ($visitQuery) use (
+                                $search
+                            ) {
+                                $visitQuery
+                                    ->where(
+                                        'visit_code',
+                                        'like',
+                                        "%{$search}%"
+                                    )
+                                    ->orWhereHas(
+                                        'patient',
+                                        function ($patientQuery) use (
+                                            $search
+                                        ) {
+                                            $patientQuery
+                                                ->where(
+                                                    'patient_code',
+                                                    'like',
+                                                    "%{$search}%"
+                                                )
+                                                ->orWhere(
+                                                    'full_name',
+                                                    'like',
+                                                    "%{$search}%"
+                                                );
+                                        }
+                                    );
+                            }
+                        );
+                }
             );
-
-        if ($request->filled('room_id')) {
-            $query->where('medical_visits.examination_room_id', $request->room_id);
-        }
-        if ($request->filled('queue_status_id')) {
-            $query->where('examination_room_queues.queue_status_id', $request->queue_status_id);
         }
 
-        $date = $request->input('date', '2026-10-15');
-        $query->whereDate('examination_room_queues.queued_at', $date);
+        /*
+        |--------------------------------------------------------------------------
+        | Trạng thái hàng đợi
+        |--------------------------------------------------------------------------
+        */
 
-        $queues = $query->orderBy('examination_room_queues.queue_number', 'asc')->paginate(15)->withQueryString();
-        $rooms = DB::table('examination_rooms')->where('status', 'ACTIVE')->get();
-        $statuses = DB::table('queue_statuses')->where('is_active', true)->get();
+        if (
+            $request->filled(
+                'queue_status_id'
+            )
+        ) {
+            $query->where(
+                'queue_status_id',
+                $request->integer(
+                    'queue_status_id'
+                )
+            );
+        }
 
-        return view('admin.queues.index', compact('queues', 'rooms', 'statuses', 'date'));
+        /*
+        |--------------------------------------------------------------------------
+        | Loại hàng đợi
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->filled('queue_type')) {
+            $query->where(
+                'queue_type',
+                $request->input('queue_type')
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ngày
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->filled('date')) {
+            $query->whereDate(
+                'queued_at',
+                $request->input('date')
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Bác sĩ
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->filled('doctor_id')) {
+            $query->whereHas(
+                'medicalVisit',
+                function ($visitQuery) use (
+                    $request
+                ) {
+                    $visitQuery->where(
+                        'doctor_id',
+                        $request->integer(
+                            'doctor_id'
+                        )
+                    );
+                }
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Phòng khám
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $request->filled(
+                'examination_room_id'
+            )
+        ) {
+            $query->whereHas(
+                'medicalVisit',
+                function ($visitQuery) use (
+                    $request
+                ) {
+                    $visitQuery->where(
+                        'examination_room_id',
+                        $request->integer(
+                            'examination_room_id'
+                        )
+                    );
+                }
+            );
+        }
+
+        $queues =
+            $query
+                ->orderByDesc('queued_at')
+                ->orderBy('queue_number')
+                ->paginate(15)
+                ->withQueryString();
+
+        $queueStatuses =
+            QueueStatus::query()
+                ->orderBy('process_order')
+                ->orderBy('id')
+                ->get();
+
+        $doctors =
+            Doctor::query()
+                ->orderBy('full_name')
+                ->get();
+
+        $examinationRooms =
+            ExaminationRoom::query()
+                ->orderBy('name')
+                ->get();
+
+        return view(
+            'admin.queues.index',
+            compact(
+                'queues',
+                'queueStatuses',
+                'doctors',
+                'examinationRooms'
+            )
+        );
     }
 
-    public function callPatient($id)
-    {
-        $statusCalled = DB::table('queue_statuses')->where('name', 'CALLED')->first();
-        if ($statusCalled) {
-            DB::table('examination_room_queues')->where('id', $id)->update([
-                'queue_status_id' => $statusCalled->id,
-                'called_at' => now(),
-                'call_count' => DB::raw('call_count + 1'),
-                'updated_at' => now(),
+    public function show(
+        ExaminationRoomQueue $queue
+    ): View {
+        $queue->load([
+            'status',
+            'medicalVisit.status',
+            'medicalVisit.patient',
+            'medicalVisit.doctor',
+            'medicalVisit.specialty',
+            'medicalVisit.examinationRoom',
+        ]);
+
+        return view(
+            'admin.queues.show',
+            compact('queue')
+        );
+    }
+
+    public function call(
+        ExaminationRoomQueue $queue
+    ): RedirectResponse {
+        $queue->load('status');
+
+        if (
+            !in_array(
+                $queue->status?->name,
+                [
+                    'WAITING',
+                    'CALLED',
+                    'SKIPPED',
+                ],
+                true
+            )
+        ) {
+            return back()->with(
+                'error',
+                'Trạng thái hiện tại không thể gọi bệnh nhân.'
+            );
+        }
+
+        $calledStatus =
+            QueueStatus::query()
+                ->where(
+                    'name',
+                    'CALLED'
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->first();
+
+        if (!$calledStatus) {
+            return back()->with(
+                'error',
+                'Không tìm thấy trạng thái CALLED đang hoạt động.'
+            );
+        }
+
+        DB::transaction(function () use (
+            $queue,
+            $calledStatus
+        ) {
+            $queue->update([
+                'queue_status_id' =>
+                    $calledStatus->id,
+
+                'called_at' =>
+                    now(),
+
+                'call_count' =>
+                    ((int) $queue->call_count) + 1,
             ]);
-        }
-        return back()->with('success', 'Đã gọi bệnh nhân vào phòng khám.');
+        });
+
+        return back()->with(
+            'success',
+            'Đã gọi bệnh nhân.'
+        );
     }
 
-    public function startService($id)
-    {
-        $inService = DB::table('queue_statuses')->where('name', 'IN_SERVICE')->first();
-        $inExam = DB::table('visit_statuses')->where('name', 'IN_EXAMINATION')->first();
+    public function startService(
+        ExaminationRoomQueue $queue
+    ): RedirectResponse {
+        $queue->load([
+            'status',
+            'medicalVisit',
+        ]);
 
-        DB::transaction(function () use ($id, $inService, $inExam) {
-            if ($inService) {
-                DB::table('examination_room_queues')->where('id', $id)->update([
-                    'queue_status_id' => $inService->id,
-                    'service_started_at' => now(),
-                    'updated_at' => now(),
-                ]);
+        if (
+            $queue->status?->name
+            !==
+            'CALLED'
+        ) {
+            return back()->with(
+                'error',
+                'Chỉ hàng đợi CALLED mới được bắt đầu phục vụ.'
+            );
+        }
+
+        $inServiceStatus =
+            QueueStatus::query()
+                ->where(
+                    'name',
+                    'IN_SERVICE'
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->first();
+
+        if (!$inServiceStatus) {
+            return back()->with(
+                'error',
+                'Không tìm thấy trạng thái IN_SERVICE đang hoạt động.'
+            );
+        }
+
+        DB::transaction(function () use (
+            $queue,
+            $inServiceStatus
+        ) {
+            $queue->update([
+                'queue_status_id' =>
+                    $inServiceStatus->id,
+
+                'service_started_at' =>
+                    $queue->service_started_at
+                    ?? now(),
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Khám ban đầu
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                $queue->queue_type
+                ===
+                'INITIAL_EXAM'
+            ) {
+                $visitStatus =
+                    VisitStatus::query()
+                        ->where(
+                            'name',
+                            'IN_EXAMINATION'
+                        )
+                        ->where(
+                            'is_active',
+                            true
+                        )
+                        ->first();
+
+                if ($visitStatus) {
+                    $queue->medicalVisit->update([
+                        'visit_status_id' =>
+                            $visitStatus->id,
+
+                        'examination_started_at' =>
+                            $queue->medicalVisit
+                                ->examination_started_at
+                            ?? now(),
+                    ]);
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Appointment -> IN_EXAMINATION
+                |--------------------------------------------------------------------------
+                */
+
+                $this->syncAppointmentStatus(
+                    $queue->medicalVisit
+                        ->appointment_id,
+                    'IN_EXAMINATION'
+                );
             }
-            $queue = DB::table('examination_room_queues')->where('id', $id)->first();
-            if ($queue && $inExam) {
-                DB::table('medical_visits')->where('id', $queue->medical_visit_id)->update([
-                    'visit_status_id' => $inExam->id,
-                    'examination_started_at' => now(),
-                    'updated_at' => now(),
-                ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Quay lại sau dịch vụ
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                $queue->queue_type
+                ===
+                'RETURN_AFTER_SERVICE'
+            ) {
+                $visitStatus =
+                    VisitStatus::query()
+                        ->where(
+                            'name',
+                            'RETURNING'
+                        )
+                        ->where(
+                            'is_active',
+                            true
+                        )
+                        ->first();
+
+                if ($visitStatus) {
+                    $queue->medicalVisit->update([
+                        'visit_status_id' =>
+                            $visitStatus->id,
+                    ]);
+                }
             }
         });
-        return back()->with('success', 'Đã bắt đầu tiến trình khám bệnh.');
+
+        return back()->with(
+            'success',
+            'Đã bắt đầu phục vụ bệnh nhân.'
+        );
     }
 
-    public function complete($id)
-    {
-        $statusCompleted = DB::table('queue_statuses')->where('name', 'COMPLETED')->first();
-        if ($statusCompleted) {
-            DB::table('examination_room_queues')->where('id', $id)->update([
-                'queue_status_id' => $statusCompleted->id,
-                'completed_at' => now(),
-                'updated_at' => now(),
-            ]);
+    public function complete(
+        ExaminationRoomQueue $queue
+    ): RedirectResponse {
+        $queue->load('status');
+
+        if (
+            $queue->status?->name
+            !==
+            'IN_SERVICE'
+        ) {
+            return back()->with(
+                'error',
+                'Chỉ hàng đợi đang phục vụ mới được hoàn tất.'
+            );
         }
-        return back()->with('success', 'Đã hoàn thành lượt chờ.');
+
+        $completedStatus =
+            QueueStatus::query()
+                ->where(
+                    'name',
+                    'COMPLETED'
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->first();
+
+        if (!$completedStatus) {
+            return back()->with(
+                'error',
+                'Không tìm thấy trạng thái COMPLETED đang hoạt động.'
+            );
+        }
+
+        DB::transaction(function () use (
+            $queue,
+            $completedStatus
+        ) {
+            $queue->update([
+                'queue_status_id' =>
+                    $completedStatus->id,
+
+                'completed_at' =>
+                    $queue->completed_at
+                    ?? now(),
+            ]);
+        });
+
+        return back()->with(
+            'success',
+            'Đã hoàn tất lượt chờ.'
+        );
     }
 
-    public function skip($id)
-    {
-        $statusSkipped = DB::table('queue_statuses')->where('name', 'SKIPPED')->first();
-        if ($statusSkipped) {
-            DB::table('examination_room_queues')->where('id', $id)->update([
-                'queue_status_id' => $statusSkipped->id,
-                'updated_at' => now(),
-            ]);
+    public function skip(
+        ExaminationRoomQueue $queue
+    ): RedirectResponse {
+        $queue->load('status');
+
+        if (
+            !in_array(
+                $queue->status?->name,
+                [
+                    'WAITING',
+                    'CALLED',
+                ],
+                true
+            )
+        ) {
+            return back()->with(
+                'error',
+                'Trạng thái hiện tại không thể bỏ qua.'
+            );
         }
-        return back()->with('warning', 'Đã ghi nhận bỏ qua lượt chờ của bệnh nhân.');
+
+        $skippedStatus =
+            QueueStatus::query()
+                ->where(
+                    'name',
+                    'SKIPPED'
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->first();
+
+        if (!$skippedStatus) {
+            return back()->with(
+                'error',
+                'Không tìm thấy trạng thái SKIPPED đang hoạt động.'
+            );
+        }
+
+        DB::transaction(function () use (
+            $queue,
+            $skippedStatus
+        ) {
+            $queue->update([
+                'queue_status_id' =>
+                    $skippedStatus->id,
+            ]);
+        });
+
+        return back()->with(
+            'success',
+            'Đã bỏ qua bệnh nhân.'
+        );
+    }
+
+    private function syncAppointmentStatus(
+        ?int $appointmentId,
+        string $statusName
+    ): void {
+        if (!$appointmentId) {
+            return;
+        }
+
+        $appointmentStatus =
+            AppointmentStatus::query()
+                ->where(
+                    'name',
+                    $statusName
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->first();
+
+        if (!$appointmentStatus) {
+            return;
+        }
+
+        DB::table('appointments')
+            ->where(
+                'id',
+                $appointmentId
+            )
+            ->update([
+                'appointment_status_id' =>
+                    $appointmentStatus->id,
+
+                'updated_at' =>
+                    now(),
+            ]);
     }
 }

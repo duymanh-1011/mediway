@@ -28,11 +28,23 @@ class Doctor extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(
+            User::class
+        );
     }
 
     public function detail(): HasOne
     {
-        return $this->hasOne(DoctorDetail::class);
+        return $this->hasOne(
+            DoctorDetail::class
+        );
+    }
+
+    public function schedules()
+    {
+        return $this->hasMany(
+            DoctorSchedule::class,
+            'doctor_id'
+        );
     }
 }

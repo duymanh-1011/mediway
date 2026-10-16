@@ -1,185 +1,689 @@
-
 <aside class="admin-sidebar">
+
     <div class="sidebar-brand">
-        <h1 class="sidebar-brand-title">Mediway</h1>
-        <div class="sidebar-brand-subtitle">Administration System</div>
-    </div>
 
-    <nav class="sidebar-nav">
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Tổng quan</div>
+        <h1 class="sidebar-brand-title">
+            Mediway
+        </h1>
 
-            <a href="{{ route('admin.dashboard') }}"
-               class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                <span class="sidebar-link-dot"></span>
-                Dashboard
-            </a>
+        <div class="sidebar-brand-subtitle">
+            Administration System
         </div>
 
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Hệ thống</div>
+    </div>
 
-            <a href="{{ route('admin.users.index') }}"
-               class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+
+    <nav class="sidebar-nav">
+
+        {{-- =====================================================
+            TỔNG QUAN
+        ====================================================== --}}
+
+        <div class="sidebar-section">
+
+            <div class="sidebar-section-title">
+                Tổng quan
+            </div>
+
+            <a
+                href="{{ route('admin.dashboard') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.dashboard')
+                        ? 'active'
+                        : '' }}
+                "
+            >
                 <span class="sidebar-link-dot"></span>
+
+                Dashboard
+            </a>
+
+        </div>
+
+
+        {{-- =====================================================
+            HỆ THỐNG
+        ====================================================== --}}
+
+        <div class="sidebar-section">
+
+            <div class="sidebar-section-title">
+                Hệ thống
+            </div>
+
+            <a
+                href="{{ route('admin.users.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.users.*')
+                        ? 'active'
+                        : '' }}
+                "
+            >
+                <span class="sidebar-link-dot"></span>
+
                 Tài khoản
             </a>
 
-            <a href="{{ route('admin.roles.index') }}"
-               class="sidebar-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+
+            <a
+                href="{{ route('admin.roles.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.roles.*')
+                        ? 'active'
+                        : '' }}
+                "
+            >
                 <span class="sidebar-link-dot"></span>
+
                 Vai trò
             </a>
 
-            <a href="{{ route('admin.administrators.index') }}"
-               class="sidebar-link {{ request()->routeIs('admin.administrators.*') ? 'active' : '' }}">
+
+            <a
+                href="{{ route('admin.administrators.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.administrators.*')
+                        ? 'active'
+                        : '' }}
+                "
+            >
                 <span class="sidebar-link-dot"></span>
+
                 Quản trị viên
             </a>
 
-            <a href="#" class="sidebar-link">
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
                 <span class="sidebar-link-dot"></span>
+
                 Nhật ký hoạt động
             </a>
+
         </div>
 
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Nhân sự & bệnh nhân</div>
 
-            <details class="sidebar-submenu"
-                {{ request()->routeIs('admin.patients.*', 'admin.personal-health-records.*') ? 'open' : '' }}>
+        {{-- =====================================================
+            NHÂN SỰ & BỆNH NHÂN
+        ====================================================== --}}
+
+        <div class="sidebar-section">
+
+            <div class="sidebar-section-title">
+                Nhân sự & bệnh nhân
+            </div>
+
+
+            <details
+                class="sidebar-submenu"
+                {{ request()->routeIs(
+                    'admin.patients.*',
+                    'admin.personal-health-records.*'
+                ) ? 'open' : '' }}
+            >
 
                 <summary
-                    class="sidebar-link sidebar-submenu-toggle {{ request()->routeIs('admin.patients.*', 'admin.personal-health-records.*') ? 'active' : '' }}">
+                    class="
+                        sidebar-link
+                        sidebar-submenu-toggle
+                        {{ request()->routeIs(
+                            'admin.patients.*',
+                            'admin.personal-health-records.*'
+                        ) ? 'active' : '' }}
+                    "
+                >
                     <span class="sidebar-link-dot"></span>
-                    <span class="sidebar-submenu-label">Bệnh nhân</span>
-                    <span class="sidebar-submenu-chevron">⌄</span>
+
+                    <span class="sidebar-submenu-label">
+                        Bệnh nhân
+                    </span>
+
+                    <span class="sidebar-submenu-chevron">
+                        ⌄
+                    </span>
                 </summary>
 
+
                 <div class="sidebar-submenu-items">
-                    <a href="{{ route('admin.patients.index') }}"
-                       class="sidebar-link sidebar-submenu-item {{ request()->routeIs('admin.patients.*') ? 'active' : '' }}">
+
+                    <a
+                        href="{{ route('admin.patients.index') }}"
+                        class="
+                            sidebar-link
+                            sidebar-submenu-item
+                            {{ request()->routeIs('admin.patients.*')
+                                ? 'active'
+                                : '' }}
+                        "
+                    >
                         <span class="sidebar-link-dot"></span>
+
                         Danh sách bệnh nhân
                     </a>
 
-                    <a href="{{ route('admin.personal-health-records.index') }}"
-                       class="sidebar-link sidebar-submenu-item {{ request()->routeIs('admin.personal-health-records.*') ? 'active' : '' }}">
+
+                    <a
+                        href="{{ route(
+                            'admin.personal-health-records.index'
+                        ) }}"
+                        class="
+                            sidebar-link
+                            sidebar-submenu-item
+                            {{ request()->routeIs(
+                                'admin.personal-health-records.*'
+                            ) ? 'active' : '' }}
+                        "
+                    >
                         <span class="sidebar-link-dot"></span>
+
                         Lịch sử sức khỏe
                     </a>
+
                 </div>
+
             </details>
 
-            <a href="{{ route('admin.doctors.index') }}"
-               class="sidebar-link {{ request()->routeIs('admin.doctors.*') ? 'active' : '' }}">
+
+            <a
+                href="{{ route('admin.doctors.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.doctors.*')
+                        ? 'active'
+                        : '' }}
+                "
+            >
                 <span class="sidebar-link-dot"></span>
+
                 Bác sĩ
             </a>
 
-            <a href="{{ route('admin.employees.index') }}"
-               class="sidebar-link {{ request()->routeIs('admin.employees.*') ? 'active' : '' }}">
+
+            <a
+                href="{{ route('admin.employees.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.employees.*')
+                        ? 'active'
+                        : '' }}
+                "
+            >
                 <span class="sidebar-link-dot"></span>
+
                 Nhân viên
             </a>
+
         </div>
 
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Danh mục</div>
 
-            @foreach([
-                'Chuyên khoa', 'Phòng khám', 'Nhóm dịch vụ',
-                'Dịch vụ y tế', 'Nhóm bệnh', 'Danh mục bệnh', 'Thuốc'
-            ] as $item)
-                <a href="#" class="sidebar-link">
-                    <span class="sidebar-link-dot"></span>
-                    {{ $item }}
-                </a>
-            @endforeach
-        </div>
+        {{-- =====================================================
+            DANH MỤC
+        ====================================================== --}}
 
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Lịch & đặt khám</div>
 
-            @foreach(['Lịch làm việc bác sĩ', 'Lịch hẹn'] as $item)
-                <a href="#" class="sidebar-link">
-                    <span class="sidebar-link-dot"></span>
-                    {{ $item }}
-                </a>
-            @endforeach
-        </div>
+            <div class="sidebar-section-title">
+                Danh mục
+            </div>
 
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Vận hành khám</div>
 
-            @foreach([
-                'Lượt khám', 'Hàng đợi phòng khám',
-                'Nội dung khám', 'Chẩn đoán', 'Kết luận'
-            ] as $item)
-                <a href="#" class="sidebar-link">
-                    <span class="sidebar-link-dot"></span>
-                    {{ $item }}
-                </a>
-            @endforeach
-        </div>
-
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Dịch vụ</div>
-
-            @foreach(['Chỉ định dịch vụ', 'Kết quả dịch vụ'] as $item)
-                <a href="#" class="sidebar-link">
-                    <span class="sidebar-link-dot"></span>
-                    {{ $item }}
-                </a>
-            @endforeach
-        </div>
-
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Đơn thuốc</div>
-
-            <a href="#" class="sidebar-link">
+            <a
+                href="{{ route('admin.specialties.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.specialties.*')
+                        ? 'active'
+                        : '' }}
+                "
+            >
                 <span class="sidebar-link-dot"></span>
+
+                Chuyên khoa
+            </a>
+
+
+            <a
+                href="{{ route('admin.examination-rooms.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs(
+                        'admin.examination-rooms.*'
+                    ) ? 'active' : '' }}
+                "
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Phòng khám
+            </a>
+
+
+            <a
+                href="{{ route('admin.service-groups.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.service-groups.*')
+                        ? 'active'
+                        : '' }}
+                "
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Nhóm dịch vụ
+            </a>
+
+
+            <a
+                href="{{ route('admin.medical-services.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs(
+                        'admin.medical-services.*'
+                    ) ? 'active' : '' }}
+                "
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Dịch vụ y tế
+            </a>
+
+
+            <a
+                href="{{ route('admin.disease-groups.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.disease-groups.*')
+                        ? 'active'
+                        : '' }}
+                "
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Nhóm bệnh
+            </a>
+
+
+            <a
+                href="{{ route('admin.diseases.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.diseases.*')
+                        ? 'active'
+                        : '' }}
+                "
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Danh mục bệnh
+            </a>
+
+
+            <a
+                href="{{ route('admin.medicines.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.medicines.*')
+                        ? 'active'
+                        : '' }}
+                "
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Thuốc
+            </a>
+
+        </div>
+
+
+        {{-- =====================================================
+            LỊCH & ĐẶT KHÁM
+        ====================================================== --}}
+
+        <div class="sidebar-section">
+
+            <div class="sidebar-section-title">
+                Lịch & đặt khám
+            </div>
+
+
+            <a
+                href="{{ route('admin.doctor-schedules.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs(
+                        'admin.doctor-schedules.*'
+                    ) ? 'active' : '' }}
+                "
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Lịch làm việc bác sĩ
+            </a>
+
+
+            <a
+                href="{{ route('admin.appointments.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.appointments.*')
+                        ? 'active'
+                        : '' }}
+                "
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Lịch hẹn
+            </a>
+
+        </div>
+
+
+        {{-- =====================================================
+            VẬN HÀNH KHÁM
+        ====================================================== --}}
+
+        <div class="sidebar-section">
+
+            <div class="sidebar-section-title">
+                Vận hành khám
+            </div>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Lượt khám
+            </a>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Hàng đợi phòng khám
+            </a>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Nội dung khám
+            </a>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Chẩn đoán
+            </a>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Kết luận
+            </a>
+
+        </div>
+
+
+        {{-- =====================================================
+            DỊCH VỤ
+        ====================================================== --}}
+
+        <div class="sidebar-section">
+
+            <div class="sidebar-section-title">
+                Dịch vụ
+            </div>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Chỉ định dịch vụ
+            </a>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Kết quả dịch vụ
+            </a>
+
+        </div>
+
+
+        {{-- =====================================================
+            ĐƠN THUỐC
+        ====================================================== --}}
+
+        <div class="sidebar-section">
+
+            <div class="sidebar-section-title">
+                Đơn thuốc
+            </div>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
                 Đơn thuốc
             </a>
+
         </div>
+
+
+        {{-- =====================================================
+            THANH TOÁN
+        ====================================================== --}}
 
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Thanh toán</div>
 
-            @foreach(['Khoản phải thanh toán', 'Giao dịch thanh toán'] as $item)
-                <a href="#" class="sidebar-link">
-                    <span class="sidebar-link-dot"></span>
-                    {{ $item }}
-                </a>
-            @endforeach
+            <div class="sidebar-section-title">
+                Thanh toán
+            </div>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Khoản phải thanh toán
+            </a>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Giao dịch thanh toán
+            </a>
+
         </div>
+
+
+        {{-- =====================================================
+            CẤU HÌNH TRẠNG THÁI
+        ====================================================== --}}
 
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Cấu hình trạng thái</div>
 
-            @foreach([
-                'Trạng thái lịch hẹn', 'Trạng thái lượt khám',
-                'Trạng thái hàng đợi', 'Trạng thái dịch vụ',
-                'Trạng thái thanh toán'
-            ] as $item)
-                <a href="#" class="sidebar-link">
-                    <span class="sidebar-link-dot"></span>
-                    {{ $item }}
-                </a>
-            @endforeach
+            <div class="sidebar-section-title">
+                Cấu hình trạng thái
+            </div>
+
+
+            <a
+                href="{{ route(
+                    'admin.appointment-statuses.index'
+                ) }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs(
+                        'admin.appointment-statuses.*'
+                    ) ? 'active' : '' }}
+                "
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Trạng thái lịch hẹn
+            </a>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Trạng thái lượt khám
+            </a>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Trạng thái hàng đợi
+            </a>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Trạng thái dịch vụ
+            </a>
+
+
+            <a
+                href="#"
+                class="sidebar-link"
+            >
+                <span class="sidebar-link-dot"></span>
+
+                Trạng thái thanh toán
+            </a>
+
         </div>
+
     </nav>
+
 </aside>
 
+
 <style>
-.sidebar-submenu{width:100%;margin:0;padding:0}
-.sidebar-submenu-toggle{display:flex;align-items:center;width:100%;cursor:pointer;list-style:none;user-select:none}
-.sidebar-submenu-toggle::-webkit-details-marker{display:none}
-.sidebar-submenu-toggle::marker{content:''}
-.sidebar-submenu-label{flex:1}
-.sidebar-submenu-chevron{font-size:20px;line-height:1;margin-left:auto;transition:transform .2s ease;opacity:.7}
-.sidebar-submenu[open] .sidebar-submenu-chevron{transform:rotate(180deg)}
-.sidebar-submenu-items{display:flex;flex-direction:column;gap:3px;margin:4px 0 8px 18px;padding-left:11px;border-left:1px solid rgba(148,163,184,.25)}
-.sidebar-submenu-item{font-size:12px;padding-left:12px;min-height:35px}
-.sidebar-submenu-item .sidebar-link-dot{width:5px;height:5px;flex-shrink:0}
+
+    .sidebar-submenu {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .sidebar-submenu-toggle {
+        display: flex;
+        align-items: center;
+
+        width: 100%;
+
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+    }
+
+    .sidebar-submenu-toggle::-webkit-details-marker {
+        display: none;
+    }
+
+    .sidebar-submenu-toggle::marker {
+        content: '';
+    }
+
+    .sidebar-submenu-label {
+        flex: 1;
+    }
+
+    .sidebar-submenu-chevron {
+        margin-left: auto;
+
+        font-size: 20px;
+        line-height: 1;
+
+        opacity: 0.7;
+
+        transition:
+            transform 0.2s ease;
+    }
+
+    .sidebar-submenu[open]
+    .sidebar-submenu-chevron {
+        transform: rotate(180deg);
+    }
+
+    .sidebar-submenu-items {
+        display: flex;
+        flex-direction: column;
+
+        gap: 3px;
+
+        margin: 4px 0 8px 18px;
+        padding-left: 11px;
+
+        border-left:
+            1px solid
+            rgba(148, 163, 184, 0.25);
+    }
+
+    .sidebar-submenu-item {
+        min-height: 35px;
+        padding-left: 12px;
+
+        font-size: 12px;
+    }
+
+    .sidebar-submenu-item
+    .sidebar-link-dot {
+        width: 5px;
+        height: 5px;
+
+        flex-shrink: 0;
+    }
+
 </style>

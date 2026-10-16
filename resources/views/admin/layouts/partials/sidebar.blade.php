@@ -8,6 +8,7 @@
     <nav class="sidebar-nav">
         <div class="sidebar-section">
             <div class="sidebar-section-title">Tổng quan</div>
+
             <a href="{{ route('admin.dashboard') }}"
                class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                 <span class="sidebar-link-dot"></span>
@@ -45,7 +46,6 @@
         <div class="sidebar-section">
             <div class="sidebar-section-title">Nhân sự & bệnh nhân</div>
 
-            {{-- Menu Bệnh nhân có mục con Lịch sử sức khỏe --}}
             <details class="sidebar-submenu"
                 {{ request()->routeIs('admin.patients.*', 'admin.personal-health-records.*') ? 'open' : '' }}>
 
@@ -71,15 +71,14 @@
                 </div>
             </details>
 
-            {{-- Ngày 4: Bác sĩ --}}
             <a href="{{ route('admin.doctors.index') }}"
                class="sidebar-link {{ request()->routeIs('admin.doctors.*') ? 'active' : '' }}">
                 <span class="sidebar-link-dot"></span>
                 Bác sĩ
             </a>
 
-            {{-- Ngày 5 --}}
-            <a href="#" class="sidebar-link">
+            <a href="{{ route('admin.employees.index') }}"
+               class="sidebar-link {{ request()->routeIs('admin.employees.*') ? 'active' : '' }}">
                 <span class="sidebar-link-dot"></span>
                 Nhân viên
             </a>
@@ -89,13 +88,8 @@
             <div class="sidebar-section-title">Danh mục</div>
 
             @foreach([
-                'Chuyên khoa',
-                'Phòng khám',
-                'Nhóm dịch vụ',
-                'Dịch vụ y tế',
-                'Nhóm bệnh',
-                'Danh mục bệnh',
-                'Thuốc',
+                'Chuyên khoa', 'Phòng khám', 'Nhóm dịch vụ',
+                'Dịch vụ y tế', 'Nhóm bệnh', 'Danh mục bệnh', 'Thuốc'
             ] as $item)
                 <a href="#" class="sidebar-link">
                     <span class="sidebar-link-dot"></span>
@@ -119,11 +113,8 @@
             <div class="sidebar-section-title">Vận hành khám</div>
 
             @foreach([
-                'Lượt khám',
-                'Hàng đợi phòng khám',
-                'Nội dung khám',
-                'Chẩn đoán',
-                'Kết luận',
+                'Lượt khám', 'Hàng đợi phòng khám',
+                'Nội dung khám', 'Chẩn đoán', 'Kết luận'
             ] as $item)
                 <a href="#" class="sidebar-link">
                     <span class="sidebar-link-dot"></span>
@@ -134,6 +125,7 @@
 
         <div class="sidebar-section">
             <div class="sidebar-section-title">Dịch vụ</div>
+
             @foreach(['Chỉ định dịch vụ', 'Kết quả dịch vụ'] as $item)
                 <a href="#" class="sidebar-link">
                     <span class="sidebar-link-dot"></span>
@@ -144,6 +136,7 @@
 
         <div class="sidebar-section">
             <div class="sidebar-section-title">Đơn thuốc</div>
+
             <a href="#" class="sidebar-link">
                 <span class="sidebar-link-dot"></span>
                 Đơn thuốc
@@ -152,6 +145,7 @@
 
         <div class="sidebar-section">
             <div class="sidebar-section-title">Thanh toán</div>
+
             @foreach(['Khoản phải thanh toán', 'Giao dịch thanh toán'] as $item)
                 <a href="#" class="sidebar-link">
                     <span class="sidebar-link-dot"></span>
@@ -162,12 +156,11 @@
 
         <div class="sidebar-section">
             <div class="sidebar-section-title">Cấu hình trạng thái</div>
+
             @foreach([
-                'Trạng thái lịch hẹn',
-                'Trạng thái lượt khám',
-                'Trạng thái hàng đợi',
-                'Trạng thái dịch vụ',
-                'Trạng thái thanh toán',
+                'Trạng thái lịch hẹn', 'Trạng thái lượt khám',
+                'Trạng thái hàng đợi', 'Trạng thái dịch vụ',
+                'Trạng thái thanh toán'
             ] as $item)
                 <a href="#" class="sidebar-link">
                     <span class="sidebar-link-dot"></span>

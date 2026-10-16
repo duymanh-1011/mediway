@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\AdministratorController;
 use App\Http\Controllers\Admin\PatientController;
 use App\Http\Controllers\Admin\PersonalHealthRecordController;
 use App\Http\Controllers\Admin\DoctorController;
+use App\Http\Controllers\Admin\EmployeeController;
 
 use App\Http\Middleware\AdminMiddleware;
 
@@ -31,11 +32,16 @@ Route::prefix('admin')
         Route::middleware(AdminMiddleware::class)
             ->group(function () {
 
-                Route::get('/dashboard', [DashboardController::class, 'index'])
-                    ->name('dashboard');
+  
+                Route::get('/dashboard', [
+                    DashboardController::class,
+                    'index'
+                ])->name('dashboard');
 
-                Route::post('/logout', [AuthController::class, 'logout'])
-                    ->name('logout');
+                Route::post('/logout', [
+                    AuthController::class,
+                    'logout'
+                ])->name('logout');
 
                 Route::resource('roles', RoleController::class);
 
@@ -51,7 +57,6 @@ Route::prefix('admin')
 
                 Route::resource('users', UserController::class)
                     ->except(['destroy']);
-
 
                 Route::patch(
                     'administrators/{administrator}/status',
@@ -73,11 +78,9 @@ Route::prefix('admin')
                     )
                     ->name('patients.document');
 
-          
                 Route::resource('patients', PatientController::class)
                     ->except(['destroy']);
 
-   
                 Route::resource(
                     'personal-health-records',
                     PersonalHealthRecordController::class
@@ -94,6 +97,19 @@ Route::prefix('admin')
                     ->name('doctors.document');
 
                 Route::resource('doctors', DoctorController::class)
+                    ->except(['destroy']);
+
+                Route::get(
+                    'employees/{employee}/documents/{type}',
+                    [EmployeeController::class, 'document']
+                )
+                    ->where(
+                        'type',
+                        'avatar|citizen-id-front|citizen-id-back|profile-pdf'
+                    )
+                    ->name('employees.document');
+
+                Route::resource('employees', EmployeeController::class)
                     ->except(['destroy']);
             });
     });

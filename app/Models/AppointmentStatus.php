@@ -18,4 +18,12 @@ class AppointmentStatus extends Model
         'allows_transition' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    public function appointments()
+    {
+        return $this->hasMany(
+            Appointment::class,
+            'appointment_status_id'
+        );
+    }
 }

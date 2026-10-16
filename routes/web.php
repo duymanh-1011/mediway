@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\MedicineController;
 use App\Http\Controllers\Admin\AppointmentStatusController;
 use App\Http\Controllers\Admin\DoctorScheduleController;
 use App\Http\Controllers\Admin\AppointmentTimeSlotController;
+use App\Http\Controllers\Admin\AppointmentController;
 
 use App\Http\Middleware\AdminMiddleware;
 
@@ -46,7 +47,9 @@ Route::prefix('admin')
 
 
             /*
+            |--------------------------------------------------------------------------
             | Dashboard
+            |--------------------------------------------------------------------------
             */
 
             Route::get(
@@ -56,7 +59,9 @@ Route::prefix('admin')
 
 
             /*
-            | Danh mục
+            |--------------------------------------------------------------------------
+            | Danh mục khám
+            |--------------------------------------------------------------------------
             */
 
             Route::resource(
@@ -83,6 +88,12 @@ Route::prefix('admin')
             );
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Bệnh và thuốc
+            |--------------------------------------------------------------------------
+            */
+
             Route::resource(
                 'disease-groups',
                 DiseaseGroupController::class
@@ -102,7 +113,9 @@ Route::prefix('admin')
 
 
             /*
+            |--------------------------------------------------------------------------
             | Trạng thái lịch hẹn
+            |--------------------------------------------------------------------------
             */
 
             Route::resource(
@@ -117,7 +130,9 @@ Route::prefix('admin')
 
 
             /*
+            |--------------------------------------------------------------------------
             | Lịch làm việc bác sĩ
+            |--------------------------------------------------------------------------
             */
 
             Route::get(
@@ -135,7 +150,9 @@ Route::prefix('admin')
 
 
             /*
+            |--------------------------------------------------------------------------
             | Khung giờ khám
+            |--------------------------------------------------------------------------
             */
 
             Route::get(
@@ -179,7 +196,36 @@ Route::prefix('admin')
 
 
             /*
+            |--------------------------------------------------------------------------
+            | Lịch hẹn
+            |--------------------------------------------------------------------------
+            */
+
+            Route::post(
+                '/appointments/{appointment}/cancel',
+                [AppointmentController::class, 'cancel']
+            )->name(
+                'appointments.cancel'
+            );
+
+
+            Route::resource(
+                'appointments',
+                AppointmentController::class
+            )->only([
+                'index',
+                'create',
+                'store',
+                'show',
+                'edit',
+                'update',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
             | Logout
+            |--------------------------------------------------------------------------
             */
 
             Route::post(

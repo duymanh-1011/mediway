@@ -28,4 +28,52 @@ class Appointment extends Model
         'booked_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
+
+    public function patient()
+    {
+        return $this->belongsTo(
+            Patient::class,
+            'patient_id'
+        );
+    }
+
+    public function doctor()
+    {
+        return $this->belongsTo(
+            Doctor::class,
+            'doctor_id'
+        );
+    }
+
+    public function specialty()
+    {
+        return $this->belongsTo(
+            Specialty::class,
+            'specialty_id'
+        );
+    }
+
+    public function examinationRoom()
+    {
+        return $this->belongsTo(
+            ExaminationRoom::class,
+            'examination_room_id'
+        );
+    }
+
+    public function appointmentTimeSlot()
+    {
+        return $this->belongsTo(
+            AppointmentTimeSlot::class,
+            'appointment_time_slot_id'
+        );
+    }
+
+    public function appointmentStatus()
+    {
+        return $this->belongsTo(
+            AppointmentStatus::class,
+            'appointment_status_id'
+        );
+    }
 }

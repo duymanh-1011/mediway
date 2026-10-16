@@ -262,8 +262,13 @@
             </a>
 
             <a
-                href="#"
-                class="sidebar-link"
+                href="{{ route('admin.appointments.index') }}"
+                class="
+                    sidebar-link
+                    {{ request()->routeIs('admin.appointments.*')
+                        ? 'active'
+                        : '' }}
+                "
             >
                 <span class="sidebar-link-dot"></span>
 

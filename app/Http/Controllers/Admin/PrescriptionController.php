@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdatePrescriptionRequest;
 use App\Models\Prescription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class PrescriptionController extends Controller
 {
@@ -235,6 +235,11 @@ class PrescriptionController extends Controller
             ->withCount('items')
             ->findOrFail($id);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Lượt khám
+        |--------------------------------------------------------------------------
+        */
         $visit = DB::table('medical_visits')
             ->where(
                 'id',
@@ -246,6 +251,11 @@ class PrescriptionController extends Controller
             ])
             ->first();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Bác sĩ
+        |--------------------------------------------------------------------------
+        */
         $doctor = DB::table('doctors')
             ->where(
                 'id',
@@ -284,21 +294,16 @@ class PrescriptionController extends Controller
     /**
      * Cập nhật đơn thuốc có kiểm soát.
      */
-    public function update(Request $request, int $id)
-    {
+    public function update(
+        UpdatePrescriptionRequest $request,
+        int $id
+    ) {
         $prescription = Prescription::query()
             ->findOrFail($id);
 
-        $statuses = Prescription::query()
-            ->select('status')
-            ->whereNotNull('status')
-            ->distinct()
-            ->pluck('status')
-            ->all();
-
         /*
         |--------------------------------------------------------------------------
-        | Validation
+        | Validation đã được xử lý trong FormRequest
         |--------------------------------------------------------------------------
         |
         | Không nhận:
@@ -306,70 +311,23 @@ class PrescriptionController extends Controller
         | - doctor_id
         | - prescription_code
         |
-        | để không thay đổi quan hệ nghiệp vụ gốc.
+        | Vì vậy không thể thay đổi quan hệ nghiệp vụ gốc
+        | thông qua request update.
         |
         */
-        $validated = $request->validate([
-            'prescribed_at' => [
-                'required',
-                'date',
-            ],
-
-            'general_instructions' => [
-                'nullable',
-                'string',
-            ],
-
-            'doctor_notes' => [
-                'nullable',
-                'string',
-            ],
-
-            'status' => [
-                'required',
-                'string',
-                'max:20',
-                Rule::in($statuses),
-            ],
-
-            'prescription_pdf_path' => [
-                'nullable',
-                'string',
-                'max:500',
-            ],
-
-            'confirm_update' => [
-                'accepted',
-            ],
-        ], [
-            'prescribed_at.required' =>
-            'Thời gian kê đơn là bắt buộc.',
-
-            'prescribed_at.date' =>
-            'Thời gian kê đơn không hợp lệ.',
-
-            'status.required' =>
-            'Trạng thái đơn thuốc là bắt buộc.',
-
-            'status.in' =>
-            'Trạng thái đơn thuốc không hợp lệ.',
-
-            'prescription_pdf_path.max' =>
-            'Đường dẫn PDF không được vượt quá 500 ký tự.',
-
-            'confirm_update.accepted' =>
-            'Bạn phải xác nhận trước khi cập nhật đơn thuốc.',
-        ]);
+        $validated = $request->validated();
 
         /*
         |--------------------------------------------------------------------------
-        | Dữ liệu cũ
+        | Dữ liệu cũ để ghi Audit Log
         |--------------------------------------------------------------------------
         */
         $oldValues = [
             'prescribed_at' =>
             $prescription->prescribed_at
-                ? $prescription->prescribed_at->format('Y-m-d H:i:s')
+                ? $prescription->prescribed_at->format(
+                    'Y-m-d H:i:s'
+                )
                 : null,
 
             'general_instructions' =>
@@ -385,6 +343,11 @@ class PrescriptionController extends Controller
             $prescription->prescription_pdf_path,
         ];
 
+        /*
+        |--------------------------------------------------------------------------
+        | Dữ liệu cập nhật
+        |--------------------------------------------------------------------------
+        */
         $updateData = [
             'prescribed_at' =>
             $validated['prescribed_at'],
@@ -404,7 +367,7 @@ class PrescriptionController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Role snapshot
+        | Role snapshot của người đang thao tác
         |--------------------------------------------------------------------------
         */
         $roleNameSnapshot = null;
@@ -436,14 +399,26 @@ class PrescriptionController extends Controller
             $oldValues,
             $roleNameSnapshot
         ) {
+            /*
+            |--------------------------------------------------------------------------
+            | Cập nhật đơn thuốc
+            |--------------------------------------------------------------------------
+            */
             $prescription->update($updateData);
 
             $prescription->refresh();
 
+            /*
+            |--------------------------------------------------------------------------
+            | Dữ liệu sau cập nhật
+            |--------------------------------------------------------------------------
+            */
             $newValues = [
                 'prescribed_at' =>
                 $prescription->prescribed_at
-                    ? $prescription->prescribed_at->format('Y-m-d H:i:s')
+                    ? $prescription->prescribed_at->format(
+                        'Y-m-d H:i:s'
+                    )
                     : null,
 
                 'general_instructions' =>
@@ -461,7 +436,7 @@ class PrescriptionController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | Audit log
+            | Ghi Audit Log
             |--------------------------------------------------------------------------
             */
             DB::table('audit_logs')->insert([

@@ -3,24 +3,34 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdatePaymentStatusRequest;
 use App\Models\PaymentStatus;
 use Illuminate\Http\Request;
 
 class PaymentStatusController extends Controller
 {
+    /**
+     * Danh sách trạng thái thanh toán.
+     */
     public function index(Request $request)
     {
         $query = PaymentStatus::query();
 
         /*
-         * Tìm kiếm theo tên hoặc mô tả.
-         */
+        |--------------------------------------------------------------------------
+        | Tìm kiếm theo tên hoặc mô tả
+        |--------------------------------------------------------------------------
+        */
         if ($request->filled('q')) {
             $keyword = trim($request->q);
 
             $query->where(function ($subQuery) use ($keyword) {
                 $subQuery
-                    ->where('name', 'like', '%' . $keyword . '%')
+                    ->where(
+                        'name',
+                        'like',
+                        '%' . $keyword . '%'
+                    )
                     ->orWhere(
                         'description',
                         'like',
@@ -30,8 +40,10 @@ class PaymentStatusController extends Controller
         }
 
         /*
-         * Lọc theo trạng thái sử dụng.
-         */
+        |--------------------------------------------------------------------------
+        | Lọc theo trạng thái sử dụng
+        |--------------------------------------------------------------------------
+        */
         if ($request->filled('is_active')) {
             $query->where(
                 'is_active',
@@ -40,9 +52,14 @@ class PaymentStatusController extends Controller
         }
 
         /*
-         * process_order chỉ dùng để sắp xếp.
-         * Không cho Admin chỉnh sửa ở màn hình Sửa.
-         */
+        |--------------------------------------------------------------------------
+        | process_order chỉ dùng để sắp xếp
+        |--------------------------------------------------------------------------
+        |
+        | Không cho Admin chỉnh sửa process_order
+        | tại màn hình Sửa.
+        |
+        */
         $statuses = $query
             ->orderBy('process_order')
             ->orderBy('name')
@@ -55,7 +72,9 @@ class PaymentStatusController extends Controller
         );
     }
 
-
+    /**
+     * Chi tiết trạng thái thanh toán.
+     */
     public function show(int $id)
     {
         $status = PaymentStatus::findOrFail($id);
@@ -66,7 +85,9 @@ class PaymentStatusController extends Controller
         );
     }
 
-
+    /**
+     * Form sửa trạng thái thanh toán.
+     */
     public function edit(int $id)
     {
         $status = PaymentStatus::findOrFail($id);
@@ -77,53 +98,40 @@ class PaymentStatusController extends Controller
         );
     }
 
-
-    public function update(Request $request, int $id)
-    {
+    /**
+     * Cập nhật trạng thái thanh toán.
+     */
+    public function update(
+        UpdatePaymentStatusRequest $request,
+        int $id
+    ) {
         $status = PaymentStatus::findOrFail($id);
 
         /*
-         * Không nhận:
-         * - name
-         * - process_order
-         *
-         * Vì vậy không thể sửa hai trường này
-         * thông qua request update.
-         */
-        $validated = $request->validate([
-            'description' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
+        |--------------------------------------------------------------------------
+        | Dữ liệu đã được validation trong FormRequest
+        |--------------------------------------------------------------------------
+        |
+        | Không nhận:
+        | - name
+        | - process_order
+        |
+        | Vì vậy không thể sửa hai trường này thông qua
+        | request update.
+        |
+        */
+        $validated = $request->validated();
 
-            'allows_service_execution' => [
-                'required',
-                'boolean',
-            ],
+        $status->update([
+            'description' =>
+            $validated['description'] ?? null,
 
-            'is_active' => [
-                'required',
-                'boolean',
-            ],
-        ], [
-            'description.max' =>
-            'Mô tả không được vượt quá 255 ký tự.',
+            'allows_service_execution' =>
+            $validated['allows_service_execution'],
 
-            'allows_service_execution.required' =>
-            'Vui lòng chọn quyền thực hiện dịch vụ.',
-
-            'allows_service_execution.boolean' =>
-            'Quyền thực hiện dịch vụ không hợp lệ.',
-
-            'is_active.required' =>
-            'Vui lòng chọn trạng thái sử dụng.',
-
-            'is_active.boolean' =>
-            'Trạng thái sử dụng không hợp lệ.',
+            'is_active' =>
+            $validated['is_active'],
         ]);
-
-        $status->update($validated);
 
         return redirect()
             ->route(

@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CancelPayableRequest;
+use App\Http\Requests\Admin\UpdatePayableStatusRequest;
 use App\Models\Payable;
 use App\Models\PaymentStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class PayableController extends Controller
 {
@@ -110,12 +111,22 @@ class PayableController extends Controller
             );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Danh sách loại khoản thu
+        |--------------------------------------------------------------------------
+        */
         $paymentTypes = Payable::query()
             ->whereNotNull('payment_type')
             ->distinct()
             ->orderBy('payment_type')
             ->pluck('payment_type');
 
+        /*
+        |--------------------------------------------------------------------------
+        | Danh sách trạng thái thanh toán
+        |--------------------------------------------------------------------------
+        */
         $paymentStatuses = PaymentStatus::query()
             ->orderBy('process_order')
             ->orderBy('id')
@@ -126,6 +137,11 @@ class PayableController extends Controller
                 'is_active',
             ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Phân trang
+        |--------------------------------------------------------------------------
+        */
         $payables = $query
             ->orderByDesc('payables.generated_at')
             ->orderByDesc('payables.id')
@@ -150,6 +166,7 @@ class PayableController extends Controller
         $payable = Payable::query()
             ->with([
                 'paymentStatus',
+
                 'transactions' => function ($query) {
                     $query
                         ->orderByDesc('started_at')
@@ -164,7 +181,10 @@ class PayableController extends Controller
         |--------------------------------------------------------------------------
         */
         $visit = DB::table('medical_visits')
-            ->where('id', $payable->medical_visit_id)
+            ->where(
+                'id',
+                $payable->medical_visit_id
+            )
             ->select([
                 'id',
                 'visit_code',
@@ -209,8 +229,16 @@ class PayableController extends Controller
                 ->first();
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Trạng thái có thể sử dụng
+        |--------------------------------------------------------------------------
+        */
         $paymentStatuses = PaymentStatus::query()
-            ->where('is_active', true)
+            ->where(
+                'is_active',
+                true
+            )
             ->orderBy('process_order')
             ->orderBy('id')
             ->get([
@@ -233,8 +261,10 @@ class PayableController extends Controller
     /**
      * Thay đổi trạng thái khoản phải thanh toán.
      */
-    public function updateStatus(Request $request, int $id)
-    {
+    public function updateStatus(
+        UpdatePayableStatusRequest $request,
+        int $id
+    ) {
         $payable = Payable::query()
             ->with([
                 'paymentStatus',
@@ -242,36 +272,25 @@ class PayableController extends Controller
             ])
             ->findOrFail($id);
 
-        $validated = $request->validate([
-            'payment_status_id' => [
-                'required',
-                'integer',
-                Rule::exists(
-                    'payment_statuses',
-                    'id'
-                )->where(function ($query) {
-                    $query->where('is_active', true);
-                }),
-            ],
+        /*
+        |--------------------------------------------------------------------------
+        | Validation đã được xử lý trong FormRequest
+        |--------------------------------------------------------------------------
+        */
+        $validated = $request->validated();
 
-            'confirm_update' => [
-                'accepted',
-            ],
-        ], [
-            'payment_status_id.required' =>
-            'Vui lòng chọn trạng thái thanh toán.',
-
-            'payment_status_id.exists' =>
-            'Trạng thái thanh toán không hợp lệ.',
-
-            'confirm_update.accepted' =>
-            'Bạn phải xác nhận trước khi thay đổi trạng thái.',
-        ]);
-
+        /*
+        |--------------------------------------------------------------------------
+        | Trạng thái mới
+        |--------------------------------------------------------------------------
+        */
         $newStatus = PaymentStatus::query()
-            ->findOrFail($validated['payment_status_id']);
+            ->findOrFail(
+                $validated['payment_status_id']
+            );
 
-        $oldStatusName = $payable->paymentStatus?->name;
+        $oldStatusName =
+            $payable->paymentStatus?->name;
 
         /*
         |--------------------------------------------------------------------------
@@ -297,7 +316,8 @@ class PayableController extends Controller
         */
         if (
             $oldStatusName === 'PAID'
-            && $newStatus->name !== 'PAID'
+            &&
+            $newStatus->name !== 'PAID'
         ) {
             return back()->with(
                 'error',
@@ -313,14 +333,19 @@ class PayableController extends Controller
         | Khi chuyển PAID phải thực sự có giao dịch SUCCESS.
         |
         */
-        $successfulTransaction = $payable->transactions
-            ->where('transaction_result', 'SUCCESS')
+        $successfulTransaction = $payable
+            ->transactions
+            ->where(
+                'transaction_result',
+                'SUCCESS'
+            )
             ->sortByDesc('confirmed_at')
             ->first();
 
         if (
             $newStatus->name === 'PAID'
-            && !$successfulTransaction
+            &&
+            !$successfulTransaction
         ) {
             return back()->with(
                 'error',
@@ -328,6 +353,11 @@ class PayableController extends Controller
             );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Không cập nhật nếu trạng thái không thay đổi
+        |--------------------------------------------------------------------------
+        */
         if ($oldStatusName === $newStatus->name) {
             return back()->with(
                 'success',
@@ -337,6 +367,11 @@ class PayableController extends Controller
             );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Dữ liệu trước cập nhật
+        |--------------------------------------------------------------------------
+        */
         $oldValues = [
             'payment_status_id' =>
             $payable->payment_status_id,
@@ -346,10 +381,17 @@ class PayableController extends Controller
 
             'paid_at' =>
             $payable->paid_at
-                ? $payable->paid_at->format('Y-m-d H:i:s')
+                ? $payable->paid_at->format(
+                    'Y-m-d H:i:s'
+                )
                 : null,
         ];
 
+        /*
+        |--------------------------------------------------------------------------
+        | Transaction cập nhật trạng thái + Audit Log
+        |--------------------------------------------------------------------------
+        */
         DB::transaction(function () use (
             $request,
             $payable,
@@ -359,13 +401,25 @@ class PayableController extends Controller
         ) {
             $paidAt = $payable->paid_at;
 
+            /*
+            |--------------------------------------------------------------------------
+            | Nếu chuyển PAID thì lấy thời gian từ giao dịch SUCCESS
+            |--------------------------------------------------------------------------
+            */
             if ($newStatus->name === 'PAID') {
                 $paidAt =
                     $successfulTransaction->paid_at
-                    ?? $successfulTransaction->confirmed_at
-                    ?? now();
+                    ??
+                    $successfulTransaction->confirmed_at
+                    ??
+                    now();
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | Cập nhật payable
+            |--------------------------------------------------------------------------
+            */
             $payable->update([
                 'payment_status_id' =>
                 $newStatus->id,
@@ -374,6 +428,11 @@ class PayableController extends Controller
                 $paidAt,
             ]);
 
+            /*
+            |--------------------------------------------------------------------------
+            | Dữ liệu sau cập nhật
+            |--------------------------------------------------------------------------
+            */
             $newValues = [
                 'payment_status_id' =>
                 $newStatus->id,
@@ -383,10 +442,17 @@ class PayableController extends Controller
 
                 'paid_at' =>
                 $paidAt
-                    ? $paidAt->format('Y-m-d H:i:s')
+                    ? $paidAt->format(
+                        'Y-m-d H:i:s'
+                    )
                     : null,
             ];
 
+            /*
+            |--------------------------------------------------------------------------
+            | Ghi Audit Log
+            |--------------------------------------------------------------------------
+            */
             $this->writeAuditLog(
                 $request,
                 $payable,
@@ -396,7 +462,10 @@ class PayableController extends Controller
                 'Thay đổi trạng thái khoản phải thanh toán '
                     . $payable->payable_code
                     . ' từ '
-                    . ($oldValues['payment_status'] ?? '—')
+                    . (
+                        $oldValues['payment_status']
+                        ?? '—'
+                    )
                     . ' sang '
                     . $newStatus->name
                     . '.'
@@ -419,32 +488,43 @@ class PayableController extends Controller
      *
      * Không xóa bản ghi.
      */
-    public function cancel(Request $request, int $id)
-    {
+    public function cancel(
+        CancelPayableRequest $request,
+        int $id
+    ) {
         $payable = Payable::query()
             ->with('paymentStatus')
             ->findOrFail($id);
 
-        $request->validate([
-            'confirm_cancel' => [
-                'accepted',
-            ],
+        /*
+        |--------------------------------------------------------------------------
+        | Validation đã được xử lý trong FormRequest
+        |--------------------------------------------------------------------------
+        */
+        $validated = $request->validated();
 
-            'cancel_reason' => [
-                'required',
-                'string',
-                'max:1000',
-            ],
-        ], [
-            'confirm_cancel.accepted' =>
-            'Bạn phải xác nhận trước khi hủy khoản phải thanh toán.',
+        /*
+        |--------------------------------------------------------------------------
+        | Lý do hủy
+        |--------------------------------------------------------------------------
+        */
+        $cancelReason = trim(
+            $validated['cancel_reason']
+        );
 
-            'cancel_reason.required' =>
-            'Vui lòng nhập lý do hủy.',
-        ]);
+        /*
+        |--------------------------------------------------------------------------
+        | Trạng thái hiện tại
+        |--------------------------------------------------------------------------
+        */
+        $currentStatus =
+            $payable->paymentStatus?->name;
 
-        $currentStatus = $payable->paymentStatus?->name;
-
+        /*
+        |--------------------------------------------------------------------------
+        | Không hủy khoản đã thanh toán
+        |--------------------------------------------------------------------------
+        */
         if ($currentStatus === 'PAID') {
             return back()->with(
                 'error',
@@ -452,6 +532,11 @@ class PayableController extends Controller
             );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Khoản đã hủy trước đó
+        |--------------------------------------------------------------------------
+        */
         if ($currentStatus === 'CANCELLED') {
             return back()->with(
                 'success',
@@ -459,8 +544,16 @@ class PayableController extends Controller
             );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Trạng thái CANCELLED
+        |--------------------------------------------------------------------------
+        */
         $cancelStatus = PaymentStatus::query()
-            ->where('name', 'CANCELLED')
+            ->where(
+                'name',
+                'CANCELLED'
+            )
             ->first();
 
         if (!$cancelStatus) {
@@ -470,6 +563,11 @@ class PayableController extends Controller
             );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Dữ liệu trước khi hủy
+        |--------------------------------------------------------------------------
+        */
         $oldValues = [
             'payment_status_id' =>
             $payable->payment_status_id,
@@ -482,20 +580,29 @@ class PayableController extends Controller
 
             'paid_at' =>
             $payable->paid_at
-                ? $payable->paid_at->format('Y-m-d H:i:s')
+                ? $payable->paid_at->format(
+                    'Y-m-d H:i:s'
+                )
                 : null,
         ];
 
+        /*
+        |--------------------------------------------------------------------------
+        | Transaction hủy nghiệp vụ + Audit Log
+        |--------------------------------------------------------------------------
+        */
         DB::transaction(function () use (
             $request,
             $payable,
             $cancelStatus,
-            $oldValues
+            $oldValues,
+            $cancelReason
         ) {
-            $cancelReason = trim(
-                $request->input('cancel_reason')
-            );
-
+            /*
+            |--------------------------------------------------------------------------
+            | Giữ ghi chú cũ và thêm lý do hủy
+            |--------------------------------------------------------------------------
+            */
             $newNotes = $payable->notes
                 ? $payable->notes
                 . PHP_EOL
@@ -504,6 +611,11 @@ class PayableController extends Controller
                 : 'Lý do hủy: '
                 . $cancelReason;
 
+            /*
+            |--------------------------------------------------------------------------
+            | Không xóa payable, chỉ chuyển CANCELLED
+            |--------------------------------------------------------------------------
+            */
             $payable->update([
                 'payment_status_id' =>
                 $cancelStatus->id,
@@ -515,6 +627,11 @@ class PayableController extends Controller
                 $newNotes,
             ]);
 
+            /*
+            |--------------------------------------------------------------------------
+            | Dữ liệu sau khi hủy
+            |--------------------------------------------------------------------------
+            */
             $newValues = [
                 'payment_status_id' =>
                 $cancelStatus->id,
@@ -529,6 +646,11 @@ class PayableController extends Controller
                 null,
             ];
 
+            /*
+            |--------------------------------------------------------------------------
+            | Ghi Audit Log
+            |--------------------------------------------------------------------------
+            */
             $this->writeAuditLog(
                 $request,
                 $payable,
@@ -554,7 +676,7 @@ class PayableController extends Controller
     }
 
     /**
-     * Ghi audit log cho thao tác tài chính.
+     * Ghi Audit Log cho thao tác tài chính.
      */
     private function writeAuditLog(
         Request $request,
@@ -564,6 +686,11 @@ class PayableController extends Controller
         array $newValues,
         string $description
     ): void {
+        /*
+        |--------------------------------------------------------------------------
+        | Role snapshot
+        |--------------------------------------------------------------------------
+        */
         $roleNameSnapshot = null;
 
         if (Auth::check()) {
@@ -581,6 +708,11 @@ class PayableController extends Controller
                 ->value('roles.name');
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Ghi Audit Log
+        |--------------------------------------------------------------------------
+        */
         DB::table('audit_logs')->insert([
             'user_id' =>
             Auth::id(),

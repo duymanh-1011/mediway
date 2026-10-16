@@ -602,7 +602,15 @@
                 @method('PATCH')
 
 
-                <input id="status-modal" type="checkbox" class="payable-modal-toggle">
+                <input
+    id="status-modal"
+    type="checkbox"
+    class="payable-modal-toggle"
+    @checked(
+        $errors->has('payment_status_id')
+        || $errors->has('confirm_update')
+    )
+>
 
 
                 <div class="payable-modal">
@@ -630,25 +638,42 @@
                                 Trạng thái mới
                             </label>
 
-                            <select id="payment_status_id" name="payment_status_id" class="payable-control">
+                            <select
+    id="payment_status_id"
+    name="payment_status_id"
+    class="payable-control
+        @error('payment_status_id')
+            payable-control-error
+        @enderror"
+>
 
-                                @foreach ($paymentStatuses as $status)
+    @foreach ($paymentStatuses as $status)
 
-                                    @if ($status->name !== 'CANCELLED')
+        @if ($status->name !== 'CANCELLED')
 
-                                        <option value="{{ $status->id }}" @selected(
-                                            $payable->payment_status_id
-                                            ===
-                                            $status->id
-                                        )>
-                                            {{ $status->name }}
-                                        </option>
+            <option
+                value="{{ $status->id }}"
+                @selected(
+                    (string) old(
+                        'payment_status_id',
+                        $payable->payment_status_id
+                    ) === (string) $status->id
+                )
+            >
+                {{ $status->name }}
+            </option>
 
-                                    @endif
+        @endif
 
-                                @endforeach
+    @endforeach
 
-                            </select>
+</select>
+
+@error('payment_status_id')
+    <div class="payable-error">
+        {{ $message }}
+    </div>
+@enderror
 
                         </div>
 
@@ -683,7 +708,15 @@
                 @method('PATCH')
 
 
-                <input id="cancel-modal" type="checkbox" class="payable-modal-toggle">
+                <input
+    id="cancel-modal"
+    type="checkbox"
+    class="payable-modal-toggle"
+    @checked(
+        $errors->has('cancel_reason')
+        || $errors->has('confirm_cancel')
+    )
+>
 
 
                 <div class="payable-modal">
@@ -710,11 +743,25 @@
                                 Lý do hủy
                             </label>
 
-                            <textarea id="cancel_reason" name="cancel_reason" rows="4" class="
-                                        payable-control
-                                        payable-textarea
-                                    " placeholder="Nhập lý do hủy...">{{ old('cancel_reason') }}</textarea>
+                            <textarea
+    id="cancel_reason"
+    name="cancel_reason"
+    rows="4"
+    class="
+        payable-control
+        payable-textarea
+        @error('cancel_reason')
+            payable-control-error
+        @enderror
+    "
+    placeholder="Nhập lý do hủy..."
+>{{ old('cancel_reason') }}</textarea>
 
+@error('cancel_reason')
+    <div class="payable-error">
+        {{ $message }}
+    </div>
+@enderror
                         </div>
 
 
@@ -1093,6 +1140,16 @@
             font-family: inherit;
             font-size: 11px;
         }
+        .payable-control-error {
+    border-color: #dc2626;
+}
+
+.payable-error {
+    margin-top: 6px;
+    color: #b91c1c;
+    font-size: 10px;
+    line-height: 1.5;
+}
 
         .payable-textarea {
             height: auto;

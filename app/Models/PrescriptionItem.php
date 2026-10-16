@@ -30,13 +30,26 @@ class PrescriptionItem extends Model
     ];
 
     /**
-     * Chi tiết thuốc thuộc đơn thuốc nào.
+     * Đơn thuốc chứa thuốc này.
      */
     public function prescription(): BelongsTo
     {
         return $this->belongsTo(
             Prescription::class,
             'prescription_id'
+        );
+    }
+
+    /**
+     * Thuốc.
+     *
+     * medicine_id -> medicines.id
+     */
+    public function medicine(): BelongsTo
+    {
+        return $this->belongsTo(
+            Medicine::class,
+            'medicine_id'
         );
     }
 }

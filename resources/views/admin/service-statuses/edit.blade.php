@@ -335,27 +335,72 @@
                     </div>
 
 
-                    <div class="status-current-item">
+                    
+<div class="status-form-group">
 
-                        <span>
-                            Trạng thái sử dụng
-                        </span>
+    <label for="is_active">
+        Trạng thái sử dụng
+        <span class="required">*</span>
+    </label>
 
-                        @if ($status->is_active)
+    <select
+        id="is_active"
+        name="is_active"
+        class="status-control
+            @error('is_active')
+                status-control-error
+            @enderror"
+    >
 
-                            <strong class="text-success">
-                                Đang sử dụng
-                            </strong>
+        <option value="">
+            -- Chọn trạng thái sử dụng --
+        </option>
 
-                        @else
+        <option
+            value="1"
+            @selected(
+                old(
+                    'is_active',
+                    $status->is_active
+                        ? '1'
+                        : '0'
+                ) === '1'
+            )
+        >
+            Đang sử dụng
+        </option>
 
-                            <strong class="text-danger">
-                                Ngừng sử dụng
-                            </strong>
+        <option
+            value="0"
+            @selected(
+                old(
+                    'is_active',
+                    $status->is_active
+                        ? '1'
+                        : '0'
+                ) === '0'
+            )
+        >
+            Ngừng sử dụng
+        </option>
 
-                        @endif
+    </select>
 
-                    </div>
+    <div class="status-help">
+        Chọn trạng thái này còn được sử dụng
+        trong hệ thống hay tạm ngừng sử dụng.
+    </div>
+
+    @error('is_active')
+        <div class="status-error">
+            {{ $message }}
+        </div>
+    @enderror
+
+</div>
+
+</div>
+
 
                 </div>
 

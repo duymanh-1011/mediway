@@ -28,7 +28,7 @@ class ServiceOrderItem extends Model
     ];
 
     /**
-     * Chi tiết thuộc phiếu chỉ định nào.
+     * Phiếu chỉ định chứa dịch vụ này.
      */
     public function serviceOrder(): BelongsTo
     {
@@ -39,19 +39,14 @@ class ServiceOrderItem extends Model
     }
 
     /**
-     * Dịch vụ y tế được chỉ định.
+     * Dịch vụ y tế.
      *
-     * Nếu model MedicalService của thành viên khác đã tồn tại
-     * thì tự động dùng model thật.
+     * medical_service_id -> medical_services.id
      */
     public function medicalService(): BelongsTo
     {
-        $relatedModel = class_exists('App\\Models\\MedicalService')
-            ? 'App\\Models\\MedicalService'
-            : ServiceOrderMedicalServiceReference::class;
-
         return $this->belongsTo(
-            $relatedModel,
+            MedicalService::class,
             'medical_service_id'
         );
     }
@@ -70,23 +65,20 @@ class ServiceOrderItem extends Model
     /**
      * Nhân viên thực hiện dịch vụ.
      *
-     * Có thể NULL.
-     * Nếu model Employee đã được merge thì tự động dùng model thật.
+     * performed_by_employee_id có thể NULL.
      */
     public function performer(): BelongsTo
     {
-        $relatedModel = class_exists('App\\Models\\Employee')
-            ? 'App\\Models\\Employee'
-            : ServiceOrderEmployeeReference::class;
-
         return $this->belongsTo(
-            $relatedModel,
+            Employee::class,
             'performed_by_employee_id'
         );
     }
 
     /**
-     * Một chi tiết chỉ định có tối đa một kết quả.
+     * Kết quả của dịch vụ.
+     *
+     * service_results.service_order_item_id là UNIQUE.
      */
     public function result(): HasOne
     {
@@ -95,33 +87,17 @@ class ServiceOrderItem extends Model
             'service_order_item_id'
         );
     }
-}
 
-
-/*
-|--------------------------------------------------------------------------
-| MODEL THAM CHIẾU TẠM
-|--------------------------------------------------------------------------
-|
-| Chỉ dùng để đọc dữ liệu trước khi các model của thành viên khác được merge.
-|
-*/
-
-class ServiceOrderMedicalServiceReference extends Model
-{
-    protected $table = 'medical_services';
-
-    public $timestamps = false;
-
-    protected $guarded = [];
-}
-
-
-class ServiceOrderEmployeeReference extends Model
-{
-    protected $table = 'employees';
-
-    public $timestamps = false;
-
-    protected $guarded = [];
+    /**
+     * Khoản phải thanh toán của dịch vụ.
+     *
+     * payables.service_order_item_id là UNIQUE và có thể NULL.
+     */
+    public function payable(): HasOne
+    {
+        return $this->hasOne(
+            Payable::class,
+            'service_order_item_id'
+        );
+    }
 }

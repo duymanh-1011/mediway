@@ -32,6 +32,35 @@ class Payable extends Model
         'paid_at' => 'datetime',
     ];
 
+    /**
+     * Lượt khám phát sinh khoản phải thanh toán.
+     *
+     * medical_visit_id -> medical_visits.id
+     */
+    public function medicalVisit(): BelongsTo
+    {
+        return $this->belongsTo(
+            MedicalVisit::class,
+            'medical_visit_id'
+        );
+    }
+
+    /**
+     * Dịch vụ phát sinh khoản phải thanh toán.
+     *
+     * Có thể NULL đối với EXAMINATION_FEE.
+     */
+    public function serviceOrderItem(): BelongsTo
+    {
+        return $this->belongsTo(
+            ServiceOrderItem::class,
+            'service_order_item_id'
+        );
+    }
+
+    /**
+     * Trạng thái thanh toán.
+     */
     public function paymentStatus(): BelongsTo
     {
         return $this->belongsTo(
@@ -40,6 +69,12 @@ class Payable extends Model
         );
     }
 
+    /**
+     * Các giao dịch thanh toán của khoản phải thu.
+     *
+     * Một payable có thể có nhiều transaction,
+     * bao gồm cả giao dịch FAILED rồi retry.
+     */
     public function transactions(): HasMany
     {
         return $this->hasMany(

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Prescription extends Model
@@ -25,10 +26,33 @@ class Prescription extends Model
     ];
 
     /**
-     * Các thuốc nằm trong đơn.
+     * Lượt khám của đơn thuốc.
      *
-     * Chỉ quan hệ với bảng thuộc phần của Tạo,
-     * không phụ thuộc model của thành viên khác.
+     * medical_visit_id -> medical_visits.id
+     */
+    public function medicalVisit(): BelongsTo
+    {
+        return $this->belongsTo(
+            MedicalVisit::class,
+            'medical_visit_id'
+        );
+    }
+
+    /**
+     * Bác sĩ kê đơn.
+     *
+     * doctor_id -> doctors.id
+     */
+    public function doctor(): BelongsTo
+    {
+        return $this->belongsTo(
+            Doctor::class,
+            'doctor_id'
+        );
+    }
+
+    /**
+     * Các thuốc trong đơn.
      */
     public function items(): HasMany
     {

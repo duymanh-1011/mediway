@@ -26,20 +26,14 @@ class ServiceOrder extends Model
     ];
 
     /**
-     * Phiếu chỉ định thuộc một lượt khám.
+     * Lượt khám của phiếu chỉ định.
      *
-     * Nếu model MedicalVisit của thành viên khác đã tồn tại
-     * thì tự động sử dụng model đó.
-     * Nếu chưa có thì dùng model tham chiếu tạm bên dưới.
+     * medical_visit_id -> medical_visits.id
      */
     public function medicalVisit(): BelongsTo
     {
-        $relatedModel = class_exists('App\\Models\\MedicalVisit')
-            ? 'App\\Models\\MedicalVisit'
-            : ServiceOrderMedicalVisitReference::class;
-
         return $this->belongsTo(
-            $relatedModel,
+            MedicalVisit::class,
             'medical_visit_id'
         );
     }
@@ -47,22 +41,18 @@ class ServiceOrder extends Model
     /**
      * Bác sĩ tạo phiếu chỉ định.
      *
-     * Nếu model Doctor đã được merge thì tự dùng model thật.
+     * ordered_by_doctor_id -> doctors.id
      */
     public function orderedByDoctor(): BelongsTo
     {
-        $relatedModel = class_exists('App\\Models\\Doctor')
-            ? 'App\\Models\\Doctor'
-            : ServiceOrderDoctorReference::class;
-
         return $this->belongsTo(
-            $relatedModel,
+            Doctor::class,
             'ordered_by_doctor_id'
         );
     }
 
     /**
-     * Các dịch vụ nằm trong phiếu chỉ định.
+     * Các dịch vụ trong phiếu chỉ định.
      */
     public function items(): HasMany
     {
@@ -71,37 +61,4 @@ class ServiceOrder extends Model
             'service_order_id'
         );
     }
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| MODEL THAM CHIẾU TẠM
-|--------------------------------------------------------------------------
-|
-| Hai class dưới đây chỉ dùng để ĐỌC dữ liệu khi model của thành viên khác
-| chưa được merge vào branch.
-|
-| Khi App\Models\MedicalVisit hoặc App\Models\Doctor tồn tại,
-| ServiceOrder sẽ tự động dùng model thật và bỏ qua các class này.
-|
-*/
-
-class ServiceOrderMedicalVisitReference extends Model
-{
-    protected $table = 'medical_visits';
-
-    public $timestamps = false;
-
-    protected $guarded = [];
-}
-
-
-class ServiceOrderDoctorReference extends Model
-{
-    protected $table = 'doctors';
-
-    public $timestamps = false;
-
-    protected $guarded = [];
 }

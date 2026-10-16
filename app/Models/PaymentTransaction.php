@@ -32,11 +32,28 @@ class PaymentTransaction extends Model
         'confirmed_at' => 'datetime',
     ];
 
+    /**
+     * Khoản phải thanh toán.
+     */
     public function payable(): BelongsTo
     {
         return $this->belongsTo(
             Payable::class,
             'payable_id'
+        );
+    }
+
+    /**
+     * Nhân viên thu tiền.
+     *
+     * collected_by_employee_id có thể NULL
+     * đối với giao dịch tự động / QR.
+     */
+    public function collector(): BelongsTo
+    {
+        return $this->belongsTo(
+            Employee::class,
+            'collected_by_employee_id'
         );
     }
 }

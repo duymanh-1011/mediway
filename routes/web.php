@@ -36,11 +36,15 @@ Route::prefix('admin')
             Route::post('/logout', [AuthController::class, 'logout'])
                 ->name('logout');
 
+            // 1. NHẬT KÝ HOẠT ĐỘNG - AUDIT LOG
+
             Route::get('/audit-logs', [AuditLogController::class, 'index'])
                 ->name('audit-logs.index');
 
             Route::get('/audit-logs/{id}', [AuditLogController::class, 'show'])
                 ->name('audit-logs.show');
+
+            // 2. TRẠNG THÁI DỊCH VỤ - SERVICE STATUSES
 
             Route::get(
                 '/service-statuses',
@@ -62,6 +66,8 @@ Route::prefix('admin')
                 [ServiceStatusController::class, 'update']
             )->name('service-statuses.update');
 
+            // 3. TRẠNG THÁI THANH TOÁN - PAYMENT STATUSES
+
             Route::get(
                 '/payment-statuses',
                 [PaymentStatusController::class, 'index']
@@ -81,48 +87,82 @@ Route::prefix('admin')
                 '/payment-statuses/{id}',
                 [PaymentStatusController::class, 'update']
             )->name('payment-statuses.update');
-            Route::get('/service-orders', [ServiceOrderController::class, 'index'])
-                ->name('service-orders.index');
 
-            Route::get('/service-orders/{id}', [ServiceOrderController::class, 'show'])
-                ->name('service-orders.show');
+            // 4. CHỈ ĐỊNH DỊCH VỤ - SERVICE ORDERS
 
-            Route::get('/service-results', [ServiceResultController::class, 'index'])
-                ->name('service-results.index');
+            Route::get(
+                '/service-orders',
+                [ServiceOrderController::class, 'index']
+            )->name('service-orders.index');
 
-            Route::get('/service-results/{id}', [ServiceResultController::class, 'show'])
-                ->name('service-results.show');
+            Route::get(
+                '/service-orders/{id}',
+                [ServiceOrderController::class, 'show']
+            )->name('service-orders.show');
 
-            Route::get('/service-results/{id}/edit', [ServiceResultController::class, 'edit'])
-                ->name('service-results.edit');
+            // 5. KẾT QUẢ DỊCH VỤ - SERVICE RESULTS
 
-            Route::patch('/service-results/{id}', [ServiceResultController::class, 'update'])
-                ->name('service-results.update');
-            Route::get('/prescriptions', [PrescriptionController::class, 'index'])
-                ->name('prescriptions.index');
+            Route::get(
+                '/service-results',
+                [ServiceResultController::class, 'index']
+            )->name('service-results.index');
 
-            Route::get('/prescriptions/{id}', [PrescriptionController::class, 'show'])
-                ->name('prescriptions.show');
+            Route::get(
+                '/service-results/{id}',
+                [ServiceResultController::class, 'show']
+            )->name('service-results.show');
 
-            Route::get('/prescriptions/{id}/edit', [PrescriptionController::class, 'edit'])
-                ->name('prescriptions.edit');
+            Route::get(
+                '/service-results/{id}/edit',
+                [ServiceResultController::class, 'edit']
+            )->name('service-results.edit');
 
-            Route::patch('/prescriptions/{id}', [PrescriptionController::class, 'update'])
-                ->name('prescriptions.update');
+            Route::patch(
+                '/service-results/{id}',
+                [ServiceResultController::class, 'update']
+            )->name('service-results.update');
 
-            Route::get('/payables', [PayableController::class, 'index'])
-                ->name('payables.index');
+            // 6. ĐƠN THUỐC - PRESCRIPTIONS
 
-            Route::get('/payables/{id}', [PayableController::class, 'show'])
-                ->name('payables.show');
+            Route::get(
+                '/prescriptions',
+                [PrescriptionController::class, 'index']
+            )->name('prescriptions.index');
 
-            Route::patch('/payables/{id}/status', [PayableController::class, 'updateStatus'])
-                ->name('payables.update-status');
+            Route::get(
+                '/prescriptions/{id}',
+                [PrescriptionController::class, 'show']
+            )->name('prescriptions.show');
 
-            Route::patch('/payables/{id}/cancel', [PayableController::class, 'cancel'])
-                ->name('payables.cancel');
+            Route::get(
+                '/prescriptions/{id}/edit',
+                [PrescriptionController::class, 'edit']
+            )->name('prescriptions.edit');
 
+            Route::patch(
+                '/prescriptions/{id}',
+                [PrescriptionController::class, 'update']
+            )->name('prescriptions.update');
 
+            // 7. KHOẢN PHẢI THANH TOÁN - PAYABLES
+            Route::get(
+                '/payables',
+                [PayableController::class, 'index']
+            )->name('payables.index');
+            Route::get(
+                '/payables/{id}',
+                [PayableController::class, 'show']
+            )->name('payables.show');
+            Route::patch(
+                '/payables/{id}/status',
+                [PayableController::class, 'updateStatus']
+            )->name('payables.update-status');
+            Route::patch(
+                '/payables/{id}/cancel',
+                [PayableController::class, 'cancel']
+            )->name('payables.cancel');
+
+            // 8. GIAO DỊCH THANH TOÁN - PAYMENT TRANSACTIONS
             Route::get(
                 '/payment-transactions',
                 [PaymentTransactionController::class, 'index']

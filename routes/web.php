@@ -6,6 +6,22 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\AuditLogController;
 
+// ============================================================
+// PHẦN CỦA TẠO
+// ============================================================
+
+use App\Http\Controllers\Admin\ServiceStatusController;
+use App\Http\Controllers\Admin\PaymentStatusController;
+use App\Http\Controllers\Admin\ServiceOrderController;
+use App\Http\Controllers\Admin\ServiceResultController;
+use App\Http\Controllers\Admin\PrescriptionController;
+use App\Http\Controllers\Admin\PayableController;
+use App\Http\Controllers\Admin\PaymentTransactionController;
+
+// ============================================================
+// PHẦN TỪ MAIN
+// ============================================================
+
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\AdministratorController;
@@ -21,12 +37,12 @@ use App\Http\Controllers\Admin\MedicalServiceController;
 use App\Http\Controllers\Admin\DiseaseGroupController;
 use App\Http\Controllers\Admin\DiseaseController;
 use App\Http\Controllers\Admin\MedicineController;
+
 use App\Http\Controllers\Admin\AppointmentStatusController;
 use App\Http\Controllers\Admin\DoctorScheduleController;
 use App\Http\Controllers\Admin\AppointmentTimeSlotController;
 use App\Http\Controllers\Admin\AppointmentController;
 
-use App\Http\Controllers\Admin\VisitStatusController;
 use App\Http\Controllers\Admin\QueueStatusController;
 use App\Http\Controllers\Admin\MedicalVisitController;
 use App\Http\Controllers\Admin\ExaminationRoomQueueController;
@@ -40,10 +56,22 @@ use App\Http\Controllers\Admin\MedicalVisitConclusionController;
 use App\Http\Middleware\AdminMiddleware;
 
 
+/*
+|--------------------------------------------------------------------------
+| Trang gốc
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/', function () {
     return redirect()->route('admin.login');
 });
 
+
+/*
+|--------------------------------------------------------------------------
+| Admin
+|--------------------------------------------------------------------------
+*/
 
 Route::prefix('admin')
     ->name('admin.')
@@ -60,7 +88,6 @@ Route::prefix('admin')
             [AuthController::class, 'showLoginForm']
         )->name('login');
 
-
         Route::post(
             '/login',
             [AuthController::class, 'login']
@@ -76,7 +103,6 @@ Route::prefix('admin')
         Route::middleware(
             AdminMiddleware::class
         )->group(function () {
-
 
             /*
             |--------------------------------------------------------------------------
@@ -99,17 +125,12 @@ Route::prefix('admin')
             Route::get(
                 '/audit-logs',
                 [AuditLogController::class, 'index']
-            )->name(
-                'audit-logs.index'
-            );
-
+            )->name('audit-logs.index');
 
             Route::get(
                 '/audit-logs/{id}',
                 [AuditLogController::class, 'show']
-            )->name(
-                'audit-logs.show'
-            );
+            )->name('audit-logs.show');
 
 
             /*
@@ -133,18 +154,12 @@ Route::prefix('admin')
             Route::patch(
                 'users/{user}/status',
                 [UserController::class, 'updateStatus']
-            )->name(
-                'users.update-status'
-            );
-
+            )->name('users.update-status');
 
             Route::patch(
                 'users/{user}/reset-password',
                 [UserController::class, 'resetPassword']
-            )->name(
-                'users.reset-password'
-            );
-
+            )->name('users.reset-password');
 
             Route::resource(
                 'users',
@@ -163,10 +178,7 @@ Route::prefix('admin')
             Route::patch(
                 'administrators/{administrator}/status',
                 [AdministratorController::class, 'updateStatus']
-            )->name(
-                'administrators.update-status'
-            );
-
+            )->name('administrators.update-status');
 
             Route::resource(
                 'administrators',
@@ -190,10 +202,7 @@ Route::prefix('admin')
                     'type',
                     'avatar|citizen-id-front|citizen-id-back|profile-pdf'
                 )
-                ->name(
-                    'patients.document'
-                );
-
+                ->name('patients.document');
 
             Route::resource(
                 'patients',
@@ -231,10 +240,7 @@ Route::prefix('admin')
                     'type',
                     'avatar|citizen-id-front|citizen-id-back|practice-license|profile-pdf'
                 )
-                ->name(
-                    'doctors.document'
-                );
-
+                ->name('doctors.document');
 
             Route::resource(
                 'doctors',
@@ -258,10 +264,7 @@ Route::prefix('admin')
                     'type',
                     'avatar|citizen-id-front|citizen-id-back|profile-pdf'
                 )
-                ->name(
-                    'employees.document'
-                );
-
+                ->name('employees.document');
 
             Route::resource(
                 'employees',
@@ -381,10 +384,7 @@ Route::prefix('admin')
             Route::get(
                 '/doctor-schedules/calendar',
                 [DoctorScheduleController::class, 'calendar']
-            )->name(
-                'doctor-schedules.calendar'
-            );
-
+            )->name('doctor-schedules.calendar');
 
             Route::resource(
                 'doctor-schedules',
@@ -405,14 +405,12 @@ Route::prefix('admin')
                 'doctor-schedules.time-slots.create'
             );
 
-
             Route::post(
                 '/doctor-schedules/{doctorSchedule}/time-slots',
                 [AppointmentTimeSlotController::class, 'store']
             )->name(
                 'doctor-schedules.time-slots.store'
             );
-
 
             Route::get(
                 '/appointment-time-slots/{appointmentTimeSlot}/edit',
@@ -421,14 +419,12 @@ Route::prefix('admin')
                 'appointment-time-slots.edit'
             );
 
-
             Route::put(
                 '/appointment-time-slots/{appointmentTimeSlot}',
                 [AppointmentTimeSlotController::class, 'update']
             )->name(
                 'appointment-time-slots.update'
             );
-
 
             Route::delete(
                 '/appointment-time-slots/{appointmentTimeSlot}',
@@ -451,14 +447,12 @@ Route::prefix('admin')
                 'appointments.check-in'
             );
 
-
             Route::post(
                 '/appointments/{appointment}/cancel',
                 [AppointmentController::class, 'cancel']
             )->name(
                 'appointments.cancel'
             );
-
 
             Route::resource(
                 'appointments',
@@ -467,23 +461,6 @@ Route::prefix('admin')
                 'index',
                 'create',
                 'store',
-                'show',
-                'edit',
-                'update',
-            ]);
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Trạng thái lượt khám
-            |--------------------------------------------------------------------------
-            */
-
-            Route::resource(
-                'visit-statuses',
-                VisitStatusController::class
-            )->only([
-                'index',
                 'show',
                 'edit',
                 'update',
@@ -520,7 +497,6 @@ Route::prefix('admin')
                 'visits.update-status'
             );
 
-
             Route::resource(
                 'visits',
                 MedicalVisitController::class
@@ -543,14 +519,15 @@ Route::prefix('admin')
                 'queues.call'
             );
 
-
             Route::post(
                 '/queues/{queue}/start-service',
-                [ExaminationRoomQueueController::class, 'startService']
+                [
+                    ExaminationRoomQueueController::class,
+                    'startService',
+                ]
             )->name(
                 'queues.start-service'
             );
-
 
             Route::post(
                 '/queues/{queue}/complete',
@@ -559,14 +536,12 @@ Route::prefix('admin')
                 'queues.complete'
             );
 
-
             Route::post(
                 '/queues/{queue}/skip',
                 [ExaminationRoomQueueController::class, 'skip']
             )->name(
                 'queues.skip'
             );
-
 
             Route::resource(
                 'queues',
@@ -585,19 +560,23 @@ Route::prefix('admin')
 
             Route::get(
                 '/visits/{visit}/clinical-note/create',
-                [MedicalVisitClinicalNoteController::class, 'create']
+                [
+                    MedicalVisitClinicalNoteController::class,
+                    'create',
+                ]
             )->name(
                 'visits.clinical-note.create'
             );
 
-
             Route::post(
                 '/visits/{visit}/clinical-note',
-                [MedicalVisitClinicalNoteController::class, 'store']
+                [
+                    MedicalVisitClinicalNoteController::class,
+                    'store',
+                ]
             )->name(
                 'visits.clinical-note.store'
             );
-
 
             Route::resource(
                 'clinical-notes',
@@ -618,19 +597,23 @@ Route::prefix('admin')
 
             Route::get(
                 '/visits/{visit}/diagnoses/create',
-                [MedicalVisitDiagnosisController::class, 'create']
+                [
+                    MedicalVisitDiagnosisController::class,
+                    'create',
+                ]
             )->name(
                 'visits.diagnoses.create'
             );
 
-
             Route::post(
                 '/visits/{visit}/diagnoses',
-                [MedicalVisitDiagnosisController::class, 'store']
+                [
+                    MedicalVisitDiagnosisController::class,
+                    'store',
+                ]
             )->name(
                 'visits.diagnoses.store'
             );
-
 
             Route::resource(
                 'diagnoses',
@@ -651,19 +634,23 @@ Route::prefix('admin')
 
             Route::get(
                 '/visits/{visit}/conclusion/create',
-                [MedicalVisitConclusionController::class, 'create']
+                [
+                    MedicalVisitConclusionController::class,
+                    'create',
+                ]
             )->name(
                 'visits.conclusion.create'
             );
 
-
             Route::post(
                 '/visits/{visit}/conclusion',
-                [MedicalVisitConclusionController::class, 'store']
+                [
+                    MedicalVisitConclusionController::class,
+                    'store',
+                ]
             )->name(
                 'visits.conclusion.store'
             );
-
 
             Route::resource(
                 'conclusions',
@@ -678,6 +665,230 @@ Route::prefix('admin')
 
             /*
             |--------------------------------------------------------------------------
+            | PHẦN CỦA TẠO
+            |--------------------------------------------------------------------------
+            */
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Trạng thái dịch vụ
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/service-statuses',
+                [ServiceStatusController::class, 'index']
+            )->name(
+                'service-statuses.index'
+            );
+
+            Route::get(
+                '/service-statuses/{id}',
+                [ServiceStatusController::class, 'show']
+            )->name(
+                'service-statuses.show'
+            );
+
+            Route::get(
+                '/service-statuses/{id}/edit',
+                [ServiceStatusController::class, 'edit']
+            )->name(
+                'service-statuses.edit'
+            );
+
+            Route::patch(
+                '/service-statuses/{id}',
+                [ServiceStatusController::class, 'update']
+            )->name(
+                'service-statuses.update'
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Trạng thái thanh toán
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/payment-statuses',
+                [PaymentStatusController::class, 'index']
+            )->name(
+                'payment-statuses.index'
+            );
+
+            Route::get(
+                '/payment-statuses/{id}',
+                [PaymentStatusController::class, 'show']
+            )->name(
+                'payment-statuses.show'
+            );
+
+            Route::get(
+                '/payment-statuses/{id}/edit',
+                [PaymentStatusController::class, 'edit']
+            )->name(
+                'payment-statuses.edit'
+            );
+
+            Route::patch(
+                '/payment-statuses/{id}',
+                [PaymentStatusController::class, 'update']
+            )->name(
+                'payment-statuses.update'
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Chỉ định dịch vụ
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/service-orders',
+                [ServiceOrderController::class, 'index']
+            )->name(
+                'service-orders.index'
+            );
+
+            Route::get(
+                '/service-orders/{id}',
+                [ServiceOrderController::class, 'show']
+            )->name(
+                'service-orders.show'
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Kết quả dịch vụ
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/service-results',
+                [ServiceResultController::class, 'index']
+            )->name(
+                'service-results.index'
+            );
+
+            Route::get(
+                '/service-results/{id}',
+                [ServiceResultController::class, 'show']
+            )->name(
+                'service-results.show'
+            );
+
+            Route::get(
+                '/service-results/{id}/edit',
+                [ServiceResultController::class, 'edit']
+            )->name(
+                'service-results.edit'
+            );
+
+            Route::patch(
+                '/service-results/{id}',
+                [ServiceResultController::class, 'update']
+            )->name(
+                'service-results.update'
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Đơn thuốc
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/prescriptions',
+                [PrescriptionController::class, 'index']
+            )->name(
+                'prescriptions.index'
+            );
+
+            Route::get(
+                '/prescriptions/{id}',
+                [PrescriptionController::class, 'show']
+            )->name(
+                'prescriptions.show'
+            );
+
+            Route::get(
+                '/prescriptions/{id}/edit',
+                [PrescriptionController::class, 'edit']
+            )->name(
+                'prescriptions.edit'
+            );
+
+            Route::patch(
+                '/prescriptions/{id}',
+                [PrescriptionController::class, 'update']
+            )->name(
+                'prescriptions.update'
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Khoản phải thanh toán
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/payables',
+                [PayableController::class, 'index']
+            )->name(
+                'payables.index'
+            );
+
+            Route::get(
+                '/payables/{id}',
+                [PayableController::class, 'show']
+            )->name(
+                'payables.show'
+            );
+
+            Route::patch(
+                '/payables/{id}/status',
+                [PayableController::class, 'updateStatus']
+            )->name(
+                'payables.update-status'
+            );
+
+            Route::patch(
+                '/payables/{id}/cancel',
+                [PayableController::class, 'cancel']
+            )->name(
+                'payables.cancel'
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Giao dịch thanh toán
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/payment-transactions',
+                [PaymentTransactionController::class, 'index']
+            )->name(
+                'payment-transactions.index'
+            );
+
+            Route::get(
+                '/payment-transactions/{id}',
+                [PaymentTransactionController::class, 'show']
+            )->name(
+                'payment-transactions.show'
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
             | Đăng xuất
             |--------------------------------------------------------------------------
             */
@@ -688,7 +899,5 @@ Route::prefix('admin')
             )->name(
                 'logout'
             );
-
         });
-
     });

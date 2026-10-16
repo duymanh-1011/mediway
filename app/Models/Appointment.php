@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Appointment extends Model
 {
@@ -74,6 +75,14 @@ class Appointment extends Model
         return $this->belongsTo(
             AppointmentStatus::class,
             'appointment_status_id'
+        );
+    }
+
+    public function medicalVisit(): HasOne
+    {
+        return $this->hasOne(
+            MedicalVisit::class,
+            'appointment_id'
         );
     }
 }

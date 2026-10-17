@@ -765,6 +765,20 @@ Route::prefix('admin')
             */
 
             Route::get(
+                '/visits/{visit}/service-orders/create',
+                [ServiceOrderController::class, 'create']
+            )->name(
+                'visits.service-orders.create'
+            );
+
+            Route::post(
+                '/visits/{visit}/service-orders',
+                [ServiceOrderController::class, 'store']
+            )->name(
+                'visits.service-orders.store'
+            );
+
+            Route::get(
                 '/service-orders',
                 [ServiceOrderController::class, 'index']
             )->name(

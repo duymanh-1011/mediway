@@ -827,6 +827,235 @@
     </div>
 
 
+    {{-- CHỈ ĐỊNH DỊCH VỤ --}}
+
+    <div class="card section-spacing">
+
+        <div class="section-header">
+
+            <div>
+                <h3 class="section-title">
+                    Chỉ định dịch vụ
+                </h3>
+
+                <p class="muted-text section-description">
+                    Các phiếu dịch vụ được chỉ định trong lượt khám này.
+                </p>
+            </div>
+
+
+            @if ($currentStatus !== 'COMPLETED')
+
+                <a
+                    href="{{ route(
+                        'admin.visits.service-orders.create',
+                        $medicalVisit
+                    ) }}"
+                    class="btn btn-primary"
+                >
+                    + Tạo chỉ định dịch vụ
+                </a>
+
+            @endif
+
+        </div>
+
+
+        @if ($medicalVisit->serviceOrders->isNotEmpty())
+
+            <div class="table-wrapper service-orders-table">
+
+                <table class="admin-table">
+
+                    <thead>
+                        <tr>
+                            <th>Mã phiếu</th>
+                            <th>Bác sĩ chỉ định</th>
+                            <th>Thời gian</th>
+                            <th>Số dịch vụ</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+
+
+                    <tbody>
+
+                        @foreach ($medicalVisit->serviceOrders as $order)
+
+                            @php
+                                $orderTotal = $order->items
+                                    ->sum(
+                                        fn ($item) =>
+                                            (float) $item->price_at_order
+                                    );
+                            @endphp
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        {{ $order->service_order_code }}
+                                    </strong>
+                                </td>
+
+
+                                <td>
+                                    {{ $order
+                                        ->orderedByDoctor
+                                        ?->full_name
+                                        ?? '—' }}
+                                </td>
+
+
+                                <td>
+                                    {{ $order
+                                        ->ordered_at
+                                        ?->format('d/m/Y H:i')
+                                        ?? '—' }}
+                                </td>
+
+
+                                <td>
+                                    {{ $order->items->count() }}
+                                </td>
+
+
+                                <td>
+                                    <strong>
+                                        {{ number_format(
+                                            $orderTotal,
+                                            0,
+                                            ',',
+                                            '.'
+                                        ) }}
+                                        đ
+                                    </strong>
+                                </td>
+
+
+                                <td>
+                                    <span class="order-status-badge">
+                                        {{ $order->status ?? '—' }}
+                                    </span>
+                                </td>
+
+
+                                <td>
+
+                                    <a
+                                        href="{{ route(
+                                            'admin.service-orders.show',
+                                            $order->id
+                                        ) }}"
+                                        class="btn btn-secondary"
+                                    >
+                                        Chi tiết
+                                    </a>
+
+                                </td>
+
+                            </tr>
+
+
+                            <tr class="service-items-row">
+
+                                <td colspan="7">
+
+                                    <div class="service-items">
+
+                                        @foreach ($order->items as $item)
+
+                                            <div class="service-item-summary">
+
+                                                <div>
+
+                                                    <strong>
+                                                        {{ $item
+                                                            ->medicalService
+                                                            ?->name
+                                                            ?? 'Dịch vụ không xác định' }}
+                                                    </strong>
+
+                                                    <span class="service-code">
+                                                        {{ $item
+                                                            ->medicalService
+                                                            ?->service_code
+                                                            ?? '' }}
+                                                    </span>
+
+                                                </div>
+
+
+                                                <div class="service-item-meta">
+
+                                                    <span>
+                                                        {{ number_format(
+                                                            (float) $item->price_at_order,
+                                                            0,
+                                                            ',',
+                                                            '.'
+                                                        ) }}
+                                                        đ
+                                                    </span>
+
+                                                    <span class="service-status">
+                                                        {{ $item
+                                                            ->serviceStatus
+                                                            ?->name
+                                                            ?? '—' }}
+                                                    </span>
+
+                                                </div>
+
+                                            </div>
+
+                                        @endforeach
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                        @endforeach
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        @else
+
+            <div class="empty-service-orders">
+
+                <p>
+                    Lượt khám này chưa có phiếu chỉ định dịch vụ.
+                </p>
+
+                @if ($currentStatus !== 'COMPLETED')
+
+                    <a
+                        href="{{ route(
+                            'admin.visits.service-orders.create',
+                            $medicalVisit
+                        ) }}"
+                        class="btn btn-primary"
+                    >
+                        + Tạo chỉ định đầu tiên
+                    </a>
+
+                @endif
+
+            </div>
+
+        @endif
+
+    </div>
+
+
     {{-- KẾT LUẬN --}}
 
     <div class="card section-spacing">
@@ -992,7 +1221,6 @@
 @push('styles')
 
 <style>
-
     .page-header {
         display: flex;
         justify-content: space-between;
@@ -1017,6 +1245,12 @@
     .section-title {
         margin-top: 0;
         margin-bottom: 15px;
+    }
+
+
+    .section-description {
+        margin-top: -8px;
+        margin-bottom: 0;
     }
 
 
@@ -1192,6 +1426,107 @@
     }
 
 
+    .service-orders-table {
+        margin-top: 18px;
+    }
+
+
+    .order-status-badge {
+        display: inline-block;
+
+        padding: 5px 10px;
+
+        border-radius: 999px;
+
+        background: #e2e8f0;
+
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+
+    .service-items-row td {
+        padding-top: 0;
+        background: #f8fafc;
+    }
+
+
+    .service-items {
+        display: grid;
+        gap: 7px;
+
+        padding: 10px 0;
+    }
+
+
+    .service-item-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        gap: 15px;
+
+        padding: 9px 12px;
+
+        background: #ffffff;
+
+        border: 1px solid #e2e8f0;
+        border-radius: 7px;
+    }
+
+
+    .service-code {
+        margin-left: 8px;
+
+        color: #64748b;
+
+        font-size: 12px;
+    }
+
+
+    .service-item-meta {
+        display: flex;
+        align-items: center;
+
+        gap: 14px;
+
+        white-space: nowrap;
+    }
+
+
+    .service-status {
+        display: inline-block;
+
+        padding: 4px 9px;
+
+        border-radius: 999px;
+
+        background: #f1f5f9;
+
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+
+    .empty-service-orders {
+        margin-top: 15px;
+
+        padding: 22px;
+
+        text-align: center;
+
+        background: #f8fafc;
+
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+    }
+
+
+    .empty-service-orders p {
+        margin-top: 0;
+    }
+
+
     @media (max-width: 800px) {
 
         .page-header {
@@ -1213,6 +1548,17 @@
 
         .form-group {
             min-width: 0;
+        }
+
+
+        .service-item-summary {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+
+        .service-item-meta {
+            white-space: normal;
         }
 
     }

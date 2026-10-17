@@ -115,4 +115,15 @@ class MedicalVisit extends Model
             'medical_visit_id'
         );
     }
+
+    /**
+     * Các phiếu chỉ định dịch vụ của lượt khám.
+     */
+    public function serviceOrders(): HasMany
+    {
+        return $this->hasMany(
+            ServiceOrder::class,
+            'medical_visit_id'
+        );
+    }
 }

@@ -210,6 +210,27 @@ class MedicalVisitController extends Controller
             'clinicalNote',
             'diagnoses.disease',
             'conclusion.doctor',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Chỉ định dịch vụ
+            |--------------------------------------------------------------------------
+            */
+            'serviceOrders' => function ($query) {
+                $query
+                    ->orderByDesc('ordered_at')
+                    ->orderByDesc('id');
+            },
+
+            'serviceOrders.orderedByDoctor',
+
+            'serviceOrders.items' => function ($query) {
+                $query->orderBy('id');
+            },
+
+            'serviceOrders.items.medicalService',
+
+            'serviceOrders.items.serviceStatus',
         ]);
 
         $allowedStatusNames =

@@ -6,10 +6,6 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\AuditLogController;
 
-// ============================================================
-// PHẦN CỦA TẠO
-// ============================================================
-
 use App\Http\Controllers\Admin\ServiceStatusController;
 use App\Http\Controllers\Admin\PaymentStatusController;
 use App\Http\Controllers\Admin\ServiceOrderController;
@@ -17,10 +13,6 @@ use App\Http\Controllers\Admin\ServiceResultController;
 use App\Http\Controllers\Admin\PrescriptionController;
 use App\Http\Controllers\Admin\PayableController;
 use App\Http\Controllers\Admin\PaymentTransactionController;
-
-// ============================================================
-// PHẦN TỪ MAIN
-// ============================================================
 
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
@@ -53,6 +45,7 @@ use App\Http\Controllers\Admin\VisitDiagnosisController;
 use App\Http\Controllers\Admin\MedicalVisitDiagnosisController;
 use App\Http\Controllers\Admin\VisitConclusionController;
 use App\Http\Controllers\Admin\MedicalVisitConclusionController;
+use App\Http\Controllers\Admin\ServiceOrderItemController;
 
 use App\Http\Middleware\AdminMiddleware;
 
@@ -795,9 +788,56 @@ Route::prefix('admin')
 
             /*
             |--------------------------------------------------------------------------
+            | Thực hiện dịch vụ
+            |--------------------------------------------------------------------------
+            */
+
+            Route::post(
+                '/service-order-items/{serviceOrderItem}/start',
+                [
+                    ServiceOrderItemController::class,
+                    'start',
+                ]
+            )->name(
+                'service-order-items.start'
+            );
+
+            Route::post(
+                '/service-order-items/{serviceOrderItem}/complete',
+                [
+                    ServiceOrderItemController::class,
+                    'complete',
+                ]
+            )->name(
+                'service-order-items.complete'
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
             | Kết quả dịch vụ
             |--------------------------------------------------------------------------
             */
+
+            Route::get(
+                '/service-order-items/{serviceOrderItem}/service-result/create',
+                [
+                    ServiceResultController::class,
+                    'create',
+                ]
+            )->name(
+                'service-order-items.service-results.create'
+            );
+
+            Route::post(
+                '/service-order-items/{serviceOrderItem}/service-result',
+                [
+                    ServiceResultController::class,
+                    'store',
+                ]
+            )->name(
+                'service-order-items.service-results.store'
+            );
 
             Route::get(
                 '/service-results',
@@ -903,6 +943,20 @@ Route::prefix('admin')
             | Giao dịch thanh toán
             |--------------------------------------------------------------------------
             */
+
+            Route::get(
+                '/payables/{payable}/payment-transactions/create',
+                [PaymentTransactionController::class, 'create']
+            )->name(
+                'payables.payment-transactions.create'
+            );
+
+            Route::post(
+                '/payables/{payable}/payment-transactions',
+                [PaymentTransactionController::class, 'store']
+            )->name(
+                'payables.payment-transactions.store'
+            );
 
             Route::get(
                 '/payment-transactions',

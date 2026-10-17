@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreServiceOrderRequest;
 use App\Models\MedicalService;
 use App\Models\MedicalVisit;
+use App\Models\Payable;
+use App\Models\PaymentStatus;
 use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceStatus;
@@ -27,11 +29,6 @@ class ServiceOrderController extends Controller
             ])
             ->withCount('items');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Tìm kiếm
-        |--------------------------------------------------------------------------
-        */
         if ($request->filled('q')) {
             $keyword = trim($request->q);
 
@@ -71,11 +68,6 @@ class ServiceOrderController extends Controller
             });
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Lọc trạng thái phiếu
-        |--------------------------------------------------------------------------
-        */
         if ($request->filled('status')) {
             $query->where(
                 'status',
@@ -83,11 +75,6 @@ class ServiceOrderController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Lọc ngày chỉ định
-        |--------------------------------------------------------------------------
-        */
         if ($request->filled('date_from')) {
             $query->whereDate(
                 'ordered_at',
@@ -104,11 +91,6 @@ class ServiceOrderController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Danh sách trạng thái hiện có
-        |--------------------------------------------------------------------------
-        */
         $orderStatuses = ServiceOrder::query()
             ->select('status')
             ->whereNotNull('status')
@@ -116,11 +98,6 @@ class ServiceOrderController extends Controller
             ->orderBy('status')
             ->pluck('status');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Phân trang
-        |--------------------------------------------------------------------------
-        */
         $orders = $query
             ->orderByDesc('ordered_at')
             ->orderByDesc('id')
@@ -137,7 +114,7 @@ class ServiceOrderController extends Controller
     }
 
     /**
-     * Form tạo phiếu chỉ định dịch vụ cho một lượt khám.
+     * Form tạo phiếu chỉ định dịch vụ.
      */
     public function create(MedicalVisit $visit)
     {
@@ -149,11 +126,6 @@ class ServiceOrderController extends Controller
             'status',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Không cho chỉ định khi lượt khám đã hoàn tất
-        |--------------------------------------------------------------------------
-        */
         if ($visit->status?->name === 'COMPLETED') {
             return redirect()
                 ->route(
@@ -166,11 +138,6 @@ class ServiceOrderController extends Controller
                 );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Lượt khám phải có bác sĩ
-        |--------------------------------------------------------------------------
-        */
         if (!$visit->doctor_id) {
             return redirect()
                 ->route(
@@ -183,11 +150,6 @@ class ServiceOrderController extends Controller
                 );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Chỉ lấy dịch vụ đang hoạt động
-        |--------------------------------------------------------------------------
-        */
         $services = MedicalService::query()
             ->where(
                 'status',
@@ -219,11 +181,6 @@ class ServiceOrderController extends Controller
             'status',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Kiểm tra trạng thái lượt khám
-        |--------------------------------------------------------------------------
-        */
         if ($visit->status?->name === 'COMPLETED') {
             return redirect()
                 ->route(
@@ -248,12 +205,7 @@ class ServiceOrderController extends Controller
                 );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Trạng thái mặc định của từng dịch vụ
-        |--------------------------------------------------------------------------
-        */
-        $pendingStatus = ServiceStatus::query()
+        $pendingServiceStatus = ServiceStatus::query()
             ->where(
                 'name',
                 'PENDING'
@@ -264,18 +216,31 @@ class ServiceOrderController extends Controller
             )
             ->first();
 
-        if (!$pendingStatus) {
+        if (!$pendingServiceStatus) {
             throw ValidationException::withMessages([
                 'medical_service_ids' =>
                     'Không tìm thấy trạng thái dịch vụ PENDING đang hoạt động.',
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Lấy các dịch vụ người dùng chọn
-        |--------------------------------------------------------------------------
-        */
+        $unpaidPaymentStatus = PaymentStatus::query()
+            ->where(
+                'name',
+                'UNPAID'
+            )
+            ->where(
+                'is_active',
+                true
+            )
+            ->first();
+
+        if (!$unpaidPaymentStatus) {
+            throw ValidationException::withMessages([
+                'medical_service_ids' =>
+                    'Không tìm thấy trạng thái thanh toán UNPAID đang hoạt động.',
+            ]);
+        }
+
         $selectedServiceIds = collect(
             $request->validated('medical_service_ids')
         )
@@ -297,12 +262,11 @@ class ServiceOrderController extends Controller
             ->get()
             ->keyBy('id');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Không cho dùng dịch vụ đã ngừng hoạt động
-        |--------------------------------------------------------------------------
-        */
-        if ($services->count() !== $selectedServiceIds->count()) {
+        if (
+            $services->count()
+            !==
+            $selectedServiceIds->count()
+        ) {
             throw ValidationException::withMessages([
                 'medical_service_ids' =>
                     'Có dịch vụ không tồn tại hoặc đã ngừng hoạt động.',
@@ -313,13 +277,14 @@ class ServiceOrderController extends Controller
             function () use (
                 $request,
                 $visit,
-                $pendingStatus,
+                $pendingServiceStatus,
+                $unpaidPaymentStatus,
                 $selectedServiceIds,
                 $services
             ) {
                 /*
                 |--------------------------------------------------------------------------
-                | Sinh mã phiếu CDxxxxxx
+                | Sinh mã phiếu chỉ định
                 |--------------------------------------------------------------------------
                 */
                 $lastOrder = ServiceOrder::query()
@@ -327,7 +292,7 @@ class ServiceOrderController extends Controller
                     ->orderByDesc('id')
                     ->first();
 
-                $nextNumber = 1;
+                $nextOrderNumber = 1;
 
                 if ($lastOrder) {
                     $numericPart = (int) preg_replace(
@@ -336,28 +301,52 @@ class ServiceOrderController extends Controller
                         $lastOrder->service_order_code
                     );
 
-                    $nextNumber = $numericPart + 1;
+                    $nextOrderNumber =
+                        $numericPart + 1;
                 }
 
                 do {
                     $serviceOrderCode =
                         'CD'
                         . str_pad(
-                            (string) $nextNumber,
+                            (string) $nextOrderNumber,
                             6,
                             '0',
                             STR_PAD_LEFT
                         );
 
-                    $exists = ServiceOrder::query()
+                    $orderExists = ServiceOrder::query()
                         ->where(
                             'service_order_code',
                             $serviceOrderCode
                         )
                         ->exists();
 
-                    $nextNumber++;
-                } while ($exists);
+                    $nextOrderNumber++;
+                } while ($orderExists);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Sinh số payable bắt đầu
+                |--------------------------------------------------------------------------
+                */
+                $lastPayable = Payable::query()
+                    ->lockForUpdate()
+                    ->orderByDesc('id')
+                    ->first();
+
+                $nextPayableNumber = 1;
+
+                if ($lastPayable) {
+                    $numericPart = (int) preg_replace(
+                        '/\D/',
+                        '',
+                        $lastPayable->payable_code
+                    );
+
+                    $nextPayableNumber =
+                        $numericPart + 1;
+                }
 
                 /*
                 |--------------------------------------------------------------------------
@@ -392,15 +381,19 @@ class ServiceOrderController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | Tạo từng dịch vụ trong phiếu
+                | Tạo từng dịch vụ + payable
                 |--------------------------------------------------------------------------
                 */
-                foreach ($selectedServiceIds as $serviceId) {
+                foreach (
+                    $selectedServiceIds
+                    as
+                    $serviceId
+                ) {
                     $service = $services->get(
                         $serviceId
                     );
 
-                    ServiceOrderItem::create([
+                    $item = ServiceOrderItem::create([
                         'service_order_id' =>
                             $order->id,
 
@@ -408,11 +401,8 @@ class ServiceOrderController extends Controller
                             $service->id,
 
                         'service_status_id' =>
-                            $pendingStatus->id,
+                            $pendingServiceStatus->id,
 
-                        /*
-                        | Snapshot giá tại thời điểm chỉ định.
-                        */
                         'price_at_order' =>
                             $service->price,
 
@@ -428,6 +418,113 @@ class ServiceOrderController extends Controller
                         'execution_notes' =>
                             null,
                     ]);
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Sinh mã khoản phải thu
+                    |--------------------------------------------------------------------------
+                    */
+                    do {
+                        $payableCode =
+                            'PT'
+                            . str_pad(
+                                (string) $nextPayableNumber,
+                                6,
+                                '0',
+                                STR_PAD_LEFT
+                            );
+
+                        $payableExists =
+                            Payable::query()
+                                ->where(
+                                    'payable_code',
+                                    $payableCode
+                                )
+                                ->exists();
+
+                        $nextPayableNumber++;
+                    } while ($payableExists);
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Tạo khoản phải thanh toán
+                    |--------------------------------------------------------------------------
+                    */
+                    Payable::create([
+                        'payable_code' =>
+                            $payableCode,
+
+                        'medical_visit_id' =>
+                            $visit->id,
+
+                        'service_order_item_id' =>
+                            $item->id,
+
+                        'payment_type' =>
+                            'SERVICE_FEE',
+
+                        'description' =>
+                            'Phí dịch vụ '
+                            . $service->name
+                            . ' - '
+                            . $service->service_code,
+
+                        'amount' =>
+                            $item->price_at_order,
+
+                        'payment_status_id' =>
+                            $unpaidPaymentStatus->id,
+
+                        'due_at' =>
+                            null,
+
+                        'payment_qr_data' =>
+                            null,
+
+                        'generated_at' =>
+                            now(),
+
+                        'paid_at' =>
+                            null,
+
+                        'notes' =>
+                            null,
+                    ]);
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Chuyển lượt khám sang chờ dịch vụ
+                |--------------------------------------------------------------------------
+                */
+                if (
+                    in_array(
+                        $visit->status?->name,
+                        [
+                            'IN_EXAMINATION',
+                            'RETURNING',
+                        ],
+                        true
+                    )
+                ) {
+                    $waitingForServiceStatus =
+                        DB::table('visit_statuses')
+                            ->where(
+                                'name',
+                                'WAITING_FOR_SERVICE'
+                            )
+                            ->where(
+                                'is_active',
+                                true
+                            )
+                            ->first();
+
+                    if ($waitingForServiceStatus) {
+                        $visit->update([
+                            'visit_status_id' =>
+                                $waitingForServiceStatus->id,
+                        ]);
+                    }
                 }
 
                 return $order;
@@ -441,7 +538,7 @@ class ServiceOrderController extends Controller
             )
             ->with(
                 'success',
-                'Tạo phiếu chỉ định dịch vụ thành công.'
+                'Tạo phiếu chỉ định và khoản phải thanh toán thành công.'
             );
     }
 
@@ -472,11 +569,6 @@ class ServiceOrderController extends Controller
             ])
             ->findOrFail($id);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Khoản phải thanh toán liên quan
-        |--------------------------------------------------------------------------
-        */
         $itemIds = $order->items
             ->pluck('id')
             ->filter()
@@ -499,6 +591,7 @@ class ServiceOrderController extends Controller
                 ->select([
                     'payables.*',
                     'payment_statuses.name as payment_status_name',
+                    'payment_statuses.allows_service_execution',
                 ])
                 ->get()
                 ->keyBy(

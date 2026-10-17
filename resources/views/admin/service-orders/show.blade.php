@@ -42,8 +42,7 @@
                 </h1>
 
                 <p>
-                    Chi tiết phiếu chỉ định và các dịch vụ
-                    thuộc phiếu.
+                    Chi tiết phiếu chỉ định và các dịch vụ thuộc phiếu.
                 </p>
 
             </div>
@@ -65,10 +64,31 @@
         </div>
 
 
+        {{-- Thông báo --}}
+        @if (session('success'))
+
+            <div class="order-alert order-alert-success">
+                {{ session('success') }}
+            </div>
+
+        @endif
+
+        @if (session('error'))
+
+            <div class="order-alert order-alert-error">
+                {{ session('error') }}
+            </div>
+
+        @endif
+
+
         {{-- Back --}}
         <div class="order-back-wrapper">
 
-            <a href="{{ route('admin.service-orders.index') }}" class="order-back-btn">
+            <a
+                href="{{ route('admin.service-orders.index') }}"
+                class="order-back-btn"
+            >
                 ← Quay lại danh sách
             </a>
 
@@ -97,7 +117,6 @@
 
             <div class="order-info-grid">
 
-                {{-- Order code --}}
                 <div class="order-info-item">
 
                     <div class="order-info-label">
@@ -111,7 +130,6 @@
                 </div>
 
 
-                {{-- Visit --}}
                 <div class="order-info-item">
 
                     <div class="order-info-label">
@@ -135,7 +153,6 @@
                 </div>
 
 
-                {{-- Doctor --}}
                 <div class="order-info-item">
 
                     <div class="order-info-label">
@@ -167,7 +184,6 @@
                 </div>
 
 
-                {{-- Ordered at --}}
                 <div class="order-info-item">
 
                     <div class="order-info-label">
@@ -178,12 +194,12 @@
 
                         @if ($order->ordered_at)
 
-                                            {{ $order->ordered_at->format(
-                                'd/m/Y H:i:s'
-                            ) }}
+                            {{ $order->ordered_at->format('d/m/Y H:i:s') }}
 
                         @else
+
                             —
+
                         @endif
 
                     </div>
@@ -191,7 +207,6 @@
                 </div>
 
 
-                {{-- Status --}}
                 <div class="order-info-item">
 
                     <div class="order-info-label">
@@ -205,7 +220,6 @@
                 </div>
 
 
-                {{-- Item count --}}
                 <div class="order-info-item">
 
                     <div class="order-info-label">
@@ -221,7 +235,6 @@
             </div>
 
 
-            {{-- Reason --}}
             <div class="order-text-section">
 
                 <div class="order-info-label">
@@ -235,7 +248,6 @@
             </div>
 
 
-            {{-- Instructions --}}
             <div class="order-text-section">
 
                 <div class="order-info-label">
@@ -263,8 +275,8 @@
                     </h2>
 
                     <p>
-                        Dịch vụ, giá tại thời điểm chỉ định,
-                        trạng thái thực hiện và dữ liệu liên quan.
+                        Dịch vụ, thanh toán, trạng thái thực hiện
+                        và kết quả liên quan.
                     </p>
 
                 </div>
@@ -287,444 +299,392 @@
 
             @forelse ($order->items as $item)
 
-                    @php
+                @php
+                    $serviceStatusName =
+                        $item->serviceStatus?->name ?? 'UNKNOWN';
 
-                        $serviceStatusName =
-                            $item->serviceStatus?->name ?? 'UNKNOWN';
+                    $serviceStatusClass = match ($serviceStatusName) {
+                        'PENDING' => 'service-status-pending',
+                        'PROCESSING' => 'service-status-processing',
+                        'COMPLETED' => 'service-status-completed',
+                        'CANCELLED' => 'service-status-cancelled',
+                        default => 'service-status-default',
+                    };
 
-                        $serviceStatusClass = match ($serviceStatusName) {
-                            'PENDING' => 'service-status-pending',
-                            'PROCESSING' => 'service-status-processing',
-                            'COMPLETED' => 'service-status-completed',
-                            'CANCELLED' => 'service-status-cancelled',
-                            default => 'service-status-default',
-                        };
+                    $payable =
+                        $payablesByItem->get($item->id);
 
-                        $payable = $payablesByItem->get($item->id);
+                    $paymentStatusName =
+                        $payable?->payment_status_name ?? null;
 
-                    @endphp
+                    $allowsServiceExecution =
+                        $payable
+                            ? (bool) $payable->allows_service_execution
+                            : false;
+
+                    $canPay =
+                        $payable
+                        &&
+                        in_array(
+                            $paymentStatusName,
+                            [
+                                'UNPAID',
+                                'PENDING',
+                            ],
+                            true
+                        );
+
+                    $canStart =
+                        $serviceStatusName === 'PENDING'
+                        &&
+                        $payable
+                        &&
+                        $allowsServiceExecution;
+
+                    $canCreateResult =
+                        $serviceStatusName === 'PROCESSING'
+                        &&
+                        !$item->result;
+
+                    $canComplete =
+                        $serviceStatusName === 'PROCESSING'
+                        &&
+                        (bool) $item->result;
+                @endphp
 
 
-                    <div class="service-item">
+                <div class="service-item">
 
-                        {{-- Item Header --}}
-                        <div class="service-item-header">
+                    {{-- Item Header --}}
+                    <div class="service-item-header">
 
-                            <div class="service-item-title">
+                        <div class="service-item-title">
 
-                                <div class="service-number">
-                                    {{ $loop->iteration }}
-                                </div>
-
-                                <div>
-
-                                    @if ($item->medicalService)
-
-                                        <h3>
-                                            {{ $item->medicalService->name }}
-                                        </h3>
-
-                                        <div class="service-code">
-                                            {{ $item->medicalService->service_code }}
-                                        </div>
-
-                                    @else
-
-                                        <h3>
-                                            Dịch vụ không xác định
-                                        </h3>
-
-                                    @endif
-
-                                </div>
-
+                            <div class="service-number">
+                                {{ $loop->iteration }}
                             </div>
 
+                            <div>
 
-                            <span class="service-status-badge {{ $serviceStatusClass }}">
-                                {{ $serviceStatusName }}
-                            </span>
+                                @if ($item->medicalService)
 
-                        </div>
+                                    <h3>
+                                        {{ $item->medicalService->name }}
+                                    </h3>
 
-
-                        {{-- Item basic information --}}
-                        <div class="service-info-grid">
-
-                            {{-- Price --}}
-                            <div class="service-info-item">
-
-                                <div class="service-info-label">
-                                    Giá tại thời điểm chỉ định
-                                </div>
-
-                                <div class="service-price">
-                                    {{ number_format(
-                    (float) $item->price_at_order,
-                    0,
-                    ',',
-                    '.'
-                ) }}
-                                    đ
-                                </div>
-
-                            </div>
-
-
-                            {{-- Performer --}}
-                            <div class="service-info-item">
-
-                                <div class="service-info-label">
-                                    Người thực hiện
-                                </div>
-
-                                @if ($item->performer)
-
-                                    <div class="service-performer">
-
-                                        <strong>
-                                            {{ $item->performer->full_name }}
-                                        </strong>
-
-                                        <span>
-                                            {{ $item->performer->employee_code }}
-                                        </span>
-
+                                    <div class="service-code">
+                                        {{ $item->medicalService->service_code }}
                                     </div>
 
                                 @else
 
-                                    <div class="order-empty-value">
-                                        Chưa phân công
-                                    </div>
+                                    <h3>
+                                        Dịch vụ không xác định
+                                    </h3>
 
                                 @endif
-
-                            </div>
-
-
-                            {{-- Started --}}
-                            <div class="service-info-item">
-
-                                <div class="service-info-label">
-                                    Bắt đầu thực hiện
-                                </div>
-
-                                <div class="service-time">
-
-                                    @if ($item->started_at)
-
-                                                        {{ $item->started_at->format(
-                                            'd/m/Y H:i:s'
-                                        ) }}
-
-                                    @else
-                                        —
-                                    @endif
-
-                                </div>
-
-                            </div>
-
-
-                            {{-- Completed --}}
-                            <div class="service-info-item">
-
-                                <div class="service-info-label">
-                                    Hoàn thành
-                                </div>
-
-                                <div class="service-time">
-
-                                    @if ($item->completed_at)
-
-                                                        {{ $item->completed_at->format(
-                                            'd/m/Y H:i:s'
-                                        ) }}
-
-                                    @else
-                                        —
-                                    @endif
-
-                                </div>
 
                             </div>
 
                         </div>
 
 
-                        {{-- Execution notes --}}
-                        @if ($item->execution_notes)
+                        <span class="service-status-badge {{ $serviceStatusClass }}">
+                            {{ $serviceStatusName }}
+                        </span>
 
-                            <div class="service-note">
+                    </div>
 
-                                <div class="service-info-label">
-                                    Ghi chú thực hiện
-                                </div>
 
-                                <p>
-                                    {{ $item->execution_notes }}
-                                </p>
+                    {{-- Action bar --}}
+                    <div class="service-action-bar">
 
+                        <div class="service-action-status">
+
+                            @if (!$payable)
+
+                                <span class="action-message action-message-warning">
+                                    Chưa có khoản phải thanh toán.
+                                </span>
+
+                            @elseif ($serviceStatusName === 'PENDING' && !$allowsServiceExecution)
+
+                                <span class="action-message action-message-warning">
+                                    Cần hoàn tất thanh toán trước khi thực hiện dịch vụ.
+                                </span>
+
+                            @elseif ($serviceStatusName === 'PENDING' && $allowsServiceExecution)
+
+                                <span class="action-message action-message-success">
+                                    Đã thanh toán. Dịch vụ có thể bắt đầu thực hiện.
+                                </span>
+
+                            @elseif ($serviceStatusName === 'PROCESSING' && !$item->result)
+
+                                <span class="action-message action-message-info">
+                                    Dịch vụ đang thực hiện. Có thể nhập kết quả.
+                                </span>
+
+                            @elseif ($serviceStatusName === 'PROCESSING' && $item->result)
+
+                                <span class="action-message action-message-success">
+                                    Đã có kết quả. Có thể hoàn tất dịch vụ.
+                                </span>
+
+                            @elseif ($serviceStatusName === 'COMPLETED')
+
+                                <span class="action-message action-message-success">
+                                    Dịch vụ đã hoàn thành.
+                                </span>
+
+                            @elseif ($serviceStatusName === 'CANCELLED')
+
+                                <span class="action-message action-message-danger">
+                                    Dịch vụ đã bị hủy.
+                                </span>
+
+                            @endif
+
+                        </div>
+
+
+                        <div class="service-actions">
+
+                            {{-- Thanh toán --}}
+                            @if (
+                                $canPay
+                                &&
+                                Route::has(
+                                    'admin.payables.payment-transactions.create'
+                                )
+                            )
+
+                                <a
+                                    href="{{ route(
+                                        'admin.payables.payment-transactions.create',
+                                        $payable->id
+                                    ) }}"
+                                    class="service-action-btn service-action-pay"
+                                >
+                                    Thanh toán
+                                </a>
+
+                            @endif
+
+
+                            {{-- Bắt đầu thực hiện --}}
+                            @if (
+                                $canStart
+                                &&
+                                Route::has(
+                                    'admin.service-order-items.start'
+                                )
+                            )
+
+                                <form
+                                    method="POST"
+                                    action="{{ route(
+                                        'admin.service-order-items.start',
+                                        $item
+                                    ) }}"
+                                    class="inline-action-form"
+                                >
+
+                                    @csrf
+
+                                    <button
+                                        type="submit"
+                                        class="service-action-btn service-action-start"
+                                        onclick="return confirm(
+                                            'Xác nhận bắt đầu thực hiện dịch vụ này?'
+                                        )"
+                                    >
+                                        Bắt đầu thực hiện
+                                    </button>
+
+                                </form>
+
+                            @endif
+
+
+                            {{-- Nhập kết quả --}}
+                            @if (
+                                $canCreateResult
+                                &&
+                                Route::has(
+                                    'admin.service-order-items.service-results.create'
+                                )
+                            )
+
+                                <a
+                                    href="{{ route(
+                                        'admin.service-order-items.service-results.create',
+                                        $item
+                                    ) }}"
+                                    class="service-action-btn service-action-result"
+                                >
+                                    Nhập kết quả
+                                </a>
+
+                            @endif
+
+
+                            {{-- Xem kết quả --}}
+                            @if (
+                                $item->result
+                                &&
+                                Route::has(
+                                    'admin.service-results.show'
+                                )
+                            )
+
+                                <a
+                                    href="{{ route(
+                                        'admin.service-results.show',
+                                        $item->result->id
+                                    ) }}"
+                                    class="service-action-btn service-action-view"
+                                >
+                                    Xem kết quả
+                                </a>
+
+                            @endif
+
+
+                            {{-- Hoàn tất dịch vụ --}}
+                            @if (
+                                $canComplete
+                                &&
+                                Route::has(
+                                    'admin.service-order-items.complete'
+                                )
+                            )
+
+                                <form
+                                    method="POST"
+                                    action="{{ route(
+                                        'admin.service-order-items.complete',
+                                        $item
+                                    ) }}"
+                                    class="inline-action-form"
+                                >
+
+                                    @csrf
+
+                                    <button
+                                        type="submit"
+                                        class="service-action-btn service-action-complete"
+                                        onclick="return confirm(
+                                            'Xác nhận hoàn tất dịch vụ này? Sau khi hoàn tất, trạng thái dịch vụ sẽ chuyển sang COMPLETED.'
+                                        )"
+                                    >
+                                        Hoàn tất dịch vụ
+                                    </button>
+
+                                </form>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- Item basic information --}}
+                    <div class="service-info-grid">
+
+                        <div class="service-info-item">
+
+                            <div class="service-info-label">
+                                Giá tại thời điểm chỉ định
                             </div>
 
-                        @endif
-
-
-                        {{-- Related data --}}
-                        <div class="service-related-grid">
-
-                            {{-- Result --}}
-                            <div class="related-card">
-
-                                <div class="related-card-header">
-
-                                    <div>
-
-                                        <div class="related-label">
-                                            KẾT QUẢ DỊCH VỤ
-                                        </div>
-
-                                        <h4>
-                                            Kết quả
-                                        </h4>
-
-                                    </div>
-
-
-                                    @if ($item->result)
-
-                                        <span class="related-exists">
-                                            Có kết quả
-                                        </span>
-
-                                    @else
-
-                                        <span class="related-empty">
-                                            Chưa có
-                                        </span>
-
-                                    @endif
-
-                                </div>
-
-
-                                @if ($item->result)
-
-                                            <div class="related-content">
-
-                                                <div class="related-row">
-
-                                                    <span>
-                                                        Tóm tắt
-                                                    </span>
-
-                                                    <strong>
-                                                        {{ $item->result->result_summary
-                                    ?? '—' }}
-                                                    </strong>
-
-                                                </div>
-
-
-                                                <div class="related-row">
-
-                                                    <span>
-                                                        Kết luận
-                                                    </span>
-
-                                                    <strong>
-                                                        {{ $item->result->result_conclusion
-                                    ?? '—' }}
-                                                    </strong>
-
-                                                </div>
-
-
-                                                <div class="related-row">
-
-                                                    <span>
-                                                        Thời gian trả kết quả
-                                                    </span>
-
-                                                    <strong>
-
-                                                        @if ($item->result->resulted_at)
-
-                                                                            {{ $item->result
-                                                            ->resulted_at
-                                                            ->format(
-                                                                'd/m/Y H:i:s'
-                                                            ) }}
-
-                                                        @else
-                                                            —
-                                                        @endif
-
-                                                    </strong>
-
-                                                </div>
-
-
-                                                @if (
-                                                                    Route::has(
-                                                                        'admin.service-results.show'
-                                                                    )
-                                                                )
-
-                                                                <div class="related-action">
-
-                                                                    <a href="{{ route(
-                                                        'admin.service-results.show',
-                                                        $item->result->id
-                                                    ) }}" class="related-link">
-                                                                        Xem chi tiết kết quả
-                                                                    </a>
-
-                                                                </div>
-
-                                                @endif
-
-                                            </div>
-
-                                @else
-
-                                    <div class="related-no-data">
-                                        Dịch vụ này chưa có kết quả.
-                                    </div>
-
-                                @endif
-
+                            <div class="service-price">
+                                {{ number_format(
+                                    (float) $item->price_at_order,
+                                    0,
+                                    ',',
+                                    '.'
+                                ) }}
+                                đ
                             </div>
 
-
-                            {{-- Payable --}}
-                            <div class="related-card">
-
-                                <div class="related-card-header">
-
-                                    <div>
-
-                                        <div class="related-label">
-                                            THANH TOÁN
-                                        </div>
-
-                                        <h4>
-                                            Khoản phải thanh toán
-                                        </h4>
-
-                                    </div>
+                        </div>
 
 
-                                    @if ($payable)
+                        <div class="service-info-item">
 
-                                        <span class="related-exists">
-                                            Có khoản thu
-                                        </span>
+                            <div class="service-info-label">
+                                Người thực hiện
+                            </div>
 
-                                    @else
+                            @if ($item->performer)
 
-                                        <span class="related-empty">
-                                            Chưa có
-                                        </span>
+                                <div class="service-performer">
 
-                                    @endif
+                                    <strong>
+                                        {{ $item->performer->full_name }}
+                                    </strong>
+
+                                    <span>
+                                        {{ $item->performer->employee_code }}
+                                    </span>
 
                                 </div>
 
+                            @else
 
-                                @if ($payable)
+                                <div class="order-empty-value">
+                                    Chưa phân công
+                                </div>
 
-                                                <div class="related-content">
+                            @endif
 
-                                                    <div class="related-row">
-
-                                                        <span>
-                                                            Mã khoản
-                                                        </span>
-
-                                                        <strong class="related-code">
-                                                            {{ $payable->payable_code }}
-                                                        </strong>
-
-                                                    </div>
+                        </div>
 
 
-                                                    <div class="related-row">
+                        <div class="service-info-item">
 
-                                                        <span>
-                                                            Loại
-                                                        </span>
+                            <div class="service-info-label">
+                                Bắt đầu thực hiện
+                            </div>
 
-                                                        <strong>
-                                                            {{ $payable->payment_type }}
-                                                        </strong>
+                            <div class="service-time">
 
-                                                    </div>
+                                @if ($item->started_at)
 
-
-                                                    <div class="related-row">
-
-                                                        <span>
-                                                            Số tiền
-                                                        </span>
-
-                                                        <strong class="related-amount">
-
-                                                            {{ number_format(
-                                        (float) $payable->amount,
-                                        0,
-                                        ',',
-                                        '.'
+                                    {{ $item->started_at->format(
+                                        'd/m/Y H:i:s'
                                     ) }}
-                                                            đ
-
-                                                        </strong>
-
-                                                    </div>
-
-
-                                                    <div class="related-row">
-
-                                                        <span>
-                                                            Trạng thái thanh toán
-                                                        </span>
-
-                                                        <strong>
-                                                            {{ $payable->payment_status_name
-                                        ?? '—' }}
-                                                        </strong>
-
-                                                    </div>
-
-
-                                                    @if (
-                                                                        Route::has(
-                                                                            'admin.payables.show'
-                                                                        )
-                                                                    )
-
-                                                                    <div class="related-action">
-
-                                                                        <a href="{{ route(
-                                                            'admin.payables.show',
-                                                            $payable->id
-                                                        ) }}" class="related-link">
-                                                                            Xem khoản thanh toán
-                                                                        </a>
-
-                                                                    </div>
-
-                                                    @endif
-
-                                                </div>
 
                                 @else
 
-                                    <div class="related-no-data">
-                                        Chưa phát sinh khoản phải thanh toán
-                                        cho dịch vụ này.
-                                    </div>
+                                    —
+
+                                @endif
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="service-info-item">
+
+                            <div class="service-info-label">
+                                Hoàn thành
+                            </div>
+
+                            <div class="service-time">
+
+                                @if ($item->completed_at)
+
+                                    {{ $item->completed_at->format(
+                                        'd/m/Y H:i:s'
+                                    ) }}
+
+                                @else
+
+                                    —
 
                                 @endif
 
@@ -733,6 +693,328 @@
                         </div>
 
                     </div>
+
+
+                    {{-- Execution notes --}}
+                    @if ($item->execution_notes)
+
+                        <div class="service-note">
+
+                            <div class="service-info-label">
+                                Ghi chú thực hiện
+                            </div>
+
+                            <p>
+                                {{ $item->execution_notes }}
+                            </p>
+
+                        </div>
+
+                    @endif
+
+
+                    {{-- Related data --}}
+                    <div class="service-related-grid">
+
+                        {{-- Result --}}
+                        <div class="related-card">
+
+                            <div class="related-card-header">
+
+                                <div>
+
+                                    <div class="related-label">
+                                        KẾT QUẢ DỊCH VỤ
+                                    </div>
+
+                                    <h4>
+                                        Kết quả
+                                    </h4>
+
+                                </div>
+
+
+                                @if ($item->result)
+
+                                    <span class="related-exists">
+                                        Có kết quả
+                                    </span>
+
+                                @else
+
+                                    <span class="related-empty">
+                                        Chưa có
+                                    </span>
+
+                                @endif
+
+                            </div>
+
+
+                            @if ($item->result)
+
+                                <div class="related-content">
+
+                                    <div class="related-row">
+
+                                        <span>
+                                            Tóm tắt
+                                        </span>
+
+                                        <strong>
+                                            {{ $item->result->result_summary ?? '—' }}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div class="related-row">
+
+                                        <span>
+                                            Kết luận
+                                        </span>
+
+                                        <strong>
+                                            {{ $item->result->result_conclusion ?? '—' }}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div class="related-row">
+
+                                        <span>
+                                            Thời gian trả kết quả
+                                        </span>
+
+                                        <strong>
+
+                                            @if ($item->result->resulted_at)
+
+                                                {{ $item->result
+                                                    ->resulted_at
+                                                    ->format(
+                                                        'd/m/Y H:i:s'
+                                                    ) }}
+
+                                            @else
+
+                                                —
+
+                                            @endif
+
+                                        </strong>
+
+                                    </div>
+
+
+                                    @if (
+                                        Route::has(
+                                            'admin.service-results.show'
+                                        )
+                                    )
+
+                                        <div class="related-action">
+
+                                            <a
+                                                href="{{ route(
+                                                    'admin.service-results.show',
+                                                    $item->result->id
+                                                ) }}"
+                                                class="related-link"
+                                            >
+                                                Xem chi tiết kết quả
+                                            </a>
+
+                                        </div>
+
+                                    @endif
+
+                                </div>
+
+                            @else
+
+                                <div class="related-no-data">
+
+                                    @if ($serviceStatusName === 'PROCESSING')
+
+                                        Dịch vụ đang thực hiện và chưa nhập kết quả.
+
+                                    @elseif ($serviceStatusName === 'PENDING')
+
+                                        Cần bắt đầu thực hiện dịch vụ trước khi nhập kết quả.
+
+                                    @else
+
+                                        Dịch vụ này chưa có kết quả.
+
+                                    @endif
+
+                                </div>
+
+                            @endif
+
+                        </div>
+
+
+                        {{-- Payable --}}
+                        <div class="related-card">
+
+                            <div class="related-card-header">
+
+                                <div>
+
+                                    <div class="related-label">
+                                        THANH TOÁN
+                                    </div>
+
+                                    <h4>
+                                        Khoản phải thanh toán
+                                    </h4>
+
+                                </div>
+
+
+                                @if ($payable)
+
+                                    <span class="related-exists">
+                                        Có khoản thu
+                                    </span>
+
+                                @else
+
+                                    <span class="related-empty">
+                                        Chưa có
+                                    </span>
+
+                                @endif
+
+                            </div>
+
+
+                            @if ($payable)
+
+                                <div class="related-content">
+
+                                    <div class="related-row">
+
+                                        <span>
+                                            Mã khoản
+                                        </span>
+
+                                        <strong class="related-code">
+                                            {{ $payable->payable_code }}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div class="related-row">
+
+                                        <span>
+                                            Loại
+                                        </span>
+
+                                        <strong>
+                                            {{ $payable->payment_type }}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div class="related-row">
+
+                                        <span>
+                                            Số tiền
+                                        </span>
+
+                                        <strong class="related-amount">
+
+                                            {{ number_format(
+                                                (float) $payable->amount,
+                                                0,
+                                                ',',
+                                                '.'
+                                            ) }}
+                                            đ
+
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div class="related-row">
+
+                                        <span>
+                                            Trạng thái thanh toán
+                                        </span>
+
+                                        <strong>
+                                            {{ $paymentStatusName ?? '—' }}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div class="related-action related-action-group">
+
+                                        @if (
+                                            Route::has(
+                                                'admin.payables.show'
+                                            )
+                                        )
+
+                                            <a
+                                                href="{{ route(
+                                                    'admin.payables.show',
+                                                    $payable->id
+                                                ) }}"
+                                                class="related-link"
+                                            >
+                                                Xem khoản thanh toán
+                                            </a>
+
+                                        @endif
+
+
+                                        @if (
+                                            $canPay
+                                            &&
+                                            Route::has(
+                                                'admin.payables.payment-transactions.create'
+                                            )
+                                        )
+
+                                            <a
+                                                href="{{ route(
+                                                    'admin.payables.payment-transactions.create',
+                                                    $payable->id
+                                                ) }}"
+                                                class="related-link related-link-pay"
+                                            >
+                                                Thanh toán
+                                            </a>
+
+                                        @endif
+
+                                    </div>
+
+                                </div>
+
+                            @else
+
+                                <div class="related-no-data">
+                                    Chưa phát sinh khoản phải thanh toán
+                                    cho dịch vụ này.
+                                </div>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+                </div>
 
             @empty
 
@@ -790,12 +1072,14 @@
 
                         @if ($order->created_at)
 
-                                            {{ $order->created_at->format(
+                            {{ $order->created_at->format(
                                 'd/m/Y H:i:s'
                             ) }}
 
                         @else
+
                             —
+
                         @endif
 
                     </div>
@@ -813,12 +1097,14 @@
 
                         @if ($order->updated_at)
 
-                                            {{ $order->updated_at->format(
+                            {{ $order->updated_at->format(
                                 'd/m/Y H:i:s'
                             ) }}
 
                         @else
+
                             —
+
                         @endif
 
                     </div>
@@ -844,7 +1130,7 @@
                 </strong>
 
                 <p>
-                    Không hard-delete phiếu chỉ định hoặc
+                    Không xóa cứng phiếu chỉ định hoặc
                     chi tiết dịch vụ đã được thực hiện hoặc
                     đã phát sinh thanh toán.
                 </p>
@@ -871,6 +1157,39 @@
 
         .service-order-show-page * {
             box-sizing: border-box;
+        }
+
+
+        /* =========================
+           ALERT
+        ========================= */
+
+        .order-alert {
+            margin-bottom: 18px;
+
+            padding: 13px 15px;
+
+            border-radius: 10px;
+
+            font-size: 13px;
+
+            line-height: 1.6;
+        }
+
+        .order-alert-success {
+            border: 1px solid #bbf7d0;
+
+            background: #f0fdf4;
+
+            color: #166534;
+        }
+
+        .order-alert-error {
+            border: 1px solid #fecaca;
+
+            background: #fef2f2;
+
+            color: #991b1b;
         }
 
 
@@ -1307,6 +1626,152 @@
 
 
         /* =========================
+           ACTION BAR
+        ========================= */
+
+        .service-action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+
+            padding: 12px 20px;
+
+            border-top: 1px solid #edf2f7;
+            border-bottom: 1px solid #edf2f7;
+
+            background: #ffffff;
+        }
+
+        .service-action-status {
+            min-width: 0;
+        }
+
+        .action-message {
+            display: inline-block;
+
+            font-size: 11px;
+
+            line-height: 1.5;
+        }
+
+        .action-message-warning {
+            color: #92400e;
+        }
+
+        .action-message-success {
+            color: #15803d;
+        }
+
+        .action-message-info {
+            color: #1d4ed8;
+        }
+
+        .action-message-danger {
+            color: #b91c1c;
+        }
+
+        .service-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+
+            gap: 8px;
+        }
+
+        .inline-action-form {
+            margin: 0;
+        }
+
+        .service-action-btn {
+            display: inline-flex;
+
+            min-height: 34px;
+
+            align-items: center;
+            justify-content: center;
+
+            padding: 7px 12px;
+
+            border-radius: 8px;
+
+            font-family:
+                "Times New Roman",
+                Times,
+                serif;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            text-decoration: none;
+
+            cursor: pointer;
+        }
+
+        .service-action-pay {
+            border: 1px solid #16a34a;
+
+            background: #16a34a;
+
+            color: #ffffff;
+        }
+
+        .service-action-pay:hover {
+            background: #15803d;
+        }
+
+        .service-action-start {
+            border: 1px solid #2563eb;
+
+            background: #2563eb;
+
+            color: #ffffff;
+        }
+
+        .service-action-start:hover {
+            background: #1d4ed8;
+        }
+
+        .service-action-result {
+            border: 1px solid #7c3aed;
+
+            background: #7c3aed;
+
+            color: #ffffff;
+        }
+
+        .service-action-result:hover {
+            background: #6d28d9;
+        }
+
+        .service-action-view {
+            border: 1px solid #cbd5e1;
+
+            background: #ffffff;
+
+            color: #334155;
+        }
+
+        .service-action-view:hover {
+            background: #f8fafc;
+        }
+
+        .service-action-complete {
+            border: 1px solid #16a34a;
+
+            background: #16a34a;
+
+            color: #ffffff;
+        }
+
+        .service-action-complete:hover {
+            background: #15803d;
+        }
+
+
+        /* =========================
            SERVICE STATUS
         ========================= */
 
@@ -1512,7 +1977,8 @@
             display: grid;
 
             grid-template-columns:
-                minmax(110px, .7fr) minmax(0, 1.3fr);
+                minmax(110px, .7fr)
+                minmax(0, 1.3fr);
 
             gap: 12px;
 
@@ -1562,15 +2028,22 @@
             margin-top: 12px;
         }
 
+        .related-action-group {
+            display: flex;
+            flex-wrap: wrap;
+
+            gap: 8px;
+        }
+
         .related-link {
             display: inline-flex;
 
-            height: 34px;
+            min-height: 34px;
 
             align-items: center;
             justify-content: center;
 
-            padding: 0 12px;
+            padding: 7px 12px;
 
             border: 1px solid #bfdbfe;
             border-radius: 8px;
@@ -1587,6 +2060,16 @@
 
         .related-link:hover {
             background: #eff6ff;
+        }
+
+        .related-link-pay {
+            border-color: #bbf7d0;
+
+            color: #15803d;
+        }
+
+        .related-link-pay:hover {
+            background: #f0fdf4;
         }
 
 
@@ -1788,6 +2271,18 @@
                 flex-direction: column;
             }
 
+            .service-action-bar {
+                align-items: flex-start;
+
+                flex-direction: column;
+            }
+
+            .service-actions {
+                width: 100%;
+
+                justify-content: flex-start;
+            }
+
             .related-row {
                 grid-template-columns: 1fr;
             }
@@ -1797,6 +2292,7 @@
             }
 
         }
+
     </style>
 
 @endsection

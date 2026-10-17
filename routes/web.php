@@ -43,6 +43,7 @@ use App\Http\Controllers\Admin\DoctorScheduleController;
 use App\Http\Controllers\Admin\AppointmentTimeSlotController;
 use App\Http\Controllers\Admin\AppointmentController;
 
+use App\Http\Controllers\Admin\VisitStatusController;
 use App\Http\Controllers\Admin\QueueStatusController;
 use App\Http\Controllers\Admin\MedicalVisitController;
 use App\Http\Controllers\Admin\ExaminationRoomQueueController;
@@ -461,6 +462,23 @@ Route::prefix('admin')
                 'index',
                 'create',
                 'store',
+                'show',
+                'edit',
+                'update',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Trạng thái lượt khám
+            |--------------------------------------------------------------------------
+            */
+
+            Route::resource(
+                'visit-statuses',
+                VisitStatusController::class
+            )->only([
+                'index',
                 'show',
                 'edit',
                 'update',
@@ -899,5 +917,7 @@ Route::prefix('admin')
             )->name(
                 'logout'
             );
+
         });
+
     });

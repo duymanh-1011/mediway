@@ -28,8 +28,8 @@
             <a href="{{ route('admin.dashboard') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.dashboard')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -53,8 +53,8 @@
             <a href="{{ route('admin.users.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.users.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -65,8 +65,8 @@
             <a href="{{ route('admin.roles.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.roles.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -77,8 +77,8 @@
             <a href="{{ route('admin.administrators.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.administrators.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -89,8 +89,8 @@
             <a href="{{ route('admin.audit-logs.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.audit-logs.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -112,17 +112,17 @@
 
 
             <details class="sidebar-submenu" {{ request()->routeIs(
-    'admin.patients.*',
-    'admin.personal-health-records.*'
-) ? 'open' : '' }}>
+                'admin.patients.*',
+                'admin.personal-health-records.*'
+            ) ? 'open' : '' }}>
 
                 <summary class="
                         sidebar-link
                         sidebar-submenu-toggle
                         {{ request()->routeIs(
-    'admin.patients.*',
-    'admin.personal-health-records.*'
-) ? 'active' : '' }}
+                            'admin.patients.*',
+                            'admin.personal-health-records.*'
+                        ) ? 'active' : '' }}
                     ">
                     <span class="sidebar-link-dot"></span>
 
@@ -142,8 +142,8 @@
                             sidebar-link
                             sidebar-submenu-item
                             {{ request()->routeIs('admin.patients.*')
-    ? 'active'
-    : '' }}
+                                ? 'active'
+                                : '' }}
                         ">
                         <span class="sidebar-link-dot"></span>
 
@@ -152,13 +152,13 @@
 
 
                     <a href="{{ route(
-    'admin.personal-health-records.index'
-) }}" class="
+                        'admin.personal-health-records.index'
+                    ) }}" class="
                             sidebar-link
                             sidebar-submenu-item
                             {{ request()->routeIs(
-    'admin.personal-health-records.*'
-) ? 'active' : '' }}
+                                'admin.personal-health-records.*'
+                            ) ? 'active' : '' }}
                         ">
                         <span class="sidebar-link-dot"></span>
 
@@ -173,8 +173,8 @@
             <a href="{{ route('admin.doctors.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.doctors.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -185,8 +185,8 @@
             <a href="{{ route('admin.employees.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.employees.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -210,8 +210,8 @@
             <a href="{{ route('admin.specialties.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.specialties.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -222,8 +222,8 @@
             <a href="{{ route('admin.examination-rooms.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs(
-    'admin.examination-rooms.*'
-) ? 'active' : '' }}
+                        'admin.examination-rooms.*'
+                    ) ? 'active' : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -234,8 +234,8 @@
             <a href="{{ route('admin.service-groups.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.service-groups.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -246,8 +246,8 @@
             <a href="{{ route('admin.medical-services.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs(
-    'admin.medical-services.*'
-) ? 'active' : '' }}
+                        'admin.medical-services.*'
+                    ) ? 'active' : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -258,8 +258,8 @@
             <a href="{{ route('admin.disease-groups.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.disease-groups.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -270,8 +270,8 @@
             <a href="{{ route('admin.diseases.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.diseases.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -282,8 +282,8 @@
             <a href="{{ route('admin.medicines.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.medicines.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -307,8 +307,8 @@
             <a href="{{ route('admin.doctor-schedules.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs(
-    'admin.doctor-schedules.*'
-) ? 'active' : '' }}
+                        'admin.doctor-schedules.*'
+                    ) ? 'active' : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -319,8 +319,8 @@
             <a href="{{ route('admin.appointments.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.appointments.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -344,8 +344,8 @@
             <a href="{{ route('admin.visits.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.visits.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -356,8 +356,8 @@
             <a href="{{ route('admin.queues.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.queues.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -368,8 +368,8 @@
             <a href="{{ route('admin.clinical-notes.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.clinical-notes.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -380,8 +380,8 @@
             <a href="{{ route('admin.diagnoses.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.diagnoses.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -392,8 +392,8 @@
             <a href="{{ route('admin.conclusions.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs('admin.conclusions.*')
-    ? 'active'
-    : '' }}
+                        ? 'active'
+                        : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -417,8 +417,8 @@
             <a href="{{ route('admin.service-orders.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs(
-    'admin.service-orders.*'
-) ? 'active' : '' }}
+                        'admin.service-orders.*'
+                    ) ? 'active' : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -429,8 +429,8 @@
             <a href="{{ route('admin.service-results.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs(
-    'admin.service-results.*'
-) ? 'active' : '' }}
+                        'admin.service-results.*'
+                    ) ? 'active' : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -454,8 +454,8 @@
             <a href="{{ route('admin.prescriptions.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs(
-    'admin.prescriptions.*'
-) ? 'active' : '' }}
+                        'admin.prescriptions.*'
+                    ) ? 'active' : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -479,8 +479,8 @@
             <a href="{{ route('admin.payables.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs(
-    'admin.payables.*'
-) ? 'active' : '' }}
+                        'admin.payables.*'
+                    ) ? 'active' : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -491,8 +491,8 @@
             <a href="{{ route('admin.payment-transactions.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs(
-    'admin.payment-transactions.*'
-) ? 'active' : '' }}
+                        'admin.payment-transactions.*'
+                    ) ? 'active' : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -514,12 +514,12 @@
 
 
             <a href="{{ route(
-    'admin.appointment-statuses.index'
-) }}" class="
+                'admin.appointment-statuses.index'
+            ) }}" class="
                     sidebar-link
                     {{ request()->routeIs(
-    'admin.appointment-statuses.*'
-) ? 'active' : '' }}
+                        'admin.appointment-statuses.*'
+                    ) ? 'active' : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -527,14 +527,24 @@
             </a>
 
 
-            <a href="#" class="sidebar-link">
+            <a href="{{ route('admin.visit-statuses.index') }}" class="
+                    sidebar-link
+                    {{ request()->routeIs(
+                        'admin.visit-statuses.*'
+                    ) ? 'active' : '' }}
+                ">
                 <span class="sidebar-link-dot"></span>
 
                 Trạng thái lượt khám
             </a>
 
 
-            <a href="#" class="sidebar-link">
+            <a href="{{ route('admin.queue-statuses.index') }}" class="
+                    sidebar-link
+                    {{ request()->routeIs(
+                        'admin.queue-statuses.*'
+                    ) ? 'active' : '' }}
+                ">
                 <span class="sidebar-link-dot"></span>
 
                 Trạng thái hàng đợi
@@ -544,8 +554,8 @@
             <a href="{{ route('admin.service-statuses.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs(
-    'admin.service-statuses.*'
-) ? 'active' : '' }}
+                        'admin.service-statuses.*'
+                    ) ? 'active' : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 
@@ -556,8 +566,8 @@
             <a href="{{ route('admin.payment-statuses.index') }}" class="
                     sidebar-link
                     {{ request()->routeIs(
-    'admin.payment-statuses.*'
-) ? 'active' : '' }}
+                        'admin.payment-statuses.*'
+                    ) ? 'active' : '' }}
                 ">
                 <span class="sidebar-link-dot"></span>
 

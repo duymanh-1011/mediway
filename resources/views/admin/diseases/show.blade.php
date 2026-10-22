@@ -1,24 +1,23 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'diseases-show')
 
 @section(
     'title',
-    'Chi tiết bệnh - Mediway Admin'
+    'Chi tiết bệnh - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-
-        Admin /
-        Danh mục /
-        Danh mục bệnh /
-        {{ $disease->disease_code }}
-
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Danh mục</span>
+    <span aria-hidden="true">/</span>
+    <span>Danh mục bệnh</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ $disease->disease_code }}</strong>
 @endsection
 
 @section('content')
+    @include('admin.layouts.partials.disease-catalog-tabs')
 
     <div class="page-header">
 
@@ -36,6 +35,8 @@
         </div>
 
         <div class="header-actions">
+
+            <a class="admin-btn admin-btn-secondary" href="{{ route('admin.disease-groups.show', $disease->disease_group_id) }}">Xem nhóm bệnh</a>
 
             <a
                 href="{{ route(
@@ -103,13 +104,13 @@
                 )
 
                     <span class="badge badge-success">
-                        ACTIVE
+                        Đang hoạt động
                     </span>
 
                 @else
 
                     <span class="badge badge-danger">
-                        INACTIVE
+                        Ngừng hoạt động
                     </span>
 
                 @endif
@@ -236,113 +237,3 @@
     </div>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .stats-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 14px;
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        padding: 16px 18px;
-
-        background: #ffffff;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-    }
-
-    .stat-label {
-        color: #64748b;
-
-        font-size: 13px;
-
-        margin-bottom: 7px;
-    }
-
-    .stat-value {
-        font-size: 26px;
-        font-weight: 700;
-    }
-
-    .stat-text {
-        font-size: 16px;
-        font-weight: 700;
-    }
-
-    .section-title {
-        margin: 0 0 18px;
-
-        font-size: 18px;
-    }
-
-    .detail-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-
-        gap: 0 30px;
-    }
-
-    .detail-row,
-    .detail-section {
-        padding: 13px 0;
-
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .detail-label {
-        margin-bottom: 5px;
-
-        color: #64748b;
-
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .detail-value {
-        color: #334155;
-
-        font-size: 14px;
-        line-height: 1.6;
-    }
-
-    .long-text {
-        white-space: pre-line;
-    }
-
-    @media (max-width: 800px) {
-
-        .stats-grid,
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

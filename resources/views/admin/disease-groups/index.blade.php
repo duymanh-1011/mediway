@@ -1,19 +1,21 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'disease-groups-index')
 
 @section(
     'title',
-    'Quản lý nhóm bệnh - Mediway Admin'
+    'Quản lý nhóm bệnh - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-        Admin / Danh mục / Nhóm bệnh
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Danh mục</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Nhóm bệnh</strong>
 @endsection
 
 @section('content')
+    @include('admin.layouts.partials.disease-catalog-tabs')
 
     <div class="page-header">
 
@@ -34,7 +36,7 @@
             href="{{ route(
                 'admin.disease-groups.create'
             ) }}"
-            class="btn btn-primary"
+            class="admin-btn btn btn-primary admin-btn-primary"
         >
             + Thêm nhóm bệnh
         </a>
@@ -81,17 +83,19 @@
 
     </div>
 
-    <div class="card">
-
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc nhóm bệnh',
+        'description' => 'Lọc theo từ khóa và trạng thái.',
+    ])
         <form
             method="GET"
             action="{{ route(
                 'admin.disease-groups.index'
             ) }}"
-            class="filter-form"
+            class="filter-form admin-filter-form"
         >
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Tìm kiếm
@@ -104,10 +108,11 @@
                     value="{{ $keyword }}"
                     placeholder="Mã hoặc tên nhóm bệnh..."
                 >
+@error('keyword')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Trạng thái
@@ -128,7 +133,7 @@
                             $status === 'ACTIVE'
                         )
                     >
-                        ACTIVE
+                        Đang hoạt động
                     </option>
 
                     <option
@@ -137,34 +142,30 @@
                             $status === 'INACTIVE'
                         )
                     >
-                        INACTIVE
+                        Ngừng hoạt động
                     </option>
 
                 </select>
+@error('status')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-actions">
+            <div class="filter-actions admin-filter-layout">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Tìm kiếm
-                </button>
 
-                <a
-                    href="{{ route(
+
+
+
+            </div>
+
+
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route(
                         'admin.disease-groups.index'
-                    ) }}"
-                    class="btn btn-secondary"
-                >
-                    Đặt lại
-                </a>
-
-            </div>
-
+                    ), 'searchOnly' => false])
         </form>
+    @endcomponent
+
+    <div class="card">
 
         <div class="table-wrapper">
 
@@ -173,7 +174,7 @@
                 <thead>
 
                     <tr>
-                        <th>#</th>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Mã nhóm</th>
                         <th>Tên nhóm bệnh</th>
                         <th>Số bệnh</th>
@@ -193,10 +194,7 @@
 
                     <tr>
 
-                        <td>
-                            {{ $diseaseGroups->firstItem()
-                                + $loop->index }}
-                        </td>
+                        @include('admin.layouts.partials.row-number', ['rows' => $diseaseGroups, 'index' => $loop->index])
 
                         <td>
                             <strong>
@@ -210,8 +208,7 @@
                         </td>
 
                         <td>
-                            {{ $diseaseGroup
-                                ->diseases_count }}
+                            <a href="{{ route('admin.disease-groups.show', $diseaseGroup) }}#group-diseases" aria-label="Xem bệnh thuộc nhóm {{ $diseaseGroup->name }}">{{ $diseaseGroup->diseases_count }}</a>
                         </td>
 
                         <td>
@@ -224,7 +221,7 @@
                                 <span
                                     class="badge badge-success"
                                 >
-                                    ACTIVE
+                                    Đang hoạt động
                                 </span>
 
                             @else
@@ -232,7 +229,7 @@
                                 <span
                                     class="badge badge-danger"
                                 >
-                                    INACTIVE
+                                    Ngừng hoạt động
                                 </span>
 
                             @endif
@@ -254,45 +251,18 @@
                                         'admin.disease-groups.show',
                                         $diseaseGroup
                                     ) }}"
-                                    class="action-link view"
-                                >
-                                    Chi tiết
-                                </a>
+                                    class="admin-btn admin-btn-detail action-link view"
+                                >Chi tiết</a>
 
                                 <a
                                     href="{{ route(
                                         'admin.disease-groups.edit',
                                         $diseaseGroup
                                     ) }}"
-                                    class="action-link edit"
-                                >
-                                    Sửa
-                                </a>
+                                    class="admin-btn admin-btn-secondary action-link edit"
+                                >Sửa</a>
 
-                                <form
-                                    method="POST"
-                                    action="{{ route(
-                                        'admin.disease-groups.destroy',
-                                        $diseaseGroup
-                                    ) }}"
-                                    onsubmit="
-                                        return confirm(
-                                            'Bạn có chắc muốn xóa nhóm bệnh này? Nếu nhóm đang chứa bệnh, hệ thống sẽ chuyển sang INACTIVE thay vì xóa.'
-                                        );
-                                    "
-                                >
-
-                                    @csrf
-                                    @method('DELETE')
-
-                                    <button
-                                        type="submit"
-                                        class="action-link delete"
-                                    >
-                                        Xóa
-                                    </button>
-
-                                </form>
+                                @include('admin.layouts.partials.catalog-status', ['record' => $diseaseGroup, 'catalog' => 'disease-groups'])
 
                             </div>
 
@@ -328,177 +298,3 @@
     </div>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-
-        gap: 20px;
-
-        margin-bottom: 20px;
-    }
-
-    .stats-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 14px;
-
-        margin-bottom: 18px;
-    }
-
-    .mini-card {
-        padding: 16px 18px;
-
-        background: #ffffff;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 11px;
-    }
-
-    .mini-card-label {
-        margin-bottom: 7px;
-
-        color: #64748b;
-
-        font-size: 12px;
-    }
-
-    .mini-card-value {
-        font-size: 26px;
-        font-weight: 700;
-    }
-
-    .mini-card-value.success {
-        color: #059669;
-    }
-
-    .mini-card-value.danger {
-        color: #dc2626;
-    }
-
-    .filter-form {
-        display: grid;
-
-        grid-template-columns:
-            minmax(220px, 1fr)
-            220px
-            auto;
-
-        gap: 14px;
-
-        align-items: end;
-
-        margin-bottom: 20px;
-    }
-
-    .filter-label {
-        display: block;
-
-        margin-bottom: 6px;
-
-        color: #475569;
-
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .filter-control {
-        width: 100%;
-
-        padding: 10px 12px;
-
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-
-        background: #ffffff;
-
-        outline: none;
-    }
-
-    .filter-control:focus {
-        border-color: #3b82f6;
-
-        box-shadow:
-            0 0 0 3px
-            rgba(59, 130, 246, 0.1);
-    }
-
-    .filter-actions {
-        display: flex;
-
-        gap: 8px;
-    }
-
-    .action-group {
-        display: flex;
-        align-items: center;
-
-        gap: 7px;
-    }
-
-    .action-group form {
-        margin: 0;
-    }
-
-    .action-link {
-        padding: 6px 9px;
-
-        border: none;
-        border-radius: 6px;
-
-        text-decoration: none;
-
-        font-family: inherit;
-        font-size: 12px;
-        font-weight: 600;
-
-        cursor: pointer;
-    }
-
-    .action-link.view {
-        background: #eff6ff;
-        color: #1d4ed8;
-    }
-
-    .action-link.edit {
-        background: #fffbeb;
-        color: #b45309;
-    }
-
-    .action-link.delete {
-        background: #fef2f2;
-        color: #b91c1c;
-    }
-
-    .empty-state {
-        padding: 40px !important;
-
-        text-align: center !important;
-
-        color: #94a3b8 !important;
-    }
-
-    .pagination-wrapper {
-        margin-top: 18px;
-    }
-
-    @media (max-width: 800px) {
-
-        .stats-grid,
-        .filter-form {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

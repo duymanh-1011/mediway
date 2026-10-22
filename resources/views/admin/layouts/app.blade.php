@@ -13,12 +13,12 @@
         @yield('title', 'Quản trị Mediway')
     </title>
 
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @stack('styles')
 </head>
 
-<body>
+<body class="admin-ui" data-admin-page="@yield('admin-page')" data-admin-module="{{ request()->segment(2) }}" data-lookup-url="{{ route('admin.lookups') }}" data-lookup-fields='@json(\App\Models\AdminLookup::FIELDS)'>
 
     <div class="admin-wrapper">
 
@@ -34,7 +34,7 @@
 
             <main class="admin-content">
 
-                @yield('breadcrumb')
+                <nav class="admin-breadcrumb" aria-label="Đường dẫn">@yield('breadcrumb')</nav>
 
                 @include(
                     'admin.layouts.partials.flash'

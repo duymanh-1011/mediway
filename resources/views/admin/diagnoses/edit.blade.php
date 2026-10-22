@@ -1,19 +1,23 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'diagnoses-edit')
 
 @section('title', 'Sửa chẩn đoán')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard /
-        Chẩn đoán /
-        {{ $diagnosis->medicalVisit?->visit_code }} /
-        Sửa
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <span>Chẩn đoán</span>
+    <span aria-hidden="true">/</span>
+    <span>{{ $diagnosis->medicalVisit?->visit_code }}</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
 
-    <div style="margin-bottom: 22px;">
+    <div class="admin-u-ed1667a9">
 
         <h1 class="page-title">
             Sửa chẩn đoán
@@ -28,8 +32,8 @@
 
 
     <div
-        class="card"
-        style="margin-bottom: 18px;"
+        class="admin-u-2f23af6b card"
+
     >
 
         <strong>Bệnh nhân:</strong>
@@ -45,7 +49,7 @@
 
     <div class="card">
 
-        <form
+        <form novalidate
             method="POST"
             action="{{ route(
                 'admin.diagnoses.update',
@@ -57,35 +61,22 @@
             @method('PUT')
 
 
-            <div style="
-                display: grid;
-                gap: 18px;
-            ">
+            <div class="admin-u-6691f14f">
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="disease_id"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Bệnh
                     </label>
 
-                    <select
+                    <select class="admin-u-184ecf5a"
                         id="disease_id"
-                        name="disease_id"
+                        name="disease_id" data-lookup="diseases"
                         required
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -113,11 +104,8 @@
                     </select>
 
                     @error('disease_id')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -126,18 +114,14 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="diagnosis_type"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Loại chẩn đoán
                     </label>
 
-                    <input
+                    <input class="admin-u-419e8d7e"
                         type="text"
                         id="diagnosis_type"
                         name="diagnosis_type"
@@ -146,12 +130,7 @@
                             'diagnosis_type',
                             $diagnosis->diagnosis_type
                         ) }}"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
 
                     <datalist id="diagnosis-type-options">
@@ -163,11 +142,8 @@
                     </datalist>
 
                     @error('diagnosis_type')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -176,18 +152,14 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="severity"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Mức độ
                     </label>
 
-                    <input
+                    <input class="admin-u-419e8d7e"
                         type="text"
                         id="severity"
                         name="severity"
@@ -196,12 +168,7 @@
                             'severity',
                             $diagnosis->severity
                         ) }}"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
 
                     <datalist id="severity-options">
@@ -213,11 +180,8 @@
                     </datalist>
 
                     @error('severity')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -226,39 +190,26 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="diagnosis_description"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Mô tả chẩn đoán
                     </label>
 
-                    <textarea
+                    <textarea class="admin-u-fb28156a"
                         id="diagnosis_description"
                         name="diagnosis_description"
                         rows="5"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            resize: vertical;
-                        "
+
                     >{{ old(
                         'diagnosis_description',
                         $diagnosis->diagnosis_description
                     ) }}</textarea>
 
                     @error('diagnosis_description')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -267,18 +218,14 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="diagnosed_at"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Thời điểm chẩn đoán
                     </label>
 
-                    <input
+                    <input class="admin-u-419e8d7e"
                         type="datetime-local"
                         id="diagnosed_at"
                         name="diagnosed_at"
@@ -290,20 +237,12 @@
                                 )
                                 : ''
                         ) }}"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
 
                     @error('diagnosed_at')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -312,49 +251,33 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="notes"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Ghi chú
                     </label>
 
-                    <textarea
+                    <textarea class="admin-u-fb28156a"
                         id="notes"
                         name="notes"
                         rows="4"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            resize: vertical;
-                        "
+
                     >{{ old(
                         'notes',
                         $diagnosis->notes
                     ) }}</textarea>
 
                     @error('notes')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
                 </div>
 
 
-                <div style="
-                    display: flex;
-                    gap: 8px;
-                ">
+                <div class="admin-u-5786f359">
 
                     <button
                         type="submit"
@@ -368,10 +291,8 @@
                             'admin.diagnoses.show',
                             $diagnosis
                         ) }}"
-                        class="btn btn-secondary"
-                    >
-                        Hủy
-                    </a>
+                        class="admin-btn admin-btn-secondary btn btn-secondary"
+                    >Hủy</a>
 
                 </div>
 

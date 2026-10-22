@@ -5,11 +5,18 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CancelPayableRequest;
 use App\Http\Requests\Admin\UpdatePayableStatusRequest;
+use App\Models\AuditLog;
+use App\Models\MedicalVisit;
 use App\Models\Payable;
 use App\Models\PaymentStatus;
+use App\Models\ServiceOrderItem;
+use App\Models\ServiceOrderProgress;
+use App\Models\ServiceStatus;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PayableController extends Controller
 {
@@ -51,17 +58,17 @@ class PayableController extends Controller
                     ->where(
                         'payables.payable_code',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'medical_visits.visit_code',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'payables.description',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     );
             });
         }
@@ -167,6 +174,9 @@ class PayableController extends Controller
             ->with([
                 'paymentStatus',
 
+                'serviceOrderItem.serviceStatus',
+                'serviceOrderItem.result',
+
                 'transactions' => function ($query) {
                     $query
                         ->orderByDesc('started_at')
@@ -261,226 +271,53 @@ class PayableController extends Controller
     /**
      * Thay đổi trạng thái khoản phải thanh toán.
      */
-    public function updateStatus(
-        UpdatePayableStatusRequest $request,
-        int $id
-    ) {
-        $payable = Payable::query()
-            ->with([
-                'paymentStatus',
-                'transactions',
-            ])
-            ->findOrFail($id);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Validation đã được xử lý trong FormRequest
-        |--------------------------------------------------------------------------
-        */
+    public function updateStatus(UpdatePayableStatusRequest $request, int $id): RedirectResponse
+    {
+        $payable = Payable::findOrFail($id);
         $validated = $request->validated();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Trạng thái mới
-        |--------------------------------------------------------------------------
-        */
-        $newStatus = PaymentStatus::query()
-            ->findOrFail(
-                $validated['payment_status_id']
-            );
+        DB::transaction(function () use ($request, $payable, $validated): void {
+            MedicalVisit::whereKey($payable->medical_visit_id)->lockForUpdate()->firstOrFail();
+            $item = $payable->service_order_item_id
+                ? ServiceOrderItem::with(['serviceStatus', 'serviceOrder'])->whereKey($payable->service_order_item_id)->lockForUpdate()->firstOrFail()
+                : null;
+            $payable = Payable::with('paymentStatus')->whereKey($payable->id)->lockForUpdate()->firstOrFail();
+            $newStatus = PaymentStatus::whereKey($validated['payment_status_id'])->where('is_active', true)->firstOrFail();
+            $oldStatus = $payable->paymentStatus?->name;
 
-        $oldStatusName =
-            $payable->paymentStatus?->name;
-
-        /*
-        |--------------------------------------------------------------------------
-        | CANCELLED dùng thao tác Hủy nghiệp vụ riêng
-        |--------------------------------------------------------------------------
-        */
-        if ($newStatus->name === 'CANCELLED') {
-            return back()
-                ->withInput()
-                ->with(
-                    'error',
-                    'Để hủy khoản phải thanh toán, hãy dùng thao tác Hủy nghiệp vụ.'
-                );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Không đưa khoản đã thanh toán quay ngược trạng thái
-        |--------------------------------------------------------------------------
-        |
-        | Không có nghiệp vụ hoàn tiền trong phạm vi module hiện tại.
-        |
-        */
-        if (
-            $oldStatusName === 'PAID'
-            &&
-            $newStatus->name !== 'PAID'
-        ) {
-            return back()->with(
-                'error',
-                'Khoản đã thanh toán không thể chuyển ngược trạng thái tại màn hình Admin.'
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Không tự suy diễn FAILED thành PAID
-        |--------------------------------------------------------------------------
-        |
-        | Khi chuyển PAID phải thực sự có giao dịch SUCCESS.
-        |
-        */
-        $successfulTransaction = $payable
-            ->transactions
-            ->where(
-                'transaction_result',
-                'SUCCESS'
-            )
-            ->sortByDesc('confirmed_at')
-            ->first();
-
-        if (
-            $newStatus->name === 'PAID'
-            &&
-            !$successfulTransaction
-        ) {
-            return back()->with(
-                'error',
-                'Không thể chuyển sang PAID vì chưa có giao dịch thanh toán SUCCESS.'
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Không cập nhật nếu trạng thái không thay đổi
-        |--------------------------------------------------------------------------
-        */
-        if ($oldStatusName === $newStatus->name) {
-            return back()->with(
-                'success',
-                'Khoản phải thanh toán đã ở trạng thái '
-                    . $newStatus->name
-                    . '.'
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Dữ liệu trước cập nhật
-        |--------------------------------------------------------------------------
-        */
-        $oldValues = [
-            'payment_status_id' =>
-            $payable->payment_status_id,
-
-            'payment_status' =>
-            $oldStatusName,
-
-            'paid_at' =>
-            $payable->paid_at
-                ? $payable->paid_at->format(
-                    'Y-m-d H:i:s'
-                )
-                : null,
-        ];
-
-        /*
-        |--------------------------------------------------------------------------
-        | Transaction cập nhật trạng thái + Audit Log
-        |--------------------------------------------------------------------------
-        */
-        DB::transaction(function () use (
-            $request,
-            $payable,
-            $newStatus,
-            $successfulTransaction,
-            $oldValues
-        ) {
-            $paidAt = $payable->paid_at;
-
-            /*
-            |--------------------------------------------------------------------------
-            | Nếu chuyển PAID thì lấy thời gian từ giao dịch SUCCESS
-            |--------------------------------------------------------------------------
-            */
-            if ($newStatus->name === 'PAID') {
-                $paidAt =
-                    $successfulTransaction->paid_at
-                    ??
-                    $successfulTransaction->confirmed_at
-                    ??
-                    now();
+            if ($oldStatus === 'CANCELLED' || $item?->serviceStatus?->name === 'CANCELLED') {
+                throw ValidationException::withMessages(['payment_status_id' => 'Khoản thu hoặc dịch vụ đã hủy không thể được mở lại.']);
+            }
+            if ($item && $item->serviceOrder->medical_visit_id !== $payable->medical_visit_id) {
+                throw ValidationException::withMessages(['payment_status_id' => 'Khoản thu không thuộc lượt khám của dịch vụ.']);
+            }
+            if ($newStatus->name === 'CANCELLED') {
+                throw ValidationException::withMessages(['payment_status_id' => 'Để hủy khoản thu và dịch vụ tương ứng, hãy dùng thao tác Hủy nghiệp vụ.']);
+            }
+            $successfulTransaction = $payable->transactions()->where('transaction_result', 'SUCCESS')->orderByDesc('confirmed_at')->first();
+            if (($oldStatus === 'PAID' || $payable->paid_at || $successfulTransaction) && $newStatus->name !== 'PAID') {
+                throw ValidationException::withMessages(['payment_status_id' => 'Khoản đã thanh toán không thể chuyển ngược trạng thái.']);
+            }
+            if ($newStatus->name === 'PAID' && ! $successfulTransaction) {
+                throw ValidationException::withMessages(['payment_status_id' => 'Không thể ghi nhận đã thanh toán khi chưa có giao dịch thành công.']);
+            }
+            if ($oldStatus === $newStatus->name) {
+                return;
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Cập nhật payable
-            |--------------------------------------------------------------------------
-            */
-            $payable->update([
-                'payment_status_id' =>
-                $newStatus->id,
+            $oldValues = ['payment_status_id' => $payable->payment_status_id, 'payment_status' => $oldStatus,
+                'paid_at' => $payable->paid_at?->format('Y-m-d H:i:s')];
+            $paidAt = $newStatus->name === 'PAID'
+                ? ($successfulTransaction->paid_at ?? $successfulTransaction->confirmed_at ?? now())
+                : null;
+            $payable->update(['payment_status_id' => $newStatus->id, 'paid_at' => $paidAt]);
+            $this->writeAuditLog($request, $payable, 'STATUS_CHANGE', $oldValues, [
+                'payment_status_id' => $newStatus->id, 'payment_status' => $newStatus->name,
+                'paid_at' => $paidAt?->format('Y-m-d H:i:s'),
+            ], 'Thay đổi trạng thái khoản phải thanh toán '.$payable->payable_code.'.');
+        }, 3);
 
-                'paid_at' =>
-                $paidAt,
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Dữ liệu sau cập nhật
-            |--------------------------------------------------------------------------
-            */
-            $newValues = [
-                'payment_status_id' =>
-                $newStatus->id,
-
-                'payment_status' =>
-                $newStatus->name,
-
-                'paid_at' =>
-                $paidAt
-                    ? $paidAt->format(
-                        'Y-m-d H:i:s'
-                    )
-                    : null,
-            ];
-
-            /*
-            |--------------------------------------------------------------------------
-            | Ghi Audit Log
-            |--------------------------------------------------------------------------
-            */
-            $this->writeAuditLog(
-                $request,
-                $payable,
-                'STATUS_CHANGE',
-                $oldValues,
-                $newValues,
-                'Thay đổi trạng thái khoản phải thanh toán '
-                    . $payable->payable_code
-                    . ' từ '
-                    . (
-                        $oldValues['payment_status']
-                        ?? '—'
-                    )
-                    . ' sang '
-                    . $newStatus->name
-                    . '.'
-            );
-        });
-
-        return redirect()
-            ->route(
-                'admin.payables.show',
-                $payable->id
-            )
-            ->with(
-                'success',
-                'Cập nhật trạng thái thanh toán thành công.'
-            );
+        return redirect()->route('admin.payables.show', $payable->id)->with('success', 'Cập nhật trạng thái thanh toán thành công.');
     }
 
     /**
@@ -488,191 +325,84 @@ class PayableController extends Controller
      *
      * Không xóa bản ghi.
      */
-    public function cancel(
-        CancelPayableRequest $request,
-        int $id
-    ) {
-        $payable = Payable::query()
-            ->with('paymentStatus')
-            ->findOrFail($id);
+    public function cancel(CancelPayableRequest $request, int $id): RedirectResponse
+    {
+        $payable = Payable::findOrFail($id);
+        $reason = trim($request->validated()['cancel_reason']);
+        try {
+            DB::transaction(function () use ($request, $payable, $reason): void {
+                MedicalVisit::whereKey($payable->medical_visit_id)->lockForUpdate()->firstOrFail();
+                $item = $payable->service_order_item_id
+                    ? ServiceOrderItem::with(['serviceStatus', 'serviceOrder'])->whereKey($payable->service_order_item_id)->lockForUpdate()->firstOrFail()
+                    : null;
+                $lockedPayable = Payable::with('paymentStatus')->whereKey($payable->id)->lockForUpdate()->firstOrFail();
+                if ($item) {
+                    $currentServiceStatus = ServiceStatus::whereKey($item->service_status_id)->lockForUpdate()->firstOrFail();
+                    $item->setRelation('serviceStatus', $currentServiceStatus);
+                    if ($currentServiceStatus->name !== 'CANCELLED' && ! $currentServiceStatus->allows_transition) {
+                        throw ValidationException::withMessages(['cancel_reason' => 'Trạng thái dịch vụ hiện tại đang khóa chuyển trạng thái, không thể hủy khoản thu kèm dịch vụ.']);
+                    }
+                }
+                if ($lockedPayable->paymentStatus?->name === 'PAID' || $lockedPayable->paid_at
+                    || $lockedPayable->transactions()->where('transaction_result', 'SUCCESS')->exists()) {
+                    throw ValidationException::withMessages(['cancel_reason' => 'Không thể hủy khoản đã thanh toán.']);
+                }
+                if ($item && ($item->serviceOrder->medical_visit_id !== $lockedPayable->medical_visit_id
+                    || ! $item->canBeCancelled())) {
+                    throw ValidationException::withMessages(['cancel_reason' => 'Chỉ được hủy dịch vụ chưa bắt đầu và chưa có kết quả.']);
+                }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validation đã được xử lý trong FormRequest
-        |--------------------------------------------------------------------------
-        */
-        $validated = $request->validated();
+                $cancelPaymentStatus = PaymentStatus::where('name', 'CANCELLED')->where('is_active', true)->first();
+                if (! $cancelPaymentStatus) {
+                    throw new \RuntimeException('Không tìm thấy trạng thái đã hủy đang hoạt động cho khoản thu.');
+                }
+                if ($item && $item->serviceStatus?->name !== 'CANCELLED') {
+                    $cancelServiceStatus = ServiceStatus::where('name', 'CANCELLED')->where('is_active', true)->first();
+                    if (! $cancelServiceStatus) {
+                        throw new \RuntimeException('Không tìm thấy trạng thái đã hủy đang hoạt động cho dịch vụ.');
+                    }
+                    $oldItem = ['service_status_id' => $item->service_status_id, 'service_status' => $item->serviceStatus?->name, 'execution_notes' => $item->execution_notes];
+                    $notes = trim(($item->execution_notes ? $item->execution_notes.PHP_EOL : '').'Lý do hủy: '.$reason);
+                    $item->update(['service_status_id' => $cancelServiceStatus->id, 'execution_notes' => $notes]);
+                    AuditLog::create([
+                        'user_id' => Auth::id(), 'role_name_snapshot' => Auth::user()?->role?->name,
+                        'action' => 'STATUS_CHANGE', 'entity_type' => 'service_order_items',
+                        'entity_id' => $item->id, 'entity_business_code' => null,
+                        'old_values' => $oldItem,
+                        'new_values' => ['service_status_id' => $cancelServiceStatus->id, 'service_status' => 'CANCELLED', 'execution_notes' => $notes],
+                        'description' => 'Hủy dịch vụ do hủy khoản thu '.$lockedPayable->payable_code.'. Lý do: '.$reason,
+                        'ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'performed_at' => now(),
+                    ]);
+                }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Lý do hủy
-        |--------------------------------------------------------------------------
-        */
-        $cancelReason = trim(
-            $validated['cancel_reason']
+                if ($lockedPayable->paymentStatus?->name !== 'CANCELLED') {
+                    $oldValues = [
+                        'payment_status_id' => $lockedPayable->payment_status_id,
+                        'payment_status' => $lockedPayable->paymentStatus?->name, 'notes' => $lockedPayable->notes,
+                        'paid_at' => $lockedPayable->paid_at?->format('Y-m-d H:i:s'),
+                    ];
+                    $lockedPayable->update([
+                        'payment_status_id' => $cancelPaymentStatus->id, 'paid_at' => null,
+                        'notes' => trim(($lockedPayable->notes ? $lockedPayable->notes.PHP_EOL : '').'Lý do hủy: '.$reason),
+                    ]);
+                    $this->writeAuditLog($request, $lockedPayable, 'STATUS_CHANGE', $oldValues, [
+                        'payment_status_id' => $cancelPaymentStatus->id, 'payment_status' => 'CANCELLED',
+                        'notes' => $lockedPayable->notes, 'paid_at' => null,
+                    ], 'Hủy khoản phải thanh toán '.$lockedPayable->payable_code.'. Lý do: '.$reason);
+                }
+                if ($item) {
+                    app(ServiceOrderProgress::class)->synchronize($item->service_order_id);
+                }
+            }, 3);
+        } catch (\RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return redirect()->route('admin.payables.show', $payable->id)->with('success',
+            $payable->service_order_item_id
+                ? 'Đã hủy khoản thu và dịch vụ chưa bắt đầu tương ứng. Nếu không còn dịch vụ cần chờ, bệnh nhân được đưa vào hàng đợi quay lại bác sĩ.'
+                : 'Đã hủy khoản phải thanh toán.'
         );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Trạng thái hiện tại
-        |--------------------------------------------------------------------------
-        */
-        $currentStatus =
-            $payable->paymentStatus?->name;
-
-        /*
-        |--------------------------------------------------------------------------
-        | Không hủy khoản đã thanh toán
-        |--------------------------------------------------------------------------
-        */
-        if ($currentStatus === 'PAID') {
-            return back()->with(
-                'error',
-                'Không thể hủy khoản đã thanh toán.'
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Khoản đã hủy trước đó
-        |--------------------------------------------------------------------------
-        */
-        if ($currentStatus === 'CANCELLED') {
-            return back()->with(
-                'success',
-                'Khoản phải thanh toán này đã được hủy trước đó.'
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Trạng thái CANCELLED
-        |--------------------------------------------------------------------------
-        */
-        $cancelStatus = PaymentStatus::query()
-            ->where(
-                'name',
-                'CANCELLED'
-            )
-            ->first();
-
-        if (!$cancelStatus) {
-            return back()->with(
-                'error',
-                'Không tìm thấy trạng thái CANCELLED trong cấu hình thanh toán.'
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Dữ liệu trước khi hủy
-        |--------------------------------------------------------------------------
-        */
-        $oldValues = [
-            'payment_status_id' =>
-            $payable->payment_status_id,
-
-            'payment_status' =>
-            $currentStatus,
-
-            'notes' =>
-            $payable->notes,
-
-            'paid_at' =>
-            $payable->paid_at
-                ? $payable->paid_at->format(
-                    'Y-m-d H:i:s'
-                )
-                : null,
-        ];
-
-        /*
-        |--------------------------------------------------------------------------
-        | Transaction hủy nghiệp vụ + Audit Log
-        |--------------------------------------------------------------------------
-        */
-        DB::transaction(function () use (
-            $request,
-            $payable,
-            $cancelStatus,
-            $oldValues,
-            $cancelReason
-        ) {
-            /*
-            |--------------------------------------------------------------------------
-            | Giữ ghi chú cũ và thêm lý do hủy
-            |--------------------------------------------------------------------------
-            */
-            $newNotes = $payable->notes
-                ? $payable->notes
-                . PHP_EOL
-                . 'Lý do hủy: '
-                . $cancelReason
-                : 'Lý do hủy: '
-                . $cancelReason;
-
-            /*
-            |--------------------------------------------------------------------------
-            | Không xóa payable, chỉ chuyển CANCELLED
-            |--------------------------------------------------------------------------
-            */
-            $payable->update([
-                'payment_status_id' =>
-                $cancelStatus->id,
-
-                'paid_at' =>
-                null,
-
-                'notes' =>
-                $newNotes,
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Dữ liệu sau khi hủy
-            |--------------------------------------------------------------------------
-            */
-            $newValues = [
-                'payment_status_id' =>
-                $cancelStatus->id,
-
-                'payment_status' =>
-                'CANCELLED',
-
-                'notes' =>
-                $newNotes,
-
-                'paid_at' =>
-                null,
-            ];
-
-            /*
-            |--------------------------------------------------------------------------
-            | Ghi Audit Log
-            |--------------------------------------------------------------------------
-            */
-            $this->writeAuditLog(
-                $request,
-                $payable,
-                'STATUS_CHANGE',
-                $oldValues,
-                $newValues,
-                'Hủy khoản phải thanh toán '
-                    . $payable->payable_code
-                    . '. Lý do: '
-                    . $cancelReason
-            );
-        });
-
-        return redirect()
-            ->route(
-                'admin.payables.show',
-                $payable->id
-            )
-            ->with(
-                'success',
-                'Đã hủy khoản phải thanh toán.'
-            );
     }
 
     /**
@@ -714,54 +444,41 @@ class PayableController extends Controller
         |--------------------------------------------------------------------------
         */
         DB::table('audit_logs')->insert([
-            'user_id' =>
-            Auth::id(),
+            'user_id' => Auth::id(),
 
-            'role_name_snapshot' =>
-            $roleNameSnapshot,
+            'role_name_snapshot' => $roleNameSnapshot,
 
-            'action' =>
-            $action,
+            'action' => $action,
 
-            'entity_type' =>
-            'payables',
+            'entity_type' => 'payables',
 
-            'entity_id' =>
-            $payable->id,
+            'entity_id' => $payable->id,
 
-            'entity_business_code' =>
-            $payable->payable_code,
+            'entity_business_code' => $payable->payable_code,
 
-            'old_values' =>
-            json_encode(
+            'old_values' => json_encode(
                 $oldValues,
                 JSON_UNESCAPED_UNICODE
                     |
                     JSON_UNESCAPED_SLASHES
             ),
 
-            'new_values' =>
-            json_encode(
+            'new_values' => json_encode(
                 $newValues,
                 JSON_UNESCAPED_UNICODE
                     |
                     JSON_UNESCAPED_SLASHES
             ),
 
-            'description' =>
-            $description,
+            'description' => $description,
 
-            'ip_address' =>
-            $request->ip(),
+            'ip_address' => $request->ip(),
 
-            'user_agent' =>
-            $request->userAgent(),
+            'user_agent' => $request->userAgent(),
 
-            'performed_at' =>
-            now(),
+            'performed_at' => now(),
 
-            'created_at' =>
-            now(),
+            'created_at' => now(),
         ]);
     }
 }

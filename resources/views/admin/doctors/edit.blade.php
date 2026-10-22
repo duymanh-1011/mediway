@@ -1,10 +1,17 @@
 
 @extends('admin.layouts.app')
+@section('admin-page', 'doctors-edit')
 
 @section('title', 'Chỉnh sửa bác sĩ - Mediway')
 
 @section('breadcrumb')
-    Admin / Nhân sự & bệnh nhân / Bác sĩ / Chỉnh sửa
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Nhân sự & bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Bác sĩ</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Chỉnh sửa</strong>
 @endsection
 
 @section('content')
@@ -29,13 +36,13 @@
                 <strong>Vui lòng kiểm tra các thông tin sau:</strong>
                 <ul>
                     @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
+                        <li>{{ \App\Models\AdminDisplay::text($error) }}</li>
                     @endforeach
                 </ul>
             </div>
         @endif
 
-        <form method="POST"
+        <form novalidate method="POST"
               action="{{ route('admin.doctors.update', $doctor) }}"
               enctype="multipart/form-data">
             @csrf
@@ -66,7 +73,3 @@
     </div>
 </div>
 @endsection
-
-@push('styles')
-@include('admin.doctors._styles')
-@endpush

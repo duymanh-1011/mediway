@@ -10,23 +10,11 @@
             <span class="required">*</span>
         </label>
 
-        <input
-            type="text"
-            id="disease_code"
-            name="disease_code"
-            class="form-control"
-            value="{{ old(
-                'disease_code',
-                $disease->disease_code ?? ''
-            ) }}"
-            placeholder="Ví dụ: J00"
-            maxlength="30"
-            required
-        >
+        @include('admin.layouts.partials.business-code', ['field' => 'disease_code', 'record' => $disease ?? null])
 
         @error('disease_code')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -60,7 +48,7 @@
                     @selected(
                         (string) old(
                             'disease_group_id',
-                            $disease->disease_group_id ?? ''
+                            $disease->disease_group_id ?? $selectedDiseaseGroup->id ?? ''
                         )
                         ===
                         (string) $group->id
@@ -77,7 +65,7 @@
 
         @error('disease_group_id')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -108,7 +96,7 @@
 
         @error('name')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -137,7 +125,7 @@
 
         @error('alternative_name')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -173,7 +161,7 @@
                     ) === 'ACTIVE'
                 )
             >
-                ACTIVE
+                Đang hoạt động
             </option>
 
             <option
@@ -185,14 +173,14 @@
                     ) === 'INACTIVE'
                 )
             >
-                INACTIVE
+                Ngừng hoạt động
             </option>
 
         </select>
 
         @error('status')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -222,7 +210,7 @@
 
     @error('description')
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
     @enderror
 
@@ -250,7 +238,7 @@
 
     @error('common_symptoms')
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
     @enderror
 
@@ -278,7 +266,7 @@
 
     @error('professional_notes')
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
     @enderror
 

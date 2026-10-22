@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateVisitDiagnosisRequest;
+use App\Models\AdminLookup;
 use App\Models\Disease;
 use App\Models\VisitDiagnosis;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class VisitDiagnosisController extends Controller
@@ -121,9 +123,7 @@ class VisitDiagnosisController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $diseases = Disease::query()
-            ->orderBy('name')
-            ->get();
+        $diseases = AdminLookup::initial(Disease::query()->orderBy('name'), $request->input('disease_id'));
 
         $diagnosisTypes = VisitDiagnosis::query()
             ->whereNotNull('diagnosis_type')
@@ -179,20 +179,14 @@ class VisitDiagnosisController extends Controller
             'disease',
         ]);
 
-        if (
-            $diagnosis->medicalVisit?->status?->name
-            ===
-            'COMPLETED'
-        ) {
+        if (! $diagnosis->medicalVisit->canRecordClinicalData()) {
             abort(
                 403,
-                'Không thể chỉnh sửa chẩn đoán của lượt khám đã hoàn tất.'
+                'Chỉ được sửa hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
             );
         }
 
-        $diseases = Disease::query()
-            ->orderBy('name')
-            ->get();
+        $diseases = AdminLookup::initial(Disease::query()->orderBy('name'), old('disease_id', $diagnosis->disease_id));
 
         $diagnosisTypes = VisitDiagnosis::query()
             ->whereNotNull('diagnosis_type')
@@ -227,40 +221,33 @@ class VisitDiagnosisController extends Controller
             'medicalVisit.status'
         );
 
-        if (
-            $diagnosis->medicalVisit?->status?->name
-            ===
-            'COMPLETED'
-        ) {
+        if (! $diagnosis->medicalVisit->canRecordClinicalData()) {
             return back()->with(
                 'error',
-                'Không thể chỉnh sửa chẩn đoán của lượt khám đã hoàn tất.'
+                'Chỉ được sửa hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
             );
         }
 
         $data = $request->validated();
 
-        $diagnosis->update([
-            'disease_id' =>
-                $data['disease_id'],
+        DB::transaction(function () use ($diagnosis, $data): void {
+            $diagnosis->medicalVisit->lockForClinicalWrite();
+            $diagnosis->update([
+                'disease_id' => $data['disease_id'],
 
-            'diagnosis_type' =>
-                $data['diagnosis_type'] ?? null,
+                'diagnosis_type' => $data['diagnosis_type'] ?? null,
 
-            'severity' =>
-                $data['severity'] ?? null,
+                'severity' => $data['severity'] ?? null,
 
-            'diagnosis_description' =>
-                $data['diagnosis_description'] ?? null,
+                'diagnosis_description' => $data['diagnosis_description'] ?? null,
 
-            'diagnosed_at' =>
-                $data['diagnosed_at']
-                ?? $diagnosis->diagnosed_at
-                ?? now(),
+                'diagnosed_at' => $data['diagnosed_at']
+                    ?? $diagnosis->diagnosed_at
+                    ?? now(),
 
-            'notes' =>
-                $data['notes'] ?? null,
-        ]);
+                'notes' => $data['notes'] ?? null,
+            ]);
+        }, 3);
 
         return redirect()
             ->route(

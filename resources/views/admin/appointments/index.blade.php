@@ -1,18 +1,17 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'appointments-index')
 
 @section(
     'title',
-    'Quản lý lịch hẹn - Mediway Admin'
+    'Quản lý lịch hẹn - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-        Admin /
-        Lịch & đặt khám /
-        Lịch hẹn
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Lịch và đặt khám</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Lịch hẹn</strong>
 @endsection
 
 @section('content')
@@ -35,7 +34,7 @@
             href="{{ route(
                 'admin.appointments.create'
             ) }}"
-            class="btn btn-primary"
+            class="admin-btn btn btn-primary admin-btn-primary"
         >
             + Thêm lịch hẹn
         </a>
@@ -84,17 +83,19 @@
     </div>
 
 
-    <div class="card filter-card">
-
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc lịch hẹn',
+        'description' => 'Lọc theo từ khóa, ngày khám, trạng thái, bác sĩ, chuyên khoa và phòng khám.',
+    ])
         <form
             method="GET"
             action="{{ route(
                 'admin.appointments.index'
             ) }}"
-            class="filter-grid"
+            class="filter-grid admin-filter-form"
         >
 
-            <div class="filter-group">
+            <div class="filter-group admin-filter-field">
 
                 <label>Tìm kiếm</label>
 
@@ -105,11 +106,12 @@
                     value="{{ $keyword }}"
                     placeholder="Mã lịch, bệnh nhân, bác sĩ..."
                 >
+@error('keyword')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-group">
+            <div class="filter-group admin-filter-field">
 
                 <label>Ngày khám</label>
 
@@ -119,11 +121,12 @@
                     class="form-control"
                     value="{{ $appointmentDate }}"
                 >
+@error('appointment_date')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-group">
+            <div class="filter-group admin-filter-field">
 
                 <label>Trạng thái</label>
 
@@ -146,17 +149,18 @@
                                 (string) $item->id
                             )
                         >
-                            {{ $item->name }}
+                            {{ \App\Models\AdminDisplay::label($item->name) }}
                         </option>
 
                     @endforeach
 
                 </select>
+@error('appointment_status_id')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-group">
+            <div class="filter-group admin-filter-field">
 
                 <label>Bác sĩ</label>
 
@@ -187,11 +191,12 @@
                     @endforeach
 
                 </select>
+@error('doctor_id')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-group">
+            <div class="filter-group admin-filter-field">
 
                 <label>Chuyên khoa</label>
 
@@ -220,11 +225,12 @@
                     @endforeach
 
                 </select>
+@error('specialty_id')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-group">
+            <div class="filter-group admin-filter-field">
 
                 <label>Phòng khám</label>
 
@@ -255,33 +261,25 @@
                     @endforeach
 
                 </select>
+@error('examination_room_id')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-actions">
+            <div class="filter-actions admin-filter-layout">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Lọc
-                </button>
 
-                <a
-                    href="{{ route(
+
+
+
+            </div>
+
+
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route(
                         'admin.appointments.index'
-                    ) }}"
-                    class="btn btn-secondary"
-                >
-                    Đặt lại
-                </a>
-
-            </div>
-
+                    ), 'searchOnly' => false])
         </form>
-
-    </div>
+    @endcomponent
 
 
     <div class="card">
@@ -293,6 +291,7 @@
                 <thead>
 
                     <tr>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Mã lịch</th>
                         <th>Bệnh nhân</th>
                         <th>Ngày / giờ</th>
@@ -311,6 +310,7 @@
 
                     <tr>
 
+                        @include('admin.layouts.partials.row-number', ['rows' => $appointments, 'index' => $loop->index])
                         <td>
                             <strong>
                                 {{ $appointment->appointment_code }}
@@ -376,10 +376,10 @@
                         <td>
 
                             <span class="status-badge">
-                                {{ $appointment
+                                {{ \App\Models\AdminDisplay::label($appointment
                                     ->appointmentStatus
                                     ?->name
-                                    ?? '—' }}
+                                    ?? '—') }}
                             </span>
 
                         </td>
@@ -409,10 +409,8 @@
                                     'admin.appointments.show',
                                     $appointment
                                 ) }}"
-                                class="action-link"
-                            >
-                                Chi tiết
-                            </a>
+                                class="admin-btn admin-btn-detail action-link"
+                            >Chi tiết</a>
 
                         </td>
 
@@ -423,7 +421,7 @@
                     <tr>
 
                         <td
-                            colspan="8"
+                            colspan="9"
                             class="empty-state"
                         >
                             Chưa có lịch hẹn phù hợp.
@@ -447,135 +445,3 @@
     </div>
 
 @endsection
-
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-        gap: 14px;
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        padding: 16px 18px;
-
-        background: #ffffff;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-    }
-
-    .stat-label {
-        margin-bottom: 6px;
-        color: #64748b;
-    }
-
-    .stat-value {
-        font-size: 26px;
-        font-weight: 700;
-    }
-
-    .filter-card {
-        margin-bottom: 20px;
-    }
-
-    .filter-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-        gap: 14px;
-        align-items: end;
-    }
-
-    .filter-group label {
-        display: block;
-        margin-bottom: 6px;
-        font-weight: 700;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 9px 11px;
-
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-    }
-
-    .filter-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .muted {
-        color: #64748b;
-        font-size: 13px;
-    }
-
-    .status-badge,
-    .visit-yes {
-        display: inline-block;
-
-        padding: 4px 7px;
-
-        border-radius: 6px;
-
-        background: #eff6ff;
-        color: #1d4ed8;
-
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .visit-yes {
-        background: #ecfdf5;
-        color: #047857;
-    }
-
-    .action-link {
-        text-decoration: none;
-        color: #2563eb;
-        font-weight: 700;
-    }
-
-    .empty-state {
-        padding: 30px !important;
-        text-align: center !important;
-        color: #94a3b8 !important;
-    }
-
-    .pagination-wrapper {
-        margin-top: 18px;
-    }
-
-    @media (max-width: 900px) {
-
-        .filter-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

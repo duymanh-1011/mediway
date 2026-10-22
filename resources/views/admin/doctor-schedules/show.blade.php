@@ -1,21 +1,19 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'doctor-schedules-show')
 
 @section(
     'title',
-    'Chi tiết lịch làm việc - Mediway Admin'
+    'Chi tiết lịch làm việc - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-
-        Admin /
-        Lịch & đặt khám /
-        Lịch làm việc bác sĩ /
-        #{{ $doctorSchedule->id }}
-
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Lịch và đặt khám</span>
+    <span aria-hidden="true">/</span>
+    <span>Lịch làm việc bác sĩ</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">#{{ $doctorSchedule->id }}</strong>
 @endsection
 
 @section('content')
@@ -46,7 +44,7 @@
                 href="{{ route(
                     'admin.doctor-schedules.index'
                 ) }}"
-                class="btn btn-secondary"
+                class="admin-btn admin-btn-secondary btn btn-secondary"
             >
                 ← Danh sách
             </a>
@@ -226,13 +224,13 @@
                     @if ($doctorSchedule->status === 'ACTIVE')
 
                         <span class="badge badge-success">
-                            ACTIVE
+                            Đang hoạt động
                         </span>
 
                     @else
 
                         <span class="badge badge-danger">
-                            INACTIVE
+                            Ngừng hoạt động
                         </span>
 
                     @endif
@@ -268,7 +266,7 @@
                     </h3>
 
                     <p class="section-description">
-                        Quản lý slot và sức chứa của lịch làm việc.
+                        Quản lý khung giờ và sức chứa của lịch làm việc.
                     </p>
 
                 </div>
@@ -293,6 +291,7 @@
                     <thead>
 
                         <tr>
+                            <th scope="col" class="admin-row-number">STT</th>
                             <th>Thời gian</th>
                             <th>Sức chứa</th>
                             <th>Đã đặt</th>
@@ -321,6 +320,7 @@
 
                         <tr>
 
+                            @include('admin.layouts.partials.row-number', ['rows' => $timeSlots, 'index' => $loop->index])
                             <td>
 
                                 {{ substr(
@@ -356,13 +356,13 @@
                                 @if ($slot->status === 'ACTIVE')
 
                                     <span class="badge badge-success">
-                                        ACTIVE
+                                        Đang hoạt động
                                     </span>
 
                                 @else
 
                                     <span class="badge badge-danger">
-                                        INACTIVE
+                                        Ngừng hoạt động
                                     </span>
 
                                 @endif
@@ -379,11 +379,9 @@
                                             $slot->id
                                         ) }}"
                                         class="action-link edit"
-                                    >
-                                        Sửa
-                                    </a>
+                                    >Sửa</a>
 
-                                    <form
+                                    <form novalidate
                                         method="POST"
                                         action="{{ route(
                                             'admin.appointment-time-slots.destroy',
@@ -419,7 +417,7 @@
                         <tr>
 
                             <td
-                                colspan="6"
+                                colspan="7"
                                 class="empty-state"
                             >
                                 Lịch làm việc này chưa có khung giờ.
@@ -440,195 +438,3 @@
     </div>
 
 @endsection
-
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-
-        gap: 20px;
-
-        margin-bottom: 20px;
-    }
-
-    .header-actions {
-        display: flex;
-
-        gap: 8px;
-    }
-
-    .stats-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 14px;
-
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        padding: 16px 18px;
-
-        background: #ffffff;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-    }
-
-    .stat-label {
-        margin-bottom: 7px;
-
-        color: #64748b;
-
-        font-size: 13px;
-    }
-
-    .stat-value {
-        font-size: 26px;
-        font-weight: 700;
-    }
-
-    .detail-grid {
-        display: grid;
-
-        grid-template-columns:
-            minmax(300px, 0.8fr)
-            minmax(0, 1.5fr);
-
-        gap: 20px;
-    }
-
-    .section-title {
-        margin: 0 0 16px;
-
-        font-size: 18px;
-    }
-
-    .section-description {
-        margin: -10px 0 15px;
-
-        color: #64748b;
-
-        font-size: 13px;
-    }
-
-    .slot-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-
-        gap: 15px;
-
-        margin-bottom: 10px;
-    }
-
-    .detail-row {
-        display: grid;
-
-        grid-template-columns:
-            130px
-            minmax(0, 1fr);
-
-        gap: 15px;
-
-        padding: 12px 0;
-
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-label {
-        color: #64748b;
-
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .detail-value {
-        color: #334155;
-
-        font-size: 14px;
-        line-height: 1.55;
-    }
-
-    .action-group {
-        display: flex;
-        align-items: center;
-
-        gap: 7px;
-    }
-
-    .action-group form {
-        margin: 0;
-    }
-
-    .action-link {
-        padding: 6px 9px;
-
-        border: none;
-        border-radius: 6px;
-
-        text-decoration: none;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        font-size: 13px;
-        font-weight: 600;
-
-        cursor: pointer;
-    }
-
-    .action-link.edit {
-        background: #fffbeb;
-        color: #b45309;
-    }
-
-    .action-link.delete {
-        background: #fef2f2;
-        color: #b91c1c;
-    }
-
-    .empty-state {
-        padding: 30px !important;
-
-        text-align: center !important;
-
-        color: #94a3b8 !important;
-    }
-
-    @media (max-width: 1000px) {
-
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-    @media (max-width: 700px) {
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .slot-header {
-            flex-direction: column;
-        }
-
-    }
-
-</style>
-
-@endpush

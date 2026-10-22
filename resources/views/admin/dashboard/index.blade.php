@@ -1,18 +1,17 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'dashboard-index')
 
-@section('title', 'Dashboard - Mediway Admin')
+@section('title', 'Bảng điều khiển - Mediway')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Admin / Dashboard
-    </div>
+    <strong aria-current="page">Bảng điều khiển</strong>
 @endsection
 
 @section('content')
 
     <div class="mb-6">
         <h1 class="page-title">
-            Dashboard
+            Bảng điều khiển
         </h1>
 
         <p class="page-description">
@@ -92,7 +91,7 @@
             </div>
 
             <div class="stat-description">
-                Lượt khám đã check-in trong ngày
+                Lượt khám đã tiếp nhận trong ngày
             </div>
         </div>
 
@@ -106,7 +105,7 @@
             </div>
 
             <div class="stat-description">
-                WAITING / CALLED / IN_SERVICE
+                Đang chờ / Đã gọi / Đang phục vụ
             </div>
         </div>
 
@@ -120,7 +119,7 @@
             </div>
 
             <div class="stat-description">
-                PENDING / PROCESSING
+                Chờ xử lý / Đang thực hiện
             </div>
         </div>
 
@@ -156,7 +155,7 @@
             </div>
 
             <div class="stat-description">
-                Tổng các giao dịch có kết quả SUCCESS
+                Tổng các giao dịch có kết quả Thành công
             </div>
 
         </div>
@@ -174,27 +173,27 @@
             <div class="status-list">
 
                 <div class="status-item">
-                    <span>BOOKED</span>
+                    <span>Đã đặt lịch</span>
                     <strong>{{ $todayAppointmentStats['BOOKED'] ?? 0 }}</strong>
                 </div>
 
                 <div class="status-item">
-                    <span>CHECKED_IN</span>
+                    <span>Đã tiếp nhận</span>
                     <strong>{{ $todayAppointmentStats['CHECKED_IN'] ?? 0 }}</strong>
                 </div>
 
                 <div class="status-item">
-                    <span>IN_EXAMINATION</span>
+                    <span>Đang khám</span>
                     <strong>{{ $todayAppointmentStats['IN_EXAMINATION'] ?? 0 }}</strong>
                 </div>
 
                 <div class="status-item">
-                    <span>COMPLETED</span>
+                    <span>Đã hoàn thành</span>
                     <strong>{{ $todayAppointmentStats['COMPLETED'] ?? 0 }}</strong>
                 </div>
 
                 <div class="status-item">
-                    <span>CANCELLED</span>
+                    <span>Đã hủy</span>
                     <strong>{{ $todayAppointmentStats['CANCELLED'] ?? 0 }}</strong>
                 </div>
 
@@ -211,27 +210,27 @@
             <div class="status-list">
 
                 <div class="status-item">
-                    <span>WAITING</span>
+                    <span>Đang chờ</span>
                     <strong>{{ $todayVisitStats['WAITING'] ?? 0 }}</strong>
                 </div>
 
                 <div class="status-item">
-                    <span>IN_EXAMINATION</span>
+                    <span>Đang khám</span>
                     <strong>{{ $todayVisitStats['IN_EXAMINATION'] ?? 0 }}</strong>
                 </div>
 
                 <div class="status-item">
-                    <span>WAITING_FOR_SERVICE</span>
+                    <span>Chờ thực hiện dịch vụ</span>
                     <strong>{{ $todayVisitStats['WAITING_FOR_SERVICE'] ?? 0 }}</strong>
                 </div>
 
                 <div class="status-item">
-                    <span>RETURNING</span>
+                    <span>Quay lại bác sĩ</span>
                     <strong>{{ $todayVisitStats['RETURNING'] ?? 0 }}</strong>
                 </div>
 
                 <div class="status-item">
-                    <span>COMPLETED</span>
+                    <span>Đã hoàn thành</span>
                     <strong>{{ $todayVisitStats['COMPLETED'] ?? 0 }}</strong>
                 </div>
 
@@ -263,6 +262,7 @@
 
                 <thead>
                     <tr>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Người thao tác</th>
                         <th>Vai trò</th>
                         <th>Hành động</th>
@@ -279,22 +279,23 @@
 
                     <tr>
 
+                        @include('admin.layouts.partials.row-number', ['rows' => $recentAuditLogs, 'index' => $loop->index])
                         <td>
                             {{ $log->business_code ?? 'Hệ thống' }}
                         </td>
 
                         <td>
-                            {{ $log->role_name_snapshot ?? '-' }}
+                            {{ \App\Models\AdminDisplay::label($log->role_name_snapshot ?? '-') }}
                         </td>
 
                         <td>
                             <span class="badge">
-                                {{ $log->action }}
+                                {{ \App\Models\AdminDisplay::label($log->action) }}
                             </span>
                         </td>
 
                         <td>
-                            {{ $log->entity_type }}
+                            {{ \App\Models\AdminDisplay::label($log->entity_type) }}
                         </td>
 
                         <td>
@@ -304,7 +305,7 @@
                         </td>
 
                         <td>
-                            {{ $log->description ?? '-' }}
+                            {{ \App\Models\AdminDisplay::text($log->description ?? '-') }}
                         </td>
 
                         <td>
@@ -317,7 +318,7 @@
 
                     <tr>
                         <td
-                            colspan="7"
+                            colspan="8"
                             class="py-10 text-center text-slate-500"
                         >
                             Chưa có nhật ký hoạt động.
@@ -335,151 +336,3 @@
     </div>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 16px;
-        margin-bottom: 16px;
-    }
-
-    .stat-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 18px;
-    }
-
-    .stat-title {
-        color: #6b7280;
-        font-size: 13px;
-        font-weight: 600;
-        margin-bottom: 10px;
-    }
-
-    .stat-value {
-        font-size: 30px;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 6px;
-    }
-
-    .stat-description {
-        font-size: 13px;
-        color: #9ca3af;
-    }
-
-    .dashboard-section {
-        margin-top: 8px;
-        margin-bottom: 24px;
-    }
-
-    .revenue-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 22px;
-    }
-
-    .revenue-value {
-        font-size: 32px;
-        font-weight: 700;
-        color: #059669;
-        margin: 8px 0;
-    }
-
-    .dashboard-two-columns {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 20px;
-    }
-
-    .section-title {
-        margin: 0 0 16px;
-        font-size: 18px;
-    }
-
-    .section-description {
-        margin: -8px 0 16px;
-        color: #6b7280;
-        font-size: 13px;
-    }
-
-    .status-list {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .status-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 11px 0;
-        border-bottom: 1px solid #f3f4f6;
-        font-size: 14px;
-    }
-
-    .status-item:last-child {
-        border-bottom: none;
-    }
-
-    .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .admin-table {
-        width: 100%;
-        min-width: 720px;
-        border-collapse: collapse;
-        font-size: 14px;
-    }
-
-    .admin-table th,
-    .admin-table td {
-        padding: 12px 10px;
-        border-bottom: 1px solid #e5e7eb;
-        text-align: left;
-        white-space: nowrap;
-    }
-
-    .admin-table th {
-        background: #f9fafb;
-        color: #4b5563;
-        font-size: 12px;
-        text-transform: uppercase;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 999px;
-        background: #eff6ff;
-        color: #1d4ed8;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    @media (max-width: 1100px) {
-
-        .dashboard-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-    }
-
-    @media (max-width: 700px) {
-        .dashboard-grid,
-        .dashboard-two-columns {
-            grid-template-columns: 1fr;
-        }
-    }
-
-</style>
-
-@endpush

@@ -1,16 +1,17 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'specialties-index')
 
 @section(
     'title',
-    'Quản lý chuyên khoa - Mediway Admin'
+    'Quản lý chuyên khoa - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-        Admin / Danh mục / Chuyên khoa
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Danh mục</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Chuyên khoa</strong>
 @endsection
 
 @section('content')
@@ -34,7 +35,7 @@
             href="{{ route(
                 'admin.specialties.create'
             ) }}"
-            class="btn btn-primary"
+            class="admin-btn btn btn-primary admin-btn-primary"
         >
             + Thêm chuyên khoa
         </a>
@@ -81,17 +82,19 @@
 
     </div>
 
-    <div class="card">
-
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc chuyên khoa',
+        'description' => 'Lọc theo từ khóa và trạng thái.',
+    ])
         <form
             method="GET"
             action="{{ route(
                 'admin.specialties.index'
             ) }}"
-            class="filter-form"
+            class="filter-form admin-filter-form"
         >
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Tìm kiếm
@@ -104,10 +107,11 @@
                     value="{{ $keyword }}"
                     placeholder="Mã hoặc tên chuyên khoa..."
                 >
+@error('keyword')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Trạng thái
@@ -127,7 +131,7 @@
                             $status === 'ACTIVE'
                         )
                     >
-                        ACTIVE
+                        Đang hoạt động
                     </option>
 
                     <option
@@ -136,34 +140,30 @@
                             $status === 'INACTIVE'
                         )
                     >
-                        INACTIVE
+                        Ngừng hoạt động
                     </option>
 
                 </select>
+@error('status')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-actions">
+            <div class="filter-actions admin-filter-layout">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Tìm kiếm
-                </button>
 
-                <a
-                    href="{{ route(
+
+
+
+            </div>
+
+
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route(
                         'admin.specialties.index'
-                    ) }}"
-                    class="btn btn-secondary"
-                >
-                    Đặt lại
-                </a>
-
-            </div>
-
+                    ), 'searchOnly' => false])
         </form>
+    @endcomponent
+
+    <div class="card">
 
         <div class="table-wrapper">
 
@@ -172,7 +172,7 @@
                 <thead>
 
                     <tr>
-                        <th>#</th>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Ảnh</th>
                         <th>Mã chuyên khoa</th>
                         <th>Tên chuyên khoa</th>
@@ -193,10 +193,7 @@
 
                     <tr>
 
-                        <td>
-                            {{ $specialties->firstItem()
-                                + $loop->index }}
-                        </td>
+                        @include('admin.layouts.partials.row-number', ['rows' => $specialties, 'index' => $loop->index])
 
                         <td>
 
@@ -249,7 +246,7 @@
                                 <span
                                     class="badge badge-success"
                                 >
-                                    ACTIVE
+                                    Đang hoạt động
                                 </span>
 
                             @else
@@ -257,7 +254,7 @@
                                 <span
                                     class="badge badge-danger"
                                 >
-                                    INACTIVE
+                                    Ngừng hoạt động
                                 </span>
 
                             @endif
@@ -279,45 +276,18 @@
                                         'admin.specialties.show',
                                         $specialty
                                     ) }}"
-                                    class="action-link view"
-                                >
-                                    Chi tiết
-                                </a>
+                                    class="admin-btn admin-btn-detail action-link view"
+                                >Chi tiết</a>
 
                                 <a
                                     href="{{ route(
                                         'admin.specialties.edit',
                                         $specialty
                                     ) }}"
-                                    class="action-link edit"
-                                >
-                                    Sửa
-                                </a>
+                                    class="admin-btn admin-btn-secondary action-link edit"
+                                >Sửa</a>
 
-                                <form
-                                    method="POST"
-                                    action="{{ route(
-                                        'admin.specialties.destroy',
-                                        $specialty
-                                    ) }}"
-                                    onsubmit="
-                                        return confirm(
-                                            'Bạn có chắc muốn xóa chuyên khoa này? Nếu chuyên khoa đã được sử dụng, hệ thống sẽ chuyển sang INACTIVE thay vì xóa.'
-                                        );
-                                    "
-                                >
-
-                                    @csrf
-                                    @method('DELETE')
-
-                                    <button
-                                        type="submit"
-                                        class="action-link delete"
-                                    >
-                                        Xóa
-                                    </button>
-
-                                </form>
+                                @include('admin.layouts.partials.catalog-status', ['record' => $specialty, 'catalog' => 'specialties'])
 
                             </div>
 
@@ -355,210 +325,3 @@
     </div>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 20px;
-
-        margin-bottom: 20px;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 14px;
-
-        margin-bottom: 18px;
-    }
-
-    .mini-card {
-        padding: 16px 18px;
-
-        background: #fff;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 11px;
-    }
-
-    .mini-card-label {
-        color: #64748b;
-        font-size: 12px;
-
-        margin-bottom: 7px;
-    }
-
-    .mini-card-value {
-        font-size: 26px;
-        font-weight: 700;
-    }
-
-    .mini-card-value.success {
-        color: #059669;
-    }
-
-    .mini-card-value.danger {
-        color: #dc2626;
-    }
-
-    .filter-form {
-        display: grid;
-
-        grid-template-columns:
-            minmax(220px, 1fr)
-            220px
-            auto;
-
-        gap: 14px;
-
-        align-items: end;
-
-        margin-bottom: 20px;
-    }
-
-    .filter-label {
-        display: block;
-
-        margin-bottom: 6px;
-
-        color: #475569;
-
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .filter-control {
-        width: 100%;
-
-        padding: 10px 12px;
-
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-
-        background: #fff;
-
-        outline: none;
-    }
-
-    .filter-control:focus {
-        border-color: #3b82f6;
-
-        box-shadow:
-            0 0 0 3px
-            rgba(59, 130, 246, 0.1);
-    }
-
-    .filter-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .table-image {
-        width: 48px;
-        height: 48px;
-
-        object-fit: cover;
-
-        border-radius: 8px;
-
-        border: 1px solid #e2e8f0;
-    }
-
-    .no-image {
-        width: 48px;
-        height: 48px;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        border-radius: 8px;
-
-        background: #f8fafc;
-
-        color: #94a3b8;
-    }
-
-    .instruction-cell {
-        max-width: 260px;
-
-        white-space: normal !important;
-
-        line-height: 1.45;
-    }
-
-    .action-group {
-        display: flex;
-        align-items: center;
-
-        gap: 7px;
-    }
-
-    .action-group form {
-        margin: 0;
-    }
-
-    .action-link {
-        padding: 6px 9px;
-
-        border: none;
-        border-radius: 6px;
-
-        text-decoration: none;
-
-        font-family: inherit;
-        font-size: 12px;
-        font-weight: 600;
-
-        cursor: pointer;
-    }
-
-    .action-link.view {
-        background: #eff6ff;
-        color: #1d4ed8;
-    }
-
-    .action-link.edit {
-        background: #fffbeb;
-        color: #b45309;
-    }
-
-    .action-link.delete {
-        background: #fef2f2;
-        color: #b91c1c;
-    }
-
-    .empty-state {
-        padding: 40px !important;
-
-        text-align: center !important;
-
-        color: #94a3b8 !important;
-    }
-
-    .pagination-wrapper {
-        margin-top: 18px;
-    }
-
-    @media (max-width: 900px) {
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .filter-form {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

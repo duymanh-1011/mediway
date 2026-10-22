@@ -79,20 +79,20 @@ class EmployeeController extends Controller
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner
-                        ->where('employee_code', 'like', '%' . $search . '%')
-                        ->orWhere('full_name', 'like', '%' . $search . '%')
+                        ->where('employee_code', 'like', '%'.$search.'%')
+                        ->orWhere('full_name', 'like', '%'.$search.'%')
                         ->orWhereHas('user', function ($userQuery) use ($search) {
                             $userQuery->where(
                                 'phone',
                                 'like',
-                                '%' . $search . '%'
+                                '%'.$search.'%'
                             );
                         })
                         ->orWhereHas('detail', function ($detailQuery) use ($search) {
                             $detailQuery
-                                ->where('citizen_id_number', 'like', '%' . $search . '%')
-                                ->orWhere('email', 'like', '%' . $search . '%')
-                                ->orWhere('position', 'like', '%' . $search . '%');
+                                ->where('citizen_id_number', 'like', '%'.$search.'%')
+                                ->orWhere('email', 'like', '%'.$search.'%')
+                                ->orWhere('position', 'like', '%'.$search.'%');
                         });
                 });
             })
@@ -182,15 +182,15 @@ class EmployeeController extends Controller
                     ->lockForUpdate()
                     ->first();
 
-                if (!$role) {
+                if (! $role) {
                     throw ValidationException::withMessages([
-                        'user_id' => 'Chưa có vai trò Employee trong hệ thống.',
+                        'user_id' => 'Chưa có vai trò nhân viên trong hệ thống.',
                     ]);
                 }
 
                 $employeeStatus = $data['status'];
 
-                if (!empty($data['user_id'])) {
+                if (! empty($data['user_id'])) {
                     $user = $this->validateAndLockEmployeeUser(
                         (int) $data['user_id'],
                         (int) $role->id
@@ -348,7 +348,7 @@ class EmployeeController extends Controller
                     ->lockForUpdate()
                     ->first();
 
-                if (!$detail) {
+                if (! $detail) {
                     $detail = new EmployeeDetail([
                         'employee_id' => $lockedEmployee->id,
                     ]);
@@ -399,7 +399,7 @@ class EmployeeController extends Controller
     {
         $column = self::DOCUMENT_TYPES[$type] ?? null;
 
-        if (!$column) {
+        if (! $column) {
             abort(404);
         }
 
@@ -407,14 +407,14 @@ class EmployeeController extends Controller
 
         $path = $employee->detail?->{$column};
 
-        if (!is_string($path) || $path === '') {
+        if (! is_string($path) || $path === '') {
             abort(404);
         }
 
-        $prefix = 'employee-documents/' . $employee->id . '/';
+        $prefix = 'employee-documents/'.$employee->id.'/';
 
         if (
-            !str_starts_with($path, $prefix) ||
+            ! str_starts_with($path, $prefix) ||
             str_contains($path, '..') ||
             str_contains($path, '\\')
         ) {
@@ -423,7 +423,7 @@ class EmployeeController extends Controller
 
         $disk = Storage::disk('local');
 
-        if (!$disk->exists($path)) {
+        if (! $disk->exists($path)) {
             abort(404);
         }
 
@@ -435,12 +435,12 @@ class EmployeeController extends Controller
             default => 'tai-lieu',
         };
 
-        $filename .= '-' . $employee->employee_code;
+        $filename .= '-'.$employee->employee_code;
 
         $extension = pathinfo($path, PATHINFO_EXTENSION);
 
         if ($extension !== '') {
-            $filename .= '.' . $extension;
+            $filename .= '.'.$extension;
         }
 
         return $disk->response(
@@ -485,7 +485,7 @@ class EmployeeController extends Controller
             ->lockForUpdate()
             ->find($userId);
 
-        if (!$user) {
+        if (! $user) {
             throw ValidationException::withMessages([
                 'user_id' => 'Tài khoản không tồn tại.',
             ]);
@@ -493,13 +493,13 @@ class EmployeeController extends Controller
 
         if ((int) $user->role_id !== $roleId) {
             throw ValidationException::withMessages([
-                'user_id' => 'Tài khoản phải có vai trò Employee.',
+                'user_id' => 'Tài khoản phải có vai trò nhân viên.',
             ]);
         }
 
-        if (!preg_match('/^NV[0-9]{6,}$/', (string) $user->business_code)) {
+        if (! preg_match('/^NV[0-9]{6,}$/', (string) $user->business_code)) {
             throw ValidationException::withMessages([
-                'user_id' => 'Mã tài khoản Employee phải có dạng NV000001.',
+                'user_id' => 'Mã tài khoản nhân viên phải có dạng NV000001.',
             ]);
         }
 
@@ -538,7 +538,7 @@ class EmployeeController extends Controller
             }
         }
 
-        return 'NV' . str_pad(
+        return 'NV'.str_pad(
             (string) ($maxNumber + 1),
             6,
             '0',
@@ -584,24 +584,24 @@ class EmployeeController extends Controller
         $result = [];
 
         foreach (self::FILE_FIELDS as $input => $column) {
-            if (!$request->hasFile($input)) {
+            if (! $request->hasFile($input)) {
                 continue;
             }
 
             $file = $request->file($input);
 
-            if (!$file || !$file->isValid()) {
+            if (! $file || ! $file->isValid()) {
                 throw ValidationException::withMessages([
                     $input => 'Tệp tải lên không hợp lệ.',
                 ]);
             }
 
             $path = $file->store(
-                'employee-documents/' . $employee->id,
+                'employee-documents/'.$employee->id,
                 'local'
             );
 
-            if (!$path) {
+            if (! $path) {
                 throw ValidationException::withMessages([
                     $input => 'Không thể lưu tài liệu.',
                 ]);

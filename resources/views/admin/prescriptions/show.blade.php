@@ -1,29 +1,12 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'prescriptions-show')
 
 @section('title', 'Chi tiết đơn thuốc')
 
 @section('content')
 
     @php
-        $pdfUrl = null;
-
-        if ($prescription->prescription_pdf_path) {
-            $pdfPath = preg_replace(
-                '#^storage/#',
-                '',
-                ltrim(
-                    $prescription->prescription_pdf_path,
-                    '/'
-                )
-            );
-
-            $pdfUrl = str_starts_with(
-                $prescription->prescription_pdf_path,
-                'http'
-            )
-                ? $prescription->prescription_pdf_path
-                : asset('storage/' . $pdfPath);
-        }
+        $pdfUrl = $prescription->hasPdf() ? route('admin.prescriptions.document', $prescription->id) : null;
 
         $statusClass = match (
         strtoupper($prescription->status ?? '')
@@ -39,35 +22,34 @@
     <div class="prescription-detail-page">
 
         {{-- Breadcrumb --}}
-        <div class="prescription-breadcrumb">
+        <nav class="admin-breadcrumb" aria-label="Đường dẫn">
 
             <a href="{{ route('admin.dashboard') }}">
-                Dashboard
+                Bảng điều khiển
             </a>
 
-            <span>/</span>
+            <span aria-hidden="true">/</span>
+            <span>Đơn thuốc</span>
+            <span aria-hidden="true">/</span>
 
             <a href="{{ route('admin.prescriptions.index') }}">
                 Đơn thuốc
             </a>
 
-            <span>/</span>
+            <span aria-hidden="true">/</span>
 
-            <strong>
+            <strong aria-current="page">
                 {{ $prescription->prescription_code }}
             </strong>
 
-        </div>
+        </nav>
 
 
         {{-- Header --}}
-        <div class="prescription-header">
+        <div class="admin-info-header prescription-header">
 
             <div>
 
-                <div class="prescription-module-label">
-                    ĐƠN THUỐC
-                </div>
 
                 <h1>
                     Chi tiết đơn thuốc
@@ -83,7 +65,7 @@
                     prescription-status
                     {{ $statusClass }}
                 ">
-                {{ $prescription->status }}
+                {{ \App\Models\AdminDisplay::label($prescription->status) }}
             </span>
 
         </div>
@@ -116,12 +98,16 @@
             </a>
 
 
+            @if ($prescription->medicalVisit->status?->name !== 'COMPLETED')
             <a href="{{ route(
         'admin.prescriptions.edit',
         $prescription->id
     ) }}" class="prescription-btn prescription-btn-primary">
                 Sửa đơn thuốc
             </a>
+            @else
+                <p class="form-help">Lượt khám đã hoàn tất. Đơn thuốc được khóa chỉnh sửa.</p>
+            @endif
 
         </div>
 
@@ -221,7 +207,7 @@
                     </span>
 
                     <strong>
-                        {{ $prescription->status ?? '—' }}
+                        {{ \App\Models\AdminDisplay::label($prescription->status ?? '—') }}
                     </strong>
 
                 </div>
@@ -622,7 +608,7 @@
 
             <div class="prescription-file-section">
 
-                @if ($prescription->prescription_pdf_path)
+                @if ($pdfUrl)
 
                     <div class="prescription-file">
 
@@ -633,7 +619,7 @@
                             </span>
 
                             <strong>
-                                {{ $prescription->prescription_pdf_path }}
+                                Tệp PDF đơn thuốc được bảo vệ
                             </strong>
 
                         </div>
@@ -653,7 +639,7 @@
                 @else
 
                     <span class="prescription-empty">
-                        Chưa có file PDF.
+                        Chưa có tệp PDF.
                     </span>
 
                 @endif
@@ -735,486 +721,6 @@
     </div>
 
 
-    <style>
-        .prescription-detail-page {
-            --primary: #2563eb;
-            --text: #0f172a;
-            --muted: #64748b;
-            --border: #e2e8f0;
 
-            width: 100%;
-            color: var(--text);
-        }
-
-        .prescription-detail-page * {
-            box-sizing: border-box;
-        }
-
-        .prescription-breadcrumb {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 18px;
-            color: #94a3b8;
-            font-size: 13px;
-        }
-
-        .prescription-breadcrumb a {
-            color: #64748b;
-            text-decoration: none;
-        }
-
-        .prescription-breadcrumb a:hover {
-            color: var(--primary);
-        }
-
-        .prescription-breadcrumb strong {
-            color: #334155;
-        }
-
-        .prescription-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .prescription-module-label {
-            margin-bottom: 7px;
-            color: var(--primary);
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: .08em;
-        }
-
-        .prescription-header h1 {
-            margin: 0;
-            font-size: 29px;
-            font-weight: 750;
-        }
-
-        .prescription-header p {
-            margin: 7px 0 0;
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        .prescription-status {
-            display: inline-flex;
-            padding: 7px 12px;
-            border-radius: 999px;
-            font-size: 10px;
-            font-weight: 800;
-        }
-
-        .prescription-status.active {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .prescription-status.completed {
-            background: #dbeafe;
-            color: #1d4ed8;
-        }
-
-        .prescription-status.cancelled {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .prescription-status.default {
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .prescription-alert {
-            margin-bottom: 18px;
-            padding: 13px 15px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
-
-        .prescription-alert-success {
-            border: 1px solid #bbf7d0;
-            background: #f0fdf4;
-            color: #15803d;
-        }
-
-        .prescription-alert-error {
-            border: 1px solid #fecaca;
-            background: #fef2f2;
-            color: #b91c1c;
-        }
-
-        .prescription-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 9px;
-            margin-bottom: 20px;
-        }
-
-        .prescription-btn {
-            display: inline-flex;
-            height: 38px;
-            align-items: center;
-            justify-content: center;
-            padding: 0 14px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            text-decoration: none;
-        }
-
-        .prescription-btn-primary {
-            border: 1px solid #2563eb;
-            background: #2563eb;
-            color: #ffffff;
-        }
-
-        .prescription-btn-secondary {
-            border: 1px solid #cbd5e1;
-            background: #ffffff;
-            color: #475569;
-        }
-
-        .prescription-card {
-            overflow: hidden;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: #ffffff;
-            box-shadow: 0 3px 14px rgba(15, 23, 42, .035);
-        }
-
-        .prescription-card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-            padding: 17px 20px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .prescription-card-header h2 {
-            margin: 0;
-            font-size: 15px;
-        }
-
-        .prescription-card-header p {
-            margin: 5px 0 0;
-            color: #64748b;
-            font-size: 11px;
-        }
-
-        .prescription-info-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .prescription-info-item {
-            padding: 18px 20px;
-            border-right: 1px solid #edf2f7;
-            border-bottom: 1px solid #edf2f7;
-        }
-
-        .prescription-info-item:nth-child(3n) {
-            border-right: none;
-        }
-
-        .prescription-info-item span,
-        .prescription-content-item>span,
-        .usage-grid span,
-        .medicine-summary-grid span,
-        .prescription-item-text span,
-        .prescription-system-grid span,
-        .prescription-file span,
-        .prescription-item-quantity span {
-            display: block;
-            margin-bottom: 6px;
-            color: #64748b;
-            font-size: 9px;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
-
-        .prescription-info-item strong {
-            color: #0f172a;
-            font-size: 12px;
-        }
-
-        .prescription-info-item small {
-            display: block;
-            margin-top: 4px;
-            color: #94a3b8;
-            font-size: 9px;
-        }
-
-        .prescription-code,
-        .prescription-item-code {
-            color: #1d4ed8 !important;
-            font-family: Consolas, Monaco, monospace;
-        }
-
-        .prescription-content-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .prescription-content-item {
-            min-height: 110px;
-            padding: 20px;
-            border-right: 1px solid #edf2f7;
-        }
-
-        .prescription-content-item:last-child {
-            border-right: none;
-        }
-
-        .prescription-content-item div {
-            color: #334155;
-            font-size: 12px;
-            line-height: 1.7;
-            white-space: pre-line;
-        }
-
-        .prescription-count {
-            padding: 5px 9px;
-            border-radius: 999px;
-            background: #f1f5f9;
-            color: #475569;
-            font-size: 10px;
-            font-weight: 800;
-        }
-
-        .prescription-items {
-            padding: 18px;
-        }
-
-        .prescription-item-card {
-            display: flex;
-            gap: 14px;
-            margin-bottom: 15px;
-            padding: 17px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-        }
-
-        .prescription-item-card:last-child {
-            margin-bottom: 0;
-        }
-
-        .prescription-item-number {
-            display: flex;
-            width: 30px;
-            height: 30px;
-            flex: 0 0 30px;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: #eff6ff;
-            color: #2563eb;
-            font-size: 11px;
-            font-weight: 800;
-        }
-
-        .prescription-item-main {
-            width: 100%;
-            min-width: 0;
-        }
-
-        .prescription-item-header {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .prescription-item-header h3 {
-            margin: 0 0 4px;
-            font-size: 14px;
-        }
-
-        .prescription-item-code {
-            font-size: 10px;
-        }
-
-        .prescription-item-quantity {
-            text-align: right;
-        }
-
-        .prescription-item-quantity strong {
-            font-size: 12px;
-        }
-
-        .medicine-summary-grid,
-        .usage-grid {
-            display: grid;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-
-        .medicine-summary-grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            padding: 13px;
-            border-radius: 10px;
-            background: #f8fafc;
-        }
-
-        .usage-grid {
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-        }
-
-        .medicine-summary-grid strong,
-        .usage-grid strong {
-            color: #334155;
-            font-size: 10px;
-        }
-
-        .prescription-item-text {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .prescription-item-text>div {
-            padding: 12px;
-            border: 1px solid #edf2f7;
-            border-radius: 9px;
-        }
-
-        .prescription-item-text p {
-            margin: 0;
-            color: #475569;
-            font-size: 10px;
-            line-height: 1.6;
-            white-space: pre-line;
-        }
-
-        .prescription-file-section {
-            padding: 20px;
-        }
-
-        .prescription-file {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-        }
-
-        .prescription-file strong {
-            font-size: 11px;
-            word-break: break-all;
-        }
-
-        .prescription-system-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .prescription-system-grid>div {
-            padding: 18px 20px;
-            border-right: 1px solid #edf2f7;
-        }
-
-        .prescription-system-grid>div:last-child {
-            border-right: none;
-        }
-
-        .prescription-system-grid strong {
-            font-size: 11px;
-        }
-
-        .prescription-policy {
-            padding: 15px 17px;
-            border: 1px solid #fde68a;
-            border-radius: 11px;
-            background: #fffbeb;
-        }
-
-        .prescription-policy strong {
-            display: block;
-            margin-bottom: 5px;
-            color: #92400e;
-            font-size: 11px;
-        }
-
-        .prescription-policy p {
-            margin: 0;
-            color: #78350f;
-            font-size: 10px;
-            line-height: 1.6;
-        }
-
-        .prescription-empty-state {
-            padding: 35px 15px;
-            text-align: center;
-        }
-
-        .prescription-empty-state p,
-        .prescription-empty {
-            color: #94a3b8;
-            font-size: 10px;
-        }
-
-        @media (max-width: 1000px) {
-            .prescription-info-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .prescription-info-item:nth-child(3n) {
-                border-right: 1px solid #edf2f7;
-            }
-
-            .prescription-info-item:nth-child(2n) {
-                border-right: none;
-            }
-
-            .medicine-summary-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .usage-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 768px) {
-
-            .prescription-header,
-            .prescription-item-header,
-            .prescription-file {
-                flex-direction: column;
-            }
-
-            .prescription-actions {
-                flex-direction: column;
-            }
-
-            .prescription-btn {
-                width: 100%;
-            }
-
-            .prescription-info-grid,
-            .prescription-content-grid,
-            .prescription-item-text,
-            .prescription-system-grid,
-            .medicine-summary-grid,
-            .usage-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .prescription-info-item,
-            .prescription-content-item,
-            .prescription-system-grid>div {
-                border-right: none;
-            }
-
-            .prescription-item-quantity {
-                text-align: left;
-            }
-        }
-    </style>
 
 @endsection

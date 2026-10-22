@@ -1,24 +1,21 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'diagnoses-show')
 
 @section('title', 'Chi tiết chẩn đoán')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard /
-        Chẩn đoán /
-        {{ $diagnosis->medicalVisit?->visit_code }}
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <span>Chẩn đoán</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ $diagnosis->medicalVisit?->visit_code }}</strong>
 @endsection
 
 @section('content')
 
-    <div style="
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 22px;
-    ">
+    <div class="admin-u-e0f559a1">
 
         <div>
 
@@ -34,34 +31,23 @@
         </div>
 
 
-        <div style="
-            display: flex;
-            gap: 8px;
-        ">
+        <div class="admin-u-5786f359">
 
             <a
                 href="{{ route('admin.diagnoses.index') }}"
-                class="btn btn-secondary"
-            >
-                Quay lại
-            </a>
+                class="admin-btn admin-btn-secondary btn btn-secondary"
+            >Quay lại</a>
 
 
-            @if (
-                $diagnosis->medicalVisit?->status?->name
-                !==
-                'COMPLETED'
-            )
+            @if ($diagnosis->medicalVisit?->canRecordClinicalData())
 
                 <a
                     href="{{ route(
                         'admin.diagnoses.edit',
                         $diagnosis
                     ) }}"
-                    class="btn btn-primary"
-                >
-                    Sửa
-                </a>
+                    class="admin-btn btn btn-primary admin-btn-primary"
+                >Sửa</a>
 
             @endif
 
@@ -71,20 +57,15 @@
 
 
     <div
-        class="card"
-        style="margin-bottom: 18px;"
+        class="admin-u-2f23af6b card"
+
     >
 
-        <h2 style="margin-top: 0;">
+        <h2 class="admin-u-ec0f7ffa">
             Lượt khám
         </h2>
 
-        <div style="
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(220px, 1fr));
-            gap: 18px;
-        ">
+        <div class="admin-u-5811d829">
 
             <div>
                 <strong>Mã lượt khám</strong>
@@ -130,7 +111,7 @@
                 <strong>Trạng thái</strong>
 
                 <div>
-                    {{ $diagnosis->medicalVisit?->status?->name ?: '—' }}
+                    {{ \App\Models\AdminDisplay::label($diagnosis->medicalVisit?->status?->name ?: '—') }}
                 </div>
             </div>
 
@@ -139,7 +120,7 @@
 
         @if ($diagnosis->medicalVisit)
 
-            <div style="margin-top: 18px;">
+            <div class="admin-u-6840f0a6">
 
                 <a
                     href="{{ route(
@@ -160,18 +141,12 @@
 
     <div class="card">
 
-        <div style="
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(220px, 1fr));
-            gap: 18px;
-            margin-bottom: 24px;
-        ">
+        <div class="admin-u-88def7f5">
 
             <div>
                 <strong>Bệnh</strong>
 
-                <div style="margin-top: 5px;">
+                <div class="admin-u-035790fa">
                     {{ $diagnosis->disease?->name ?: '—' }}
                 </div>
             </div>
@@ -180,8 +155,8 @@
             <div>
                 <strong>Loại chẩn đoán</strong>
 
-                <div style="margin-top: 5px;">
-                    {{ $diagnosis->diagnosis_type ?: '—' }}
+                <div class="admin-u-035790fa">
+                    {{ \App\Models\AdminDisplay::label($diagnosis->diagnosis_type ?: '—') }}
                 </div>
             </div>
 
@@ -189,8 +164,8 @@
             <div>
                 <strong>Mức độ</strong>
 
-                <div style="margin-top: 5px;">
-                    {{ $diagnosis->severity ?: '—' }}
+                <div class="admin-u-035790fa">
+                    {{ \App\Models\AdminDisplay::label($diagnosis->severity ?: '—') }}
                 </div>
             </div>
 
@@ -198,7 +173,7 @@
             <div>
                 <strong>Thời điểm chẩn đoán</strong>
 
-                <div style="margin-top: 5px;">
+                <div class="admin-u-035790fa">
                     {{ $diagnosis->diagnosed_at?->format(
                         'd/m/Y H:i:s'
                     ) ?: '—' }}
@@ -208,17 +183,13 @@
         </div>
 
 
-        <div style="margin-bottom: 22px;">
+        <div class="admin-u-ed1667a9">
 
             <strong>
                 Mô tả chẩn đoán
             </strong>
 
-            <div style="
-                margin-top: 7px;
-                white-space: pre-line;
-                line-height: 1.7;
-            ">
+            <div class="admin-u-4b947e64">
                 {{ $diagnosis->diagnosis_description ?: '—' }}
             </div>
 
@@ -231,11 +202,7 @@
                 Ghi chú
             </strong>
 
-            <div style="
-                margin-top: 7px;
-                white-space: pre-line;
-                line-height: 1.7;
-            ">
+            <div class="admin-u-4b947e64">
                 {{ $diagnosis->notes ?: '—' }}
             </div>
 

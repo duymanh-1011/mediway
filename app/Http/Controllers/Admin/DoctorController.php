@@ -79,27 +79,27 @@ class DoctorController extends Controller
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner
-                        ->where('doctor_code', 'like', '%' . $search . '%')
-                        ->orWhere('full_name', 'like', '%' . $search . '%')
+                        ->where('doctor_code', 'like', '%'.$search.'%')
+                        ->orWhere('full_name', 'like', '%'.$search.'%')
                         ->orWhereHas('user', function ($userQuery) use ($search) {
-                            $userQuery->where('phone', 'like', '%' . $search . '%');
+                            $userQuery->where('phone', 'like', '%'.$search.'%');
                         })
                         ->orWhereHas('detail', function ($detailQuery) use ($search) {
                             $detailQuery
                                 ->where(
                                     'practice_license_number',
                                     'like',
-                                    '%' . $search . '%'
+                                    '%'.$search.'%'
                                 )
                                 ->orWhere(
                                     'citizen_id_number',
                                     'like',
-                                    '%' . $search . '%'
+                                    '%'.$search.'%'
                                 )
                                 ->orWhere(
                                     'email',
                                     'like',
-                                    '%' . $search . '%'
+                                    '%'.$search.'%'
                                 );
                         });
                 });
@@ -146,16 +146,16 @@ class DoctorController extends Controller
                     ->lockForUpdate()
                     ->first();
 
-                if (!$role) {
+                if (! $role) {
                     throw ValidationException::withMessages([
-                        'user_id' => 'Vai trò Doctor chưa tồn tại.',
+                        'user_id' => 'Vai trò bác sĩ chưa tồn tại.',
                     ]);
                 }
 
                 $status = $data['status'];
                 $accountStatus = $this->accountStatus($status);
 
-                if (!empty($data['user_id'])) {
+                if (! empty($data['user_id'])) {
                     $user = $this->validateAndLockDoctorUser(
                         (int) $data['user_id'],
                         (int) $role->id
@@ -163,9 +163,9 @@ class DoctorController extends Controller
 
                     $doctorCode = $user->business_code;
 
-                    if (!preg_match('/^BS[0-9]{6,}$/', $doctorCode)) {
+                    if (! preg_match('/^BS[0-9]{6,}$/', $doctorCode)) {
                         throw ValidationException::withMessages([
-                            'user_id' => 'Mã tài khoản Doctor phải có dạng BS000001.',
+                            'user_id' => 'Mã tài khoản bác sĩ phải có dạng BS000001.',
                         ]);
                     }
 
@@ -297,7 +297,7 @@ class DoctorController extends Controller
                     ->lockForUpdate()
                     ->first();
 
-                if (!$detail) {
+                if (! $detail) {
                     $detail = new DoctorDetail([
                         'doctor_id' => $lockedDoctor->id,
                     ]);
@@ -349,7 +349,7 @@ class DoctorController extends Controller
     {
         $column = self::DOCUMENT_TYPES[$type] ?? null;
 
-        if (!$column) {
+        if (! $column) {
             abort(404);
         }
 
@@ -357,14 +357,14 @@ class DoctorController extends Controller
 
         $path = $doctor->detail?->{$column};
 
-        if (!is_string($path) || $path === '') {
+        if (! is_string($path) || $path === '') {
             abort(404);
         }
 
-        $prefix = 'doctor-documents/' . $doctor->id . '/';
+        $prefix = 'doctor-documents/'.$doctor->id.'/';
 
         if (
-            !str_starts_with($path, $prefix) ||
+            ! str_starts_with($path, $prefix) ||
             str_contains($path, '..') ||
             str_contains($path, '\\')
         ) {
@@ -373,7 +373,7 @@ class DoctorController extends Controller
 
         $disk = Storage::disk('local');
 
-        if (!$disk->exists($path)) {
+        if (! $disk->exists($path)) {
             abort(404);
         }
 
@@ -388,10 +388,10 @@ class DoctorController extends Controller
 
         $extension = pathinfo($path, PATHINFO_EXTENSION);
 
-        $filename .= '-' . $doctor->doctor_code;
+        $filename .= '-'.$doctor->doctor_code;
 
         if ($extension !== '') {
-            $filename .= '.' . $extension;
+            $filename .= '.'.$extension;
         }
 
         return $disk->response(
@@ -434,7 +434,7 @@ class DoctorController extends Controller
             ->lockForUpdate()
             ->find($userId);
 
-        if (!$user) {
+        if (! $user) {
             throw ValidationException::withMessages([
                 'user_id' => 'Tài khoản được chọn không tồn tại.',
             ]);
@@ -442,7 +442,7 @@ class DoctorController extends Controller
 
         if ((int) $user->role_id !== $roleId) {
             throw ValidationException::withMessages([
-                'user_id' => 'Tài khoản phải có vai trò Doctor.',
+                'user_id' => 'Tài khoản phải có vai trò bác sĩ.',
             ]);
         }
 
@@ -478,7 +478,7 @@ class DoctorController extends Controller
             }
         }
 
-        return 'BS' . str_pad(
+        return 'BS'.str_pad(
             (string) ($max + 1),
             6,
             '0',
@@ -516,24 +516,24 @@ class DoctorController extends Controller
         $result = [];
 
         foreach (self::FILE_FIELDS as $input => $column) {
-            if (!$request->hasFile($input)) {
+            if (! $request->hasFile($input)) {
                 continue;
             }
 
             $file = $request->file($input);
 
-            if (!$file || !$file->isValid()) {
+            if (! $file || ! $file->isValid()) {
                 throw ValidationException::withMessages([
                     $input => 'Tệp tải lên không hợp lệ.',
                 ]);
             }
 
             $path = $file->store(
-                'doctor-documents/' . $doctor->id,
+                'doctor-documents/'.$doctor->id,
                 'local'
             );
 
-            if (!$path) {
+            if (! $path) {
                 throw ValidationException::withMessages([
                     $input => 'Không thể lưu tài liệu.',
                 ]);

@@ -1,21 +1,19 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'specialties-show')
 
 @section(
     'title',
-    'Chi tiết chuyên khoa - Mediway Admin'
+    'Chi tiết chuyên khoa - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-
-        Admin /
-        Danh mục /
-        Chuyên khoa /
-        {{ $specialty->specialty_code }}
-
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Danh mục</span>
+    <span aria-hidden="true">/</span>
+    <span>Chuyên khoa</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ $specialty->specialty_code }}</strong>
 @endsection
 
 @section('content')
@@ -121,7 +119,7 @@
                         <span
                             class="badge badge-success"
                         >
-                            ACTIVE
+                            Đang hoạt động
                         </span>
 
                     @else
@@ -129,7 +127,7 @@
                         <span
                             class="badge badge-danger"
                         >
-                            INACTIVE
+                            Ngừng hoạt động
                         </span>
 
                     @endif
@@ -249,6 +247,7 @@
                         <thead>
 
                             <tr>
+                                <th scope="col" class="admin-row-number">STT</th>
                                 <th>Ngày</th>
                                 <th>Bác sĩ</th>
                                 <th>Phòng</th>
@@ -267,6 +266,7 @@
 
                             <tr>
 
+                                @include('admin.layouts.partials.row-number', ['rows' => $recentSchedules, 'index' => $loop->index])
                                 <td>
                                     {{
                                         \Carbon\Carbon::parse(
@@ -318,7 +318,7 @@
                                 </td>
 
                                 <td>
-                                    {{ $schedule->status }}
+                                    {{ \App\Models\AdminDisplay::label($schedule->status) }}
                                 </td>
 
                             </tr>
@@ -328,7 +328,7 @@
                             <tr>
 
                                 <td
-                                    colspan="5"
+                                    colspan="6"
                                     class="empty-state"
                                 >
                                     Chưa có lịch bác sĩ.
@@ -351,8 +351,8 @@
     </div>
 
     <div
-        class="card"
-        style="margin-top:20px;"
+        class="admin-u-a26bda7d card"
+
     >
 
         <h3 class="section-title">
@@ -366,6 +366,7 @@
                 <thead>
 
                     <tr>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Mã lịch hẹn</th>
                         <th>Ngày khám</th>
                         <th>Bệnh nhân</th>
@@ -384,6 +385,7 @@
 
                     <tr>
 
+                        @include('admin.layouts.partials.row-number', ['rows' => $recentAppointments, 'index' => $loop->index])
                         <td>
                             <strong>
                                 {{ $appointment
@@ -429,8 +431,8 @@
                         </td>
 
                         <td>
-                            {{ $appointment
-                                ->appointment_status }}
+                            {{ \App\Models\AdminDisplay::label($appointment
+                                ->appointment_status) }}
                         </td>
 
                     </tr>
@@ -440,7 +442,7 @@
                     <tr>
 
                         <td
-                            colspan="5"
+                            colspan="6"
                             class="empty-state"
                         >
                             Chưa có lịch hẹn thuộc chuyên khoa này.
@@ -459,139 +461,3 @@
     </div>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-
-        justify-content: space-between;
-        align-items: flex-start;
-
-        gap: 20px;
-
-        margin-bottom: 20px;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .detail-grid {
-        display: grid;
-
-        grid-template-columns:
-            minmax(300px, 0.8fr)
-            minmax(0, 1.5fr);
-
-        gap: 20px;
-    }
-
-    .section-title {
-        margin:
-            0
-            0
-            16px;
-
-        font-size: 17px;
-    }
-
-    .detail-image {
-        width: 100%;
-        max-height: 220px;
-
-        object-fit: cover;
-
-        border-radius: 10px;
-
-        margin-bottom: 18px;
-    }
-
-    .detail-row {
-        display: grid;
-
-        grid-template-columns:
-            150px
-            minmax(0, 1fr);
-
-        gap: 15px;
-
-        padding: 12px 0;
-
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-label {
-        color: #64748b;
-
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .detail-value {
-        color: #334155;
-
-        font-size: 13px;
-
-        line-height: 1.55;
-    }
-
-    .stats-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 12px;
-
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        padding: 16px;
-
-        background: #fff;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-    }
-
-    .stat-label {
-        color: #64748b;
-
-        font-size: 12px;
-
-        margin-bottom: 6px;
-    }
-
-    .stat-value {
-        font-size: 25px;
-        font-weight: 700;
-    }
-
-    .empty-state {
-        padding: 30px !important;
-
-        text-align: center !important;
-
-        color: #94a3b8 !important;
-    }
-
-    @media (max-width: 1000px) {
-
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

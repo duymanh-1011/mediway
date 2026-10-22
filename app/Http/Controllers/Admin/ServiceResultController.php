@@ -5,14 +5,27 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreServiceResultRequest;
 use App\Http\Requests\Admin\UpdateServiceResultRequest;
+use App\Models\ClinicalDocument;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceResult;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ServiceResultController extends Controller
 {
+    public function document(int $id, string $type): StreamedResponse
+    {
+        abort_unless(in_array($type, ['pdf', 'image'], true), 404);
+        $result = ServiceResult::findOrFail($id);
+
+        return app(ClinicalDocument::class)->response(
+            $result->getAttribute('result_'.$type.'_path'), 'service-results/'.$result->service_order_item_id, $type
+        );
+    }
+
     /**
      * Danh sách kết quả dịch vụ.
      */
@@ -35,12 +48,12 @@ class ServiceResultController extends Controller
                     ->where(
                         'result_summary',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'result_conclusion',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhereHas(
                         'serviceOrderItem.serviceOrder',
@@ -48,7 +61,7 @@ class ServiceResultController extends Controller
                             $orderQuery->where(
                                 'service_order_code',
                                 'like',
-                                '%' . $keyword . '%'
+                                '%'.$keyword.'%'
                             );
                         }
                     )
@@ -58,7 +71,7 @@ class ServiceResultController extends Controller
                             $visitQuery->where(
                                 'visit_code',
                                 'like',
-                                '%' . $keyword . '%'
+                                '%'.$keyword.'%'
                             );
                         }
                     )
@@ -69,12 +82,12 @@ class ServiceResultController extends Controller
                                 ->where(
                                     'service_code',
                                     'like',
-                                    '%' . $keyword . '%'
+                                    '%'.$keyword.'%'
                                 )
                                 ->orWhere(
                                     'name',
                                     'like',
-                                    '%' . $keyword . '%'
+                                    '%'.$keyword.'%'
                                 );
                         }
                     )
@@ -84,7 +97,7 @@ class ServiceResultController extends Controller
                             $userQuery->where(
                                 'business_code',
                                 'like',
-                                '%' . $keyword . '%'
+                                '%'.$keyword.'%'
                             );
                         }
                     );
@@ -221,8 +234,8 @@ class ServiceResultController extends Controller
     ) {
         $validated = $request->validated();
 
-        $result = DB::transaction(
-            function () use (
+        $result = ClinicalDocument::transaction(
+            function (ClinicalDocument $documents) use (
                 $request,
                 $serviceOrderItem,
                 $validated
@@ -252,41 +265,37 @@ class ServiceResultController extends Controller
                     return null;
                 }
 
+                $paths = $documents->store($request, 'service-results/'.$lockedItem->id, ClinicalDocument::RESULT_FILES);
                 $result = ServiceResult::create([
-                    'service_order_item_id' =>
-                        $lockedItem->id,
+                    'service_order_item_id' => $lockedItem->id,
 
-                    'result_summary' =>
-                        $validated['result_summary']
+                    'result_summary' => $validated['result_summary']
                         ?? null,
 
-                    'result_conclusion' =>
-                        $validated['result_conclusion']
+                    'result_conclusion' => $validated['result_conclusion']
                         ?? null,
 
-                    'result_parameters' =>
-                        null,
+                    'result_parameters' => null,
 
-                    'result_pdf_path' =>
-                        $validated['result_pdf_path']
+                    'result_pdf_path' => $paths['result_pdf_path']
                         ?? null,
 
-                    'result_image_path' =>
-                        $validated['result_image_path']
+                    'result_image_path' => $paths['result_image_path']
                         ?? null,
 
-                    'verified_by_user_id' =>
-                        $validated['verified_by_user_id']
+                    'verified_by_user_id' => $validated['verified_by_user_id']
                         ?? null,
 
-                    'resulted_at' =>
-                        $validated['resulted_at']
+                    'resulted_at' => $validated['resulted_at']
                         ?? null,
 
-                    'notes' =>
-                        $validated['notes']
+                    'notes' => $validated['notes']
                         ?? null,
                 ]);
+
+                if (! $result->hasContent()) {
+                    throw ValidationException::withMessages(['result_summary' => 'Kết quả phải có nội dung hoặc tệp hợp lệ còn tồn tại.']);
+                }
 
                 $roleNameSnapshot = null;
 
@@ -306,32 +315,24 @@ class ServiceResultController extends Controller
                 }
 
                 $newValues = [
-                    'service_order_item_id' =>
-                        $result->service_order_item_id,
+                    'service_order_item_id' => $result->service_order_item_id,
 
-                    'result_summary' =>
-                        $result->result_summary,
+                    'result_summary' => $result->result_summary,
 
-                    'result_conclusion' =>
-                        $result->result_conclusion,
+                    'result_conclusion' => $result->result_conclusion,
 
-                    'result_pdf_path' =>
-                        $result->result_pdf_path,
+                    'result_pdf_path' => $result->result_pdf_path,
 
-                    'result_image_path' =>
-                        $result->result_image_path,
+                    'result_image_path' => $result->result_image_path,
 
-                    'verified_by_user_id' =>
-                        $result->verified_by_user_id,
+                    'verified_by_user_id' => $result->verified_by_user_id,
 
-                    'resulted_at' =>
-                        $result->resulted_at
-                            ?->format(
-                                'Y-m-d H:i:s'
-                            ),
+                    'resulted_at' => $result->resulted_at
+                        ?->format(
+                            'Y-m-d H:i:s'
+                        ),
 
-                    'notes' =>
-                        $result->notes,
+                    'notes' => $result->notes,
                 ];
 
                 $orderCode =
@@ -350,70 +351,57 @@ class ServiceResultController extends Controller
                 if ($orderCode && $serviceCode) {
                     $description .=
                         ' của phiếu '
-                        . $orderCode
-                        . ', dịch vụ '
-                        . $serviceCode
-                        . '.';
+                        .$orderCode
+                        .', dịch vụ '
+                        .$serviceCode
+                        .'.';
                 } else {
                     $description .= '.';
                 }
 
                 DB::table('audit_logs')->insert([
-                    'user_id' =>
-                        Auth::id(),
+                    'user_id' => Auth::id(),
 
-                    'role_name_snapshot' =>
-                        $roleNameSnapshot,
+                    'role_name_snapshot' => $roleNameSnapshot,
 
-                    'action' =>
-                        'CREATE',
+                    'action' => 'CREATE',
 
-                    'entity_type' =>
-                        'service_results',
+                    'entity_type' => 'service_results',
 
-                    'entity_id' =>
-                        $result->id,
+                    'entity_id' => $result->id,
 
-                    'entity_business_code' =>
-                        null,
+                    'entity_business_code' => null,
 
-                    'old_values' =>
-                        json_encode(
-                            [],
-                            JSON_UNESCAPED_UNICODE
-                            |
-                            JSON_UNESCAPED_SLASHES
-                        ),
+                    'old_values' => json_encode(
+                        [],
+                        JSON_UNESCAPED_UNICODE
+                        |
+                        JSON_UNESCAPED_SLASHES
+                    ),
 
-                    'new_values' =>
-                        json_encode(
-                            $newValues,
-                            JSON_UNESCAPED_UNICODE
-                            |
-                            JSON_UNESCAPED_SLASHES
-                        ),
+                    'new_values' => json_encode(
+                        $newValues,
+                        JSON_UNESCAPED_UNICODE
+                        |
+                        JSON_UNESCAPED_SLASHES
+                    ),
 
-                    'description' =>
-                        $description,
+                    'description' => $description,
 
-                    'ip_address' =>
-                        $request->ip(),
+                    'ip_address' => $request->ip(),
 
-                    'user_agent' =>
-                        $request->userAgent(),
+                    'user_agent' => $request->userAgent(),
 
-                    'performed_at' =>
-                        now(),
+                    'performed_at' => now(),
 
-                    'created_at' =>
-                        now(),
+                    'created_at' => now(),
                 ]);
 
                 return $result;
             }
         );
 
-        if (!$result) {
+        if (! $result) {
             return redirect()
                 ->route(
                     'admin.service-orders.show',
@@ -518,35 +506,6 @@ class ServiceResultController extends Controller
 
         $validated = $request->validated();
 
-        $oldValues = [
-            'result_summary' =>
-                $result->result_summary,
-
-            'result_conclusion' =>
-                $result->result_conclusion,
-
-            'result_parameters' =>
-                $result->result_parameters,
-
-            'result_pdf_path' =>
-                $result->result_pdf_path,
-
-            'result_image_path' =>
-                $result->result_image_path,
-
-            'verified_by_user_id' =>
-                $result->verified_by_user_id,
-
-            'resulted_at' =>
-                $result->resulted_at
-                    ?->format(
-                        'Y-m-d H:i:s'
-                    ),
-
-            'notes' =>
-                $result->notes,
-        ];
-
         /*
         |--------------------------------------------------------------------------
         | Không cập nhật result_parameters.
@@ -554,32 +513,19 @@ class ServiceResultController extends Controller
         |--------------------------------------------------------------------------
         */
         $updateData = [
-            'result_summary' =>
-                $validated['result_summary']
+            'result_summary' => $validated['result_summary']
                 ?? null,
 
-            'result_conclusion' =>
-                $validated['result_conclusion']
+            'result_conclusion' => $validated['result_conclusion']
                 ?? null,
 
-            'result_pdf_path' =>
-                $validated['result_pdf_path']
+            'verified_by_user_id' => $validated['verified_by_user_id']
                 ?? null,
 
-            'result_image_path' =>
-                $validated['result_image_path']
+            'resulted_at' => $validated['resulted_at']
                 ?? null,
 
-            'verified_by_user_id' =>
-                $validated['verified_by_user_id']
-                ?? null,
-
-            'resulted_at' =>
-                $validated['resulted_at']
-                ?? null,
-
-            'notes' =>
-                $validated['notes']
+            'notes' => $validated['notes']
                 ?? null,
         ];
 
@@ -600,14 +546,22 @@ class ServiceResultController extends Controller
                 ->value('roles.name');
         }
 
-        DB::transaction(
-            function () use (
+        ClinicalDocument::transaction(
+            function (ClinicalDocument $documents) use (
                 $request,
                 $result,
                 $updateData,
-                $oldValues,
                 $roleNameSnapshot
             ) {
+                ServiceOrderItem::whereKey($result->service_order_item_id)->lockForUpdate()->firstOrFail();
+                $result = ServiceResult::with(['serviceOrderItem.serviceOrder', 'serviceOrderItem.medicalService'])
+                    ->whereKey($result->id)->lockForUpdate()->firstOrFail();
+                $oldValues = $result->only(['result_summary', 'result_conclusion', 'result_parameters', 'result_pdf_path', 'result_image_path', 'verified_by_user_id', 'notes']);
+                $oldValues['resulted_at'] = $result->resulted_at?->format('Y-m-d H:i:s');
+                $updateData = array_merge($updateData, $documents->store($request, 'service-results/'.$result->service_order_item_id, ClinicalDocument::RESULT_FILES));
+                if (! ServiceResult::hasContentValues(array_merge($result->getAttributes(), $updateData), $result->service_order_item_id)) {
+                    throw ValidationException::withMessages(['result_summary' => 'Kết quả phải có nội dung hoặc tệp hợp lệ còn tồn tại.']);
+                }
                 $result->update(
                     $updateData
                 );
@@ -615,32 +569,24 @@ class ServiceResultController extends Controller
                 $result->refresh();
 
                 $newValues = [
-                    'result_summary' =>
-                        $result->result_summary,
+                    'result_summary' => $result->result_summary,
 
-                    'result_conclusion' =>
-                        $result->result_conclusion,
+                    'result_conclusion' => $result->result_conclusion,
 
-                    'result_parameters' =>
-                        $result->result_parameters,
+                    'result_parameters' => $result->result_parameters,
 
-                    'result_pdf_path' =>
-                        $result->result_pdf_path,
+                    'result_pdf_path' => $result->result_pdf_path,
 
-                    'result_image_path' =>
-                        $result->result_image_path,
+                    'result_image_path' => $result->result_image_path,
 
-                    'verified_by_user_id' =>
-                        $result->verified_by_user_id,
+                    'verified_by_user_id' => $result->verified_by_user_id,
 
-                    'resulted_at' =>
-                        $result->resulted_at
-                            ?->format(
-                                'Y-m-d H:i:s'
-                            ),
+                    'resulted_at' => $result->resulted_at
+                        ?->format(
+                            'Y-m-d H:i:s'
+                        ),
 
-                    'notes' =>
-                        $result->notes,
+                    'notes' => $result->notes,
                 ];
 
                 $orderCode =
@@ -661,63 +607,50 @@ class ServiceResultController extends Controller
                 if ($orderCode && $serviceCode) {
                     $description .=
                         ' của phiếu '
-                        . $orderCode
-                        . ', dịch vụ '
-                        . $serviceCode
-                        . '.';
+                        .$orderCode
+                        .', dịch vụ '
+                        .$serviceCode
+                        .'.';
                 } else {
                     $description .= '.';
                 }
 
                 DB::table('audit_logs')->insert([
-                    'user_id' =>
-                        Auth::id(),
+                    'user_id' => Auth::id(),
 
-                    'role_name_snapshot' =>
-                        $roleNameSnapshot,
+                    'role_name_snapshot' => $roleNameSnapshot,
 
-                    'action' =>
-                        'UPDATE',
+                    'action' => 'UPDATE',
 
-                    'entity_type' =>
-                        'service_results',
+                    'entity_type' => 'service_results',
 
-                    'entity_id' =>
-                        $result->id,
+                    'entity_id' => $result->id,
 
-                    'entity_business_code' =>
-                        null,
+                    'entity_business_code' => null,
 
-                    'old_values' =>
-                        json_encode(
-                            $oldValues,
-                            JSON_UNESCAPED_UNICODE
-                            |
-                            JSON_UNESCAPED_SLASHES
-                        ),
+                    'old_values' => json_encode(
+                        $oldValues,
+                        JSON_UNESCAPED_UNICODE
+                        |
+                        JSON_UNESCAPED_SLASHES
+                    ),
 
-                    'new_values' =>
-                        json_encode(
-                            $newValues,
-                            JSON_UNESCAPED_UNICODE
-                            |
-                            JSON_UNESCAPED_SLASHES
-                        ),
+                    'new_values' => json_encode(
+                        $newValues,
+                        JSON_UNESCAPED_UNICODE
+                        |
+                        JSON_UNESCAPED_SLASHES
+                    ),
 
-                    'description' =>
-                        $description,
+                    'description' => $description,
 
-                    'ip_address' =>
-                        $request->ip(),
+                    'ip_address' => $request->ip(),
 
-                    'user_agent' =>
-                        $request->userAgent(),
+                    'user_agent' => $request->userAgent(),
 
-                    'performed_at' =>
-                        now(),
+                    'performed_at' => now(),
 
-                    'created_at' =>
-                        now(),
+                    'created_at' => now(),
                 ]);
             }
         );

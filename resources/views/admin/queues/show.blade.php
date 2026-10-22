@@ -1,24 +1,21 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'queues-show')
 
 @section('title', 'Chi tiết hàng đợi')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard /
-        Hàng đợi /
-        #{{ $queue->queue_number }}
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <span>Hàng đợi</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">#{{ $queue->queue_number }}</strong>
 @endsection
 
 @section('content')
 
-    <div style="
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 22px;
-    ">
+    <div class="admin-u-e0f559a1">
 
         <div>
             <h1 class="page-title">
@@ -32,29 +29,22 @@
 
         <a
             href="{{ route('admin.queues.index') }}"
-            class="btn btn-secondary"
-        >
-            Quay lại
-        </a>
+            class="admin-btn admin-btn-secondary btn btn-secondary"
+        >Quay lại</a>
 
     </div>
 
 
     <div
-        class="card"
-        style="margin-bottom: 18px;"
+        class="admin-u-2f23af6b card"
+
     >
 
-        <h2 style="margin-top: 0;">
+        <h2 class="admin-u-ec0f7ffa">
             Thông tin hàng đợi
         </h2>
 
-        <div style="
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(220px, 1fr));
-            gap: 18px;
-        ">
+        <div class="admin-u-5811d829">
 
             <div>
                 <strong>Số thứ tự</strong>
@@ -70,7 +60,7 @@
                     @elseif ($queue->queue_type === 'RETURN_AFTER_SERVICE')
                         Quay lại sau dịch vụ
                     @else
-                        {{ $queue->queue_type }}
+                        {{ \App\Models\AdminDisplay::label($queue->queue_type) }}
                     @endif
                 </div>
             </div>
@@ -80,7 +70,7 @@
 
                 <div>
                     <span class="badge">
-                        {{ $queue->status?->name ?: '—' }}
+                        {{ \App\Models\AdminDisplay::label($queue->status?->name ?: '—') }}
                     </span>
                 </div>
             </div>
@@ -133,13 +123,10 @@
         </div>
 
 
-        <div style="margin-top: 20px;">
+        <div class="admin-u-4f7f1ad5">
             <strong>Ghi chú</strong>
 
-            <div style="
-                margin-top: 6px;
-                white-space: pre-line;
-            ">
+            <div class="admin-u-0872b0cf">
                 {{ $queue->notes ?: 'Không có.' }}
             </div>
         </div>
@@ -148,20 +135,15 @@
 
 
     <div
-        class="card"
-        style="margin-bottom: 18px;"
+        class="admin-u-2f23af6b card"
+
     >
 
-        <h2 style="margin-top: 0;">
+        <h2 class="admin-u-ec0f7ffa">
             Bệnh nhân và lượt khám
         </h2>
 
-        <div style="
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(220px, 1fr));
-            gap: 18px;
-        ">
+        <div class="admin-u-5811d829">
 
             <div>
                 <strong>Mã lượt khám</strong>
@@ -207,7 +189,7 @@
                 <strong>Trạng thái lượt khám</strong>
 
                 <div>
-                    {{ $queue->medicalVisit?->status?->name ?: '—' }}
+                    {{ \App\Models\AdminDisplay::label($queue->medicalVisit?->status?->name ?: '—') }}
                 </div>
             </div>
 
@@ -216,7 +198,7 @@
 
         @if ($queue->medicalVisit)
 
-            <div style="margin-top: 18px;">
+            <div class="admin-u-6840f0a6">
 
                 <a
                     href="{{ route(
@@ -237,15 +219,11 @@
 
     <div class="card">
 
-        <h2 style="margin-top: 0;">
+        <h2 class="admin-u-ec0f7ffa">
             Điều phối hàng đợi
         </h2>
 
-        <div style="
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        ">
+        <div class="admin-u-b4534c93">
 
             @if (
                 in_array(
@@ -255,7 +233,7 @@
                 )
             )
 
-                <form
+                <form novalidate
                     method="POST"
                     action="{{ route(
                         'admin.queues.call',
@@ -279,7 +257,7 @@
 
             @if ($queue->status?->name === 'CALLED')
 
-                <form
+                <form novalidate
                     method="POST"
                     action="{{ route(
                         'admin.queues.start-service',
@@ -301,7 +279,7 @@
 
             @if ($queue->status?->name === 'IN_SERVICE')
 
-                <form
+                <form novalidate
                     method="POST"
                     action="{{ route(
                         'admin.queues.complete',
@@ -329,7 +307,7 @@
                 )
             )
 
-                <form
+                <form novalidate
                     method="POST"
                     action="{{ route(
                         'admin.queues.skip',
@@ -362,7 +340,7 @@
                 )
             )
 
-                <span style="color: #64748b;">
+                <span class="admin-u-a6f48144">
                     Lượt chờ đã hoàn tất.
                 </span>
 

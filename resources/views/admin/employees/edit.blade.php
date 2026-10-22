@@ -1,10 +1,17 @@
 
 @extends('admin.layouts.app')
+@section('admin-page', 'employees-edit')
 
 @section('title', 'Chỉnh sửa nhân viên - Mediway')
 
 @section('breadcrumb')
-    Admin / Nhân sự & bệnh nhân / Nhân viên / Chỉnh sửa
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Nhân sự & bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Nhân viên</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Chỉnh sửa</strong>
 @endsection
 
 @section('content')
@@ -29,13 +36,13 @@
                 <strong>Vui lòng kiểm tra thông tin:</strong>
                 <ul>
                     @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
+                        <li>{{ \App\Models\AdminDisplay::text($error) }}</li>
                     @endforeach
                 </ul>
             </div>
         @endif
 
-        <form
+        <form novalidate
             method="POST"
             action="{{ route('admin.employees.update', $employee) }}"
             enctype="multipart/form-data"
@@ -69,7 +76,3 @@
     </div>
 </div>
 @endsection
-
-@push('styles')
-    @include('admin.employees._styles')
-@endpush

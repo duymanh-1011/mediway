@@ -15,10 +15,7 @@ class StoreMedicineRequest extends FormRequest
     {
         return [
             'medicine_code' => [
-                'required',
-                'string',
-                'max:30',
-                'unique:medicines,medicine_code',
+                'exclude',
             ],
 
             'name' => [
@@ -114,26 +111,19 @@ class StoreMedicineRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'medicine_code.required' =>
-                'Vui lòng nhập mã thuốc.',
+            'medicine_code.required' => 'Vui lòng nhập mã thuốc.',
 
-            'medicine_code.unique' =>
-                'Mã thuốc đã tồn tại.',
+            'medicine_code.unique' => 'Mã thuốc đã tồn tại.',
 
-            'medicine_code.max' =>
-                'Mã thuốc không được vượt quá 30 ký tự.',
+            'medicine_code.max' => 'Mã thuốc không được vượt quá 30 ký tự.',
 
-            'name.required' =>
-                'Vui lòng nhập tên thuốc.',
+            'name.required' => 'Vui lòng nhập tên thuốc.',
 
-            'name.max' =>
-                'Tên thuốc không được vượt quá 255 ký tự.',
+            'name.max' => 'Tên thuốc không được vượt quá 255 ký tự.',
 
-            'status.required' =>
-                'Vui lòng chọn trạng thái.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' =>
-                'Trạng thái thuốc không hợp lệ.',
+            'status.in' => 'Trạng thái thuốc không hợp lệ.',
         ];
     }
 }

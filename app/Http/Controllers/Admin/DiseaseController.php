@@ -7,7 +7,7 @@ use App\Http\Requests\Admin\StoreDiseaseRequest;
 use App\Http\Requests\Admin\UpdateDiseaseRequest;
 use App\Models\Disease;
 use App\Models\DiseaseGroup;
-
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -45,16 +45,16 @@ class DiseaseController extends Controller
                         'like',
                         "%{$keyword}%"
                     )
-                    ->orWhere(
-                        'name',
-                        'like',
-                        "%{$keyword}%"
-                    )
-                    ->orWhere(
-                        'alternative_name',
-                        'like',
-                        "%{$keyword}%"
-                    );
+                        ->orWhere(
+                            'name',
+                            'like',
+                            "%{$keyword}%"
+                        )
+                        ->orWhere(
+                            'alternative_name',
+                            'like',
+                            "%{$keyword}%"
+                        );
                 }
             );
         }
@@ -65,7 +65,7 @@ class DiseaseController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        if (!empty($diseaseGroupId)) {
+        if (! empty($diseaseGroupId)) {
 
             $query->where(
                 'disease_group_id',
@@ -151,7 +151,7 @@ class DiseaseController extends Controller
         );
     }
 
-    public function create()
+    public function create(Request $request): View
     {
         $diseaseGroups =
             DiseaseGroup::query()
@@ -162,9 +162,14 @@ class DiseaseController extends Controller
                 ->orderBy('name')
                 ->get();
 
+        $selectedDiseaseGroup = $diseaseGroups->firstWhere('id', $request->integer('disease_group_id'));
+        $backUrl = $selectedDiseaseGroup
+            ? route('admin.disease-groups.show', $selectedDiseaseGroup)
+            : route('admin.diseases.index');
+
         return view(
             'admin.diseases.create',
-            compact('diseaseGroups')
+            compact('diseaseGroups', 'selectedDiseaseGroup', 'backUrl')
         );
     }
 

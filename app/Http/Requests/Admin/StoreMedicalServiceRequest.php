@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreMedicalServiceRequest extends FormRequest
 {
@@ -15,22 +16,27 @@ class StoreMedicalServiceRequest extends FormRequest
     {
         return [
             'service_code' => [
-                'required',
-                'string',
-                'max:30',
-                'unique:medical_services,service_code',
+                'exclude',
             ],
 
-            'service_group_id' => [
+            'service_group_ids' => [
+                'required',
+                'array',
+                'min:1',
+            ],
+
+            'service_group_ids.*' => [
                 'required',
                 'integer',
-                'exists:service_groups,id',
+                'distinct',
+                Rule::exists('service_groups', 'id')->where('status', 'ACTIVE'),
             ],
 
             'name' => [
                 'required',
                 'string',
                 'max:150',
+                'unique:medical_services,name',
             ],
 
             'description' => [
@@ -42,6 +48,8 @@ class StoreMedicalServiceRequest extends FormRequest
                 'required',
                 'numeric',
                 'min:0',
+                'multiple_of:1000',
+                'max:9999999999.99',
             ],
 
             'unit' => [
@@ -84,50 +92,50 @@ class StoreMedicalServiceRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'service_code.required' =>
-                'Vui lòng nhập mã dịch vụ.',
+            'service_code.required' => 'Vui lòng nhập mã dịch vụ.',
 
-            'service_code.unique' =>
-                'Mã dịch vụ đã tồn tại.',
+            'service_code.unique' => 'Mã dịch vụ đã tồn tại.',
 
-            'service_group_id.required' =>
-                'Vui lòng chọn nhóm dịch vụ.',
+            'service_group_ids.required' => 'Vui lòng chọn ít nhất một nhóm dịch vụ.',
 
-            'service_group_id.exists' =>
-                'Nhóm dịch vụ không hợp lệ.',
+            'service_group_ids.array' => 'Danh sách nhóm dịch vụ không hợp lệ.',
 
-            'name.required' =>
-                'Vui lòng nhập tên dịch vụ.',
+            'service_group_ids.min' => 'Vui lòng chọn ít nhất một nhóm dịch vụ.',
 
-            'price.required' =>
-                'Vui lòng nhập giá dịch vụ.',
+            'service_group_ids.*.required' => 'Nhóm dịch vụ không hợp lệ.',
 
-            'price.numeric' =>
-                'Giá dịch vụ phải là số.',
+            'service_group_ids.*.integer' => 'Nhóm dịch vụ không hợp lệ.',
 
-            'price.min' =>
-                'Giá dịch vụ không được âm.',
+            'service_group_ids.*.distinct' => 'Không được chọn trùng nhóm dịch vụ.',
 
-            'unit.required' =>
-                'Vui lòng nhập đơn vị.',
+            'service_group_ids.*.exists' => 'Có nhóm dịch vụ không tồn tại.',
 
-            'estimated_duration_minutes.integer' =>
-                'Thời lượng dự kiến phải là số nguyên.',
+            'name.required' => 'Vui lòng nhập tên dịch vụ.',
+            'name.unique' => 'Tên dịch vụ đã tồn tại. Hãy gán dịch vụ hiện có vào nhóm.',
 
-            'estimated_duration_minutes.min' =>
-                'Thời lượng dự kiến phải lớn hơn 0 phút.',
+            'price.required' => 'Vui lòng nhập giá dịch vụ.',
 
-            'display_order.required' =>
-                'Vui lòng nhập thứ tự hiển thị.',
+            'price.numeric' => 'Giá dịch vụ phải là số.',
 
-            'display_order.integer' =>
-                'Thứ tự hiển thị phải là số nguyên.',
+            'price.min' => 'Giá dịch vụ không được âm.',
 
-            'status.required' =>
-                'Vui lòng chọn trạng thái.',
+            'price.multiple_of' => 'Giá dịch vụ phải là bội số của 1.000 đồng.',
 
-            'status.in' =>
-                'Trạng thái dịch vụ không hợp lệ.',
+            'unit.required' => 'Vui lòng nhập đơn vị.',
+
+            'estimated_duration_minutes.integer' => 'Thời lượng dự kiến phải là số nguyên.',
+
+            'estimated_duration_minutes.min' => 'Thời lượng dự kiến phải lớn hơn 0 phút.',
+
+            'estimated_duration_minutes.max' => 'Thời lượng dự kiến không được vượt quá 1440 phút.',
+
+            'display_order.required' => 'Vui lòng nhập thứ tự hiển thị.',
+
+            'display_order.integer' => 'Thứ tự hiển thị phải là số nguyên.',
+
+            'status.required' => 'Vui lòng chọn trạng thái.',
+
+            'status.in' => 'Trạng thái dịch vụ không hợp lệ.',
         ];
     }
 }

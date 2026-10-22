@@ -10,20 +10,20 @@ use App\Models\Appointment;
 use App\Models\AppointmentStatus;
 use App\Models\AppointmentTimeSlot;
 use App\Models\Doctor;
-use App\Models\ExaminationRoomQueue;
-use App\Models\MedicalVisit;
-use App\Models\QueueStatus;
-use App\Models\VisitStatus;
 use App\Models\DoctorSchedule;
 use App\Models\ExaminationRoom;
+use App\Models\ExaminationRoomQueue;
+use App\Models\MedicalVisit;
 use App\Models\Patient;
+use App\Models\QueueStatus;
 use App\Models\Specialty;
-
+use App\Models\VisitStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AppointmentController extends Controller
 {
@@ -84,40 +84,40 @@ class AppointmentController extends Controller
                         'like',
                         "%{$keyword}%"
                     )
-                    ->orWhereHas(
-                        'patient',
-                        function ($patientQuery) use ($keyword) {
+                        ->orWhereHas(
+                            'patient',
+                            function ($patientQuery) use ($keyword) {
 
-                            $patientQuery
-                                ->where(
-                                    'patient_code',
-                                    'like',
-                                    "%{$keyword}%"
-                                )
-                                ->orWhere(
-                                    'full_name',
-                                    'like',
-                                    "%{$keyword}%"
-                                );
-                        }
-                    )
-                    ->orWhereHas(
-                        'doctor',
-                        function ($doctorQuery) use ($keyword) {
+                                $patientQuery
+                                    ->where(
+                                        'patient_code',
+                                        'like',
+                                        "%{$keyword}%"
+                                    )
+                                    ->orWhere(
+                                        'full_name',
+                                        'like',
+                                        "%{$keyword}%"
+                                    );
+                            }
+                        )
+                        ->orWhereHas(
+                            'doctor',
+                            function ($doctorQuery) use ($keyword) {
 
-                            $doctorQuery
-                                ->where(
-                                    'doctor_code',
-                                    'like',
-                                    "%{$keyword}%"
-                                )
-                                ->orWhere(
-                                    'full_name',
-                                    'like',
-                                    "%{$keyword}%"
-                                );
-                        }
-                    );
+                                $doctorQuery
+                                    ->where(
+                                        'doctor_code',
+                                        'like',
+                                        "%{$keyword}%"
+                                    )
+                                    ->orWhere(
+                                        'full_name',
+                                        'like',
+                                        "%{$keyword}%"
+                                    );
+                            }
+                        );
                 }
             );
         }
@@ -128,7 +128,7 @@ class AppointmentController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        if (!empty($statusId)) {
+        if (! empty($statusId)) {
 
             $query->where(
                 'appointment_status_id',
@@ -136,7 +136,7 @@ class AppointmentController extends Controller
             );
         }
 
-        if (!empty($doctorId)) {
+        if (! empty($doctorId)) {
 
             $query->where(
                 'doctor_id',
@@ -144,7 +144,7 @@ class AppointmentController extends Controller
             );
         }
 
-        if (!empty($specialtyId)) {
+        if (! empty($specialtyId)) {
 
             $query->where(
                 'specialty_id',
@@ -152,7 +152,7 @@ class AppointmentController extends Controller
             );
         }
 
-        if (!empty($roomId)) {
+        if (! empty($roomId)) {
 
             $query->where(
                 'examination_room_id',
@@ -160,7 +160,7 @@ class AppointmentController extends Controller
             );
         }
 
-        if (!empty($appointmentDate)) {
+        if (! empty($appointmentDate)) {
 
             $query->whereDate(
                 'appointment_date',
@@ -296,8 +296,7 @@ class AppointmentController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'patient_id' =>
-                        'Bệnh nhân hiện không ở trạng thái ACTIVE.',
+                    'patient_id' => 'Bệnh nhân hiện không ở trạng thái ACTIVE.',
                 ]);
         }
 
@@ -308,18 +307,17 @@ class AppointmentController extends Controller
                 ]
             );
 
-        if (!$slot) {
+        if (! $slot) {
 
             return back()
                 ->withInput()
                 ->withErrors([
-                    'appointment_time_slot_id' =>
-                        'Khung giờ không còn khả dụng.',
+                    'appointment_time_slot_id' => 'Khung giờ không còn khả dụng.',
                 ]);
         }
 
         if (
-            !$this->slotHasCapacity(
+            ! $this->slotHasCapacity(
                 $slot->id
             )
         ) {
@@ -327,8 +325,7 @@ class AppointmentController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'appointment_time_slot_id' =>
-                        'Khung giờ này đã đủ số bệnh nhân tối đa.',
+                    'appointment_time_slot_id' => 'Khung giờ này đã đủ số bệnh nhân tối đa.',
                 ]);
         }
 
@@ -347,13 +344,12 @@ class AppointmentController extends Controller
                 )
                 ->first();
 
-        if (!$bookedStatus) {
+        if (! $bookedStatus) {
 
             return back()
                 ->withInput()
                 ->withErrors([
-                    'appointment_time_slot_id' =>
-                        'Không tìm thấy trạng thái BOOKED đang hoạt động.',
+                    'appointment_time_slot_id' => 'Không tìm thấy trạng thái BOOKED đang hoạt động.',
                 ]);
         }
 
@@ -367,52 +363,40 @@ class AppointmentController extends Controller
             |--------------------------------------------------------------------------
             */
 
+            $slot = $this->lockBookableSlot($slot->id, $slot->doctor_schedule_id);
+            $schedule = $slot->doctorSchedule;
             $appointment =
                 Appointment::create([
-                    'appointment_code' =>
-                        $this->generateAppointmentCode(),
+                    'appointment_code' => $this->generateAppointmentCode(),
 
-                    'patient_id' =>
-                        $patient->id,
+                    'patient_id' => $patient->id,
 
-                    'doctor_id' =>
-                        $schedule->doctor_id,
+                    'doctor_id' => $schedule->doctor_id,
 
-                    'specialty_id' =>
-                        $schedule->specialty_id,
+                    'specialty_id' => $schedule->specialty_id,
 
-                    'examination_room_id' =>
-                        $schedule->examination_room_id,
+                    'examination_room_id' => $schedule->examination_room_id,
 
-                    'appointment_date' =>
-                        $schedule
-                            ->work_date
-                            ->format('Y-m-d'),
+                    'appointment_date' => $schedule
+                        ->work_date
+                        ->format('Y-m-d'),
 
-                    'appointment_time_slot_id' =>
-                        $slot->id,
+                    'appointment_time_slot_id' => $slot->id,
 
-                    'appointment_status_id' =>
-                        $bookedStatus->id,
+                    'appointment_status_id' => $bookedStatus->id,
 
-                    'checkin_token' =>
-                        (string) Str::uuid(),
+                    'checkin_token' => (string) Str::uuid(),
 
-                    'reason_for_visit' =>
-                        $data['reason_for_visit'],
+                    'reason_for_visit' => $data['reason_for_visit'],
 
-                    'patient_notes' =>
-                        $data['patient_notes']
+                    'patient_notes' => $data['patient_notes']
                         ?? null,
 
-                    'booked_at' =>
-                        now(),
+                    'booked_at' => now(),
 
-                    'cancelled_at' =>
-                        null,
+                    'cancelled_at' => null,
 
-                    'cancellation_reason' =>
-                        null,
+                    'cancellation_reason' => null,
                 ]);
 
             /*
@@ -428,8 +412,7 @@ class AppointmentController extends Controller
                 newValues: $this->appointmentSnapshot(
                     $appointment
                 ),
-                description:
-                    'Quản trị viên tạo lịch hẹn '
+                description: 'Quản trị viên tạo lịch hẹn '
                     .
                     $appointment->appointment_code
                     .
@@ -514,7 +497,7 @@ class AppointmentController extends Controller
                 )
                 ->with(
                     'error',
-                    'Lịch hẹn này đã được check-in và đã có lượt khám.'
+                    'Bệnh nhân của lịch hẹn này đã được tiếp nhận và đã có lượt khám.'
                 );
         }
 
@@ -538,7 +521,7 @@ class AppointmentController extends Controller
                 )
                 ->with(
                     'error',
-                    'Chỉ lịch hẹn ở trạng thái BOOKED mới được check-in.'
+                    'Chỉ lịch hẹn ở trạng thái đã đặt lịch mới được tiếp nhận.'
                 );
         }
 
@@ -578,7 +561,7 @@ class AppointmentController extends Controller
                 )
                 ->first();
 
-        if (!$checkedInAppointmentStatus) {
+        if (! $checkedInAppointmentStatus) {
             return redirect()
                 ->route(
                     'admin.appointments.show',
@@ -590,7 +573,7 @@ class AppointmentController extends Controller
                 );
         }
 
-        if (!$waitingVisitStatus) {
+        if (! $waitingVisitStatus) {
             return redirect()
                 ->route(
                     'admin.appointments.show',
@@ -602,7 +585,7 @@ class AppointmentController extends Controller
                 );
         }
 
-        if (!$waitingQueueStatus) {
+        if (! $waitingQueueStatus) {
             return redirect()
                 ->route(
                     'admin.appointments.show',
@@ -636,6 +619,11 @@ class AppointmentController extends Controller
                     ->lockForUpdate()
                     ->firstOrFail();
 
+            $lockedAppointment->load('appointmentStatus');
+            if ($lockedAppointment->appointmentStatus?->name !== 'BOOKED') {
+                throw ValidationException::withMessages(['appointment' => 'Lịch hẹn không còn ở trạng thái đã đặt lịch.']);
+            }
+
             $alreadyHasVisit =
                 MedicalVisit::query()
                     ->where(
@@ -662,7 +650,7 @@ class AppointmentController extends Controller
                     )
                     ->with(
                         'error',
-                        'Lịch hẹn này đã được check-in trước đó.'
+                        'Bệnh nhân của lịch hẹn này đã được tiếp nhận trước đó.'
                     );
             }
 
@@ -674,50 +662,37 @@ class AppointmentController extends Controller
 
             $medicalVisit =
                 MedicalVisit::create([
-                    'visit_code' =>
-                        $this->generateVisitCode(),
+                    'visit_code' => $this->generateVisitCode(),
 
-                    'appointment_id' =>
-                        $lockedAppointment->id,
+                    'appointment_id' => $lockedAppointment->id,
 
-                    'patient_id' =>
-                        $lockedAppointment->patient_id,
+                    'patient_id' => $lockedAppointment->patient_id,
 
-                    'doctor_id' =>
-                        $lockedAppointment->doctor_id,
+                    'doctor_id' => $lockedAppointment->doctor_id,
 
-                    'specialty_id' =>
-                        $lockedAppointment->specialty_id,
+                    'specialty_id' => $lockedAppointment->specialty_id,
 
-                    'examination_room_id' =>
-                        $lockedAppointment
-                            ->examination_room_id,
+                    'examination_room_id' => $lockedAppointment
+                        ->examination_room_id,
 
-                    'visit_status_id' =>
-                        $waitingVisitStatus->id,
+                    'visit_status_id' => $waitingVisitStatus->id,
 
-                    'checked_in_at' =>
-                        now(),
+                    'checked_in_at' => now(),
 
-                    'examination_started_at' =>
-                        null,
+                    'examination_started_at' => null,
 
-                    'examination_ended_at' =>
-                        null,
+                    'examination_ended_at' => null,
 
-                    'reception_source' =>
-                        'COUNTER',
+                    'reception_source' => 'COUNTER',
 
-                    'reception_notes' =>
-                        'Check-in từ lịch hẹn '
+                    'reception_notes' => 'Tiếp nhận từ lịch hẹn '
                         .
                         $lockedAppointment
                             ->appointment_code
                         .
                         '.',
 
-                    'examination_slip_pdf_path' =>
-                        null,
+                    'examination_slip_pdf_path' => null,
                 ]);
 
             /*
@@ -727,38 +702,28 @@ class AppointmentController extends Controller
             */
 
             ExaminationRoomQueue::create([
-                'medical_visit_id' =>
-                    $medicalVisit->id,
+                'medical_visit_id' => $medicalVisit->id,
 
-                'queue_status_id' =>
-                    $waitingQueueStatus->id,
+                'queue_status_id' => $waitingQueueStatus->id,
 
-                'queue_number' =>
-                    $this->nextQueueNumber(
-                        (int) $lockedAppointment
-                            ->examination_room_id
-                    ),
+                'queue_number' => $this->nextQueueNumber(
+                    (int) $lockedAppointment
+                        ->examination_room_id
+                ),
 
-                'queue_type' =>
-                    'INITIAL_EXAM',
+                'queue_type' => 'INITIAL_EXAM',
 
-                'queued_at' =>
-                    now(),
+                'queued_at' => now(),
 
-                'called_at' =>
-                    null,
+                'called_at' => null,
 
-                'service_started_at' =>
-                    null,
+                'service_started_at' => null,
 
-                'completed_at' =>
-                    null,
+                'completed_at' => null,
 
-                'call_count' =>
-                    0,
+                'call_count' => 0,
 
-                'notes' =>
-                    null,
+                'notes' => null,
             ]);
 
             /*
@@ -768,8 +733,7 @@ class AppointmentController extends Controller
             */
 
             $lockedAppointment->update([
-                'appointment_status_id' =>
-                    $checkedInAppointmentStatus->id,
+                'appointment_status_id' => $checkedInAppointmentStatus->id,
             ]);
 
             $lockedAppointment->refresh();
@@ -787,8 +751,7 @@ class AppointmentController extends Controller
                 newValues: $this->appointmentSnapshot(
                     $lockedAppointment
                 ),
-                description:
-                    'Quản trị viên check-in lịch hẹn '
+                description: 'Quản trị viên tiếp nhận lịch hẹn '
                     .
                     $lockedAppointment
                         ->appointment_code
@@ -815,7 +778,7 @@ class AppointmentController extends Controller
             )
             ->with(
                 'success',
-                'Check-in thành công. Đã tạo lượt khám và đưa bệnh nhân vào hàng đợi.'
+                'Tiếp nhận thành công. Đã tạo lượt khám và đưa bệnh nhân vào hàng đợi.'
             );
     }
 
@@ -993,8 +956,7 @@ class AppointmentController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'patient_id' =>
-                        'Bệnh nhân hiện không ở trạng thái ACTIVE.',
+                    'patient_id' => 'Bệnh nhân hiện không ở trạng thái ACTIVE.',
                 ]);
         }
 
@@ -1007,13 +969,12 @@ class AppointmentController extends Controller
                     ->appointment_time_slot_id
             );
 
-        if (!$slot) {
+        if (! $slot) {
 
             return back()
                 ->withInput()
                 ->withErrors([
-                    'appointment_time_slot_id' =>
-                        'Khung giờ không còn khả dụng.',
+                    'appointment_time_slot_id' => 'Khung giờ không còn khả dụng.',
                 ]);
         }
 
@@ -1029,7 +990,7 @@ class AppointmentController extends Controller
             (int) $appointment
                 ->appointment_time_slot_id
             &&
-            !$this->slotHasCapacity(
+            ! $this->slotHasCapacity(
                 $slot->id
             )
         ) {
@@ -1037,8 +998,7 @@ class AppointmentController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'appointment_time_slot_id' =>
-                        'Khung giờ này đã đủ số bệnh nhân tối đa.',
+                    'appointment_time_slot_id' => 'Khung giờ này đã đủ số bệnh nhân tối đa.',
                 ]);
         }
 
@@ -1066,32 +1026,31 @@ class AppointmentController extends Controller
             |--------------------------------------------------------------------------
             */
 
+            $slot = $this->lockBookableSlot($slot->id, $slot->doctor_schedule_id, $appointment->id);
+            $appointment = Appointment::whereKey($appointment->id)->lockForUpdate()->firstOrFail();
+            $appointment->load('appointmentStatus');
+            if ($appointment->medicalVisit()->exists() || in_array($appointment->appointmentStatus?->name, ['CANCELLED', 'COMPLETED'], true)) {
+                throw ValidationException::withMessages(['appointment_time_slot_id' => 'Lịch hẹn đã được tiếp nhận hoặc kết thúc.']);
+            }
+            $schedule = $slot->doctorSchedule;
             $appointment->update([
-                'patient_id' =>
-                    $patient->id,
+                'patient_id' => $patient->id,
 
-                'doctor_id' =>
-                    $schedule->doctor_id,
+                'doctor_id' => $schedule->doctor_id,
 
-                'specialty_id' =>
-                    $schedule->specialty_id,
+                'specialty_id' => $schedule->specialty_id,
 
-                'examination_room_id' =>
-                    $schedule->examination_room_id,
+                'examination_room_id' => $schedule->examination_room_id,
 
-                'appointment_date' =>
-                    $schedule
-                        ->work_date
-                        ->format('Y-m-d'),
+                'appointment_date' => $schedule
+                    ->work_date
+                    ->format('Y-m-d'),
 
-                'appointment_time_slot_id' =>
-                    $slot->id,
+                'appointment_time_slot_id' => $slot->id,
 
-                'reason_for_visit' =>
-                    $data['reason_for_visit'],
+                'reason_for_visit' => $data['reason_for_visit'],
 
-                'patient_notes' =>
-                    $data['patient_notes']
+                'patient_notes' => $data['patient_notes']
                     ?? null,
             ]);
 
@@ -1110,8 +1069,7 @@ class AppointmentController extends Controller
                 newValues: $this->appointmentSnapshot(
                     $appointment
                 ),
-                description:
-                    'Quản trị viên cập nhật lịch hẹn '
+                description: 'Quản trị viên cập nhật lịch hẹn '
                     .
                     $appointment->appointment_code
                     .
@@ -1227,7 +1185,7 @@ class AppointmentController extends Controller
                 )
                 ->first();
 
-        if (!$cancelledStatus) {
+        if (! $cancelledStatus) {
 
             return redirect()
                 ->route(
@@ -1255,16 +1213,18 @@ class AppointmentController extends Controller
             |--------------------------------------------------------------------------
             */
 
+            $appointment = Appointment::whereKey($appointment->id)->lockForUpdate()->firstOrFail();
+            $appointment->load('appointmentStatus');
+            if ($appointment->medicalVisit()->exists() || in_array($appointment->appointmentStatus?->name, ['CANCELLED', 'COMPLETED'], true)) {
+                throw ValidationException::withMessages(['cancellation_reason' => 'Lịch hẹn đã được tiếp nhận hoặc kết thúc, không thể hủy.']);
+            }
             $appointment->update([
-                'appointment_status_id' =>
-                    $cancelledStatus->id,
+                'appointment_status_id' => $cancelledStatus->id,
 
-                'cancelled_at' =>
-                    now(),
+                'cancelled_at' => now(),
 
-                'cancellation_reason' =>
-                    $request
-                        ->validated()[
+                'cancellation_reason' => $request
+                    ->validated()[
                             'cancellation_reason'
                         ],
             ]);
@@ -1284,8 +1244,7 @@ class AppointmentController extends Controller
                 newValues: $this->appointmentSnapshot(
                     $appointment
                 ),
-                description:
-                    'Quản trị viên hủy lịch hẹn '
+                description: 'Quản trị viên hủy lịch hẹn '
                     .
                     $appointment->appointment_code
                     .
@@ -1327,37 +1286,36 @@ class AppointmentController extends Controller
                 'specialty',
                 'examinationRoom',
 
-                'appointmentTimeSlots' =>
-                    function ($query) use (
-                        $currentSlotId
-                    ) {
+                'appointmentTimeSlots' => function ($query) use (
+                    $currentSlotId
+                ) {
 
-                        $query
-                            ->where(
-                                function ($slotQuery) use (
-                                    $currentSlotId
-                                ) {
+                    $query
+                        ->where(
+                            function ($slotQuery) use (
+                                $currentSlotId
+                            ) {
+
+                                $slotQuery
+                                    ->where(
+                                        'status',
+                                        'ACTIVE'
+                                    );
+
+                                if ($currentSlotId) {
 
                                     $slotQuery
-                                        ->where(
-                                            'status',
-                                            'ACTIVE'
+                                        ->orWhere(
+                                            'id',
+                                            $currentSlotId
                                         );
-
-                                    if ($currentSlotId) {
-
-                                        $slotQuery
-                                            ->orWhere(
-                                                'id',
-                                                $currentSlotId
-                                            );
-                                    }
                                 }
-                            )
-                            ->orderBy(
-                                'start_time'
-                            );
-                    },
+                            }
+                        )
+                        ->orderBy(
+                            'start_time'
+                        );
+                },
             ])
             ->where(
                 'status',
@@ -1417,8 +1375,7 @@ class AppointmentController extends Controller
                         ->appointmentTimeSlots
                         ->contains(
                             function ($slot) {
-                                return
-                                    $slot->is_selectable;
+                                return $slot->is_selectable;
                             }
                         );
                 }
@@ -1443,14 +1400,14 @@ class AppointmentController extends Controller
                 )
                 ->find($slotId);
 
-        if (!$slot) {
+        if (! $slot) {
             return null;
         }
 
         $schedule =
             $slot->doctorSchedule;
 
-        if (!$schedule) {
+        if (! $schedule) {
             return null;
         }
 
@@ -1477,7 +1434,7 @@ class AppointmentController extends Controller
         }
 
         if (
-            !$this->isSlotFuture(
+            ! $this->isSlotFuture(
                 $schedule,
                 $slot
             )
@@ -1513,8 +1470,7 @@ class AppointmentController extends Controller
                 )
             );
 
-        return
-            $slotDateTime->isFuture();
+        return $slotDateTime->isFuture();
     }
 
     /*
@@ -1531,7 +1487,7 @@ class AppointmentController extends Controller
                 $slotId
             );
 
-        if (!$slot) {
+        if (! $slot) {
             return false;
         }
 
@@ -1639,6 +1595,7 @@ class AppointmentController extends Controller
     private function nextQueueNumber(
         int $examinationRoomId
     ): int {
+        ExaminationRoom::whereKey($examinationRoomId)->lockForUpdate()->firstOrFail();
         $lastQueueNumber =
             ExaminationRoomQueue::query()
                 ->whereDate(
@@ -1668,6 +1625,27 @@ class AppointmentController extends Controller
             ((int) $lastQueueNumber)
             +
             1;
+    }
+
+    private function lockBookableSlot(int $slotId, int $doctorScheduleId, ?int $ignoreAppointmentId = null): AppointmentTimeSlot
+    {
+        $schedule = DoctorSchedule::whereKey($doctorScheduleId)->lockForUpdate()->firstOrFail();
+        $slot = AppointmentTimeSlot::whereKey($slotId)->lockForUpdate()->firstOrFail();
+        $slot->setRelation('doctorSchedule', $schedule);
+        $bookings = Appointment::where('appointment_time_slot_id', $slotId)
+            ->whereHas('appointmentStatus', fn ($query) => $query->where('name', '!=', 'CANCELLED'))
+            ->when($ignoreAppointmentId, fn ($query) => $query->where('id', '!=', $ignoreAppointmentId))->count();
+        if ($slot->status !== 'ACTIVE' || $schedule->status !== 'ACTIVE'
+            || ! $this->isSlotFuture($schedule, $slot)
+            || $slot->start_time >= $slot->end_time
+            || $slot->start_time < $schedule->start_time || $slot->end_time > $schedule->end_time
+            || $bookings >= $slot->max_patients
+            || $schedule->doctor?->status !== 'ACTIVE' || $schedule->specialty?->status !== 'ACTIVE'
+            || $schedule->examinationRoom?->status !== 'ACTIVE') {
+            throw ValidationException::withMessages(['appointment_time_slot_id' => 'Khung giờ đã đầy, đã qua hoặc không còn khả dụng trong lịch làm việc.']);
+        }
+
+        return $slot;
     }
 
     private function generateAppointmentCode(): string
@@ -1705,54 +1683,41 @@ class AppointmentController extends Controller
         Appointment $appointment
     ): array {
         return [
-            'appointment_code' =>
-                $appointment->appointment_code,
+            'appointment_code' => $appointment->appointment_code,
 
-            'patient_id' =>
-                $appointment->patient_id,
+            'patient_id' => $appointment->patient_id,
 
-            'doctor_id' =>
-                $appointment->doctor_id,
+            'doctor_id' => $appointment->doctor_id,
 
-            'specialty_id' =>
-                $appointment->specialty_id,
+            'specialty_id' => $appointment->specialty_id,
 
-            'examination_room_id' =>
-                $appointment->examination_room_id,
+            'examination_room_id' => $appointment->examination_room_id,
 
-            'appointment_date' =>
-                $appointment->appointment_date
-                    ?->format('Y-m-d'),
+            'appointment_date' => $appointment->appointment_date
+                ?->format('Y-m-d'),
 
-            'appointment_time_slot_id' =>
-                $appointment
-                    ->appointment_time_slot_id,
+            'appointment_time_slot_id' => $appointment
+                ->appointment_time_slot_id,
 
-            'appointment_status_id' =>
-                $appointment
-                    ->appointment_status_id,
+            'appointment_status_id' => $appointment
+                ->appointment_status_id,
 
-            'reason_for_visit' =>
-                $appointment
-                    ->reason_for_visit,
+            'reason_for_visit' => $appointment
+                ->reason_for_visit,
 
-            'patient_notes' =>
-                $appointment
-                    ->patient_notes,
+            'patient_notes' => $appointment
+                ->patient_notes,
 
-            'booked_at' =>
-                $appointment
-                    ->booked_at
-                    ?->format('Y-m-d H:i:s'),
+            'booked_at' => $appointment
+                ->booked_at
+                ?->format('Y-m-d H:i:s'),
 
-            'cancelled_at' =>
-                $appointment
-                    ->cancelled_at
-                    ?->format('Y-m-d H:i:s'),
+            'cancelled_at' => $appointment
+                ->cancelled_at
+                ?->format('Y-m-d H:i:s'),
 
-            'cancellation_reason' =>
-                $appointment
-                    ->cancellation_reason,
+            'cancellation_reason' => $appointment
+                ->cancellation_reason,
         ];
     }
 
@@ -1772,27 +1737,20 @@ class AppointmentController extends Controller
         DB::table(
             'audit_logs'
         )->insert([
-            'user_id' =>
-                Auth::id(),
+            'user_id' => Auth::id(),
 
-            'role_name_snapshot' =>
-                'Administrator',
+            'role_name_snapshot' => 'Administrator',
 
-            'action' =>
-                $action,
+            'action' => $action,
 
-            'entity_type' =>
-                'Appointment',
+            'entity_type' => 'Appointment',
 
-            'entity_id' =>
-                $appointment->id,
+            'entity_id' => $appointment->id,
 
-            'entity_business_code' =>
-                $appointment
-                    ->appointment_code,
+            'entity_business_code' => $appointment
+                ->appointment_code,
 
-            'old_values' =>
-                $oldValues
+            'old_values' => $oldValues
                     ? json_encode(
                         $oldValues,
                         JSON_UNESCAPED_UNICODE
@@ -1801,8 +1759,7 @@ class AppointmentController extends Controller
                     )
                     : null,
 
-            'new_values' =>
-                $newValues
+            'new_values' => $newValues
                     ? json_encode(
                         $newValues,
                         JSON_UNESCAPED_UNICODE
@@ -1811,25 +1768,20 @@ class AppointmentController extends Controller
                     )
                     : null,
 
-            'description' =>
-                $description,
+            'description' => $description,
 
-            'ip_address' =>
-                request()->ip(),
+            'ip_address' => request()->ip(),
 
-            'user_agent' =>
-                Str::limit(
-                    (string) request()
-                        ->userAgent(),
-                    500,
-                    ''
-                ),
+            'user_agent' => Str::limit(
+                (string) request()
+                    ->userAgent(),
+                500,
+                ''
+            ),
 
-            'performed_at' =>
-                now(),
+            'performed_at' => now(),
 
-            'created_at' =>
-                now(),
+            'created_at' => now(),
         ]);
     }
 }

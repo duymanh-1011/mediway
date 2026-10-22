@@ -1,4 +1,5 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'payment-statuses-index')
 
 @section('title', 'Trạng thái thanh toán')
 
@@ -7,29 +8,28 @@
     <div class="status-page">
 
         {{-- Breadcrumb --}}
-        <div class="status-breadcrumb">
+        <nav class="admin-breadcrumb" aria-label="Đường dẫn">
 
             <a href="{{ route('admin.dashboard') }}">
-                Dashboard
+                Bảng điều khiển
             </a>
 
-            <span>/</span>
+            <span aria-hidden="true">/</span>
+            <span>Cấu hình trạng thái</span>
+            <span aria-hidden="true">/</span>
 
-            <strong>
+            <strong aria-current="page">
                 Trạng thái thanh toán
             </strong>
 
-        </div>
+        </nav>
 
 
         {{-- Header --}}
-        <div class="status-header">
+        <div class="admin-info-header status-header">
 
             <div>
 
-                <div class="status-module-label">
-                    CẤU HÌNH TRẠNG THÁI
-                </div>
 
                 <h1>
                     Trạng thái thanh toán
@@ -42,42 +42,21 @@
 
             </div>
 
-            <div class="status-policy">
-                <span></span>
-                Xem / Sửa cấu hình
-            </div>
 
         </div>
 
 
         {{-- Filter --}}
-        <div class="status-card">
+        @component('admin.layouts.partials.filter-panel', [
+            'title' => 'Bộ lọc trạng thái thanh toán',
+            'description' => 'Lọc theo từ khóa và trạng thái sử dụng.',
+        ])
+            <form method="GET" action="{{ route('admin.payment-statuses.index') }}" class="admin-filter-form">
 
-            <div class="status-card-header">
-
-                <div>
-
-                    <h2>
-                        Tìm kiếm và lọc
-                    </h2>
-
-                    <p>
-                        Tìm theo tên, mô tả hoặc lọc theo trạng thái sử dụng.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="status-card-body">
-
-                <form method="GET" action="{{ route('admin.payment-statuses.index') }}">
-
-                    <div class="status-filter-grid">
+                    <div class="status-filter-grid admin-filter-layout">
 
                         {{-- Search --}}
-                        <div class="status-form-group">
+                        <div class="status-form-group admin-filter-field">
 
                             <label for="q">
                                 Tìm kiếm
@@ -85,12 +64,13 @@
 
                             <input id="q" type="text" name="q" class="status-control" value="{{ request('q') }}"
                                 placeholder="Tên trạng thái hoặc mô tả...">
+@error('q')<div class="field-error">{{ $message }}</div>@enderror
 
                         </div>
 
 
                         {{-- Usage status --}}
-                        <div class="status-form-group">
+                        <div class="status-form-group admin-filter-field">
 
                             <label for="is_active">
                                 Trạng thái sử dụng
@@ -111,29 +91,25 @@
                                 </option>
 
                             </select>
+@error('is_active')<div class="field-error">{{ $message }}</div>@enderror
 
                         </div>
 
                     </div>
 
 
-                    <div class="status-filter-actions">
+                    <div class="status-filter-actions admin-filter-layout">
 
-                        <button type="submit" class="status-btn status-btn-primary">
-                            Lọc dữ liệu
-                        </button>
 
-                        <a href="{{ route('admin.payment-statuses.index') }}" class="status-btn status-btn-secondary">
-                            Xóa bộ lọc
-                        </a>
+
+
 
                     </div>
 
-                </form>
 
-            </div>
-
-        </div>
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route('admin.payment-statuses.index'), 'searchOnly' => false])
+            </form>
+        @endcomponent
 
 
         {{-- Table --}}
@@ -177,9 +153,8 @@
 
                         <tr>
 
-                            <th>
-                                Thứ tự
-                            </th>
+                            <th scope="col" class="admin-row-number">STT</th>
+                            <th>Thứ tự xử lý</th>
 
                             <th>
                                 Tên trạng thái
@@ -213,6 +188,7 @@
                                             <tr>
 
                                                 {{-- Process order --}}
+                                                @include('admin.layouts.partials.row-number', ['rows' => $statuses, 'index' => $loop->index])
                                                 <td>
 
                                                     <div class="status-order">
@@ -226,7 +202,7 @@
                                                 <td>
 
                                                     <div class="status-name">
-                                                        {{ $status->name }}
+                                                        {{ \App\Models\AdminDisplay::label($status->name) }}
                                                     </div>
 
                                                 </td>
@@ -290,16 +266,12 @@
                                                         <a href="{{ route(
                                 'admin.payment-statuses.show',
                                 $status->id
-                            ) }}" class="status-action-btn action-view">
-                                                            Chi tiết
-                                                        </a>
+                            ) }}" class="admin-btn admin-btn-detail status-action-btn action-view">Chi tiết</a>
 
                                                         <a href="{{ route(
                                 'admin.payment-statuses.edit',
                                 $status->id
-                            ) }}" class="status-action-btn action-edit">
-                                                            Sửa
-                                                        </a>
+                            ) }}" class="admin-btn admin-btn-secondary status-action-btn action-edit">Sửa</a>
 
                                                     </div>
 
@@ -311,7 +283,7 @@
 
                             <tr>
 
-                                <td colspan="6" class="status-empty">
+                                <td colspan="7" class="status-empty">
 
                                     <div class="status-empty-icon">
                                         !
@@ -401,567 +373,6 @@
     </div>
 
 
-    <style>
-        .status-page {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --text: #0f172a;
-            --muted: #64748b;
-            --border: #e2e8f0;
 
-            width: 100%;
-            color: var(--text);
-        }
-
-        .status-page * {
-            box-sizing: border-box;
-        }
-
-        .status-breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-
-            margin-bottom: 18px;
-
-            color: #94a3b8;
-            font-size: 13px;
-        }
-
-        .status-breadcrumb a {
-            color: #64748b;
-            text-decoration: none;
-        }
-
-        .status-breadcrumb a:hover {
-            color: var(--primary);
-        }
-
-        .status-breadcrumb strong {
-            color: #334155;
-        }
-
-        .status-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 20px;
-
-            margin-bottom: 24px;
-        }
-
-        .status-module-label {
-            margin-bottom: 7px;
-
-            color: var(--primary);
-
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: .08em;
-        }
-
-        .status-header h1 {
-            margin: 0;
-
-            color: #0f172a;
-
-            font-size: 29px;
-            font-weight: 750;
-        }
-
-        .status-header p {
-            margin: 8px 0 0;
-
-            color: var(--muted);
-
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .status-policy {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-
-            padding: 8px 13px;
-
-            border: 1px solid #bfdbfe;
-            border-radius: 999px;
-
-            background: #eff6ff;
-
-            color: #1d4ed8;
-
-            font-size: 12px;
-            font-weight: 700;
-
-            white-space: nowrap;
-        }
-
-        .status-policy span {
-            width: 7px;
-            height: 7px;
-
-            border-radius: 50%;
-
-            background: #2563eb;
-        }
-
-        .status-card {
-            overflow: hidden;
-
-            margin-bottom: 22px;
-
-            border: 1px solid var(--border);
-            border-radius: 14px;
-
-            background: #ffffff;
-
-            box-shadow:
-                0 3px 14px rgba(15, 23, 42, .035);
-        }
-
-        .status-card-header {
-            padding: 18px 20px;
-
-            border-bottom: 1px solid var(--border);
-        }
-
-        .status-card-header h2 {
-            margin: 0;
-
-            color: #0f172a;
-
-            font-size: 15px;
-            font-weight: 750;
-        }
-
-        .status-card-header p {
-            margin: 5px 0 0;
-
-            color: var(--muted);
-
-            font-size: 12px;
-        }
-
-        .status-card-body {
-            padding: 20px;
-        }
-
-        .status-filter-grid {
-            display: grid;
-
-            grid-template-columns:
-                minmax(0, 2fr) minmax(220px, .8fr);
-
-            gap: 15px;
-        }
-
-        .status-form-group label {
-            display: block;
-
-            margin-bottom: 7px;
-
-            color: #334155;
-
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .status-control {
-            display: block;
-
-            width: 100%;
-            height: 42px;
-
-            padding: 0 12px;
-
-            border: 1px solid #cbd5e1;
-            border-radius: 9px;
-
-            outline: none;
-
-            background: #ffffff;
-
-            color: #0f172a;
-
-            font-family: inherit;
-            font-size: 13px;
-        }
-
-        .status-control:focus {
-            border-color: var(--primary);
-
-            box-shadow:
-                0 0 0 3px rgba(37, 99, 235, .12);
-        }
-
-        .status-filter-actions {
-            display: flex;
-
-            gap: 10px;
-
-            margin-top: 18px;
-        }
-
-        .status-btn {
-            display: inline-flex;
-
-            height: 40px;
-
-            align-items: center;
-            justify-content: center;
-
-            padding: 0 16px;
-
-            border-radius: 9px;
-
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 700;
-
-            text-decoration: none;
-
-            cursor: pointer;
-        }
-
-        .status-btn-primary {
-            border: 1px solid var(--primary);
-
-            background: var(--primary);
-
-            color: #ffffff;
-        }
-
-        .status-btn-primary:hover {
-            background: var(--primary-dark);
-        }
-
-        .status-btn-secondary {
-            border: 1px solid #cbd5e1;
-
-            background: #ffffff;
-
-            color: #475569;
-        }
-
-        .status-list-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            gap: 20px;
-        }
-
-        .status-count {
-            color: var(--muted);
-
-            font-size: 12px;
-
-            white-space: nowrap;
-        }
-
-        .status-count strong {
-            color: #0f172a;
-
-            font-size: 14px;
-        }
-
-        .status-table-wrapper {
-            width: 100%;
-
-            overflow-x: auto;
-        }
-
-        .status-table {
-            width: 100%;
-
-            border-collapse: collapse;
-
-            font-size: 13px;
-        }
-
-        .status-table th {
-            padding: 13px 14px;
-
-            border-bottom: 1px solid var(--border);
-
-            background: #f8fafc;
-
-            color: #475569;
-
-            text-align: left;
-
-            font-size: 11px;
-            font-weight: 750;
-
-            text-transform: uppercase;
-
-            white-space: nowrap;
-        }
-
-        .status-table td {
-            padding: 14px;
-
-            border-bottom: 1px solid #edf2f7;
-
-            color: #334155;
-
-            vertical-align: middle;
-        }
-
-        .status-table tbody tr:hover {
-            background: #f8fbff;
-        }
-
-        .status-order {
-            display: flex;
-
-            width: 32px;
-            height: 32px;
-
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 8px;
-
-            background: #eff6ff;
-
-            color: #2563eb;
-
-            font-weight: 800;
-        }
-
-        .status-name {
-            color: #0f172a;
-
-            font-family:
-                Consolas,
-                Monaco,
-                monospace;
-
-            font-size: 12px;
-            font-weight: 750;
-
-            white-space: nowrap;
-        }
-
-        .status-description {
-            max-width: 360px;
-
-            color: #475569;
-
-            line-height: 1.5;
-        }
-
-        .status-badge {
-            display: inline-flex;
-
-            align-items: center;
-            justify-content: center;
-
-            min-height: 26px;
-
-            padding: 4px 10px;
-
-            border-radius: 999px;
-
-            font-size: 10px;
-            font-weight: 800;
-
-            white-space: nowrap;
-        }
-
-        .badge-yes {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .badge-no {
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .badge-active {
-            background: #dbeafe;
-            color: #1d4ed8;
-        }
-
-        .badge-inactive {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .status-actions {
-            display: flex;
-            align-items: center;
-
-            gap: 8px;
-
-            white-space: nowrap;
-        }
-
-        .status-action-btn {
-            display: inline-flex;
-
-            align-items: center;
-            justify-content: center;
-
-            padding: 7px 11px;
-
-            border-radius: 8px;
-
-            font-size: 12px;
-            font-weight: 700;
-
-            text-decoration: none;
-        }
-
-        .action-view {
-            border: 1px solid #bfdbfe;
-
-            background: #ffffff;
-
-            color: #2563eb;
-        }
-
-        .action-edit {
-            border: 1px solid #fde68a;
-
-            background: #fffbeb;
-
-            color: #b45309;
-        }
-
-        .status-empty {
-            padding: 50px 20px !important;
-
-            text-align: center;
-        }
-
-        .status-empty-icon {
-            display: flex;
-
-            width: 44px;
-            height: 44px;
-
-            align-items: center;
-            justify-content: center;
-
-            margin: 0 auto 12px;
-
-            border-radius: 50%;
-
-            background: #f1f5f9;
-
-            color: #64748b;
-
-            font-weight: 800;
-        }
-
-        .status-empty strong {
-            display: block;
-
-            color: #0f172a;
-        }
-
-        .status-empty p {
-            margin: 6px 0 0;
-
-            color: #64748b;
-
-            font-size: 12px;
-        }
-
-        .status-pagination {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            gap: 20px;
-
-            padding: 15px 20px;
-
-            border-top: 1px solid var(--border);
-        }
-
-        .status-pagination-info {
-            color: #64748b;
-
-            font-size: 12px;
-        }
-
-        .status-pagination-info strong {
-            color: #0f172a;
-        }
-
-        .status-pagination-buttons {
-            display: flex;
-
-            gap: 8px;
-        }
-
-        .status-page-btn {
-            display: inline-flex;
-
-            height: 34px;
-
-            align-items: center;
-            justify-content: center;
-
-            padding: 0 12px;
-
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-
-            background: #ffffff;
-
-            color: #334155;
-
-            font-size: 12px;
-            font-weight: 650;
-
-            text-decoration: none;
-        }
-
-        .status-page-btn.disabled {
-            opacity: .45;
-
-            cursor: not-allowed;
-        }
-
-        @media (max-width: 900px) {
-
-            .status-header {
-                flex-direction: column;
-            }
-
-            .status-filter-grid {
-                grid-template-columns: 1fr;
-            }
-
-        }
-
-        @media (max-width: 768px) {
-
-            .status-header h1 {
-                font-size: 24px;
-            }
-
-            .status-filter-actions {
-                flex-direction: column;
-            }
-
-            .status-btn {
-                width: 100%;
-            }
-
-            .status-list-header {
-                align-items: flex-start;
-                flex-direction: column;
-            }
-
-        }
-    </style>
 
 @endsection

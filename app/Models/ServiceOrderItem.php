@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ServiceOrderItem extends Model
 {
+    public const RESOLVED_STATUSES = ['COMPLETED', 'CANCELLED'];
+
     protected $table = 'service_order_items';
 
     protected $fillable = [
@@ -26,6 +29,18 @@ class ServiceOrderItem extends Model
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
+
+    public function scopeUnresolved(Builder $query): Builder
+    {
+        return $query->whereHas('serviceStatus', fn (Builder $status): Builder => $status->whereNotIn('name', self::RESOLVED_STATUSES));
+    }
+
+    public function canBeCancelled(): bool
+    {
+        return in_array($this->serviceStatus?->name, ['PENDING', 'CANCELLED'], true)
+            && ($this->serviceStatus?->name === 'CANCELLED' || $this->serviceStatus?->allows_transition)
+            && ! $this->started_at && ! $this->result;
+    }
 
     /**
      * Phiếu chỉ định chứa dịch vụ này.

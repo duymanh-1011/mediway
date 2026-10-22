@@ -1,14 +1,18 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'service-orders-create')
 
-@section('title', 'Tạo chỉ định dịch vụ - Mediway Admin')
+@section('title', 'Tạo chỉ định dịch vụ - Mediway')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Admin /
-        Lượt khám /
-        {{ $visit->visit_code }} /
-        Tạo chỉ định dịch vụ
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Dịch vụ</span>
+    <span aria-hidden="true">/</span>
+    <span>Lượt khám</span>
+    <span aria-hidden="true">/</span>
+    <span>{{ $visit->visit_code }}</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Tạo chỉ định dịch vụ</strong>
 @endsection
 
 @section('content')
@@ -29,7 +33,7 @@
         <div class="header-actions">
             <a
                 href="{{ route('admin.visits.show', $visit) }}"
-                class="btn btn-secondary"
+                class="admin-btn admin-btn-secondary btn btn-secondary"
             >
                 ← Quay lại lượt khám
             </a>
@@ -48,7 +52,7 @@
             <ul>
                 @foreach ($errors->all() as $error)
                     <li>
-                        {{ $error }}
+                        {{ \App\Models\AdminDisplay::text($error) }}
                     </li>
                 @endforeach
             </ul>
@@ -121,7 +125,7 @@
                 <span>Trạng thái</span>
 
                 <strong>
-                    {{ $visit->status?->name ?? '—' }}
+                    {{ \App\Models\AdminDisplay::label($visit->status?->name ?? '—') }}
                 </strong>
             </div>
 
@@ -149,7 +153,7 @@
 
             <p class="info-text">
                 Dịch vụ mới sẽ bắt đầu ở trạng thái
-                <strong>PENDING</strong>.
+                <strong>Chờ xử lý</strong>.
             </p>
 
         </div>
@@ -157,7 +161,7 @@
     </div>
 
 
-    <form
+    <form novalidate
         method="POST"
         action="{{ route(
             'admin.visits.service-orders.store',
@@ -189,6 +193,7 @@
                     rows="4"
                     placeholder="Nhập lý do cần thực hiện dịch vụ..."
                 >{{ old('reason') }}</textarea>
+@error('reason')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
@@ -206,6 +211,7 @@
                     rows="4"
                     placeholder="Nhập hướng dẫn hoặc lưu ý cho nhân viên thực hiện..."
                 >{{ old('instructions') }}</textarea>
+@error('instructions')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
@@ -274,9 +280,9 @@
                                     <div class="service-code">
                                         {{ $service->service_code }}
 
-                                        @if ($service->serviceGroup)
+                                        @if ($service->serviceGroups->isNotEmpty())
                                             •
-                                            {{ $service->serviceGroup->name }}
+                                            {{ $service->serviceGroups->pluck('name')->join(', ') }}
                                         @endif
                                     </div>
 
@@ -350,9 +356,7 @@
             <a
                 href="{{ route('admin.visits.show', $visit) }}"
                 class="btn btn-secondary"
-            >
-                Hủy
-            </a>
+            >Hủy</a>
 
             <button
                 type="submit"
@@ -369,244 +373,7 @@
 @endsection
 
 
-@push('styles')
 
-<style>
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .section-spacing {
-        margin-top: 20px;
-    }
-
-    .section-title {
-        margin-top: 0;
-        margin-bottom: 15px;
-    }
-
-    .detail-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-        gap: 20px;
-    }
-
-    .detail-row {
-        display: grid;
-        grid-template-columns:
-            145px minmax(0, 1fr);
-        gap: 15px;
-        padding: 11px 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-row span {
-        color: #64748b;
-    }
-
-    .info-text {
-        margin: 0 0 12px;
-        line-height: 1.6;
-    }
-
-    .info-text:last-child {
-        margin-bottom: 0;
-    }
-
-    .form-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-        gap: 20px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 7px;
-        font-weight: 700;
-    }
-
-    .form-control {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 10px 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        resize: vertical;
-    }
-
-    .services-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        gap: 20px;
-        margin-top: 28px;
-        margin-bottom: 14px;
-    }
-
-    .service-title {
-        margin-bottom: 4px;
-    }
-
-    .muted-text {
-        margin: 0;
-        color: #64748b;
-    }
-
-    .selected-summary {
-        padding: 8px 12px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        white-space: nowrap;
-    }
-
-    .service-list {
-        display: grid;
-        gap: 10px;
-    }
-
-    .service-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-
-        padding: 15px;
-
-        border:
-            1px solid #e2e8f0;
-
-        border-radius: 10px;
-
-        cursor: pointer;
-
-        transition:
-            border-color 0.15s ease,
-            background 0.15s ease;
-    }
-
-    .service-item:hover {
-        border-color: #94a3b8;
-        background: #f8fafc;
-    }
-
-    .service-checkbox {
-        width: 18px;
-        height: 18px;
-        margin-top: 3px;
-        flex-shrink: 0;
-    }
-
-    .service-content {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .service-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-    }
-
-    .service-name {
-        display: block;
-        font-size: 16px;
-    }
-
-    .service-code {
-        margin-top: 4px;
-        color: #64748b;
-        font-size: 13px;
-    }
-
-    .service-price {
-        white-space: nowrap;
-    }
-
-    .service-meta {
-        display: flex;
-        gap: 18px;
-        flex-wrap: wrap;
-        margin-top: 10px;
-        color: #475569;
-        font-size: 13px;
-    }
-
-    .service-note {
-        margin-top: 10px;
-        padding: 9px 11px;
-        background: #f8fafc;
-        border-radius: 7px;
-        line-height: 1.5;
-    }
-
-    .empty-state {
-        padding: 20px;
-        text-align: center;
-        color: #64748b;
-        background: #f8fafc;
-        border-radius: 8px;
-    }
-
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 24px;
-    }
-
-    .alert {
-        margin-bottom: 20px;
-        padding: 14px 16px;
-        border-radius: 8px;
-    }
-
-    .alert-danger {
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-    }
-
-    .alert-danger ul {
-        margin-bottom: 0;
-    }
-
-    @media (max-width: 800px) {
-        .page-header,
-        .services-header,
-        .service-top {
-            flex-direction: column;
-        }
-
-        .detail-grid,
-        .form-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-
-@endpush
 
 
 @push('scripts')

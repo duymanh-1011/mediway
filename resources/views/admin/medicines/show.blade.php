@@ -1,21 +1,19 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'medicines-show')
 
 @section(
     'title',
-    'Chi tiết thuốc - Mediway Admin'
+    'Chi tiết thuốc - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-
-        Admin /
-        Danh mục /
-        Thuốc /
-        {{ $medicine->medicine_code }}
-
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Danh mục</span>
+    <span aria-hidden="true">/</span>
+    <span>Thuốc</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ $medicine->medicine_code }}</strong>
 @endsection
 
 @section('content')
@@ -95,13 +93,13 @@
                 @if ($medicine->status === 'ACTIVE')
 
                     <span class="badge badge-success">
-                        ACTIVE
+                        Đang hoạt động
                     </span>
 
                 @else
 
                     <span class="badge badge-danger">
-                        INACTIVE
+                        Ngừng hoạt động
                     </span>
 
                 @endif
@@ -329,8 +327,8 @@
     </div>
 
     <div
-        class="card"
-        style="margin-top:20px;"
+        class="admin-u-a26bda7d card"
+
     >
 
         <h3 class="section-title">
@@ -344,6 +342,7 @@
                 <thead>
 
                     <tr>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Đơn thuốc</th>
                         <th>Số lượng</th>
                         <th>Đơn vị dùng</th>
@@ -364,6 +363,7 @@
 
                     <tr>
 
+                        @include('admin.layouts.partials.row-number', ['rows' => $recentPrescriptionItems, 'index' => $loop->index])
                         <td>
                             #{{ $item->prescription_id }}
                         </td>
@@ -408,7 +408,7 @@
                     <tr>
 
                         <td
-                            colspan="7"
+                            colspan="8"
                             class="empty-state"
                         >
                             Thuốc này chưa từng được kê.
@@ -427,105 +427,3 @@
     </div>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-        gap: 14px;
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        padding: 16px 18px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-    }
-
-    .stat-label {
-        color: #64748b;
-        font-size: 13px;
-        margin-bottom: 7px;
-    }
-
-    .stat-value {
-        font-size: 26px;
-        font-weight: 700;
-    }
-
-    .stat-text {
-        font-size: 16px;
-        font-weight: 700;
-    }
-
-    .section-title {
-        margin: 0 0 18px;
-        font-size: 18px;
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-        gap: 0 30px;
-    }
-
-    .detail-row,
-    .detail-section {
-        padding: 13px 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .detail-label {
-        margin-bottom: 5px;
-        color: #64748b;
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .detail-value {
-        color: #334155;
-        font-size: 14px;
-        line-height: 1.6;
-    }
-
-    .long-text {
-        white-space: pre-line;
-    }
-
-    .empty-state {
-        padding: 30px !important;
-        text-align: center !important;
-        color: #94a3b8 !important;
-    }
-
-    @media (max-width: 800px) {
-
-        .stats-grid,
-        .info-grid {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

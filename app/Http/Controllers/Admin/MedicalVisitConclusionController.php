@@ -36,7 +36,7 @@ class MedicalVisitConclusionController extends Controller
                 );
         }
 
-        if ($visit->status?->name === 'COMPLETED') {
+        if (! $visit->canRecordClinicalData()) {
             return redirect()
                 ->route(
                     'admin.visits.show',
@@ -44,7 +44,7 @@ class MedicalVisitConclusionController extends Controller
                 )
                 ->with(
                     'error',
-                    'Không thể thêm kết luận cho lượt khám đã hoàn tất.'
+                    'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
                 );
         }
 
@@ -85,7 +85,7 @@ class MedicalVisitConclusionController extends Controller
                 );
         }
 
-        if ($visit->status?->name === 'COMPLETED') {
+        if (! $visit->canRecordClinicalData()) {
             return redirect()
                 ->route(
                     'admin.visits.show',
@@ -93,7 +93,7 @@ class MedicalVisitConclusionController extends Controller
                 )
                 ->with(
                     'error',
-                    'Không thể thêm kết luận cho lượt khám đã hoàn tất.'
+                    'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
                 );
         }
 
@@ -107,47 +107,41 @@ class MedicalVisitConclusionController extends Controller
                 $data,
                 $hasFollowUp
             ) {
+                $visit = $visit->lockForClinicalWrite();
+                if ($existing = $visit->conclusion()->first()) {
+                    return $existing;
+                }
+
                 return VisitConclusion::create([
-                    'medical_visit_id' =>
-                        $visit->id,
+                    'medical_visit_id' => $visit->id,
 
-                    'doctor_id' =>
-                        $visit->doctor_id,
+                    'doctor_id' => $visit->doctor_id,
 
-                    'professional_conclusion' =>
-                        $data['professional_conclusion'],
+                    'professional_conclusion' => $data['professional_conclusion'],
 
-                    'disposition' =>
-                        $data['disposition']
+                    'disposition' => $data['disposition']
                         ?? null,
 
-                    'treatment_plan' =>
-                        $data['treatment_plan']
+                    'treatment_plan' => $data['treatment_plan']
                         ?? null,
 
-                    'instructions' =>
-                        $data['instructions']
+                    'instructions' => $data['instructions']
                         ?? null,
 
-                    'has_follow_up' =>
-                        $hasFollowUp,
+                    'has_follow_up' => $hasFollowUp,
 
-                    'follow_up_date' =>
-                        $hasFollowUp
+                    'follow_up_date' => $hasFollowUp
                             ? ($data['follow_up_date'] ?? null)
                             : null,
 
-                    'follow_up_reason' =>
-                        $hasFollowUp
+                    'follow_up_reason' => $hasFollowUp
                             ? ($data['follow_up_reason'] ?? null)
                             : null,
 
-                    'notes' =>
-                        $data['notes']
+                    'notes' => $data['notes']
                         ?? null,
 
-                    'concluded_at' =>
-                        now(),
+                    'concluded_at' => now(),
                 ]);
             }
         );

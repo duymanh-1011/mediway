@@ -26,6 +26,40 @@ class ServiceResult extends Model
         'resulted_at' => 'datetime',
     ];
 
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    public static function hasContentValues(array $values, ?int $serviceOrderItemId = null): bool
+    {
+        foreach (['result_summary', 'result_conclusion'] as $field) {
+            if (is_string($values[$field] ?? null) && trim($values[$field]) !== '') {
+                return true;
+            }
+        }
+
+        if ($serviceOrderItemId) {
+            foreach (['pdf', 'image'] as $type) {
+                $path = $values['result_'.$type.'_path'] ?? null;
+                if (is_string($path) && app(ClinicalDocument::class)->exists($path, 'service-results/'.$serviceOrderItemId, $type)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public function hasContent(): bool
+    {
+        return self::hasContentValues($this->getAttributes(), $this->service_order_item_id);
+    }
+
+    public function hasDocument(string $type): bool
+    {
+        return in_array($type, ['pdf', 'image'], true)
+            && app(ClinicalDocument::class)->exists($this->getAttribute('result_'.$type.'_path'), 'service-results/'.$this->service_order_item_id, $type);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Quan hệ

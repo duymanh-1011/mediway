@@ -54,7 +54,7 @@
 
         @error('doctor_id')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -106,7 +106,7 @@
 
         @error('specialty_id')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -165,7 +165,7 @@
 
         @error('examination_room_id')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -200,7 +200,7 @@
 
         @error('work_date')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -237,7 +237,7 @@
 
         @error('start_time')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -274,7 +274,7 @@
 
         @error('end_time')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -307,7 +307,7 @@
                     ) === 'ACTIVE'
                 )
             >
-                ACTIVE
+                Đang hoạt động
             </option>
 
             <option
@@ -319,14 +319,14 @@
                     ) === 'INACTIVE'
                 )
             >
-                INACTIVE
+                Ngừng hoạt động
             </option>
 
         </select>
 
         @error('status')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -357,7 +357,7 @@
 
     @error('notes')
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
     @enderror
 

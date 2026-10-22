@@ -1,14 +1,18 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'clinical-notes-create')
 
-@section('title', 'Thêm nội dung khám - Mediway Admin')
+@section('title', 'Thêm nội dung khám - Mediway')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Quản trị /
-        Lượt khám /
-        {{ $visit->visit_code }} /
-        Thêm nội dung khám
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <span>Lượt khám</span>
+    <span aria-hidden="true">/</span>
+    <span>{{ $visit->visit_code }}</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Thêm nội dung khám</strong>
 @endsection
 
 @section('content')
@@ -27,7 +31,7 @@
 
         <a
             href="{{ route('admin.visits.show', $visit) }}"
-            class="btn btn-secondary"
+            class="admin-btn admin-btn-secondary btn btn-secondary"
         >
             ← Quay lại lượt khám
         </a>
@@ -87,7 +91,7 @@
     </div>
 
 
-    <form
+    <form novalidate
         method="POST"
         action="{{ route(
             'admin.visits.clinical-note.store',
@@ -119,7 +123,7 @@
 
             @error('reason_for_visit')
                 <div class="field-error">
-                    {{ $message }}
+                    {{ \App\Models\AdminDisplay::text($message) }}
                 </div>
             @enderror
         </div>
@@ -139,7 +143,7 @@
 
             @error('current_symptoms')
                 <div class="field-error">
-                    {{ $message }}
+                    {{ \App\Models\AdminDisplay::text($message) }}
                 </div>
             @enderror
         </div>
@@ -159,7 +163,7 @@
 
             @error('present_illness_history')
                 <div class="field-error">
-                    {{ $message }}
+                    {{ \App\Models\AdminDisplay::text($message) }}
                 </div>
             @enderror
         </div>
@@ -179,7 +183,7 @@
 
             @error('relevant_medical_history')
                 <div class="field-error">
-                    {{ $message }}
+                    {{ \App\Models\AdminDisplay::text($message) }}
                 </div>
             @enderror
         </div>
@@ -199,7 +203,7 @@
 
             @error('physical_examination')
                 <div class="field-error">
-                    {{ $message }}
+                    {{ \App\Models\AdminDisplay::text($message) }}
                 </div>
             @enderror
         </div>
@@ -219,7 +223,7 @@
 
             @error('initial_assessment')
                 <div class="field-error">
-                    {{ $message }}
+                    {{ \App\Models\AdminDisplay::text($message) }}
                 </div>
             @enderror
         </div>
@@ -239,7 +243,7 @@
 
             @error('notes')
                 <div class="field-error">
-                    {{ $message }}
+                    {{ \App\Models\AdminDisplay::text($message) }}
                 </div>
             @enderror
         </div>
@@ -249,9 +253,7 @@
             <a
                 href="{{ route('admin.visits.show', $visit) }}"
                 class="btn btn-secondary"
-            >
-                Hủy
-            </a>
+            >Hủy</a>
 
             <button
                 type="submit"
@@ -263,97 +265,3 @@
     </form>
 
 @endsection
-
-
-@push('styles')
-
-<style>
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .detail-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .section-title {
-        margin-top: 0;
-        margin-bottom: 15px;
-    }
-
-    .detail-row {
-        display: grid;
-        grid-template-columns:
-            145px minmax(0, 1fr);
-        gap: 15px;
-        padding: 11px 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-row span {
-        color: #64748b;
-    }
-
-    .form-card {
-        margin-top: 20px;
-    }
-
-    .form-group {
-        margin-bottom: 18px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 7px;
-        font-weight: 700;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        resize: vertical;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-    }
-
-    .field-error {
-        margin-top: 5px;
-        color: #dc2626;
-    }
-
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 22px;
-    }
-
-    @media (max-width: 800px) {
-        .page-header {
-            flex-direction: column;
-        }
-
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-
-@endpush

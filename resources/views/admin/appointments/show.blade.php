@@ -1,18 +1,17 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'appointments-show')
 
 @section(
     'title',
-    'Chi tiết lịch hẹn - Mediway Admin'
+    'Chi tiết lịch hẹn - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-        Admin /
-        Lịch & đặt khám /
-        {{ $appointment->appointment_code }}
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Lịch và đặt khám</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ $appointment->appointment_code }}</strong>
 @endsection
 
 
@@ -109,7 +108,7 @@
             </div>
 
 
-            <div style="margin-top: 10px;">
+            <div class="admin-u-e5a6d3c3">
 
                 <a
                     href="{{ route(
@@ -135,7 +134,7 @@
             <div>
 
                 <h3 class="section-title">
-                    Check-in bệnh nhân
+                    Tiếp nhận bệnh nhân
                 </h3>
 
                 <p class="checkin-description">
@@ -147,7 +146,7 @@
             </div>
 
 
-            <form
+            <form novalidate
                 method="POST"
                 action="{{ route(
                     'admin.appointments.check-in',
@@ -155,7 +154,7 @@
                 ) }}"
                 onsubmit="
                     return confirm(
-                        'Xác nhận check-in bệnh nhân cho lịch hẹn này?'
+                        'Xác nhận tiếp nhận bệnh nhân cho lịch hẹn này?'
                     );
                 "
             >
@@ -166,7 +165,7 @@
                     type="submit"
                     class="btn-checkin"
                 >
-                    Check-in bệnh nhân
+                    Tiếp nhận bệnh nhân
                 </button>
 
             </form>
@@ -381,7 +380,7 @@
                 </span>
 
                 <strong>
-                    {{ $statusName ?? '—' }}
+                    {{ \App\Models\AdminDisplay::label($statusName ?? '—') }}
                 </strong>
 
             </div>
@@ -500,7 +499,7 @@
             </p>
 
 
-            <form
+            <form novalidate
                 method="POST"
                 action="{{ route(
                     'admin.appointments.cancel',
@@ -533,7 +532,7 @@
                     @error('cancellation_reason')
 
                         <div class="field-error">
-                            {{ $message }}
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
 
                     @enderror
@@ -555,241 +554,3 @@
     @endif
 
 @endsection
-
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-
-    .header-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-
-    .notice-box {
-        margin-bottom: 20px;
-        padding: 14px 16px;
-
-        border: 1px solid #fde68a;
-        border-radius: 8px;
-
-        background: #fffbeb;
-        color: #92400e;
-    }
-
-
-    .checkin-card {
-        margin-bottom: 20px;
-        padding: 18px 20px;
-
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-
-        border: 1px solid #bbf7d0;
-        border-radius: 10px;
-
-        background: #f0fdf4;
-    }
-
-
-    .checkin-card .section-title {
-        color: #166534;
-    }
-
-
-    .checkin-description {
-        margin: 0;
-
-        color: #475569;
-        line-height: 1.6;
-    }
-
-
-    .btn-checkin {
-        padding: 10px 18px;
-
-        border: none;
-        border-radius: 8px;
-
-        background: #16a34a;
-        color: #ffffff;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        font-size: 16px;
-        font-weight: 700;
-
-        cursor: pointer;
-        white-space: nowrap;
-    }
-
-
-    .btn-checkin:hover {
-        opacity: 0.9;
-    }
-
-
-    .detail-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-
-    .section-title {
-        margin-top: 0;
-        margin-bottom: 15px;
-    }
-
-
-    .detail-row {
-        display: grid;
-
-        grid-template-columns:
-            140px minmax(0, 1fr);
-
-        gap: 15px;
-
-        padding: 11px 0;
-
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-
-    .detail-row span {
-        color: #64748b;
-    }
-
-
-    .information-card,
-    .cancellation-card,
-    .cancellation-form {
-        margin-top: 20px;
-    }
-
-
-    .content-section {
-        margin-bottom: 18px;
-    }
-
-
-    .content-section:last-child {
-        margin-bottom: 0;
-    }
-
-
-    .content-section p {
-        margin-bottom: 0;
-        line-height: 1.6;
-    }
-
-
-    .danger-title {
-        color: #b91c1c;
-    }
-
-
-    .warning-text {
-        color: #64748b;
-    }
-
-
-    .form-group {
-        margin-bottom: 15px;
-    }
-
-
-    .form-group label {
-        display: block;
-        margin-bottom: 6px;
-
-        font-weight: 700;
-    }
-
-
-    .form-control {
-        width: 100%;
-
-        padding: 10px 12px;
-
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-    }
-
-
-    .field-error {
-        margin-top: 5px;
-        color: #dc2626;
-    }
-
-
-    .btn-danger {
-        padding: 9px 15px;
-
-        border: none;
-        border-radius: 8px;
-
-        background: #dc2626;
-        color: #ffffff;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        cursor: pointer;
-    }
-
-
-    @media (max-width: 800px) {
-
-        .page-header {
-            flex-direction: column;
-        }
-
-
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-
-
-        .checkin-card {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-    }
-
-</style>
-
-@endpush

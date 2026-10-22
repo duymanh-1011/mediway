@@ -9,10 +9,11 @@ use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\ExaminationRoom;
 use App\Models\Specialty;
-
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class DoctorScheduleController extends Controller
 {
@@ -73,35 +74,35 @@ class DoctorScheduleController extends Controller
                                 );
                         }
                     )
-                    ->orWhereHas(
-                        'specialty',
-                        function ($specialtyQuery) use ($keyword) {
+                        ->orWhereHas(
+                            'specialty',
+                            function ($specialtyQuery) use ($keyword) {
 
-                            $specialtyQuery
-                                ->where(
-                                    'name',
-                                    'like',
-                                    "%{$keyword}%"
-                                );
-                        }
-                    )
-                    ->orWhereHas(
-                        'examinationRoom',
-                        function ($roomQuery) use ($keyword) {
+                                $specialtyQuery
+                                    ->where(
+                                        'name',
+                                        'like',
+                                        "%{$keyword}%"
+                                    );
+                            }
+                        )
+                        ->orWhereHas(
+                            'examinationRoom',
+                            function ($roomQuery) use ($keyword) {
 
-                            $roomQuery
-                                ->where(
-                                    'room_code',
-                                    'like',
-                                    "%{$keyword}%"
-                                )
-                                ->orWhere(
-                                    'name',
-                                    'like',
-                                    "%{$keyword}%"
-                                );
-                        }
-                    );
+                                $roomQuery
+                                    ->where(
+                                        'room_code',
+                                        'like',
+                                        "%{$keyword}%"
+                                    )
+                                    ->orWhere(
+                                        'name',
+                                        'like',
+                                        "%{$keyword}%"
+                                    );
+                            }
+                        );
                 }
             );
         }
@@ -112,7 +113,7 @@ class DoctorScheduleController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        if (!empty($doctorId)) {
+        if (! empty($doctorId)) {
 
             $query->where(
                 'doctor_id',
@@ -120,7 +121,7 @@ class DoctorScheduleController extends Controller
             );
         }
 
-        if (!empty($specialtyId)) {
+        if (! empty($specialtyId)) {
 
             $query->where(
                 'specialty_id',
@@ -128,7 +129,7 @@ class DoctorScheduleController extends Controller
             );
         }
 
-        if (!empty($roomId)) {
+        if (! empty($roomId)) {
 
             $query->where(
                 'examination_room_id',
@@ -136,7 +137,7 @@ class DoctorScheduleController extends Controller
             );
         }
 
-        if (!empty($workDate)) {
+        if (! empty($workDate)) {
 
             $query->whereDate(
                 'work_date',
@@ -350,7 +351,7 @@ class DoctorScheduleController extends Controller
                     ]
                 );
 
-        if (!empty($doctorId)) {
+        if (! empty($doctorId)) {
 
             $query->where(
                 'doctor_id',
@@ -358,7 +359,7 @@ class DoctorScheduleController extends Controller
             );
         }
 
-        if (!empty($specialtyId)) {
+        if (! empty($specialtyId)) {
 
             $query->where(
                 'specialty_id',
@@ -366,7 +367,7 @@ class DoctorScheduleController extends Controller
             );
         }
 
-        if (!empty($roomId)) {
+        if (! empty($roomId)) {
 
             $query->where(
                 'examination_room_id',
@@ -510,42 +511,44 @@ class DoctorScheduleController extends Controller
 
     public function store(
         StoreDoctorScheduleRequest $request
-    ) {
-        $data =
-            $request->validated();
+    ): RedirectResponse {
+        return DB::transaction(function () use ($request): RedirectResponse {
+            $data = $request->validated();
 
-        if ($data['status'] === 'ACTIVE') {
+            $this->lockActiveScheduleParents($data);
 
-            $conflictMessage =
-                $this->getConflictMessage(
+            if ($data['status'] === 'ACTIVE') {
+
+                $conflictMessage =
+                    $this->getConflictMessage(
+                        $data
+                    );
+
+                if ($conflictMessage !== null) {
+
+                    return back()
+                        ->withInput()
+                        ->withErrors([
+                            'schedule_conflict' => $conflictMessage,
+                        ]);
+                }
+            }
+
+            $doctorSchedule =
+                DoctorSchedule::create(
                     $data
                 );
 
-            if ($conflictMessage !== null) {
-
-                return back()
-                    ->withInput()
-                    ->withErrors([
-                        'schedule_conflict' =>
-                            $conflictMessage,
-                    ]);
-            }
-        }
-
-        $doctorSchedule =
-            DoctorSchedule::create(
-                $data
-            );
-
-        return redirect()
-            ->route(
-                'admin.doctor-schedules.show',
-                $doctorSchedule
-            )
-            ->with(
-                'success',
-                'Thêm lịch làm việc bác sĩ thành công.'
-            );
+            return redirect()
+                ->route(
+                    'admin.doctor-schedules.show',
+                    $doctorSchedule
+                )
+                ->with(
+                    'success',
+                    'Thêm lịch làm việc bác sĩ thành công.'
+                );
+        }, 3);
     }
 
     public function show(
@@ -656,106 +659,118 @@ class DoctorScheduleController extends Controller
     public function update(
         UpdateDoctorScheduleRequest $request,
         DoctorSchedule $doctorSchedule
-    ) {
-        $data =
-            $request->validated();
+    ): RedirectResponse {
+        return DB::transaction(function () use ($request, $doctorSchedule): RedirectResponse {
+            $data = $request->validated();
 
-        if ($data['status'] === 'ACTIVE') {
+            $doctorSchedule = DoctorSchedule::whereKey($doctorSchedule->id)->lockForUpdate()->firstOrFail();
+            $this->lockActiveScheduleParents($data);
 
-            $conflictMessage =
-                $this->getConflictMessage(
-                    $data,
-                    $doctorSchedule->id
-                );
+            if ($data['status'] === 'ACTIVE') {
 
-            if ($conflictMessage !== null) {
+                $conflictMessage =
+                    $this->getConflictMessage(
+                        $data,
+                        $doctorSchedule->id
+                    );
 
-                return back()
-                    ->withInput()
-                    ->withErrors([
-                        'schedule_conflict' =>
-                            $conflictMessage,
-                    ]);
+                if ($conflictMessage !== null) {
+
+                    return back()
+                        ->withInput()
+                        ->withErrors([
+                            'schedule_conflict' => $conflictMessage,
+                        ]);
+                }
             }
-        }
 
-        $hasAppointments =
-            DB::table(
-                'appointment_time_slots as slots'
-            )
-                ->join(
-                    'appointments',
-                    'appointments.appointment_time_slot_id',
-                    '=',
-                    'slots.id'
+            $hasAppointments =
+                DB::table(
+                    'appointment_time_slots as slots'
                 )
-                ->where(
-                    'slots.doctor_schedule_id',
-                    $doctorSchedule->id
-                )
-                ->exists();
+                    ->join(
+                        'appointments',
+                        'appointments.appointment_time_slot_id',
+                        '=',
+                        'slots.id'
+                    )
+                    ->where(
+                        'slots.doctor_schedule_id',
+                        $doctorSchedule->id
+                    )
+                    ->exists();
 
-        if ($hasAppointments) {
+            if ($hasAppointments) {
 
-            $coreChanged =
-                (int) $doctorSchedule->doctor_id
-                    !==
-                (int) $data['doctor_id']
-                ||
-                (int) $doctorSchedule->specialty_id
-                    !==
-                (int) $data['specialty_id']
-                ||
-                (int) $doctorSchedule->examination_room_id
-                    !==
-                (int) $data['examination_room_id']
-                ||
-                $doctorSchedule
-                    ->work_date
-                    ->format('Y-m-d')
-                    !==
-                $data['work_date']
-                ||
-                substr(
-                    $doctorSchedule->start_time,
-                    0,
-                    5
-                )
-                    !==
-                $data['start_time']
-                ||
-                substr(
-                    $doctorSchedule->end_time,
-                    0,
-                    5
-                )
-                    !==
-                $data['end_time'];
+                $coreChanged =
+                    (int) $doctorSchedule->doctor_id
+                        !==
+                    (int) $data['doctor_id']
+                    ||
+                    (int) $doctorSchedule->specialty_id
+                        !==
+                    (int) $data['specialty_id']
+                    ||
+                    (int) $doctorSchedule->examination_room_id
+                        !==
+                    (int) $data['examination_room_id']
+                    ||
+                    $doctorSchedule
+                        ->work_date
+                        ->format('Y-m-d')
+                        !==
+                    $data['work_date']
+                    ||
+                    substr(
+                        $doctorSchedule->start_time,
+                        0,
+                        5
+                    )
+                        !==
+                    $data['start_time']
+                    ||
+                    substr(
+                        $doctorSchedule->end_time,
+                        0,
+                        5
+                    )
+                        !==
+                    $data['end_time'];
 
-            if ($coreChanged) {
+                if ($coreChanged) {
 
-                return back()
-                    ->withInput()
-                    ->withErrors([
-                        'schedule_conflict' =>
-                            'Lịch làm việc đã có lịch hẹn nên không thể thay đổi bác sĩ, chuyên khoa, phòng, ngày hoặc khung giờ. Bạn chỉ nên cập nhật trạng thái hoặc ghi chú.',
-                    ]);
+                    return back()
+                        ->withInput()
+                        ->withErrors([
+                            'schedule_conflict' => 'Lịch làm việc đã có lịch hẹn nên không thể thay đổi bác sĩ, chuyên khoa, phòng, ngày hoặc khung giờ. Bạn chỉ nên cập nhật trạng thái hoặc ghi chú.',
+                        ]);
+                }
             }
-        }
 
-        $doctorSchedule->update(
-            $data
-        );
+            $startTime = $data['start_time'].':00';
+            $endTime = $data['end_time'].':00';
+            if ($doctorSchedule->appointmentTimeSlots()->where(function ($query) use ($startTime, $endTime) {
+                $query->where('start_time', '<', $startTime)->orWhere('end_time', '>', $endTime);
+            })->exists()) {
+                return back()->withInput()->withErrors([
+                    'end_time' => 'Khung giờ mới phải bao phủ toàn bộ khung giờ hẹn đã tạo. Hãy điều chỉnh các khung giờ hẹn trước.',
+                ]);
+            }
 
-        return redirect()
-            ->route(
-                'admin.doctor-schedules.show',
-                $doctorSchedule
-            )
-            ->with(
-                'success',
-                'Cập nhật lịch làm việc thành công.'
+            $doctorSchedule->update(
+                $data
             );
+
+            return redirect()
+                ->route(
+                    'admin.doctor-schedules.show',
+                    $doctorSchedule
+                )
+                ->with(
+                    'success',
+                    'Cập nhật lịch làm việc thành công.'
+                );
+        }, 3);
     }
 
     public function destroy(
@@ -824,6 +839,20 @@ class DoctorScheduleController extends Controller
             );
     }
 
+    /** @param array<string, mixed> $data */
+    private function lockActiveScheduleParents(array $data): void
+    {
+        if ($data['status'] !== 'ACTIVE') {
+            return;
+        }
+        foreach (['doctor_id' => Doctor::class, 'specialty_id' => Specialty::class, 'examination_room_id' => ExaminationRoom::class] as $field => $model) {
+            $parent = $model::whereKey($data[$field])->lockForUpdate()->firstOrFail();
+            if ($parent->status !== 'ACTIVE') {
+                throw ValidationException::withMessages([$field => 'Không thể tạo hoặc kích hoạt lịch với bác sĩ, chuyên khoa hoặc phòng đã ngừng hoạt động.']);
+            }
+        }
+    }
+
     private function getConflictMessage(
         array $data,
         ?int $ignoreScheduleId = null
@@ -868,8 +897,7 @@ class DoctorScheduleController extends Controller
 
         if ($doctorConflict) {
 
-            return
-                'Bác sĩ đã có lịch làm việc bị trùng thời gian trong ngày này.';
+            return 'Bác sĩ đã có lịch làm việc bị trùng thời gian trong ngày này.';
         }
 
         $roomConflict =
@@ -912,8 +940,7 @@ class DoctorScheduleController extends Controller
 
         if ($roomConflict) {
 
-            return
-                'Phòng khám đã được sử dụng bởi lịch làm việc khác trong khoảng thời gian này.';
+            return 'Phòng khám đã được sử dụng bởi lịch làm việc khác trong khoảng thời gian này.';
         }
 
         return null;

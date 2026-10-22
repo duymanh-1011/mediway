@@ -15,10 +15,7 @@ class StoreExaminationRoomRequest extends FormRequest
     {
         return [
             'room_code' => [
-                'required',
-                'string',
-                'max:30',
-                'unique:examination_rooms,room_code',
+                'exclude',
             ],
 
             'name' => [
@@ -70,38 +67,27 @@ class StoreExaminationRoomRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'room_code.required' =>
-                'Vui lòng nhập mã phòng khám.',
+            'room_code.required' => 'Vui lòng nhập mã phòng khám.',
 
-            'room_code.max' =>
-                'Mã phòng khám không được vượt quá 30 ký tự.',
+            'room_code.max' => 'Mã phòng khám không được vượt quá 30 ký tự.',
 
-            'room_code.unique' =>
-                'Mã phòng khám đã tồn tại.',
+            'room_code.unique' => 'Mã phòng khám đã tồn tại.',
 
-            'name.required' =>
-                'Vui lòng nhập tên phòng khám.',
+            'name.required' => 'Vui lòng nhập tên phòng khám.',
 
-            'name.max' =>
-                'Tên phòng khám không được vượt quá 150 ký tự.',
+            'name.max' => 'Tên phòng khám không được vượt quá 150 ký tự.',
 
-            'room_number.required' =>
-                'Vui lòng nhập số phòng.',
+            'room_number.required' => 'Vui lòng nhập số phòng.',
 
-            'room_number.max' =>
-                'Số phòng không được vượt quá 50 ký tự.',
+            'room_number.max' => 'Số phòng không được vượt quá 50 ký tự.',
 
-            'floor.max' =>
-                'Thông tin tầng không được vượt quá 50 ký tự.',
+            'floor.max' => 'Thông tin tầng không được vượt quá 50 ký tự.',
 
-            'building.max' =>
-                'Tên tòa nhà không được vượt quá 150 ký tự.',
+            'building.max' => 'Tên tòa nhà không được vượt quá 150 ký tự.',
 
-            'status.required' =>
-                'Vui lòng chọn trạng thái.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' =>
-                'Trạng thái phòng khám không hợp lệ.',
+            'status.in' => 'Trạng thái phòng khám không hợp lệ.',
         ];
     }
 }

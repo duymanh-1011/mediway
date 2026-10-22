@@ -1,18 +1,17 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'payment-transactions-create')
 
 @section(
     'title',
-    'Thanh toán khoản phải thu - Mediway Admin'
+    'Thanh toán khoản phải thu - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-        Admin /
-        Thanh toán /
-        {{ $payable->payable_code }}
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Thanh toán</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ $payable->payable_code }}</strong>
 @endsection
 
 
@@ -53,7 +52,7 @@
                     'admin.payables.show',
                     $payable->id
                 ) }}"
-                class="btn btn-secondary"
+                class="admin-btn admin-btn-secondary btn btn-secondary"
             >
                 ← Quay lại khoản phải thu
             </a>
@@ -76,7 +75,7 @@
                 @foreach ($errors->all() as $error)
 
                     <li>
-                        {{ $error }}
+                        {{ \App\Models\AdminDisplay::text($error) }}
                     </li>
 
                 @endforeach
@@ -117,7 +116,7 @@
                 </span>
 
                 <strong>
-                    {{ $payable->payment_type }}
+                    {{ \App\Models\AdminDisplay::label($payable->payment_type) }}
                 </strong>
 
             </div>
@@ -143,10 +142,10 @@
                 </span>
 
                 <strong>
-                    {{ $payable
+                    {{ \App\Models\AdminDisplay::label($payable
                         ->paymentStatus
                         ?->name
-                        ?? '—' }}
+                        ?? '—') }}
                 </strong>
 
             </div>
@@ -238,7 +237,7 @@
     </div>
 
 
-    <form
+    <form novalidate
         method="POST"
         action="{{ route(
             'admin.payables.payment-transactions.store',
@@ -298,6 +297,7 @@
                     </option>
 
                 </select>
+@error('payment_method')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
@@ -347,6 +347,7 @@
                 ) }}"
                 placeholder="Có thể để trống với tiền mặt"
             >
+@error('provider_transaction_code')<div class="field-error">{{ $message }}</div>@enderror
 
         </div>
 
@@ -368,6 +369,7 @@
                 ) }}"
                 placeholder="Ví dụ: Thanh toán phí dịch vụ xét nghiệm"
             >
+@error('payment_content')<div class="field-error">{{ $message }}</div>@enderror
 
         </div>
 
@@ -385,6 +387,7 @@
                 rows="4"
                 placeholder="Nhập ghi chú nếu có..."
             >{{ old('notes') }}</textarea>
+@error('notes')<div class="field-error">{{ $message }}</div>@enderror
 
         </div>
 
@@ -396,9 +399,8 @@
             </strong>
 
             <p>
-                Khi xác nhận, hệ thống sẽ tạo giao dịch
-                SUCCESS và chuyển khoản phải thanh toán
-                sang trạng thái PAID.
+                Khi xác nhận, hệ thống sẽ tạo giao dịch thành công
+                và chuyển khoản phải thanh toán sang trạng thái đã thanh toán.
             </p>
 
             <label class="confirm-row">
@@ -427,9 +429,7 @@
                     $payable->id
                 ) }}"
                 class="btn btn-secondary"
-            >
-                Hủy
-            </a>
+            >Hủy</a>
 
             <button
                 type="submit"
@@ -443,214 +443,3 @@
     </form>
 
 @endsection
-
-
-@push('styles')
-
-<style>
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .payment-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-
-        gap: 20px;
-    }
-
-    .section-title {
-        margin-top: 0;
-        margin-bottom: 16px;
-    }
-
-    .detail-row {
-        display: grid;
-
-        grid-template-columns:
-            145px minmax(0, 1fr);
-
-        gap: 15px;
-
-        padding: 11px 0;
-
-        border-bottom:
-            1px solid #f1f5f9;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-row span {
-        color: #64748b;
-    }
-
-    .payment-amount {
-        color: #15803d;
-        font-size: 18px;
-    }
-
-    .payment-form-card {
-        margin-top: 20px;
-    }
-
-    .form-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-
-        gap: 20px;
-    }
-
-    .form-group label {
-        display: block;
-
-        margin-bottom: 7px;
-
-        font-weight: 700;
-    }
-
-    .form-control {
-        display: block;
-
-        width: 100%;
-
-        box-sizing: border-box;
-
-        min-height: 42px;
-
-        padding: 10px 12px;
-
-        border:
-            1px solid #cbd5e1;
-
-        border-radius: 8px;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        font-size: 14px;
-    }
-
-    textarea.form-control {
-        resize: vertical;
-    }
-
-    .required {
-        color: #dc2626;
-    }
-
-    .form-help {
-        margin-top: 6px;
-
-        color: #64748b;
-
-        font-size: 12px;
-    }
-
-    .section-field {
-        margin-top: 18px;
-    }
-
-    .payment-warning {
-        margin-top: 22px;
-
-        padding: 16px;
-
-        border:
-            1px solid #fde68a;
-
-        border-radius: 10px;
-
-        background: #fffbeb;
-    }
-
-    .payment-warning strong {
-        display: block;
-
-        margin-bottom: 7px;
-
-        color: #92400e;
-    }
-
-    .payment-warning p {
-        margin:
-            0 0 12px;
-
-        color: #78350f;
-
-        line-height: 1.6;
-    }
-
-    .confirm-row {
-        display: flex !important;
-
-        align-items: flex-start;
-
-        gap: 9px;
-
-        margin: 0 !important;
-
-        font-weight: 400 !important;
-
-        cursor: pointer;
-    }
-
-    .confirm-row input {
-        margin-top: 3px;
-    }
-
-    .form-actions {
-        display: flex;
-
-        justify-content: flex-end;
-
-        gap: 10px;
-
-        margin-top: 24px;
-    }
-
-    .payment-alert {
-        margin-bottom: 20px;
-
-        padding: 14px 16px;
-
-        border-radius: 8px;
-    }
-
-    .payment-alert-error {
-        border:
-            1px solid #fecaca;
-
-        background: #fef2f2;
-
-        color: #991b1b;
-    }
-
-    .payment-alert ul {
-        margin-bottom: 0;
-    }
-
-    @media (max-width: 800px) {
-        .page-header {
-            flex-direction: column;
-        }
-
-        .payment-grid,
-        .form-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-
-@endpush

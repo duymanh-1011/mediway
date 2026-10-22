@@ -11,6 +11,7 @@ use App\Models\PaymentStatus;
 use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceStatus;
+use App\Models\VisitStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -37,7 +38,7 @@ class ServiceOrderController extends Controller
                     ->where(
                         'service_order_code',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhereHas(
                         'medicalVisit',
@@ -45,7 +46,7 @@ class ServiceOrderController extends Controller
                             $visitQuery->where(
                                 'visit_code',
                                 'like',
-                                '%' . $keyword . '%'
+                                '%'.$keyword.'%'
                             );
                         }
                     )
@@ -56,12 +57,12 @@ class ServiceOrderController extends Controller
                                 ->where(
                                     'doctor_code',
                                     'like',
-                                    '%' . $keyword . '%'
+                                    '%'.$keyword.'%'
                                 )
                                 ->orWhere(
                                     'full_name',
                                     'like',
-                                    '%' . $keyword . '%'
+                                    '%'.$keyword.'%'
                                 );
                         }
                     );
@@ -126,7 +127,7 @@ class ServiceOrderController extends Controller
             'status',
         ]);
 
-        if ($visit->status?->name === 'COMPLETED') {
+        if (! in_array($visit->status?->name, ['IN_EXAMINATION', 'RETURNING'], true)) {
             return redirect()
                 ->route(
                     'admin.visits.show',
@@ -134,11 +135,11 @@ class ServiceOrderController extends Controller
                 )
                 ->with(
                     'error',
-                    'Lượt khám đã hoàn tất, không thể tạo thêm chỉ định dịch vụ.'
+                    'Chỉ được chỉ định dịch vụ khi đang khám hoặc đang khám lại sau dịch vụ.'
                 );
         }
 
-        if (!$visit->doctor_id) {
+        if (! $visit->doctor_id) {
             return redirect()
                 ->route(
                     'admin.visits.show',
@@ -155,7 +156,7 @@ class ServiceOrderController extends Controller
                 'status',
                 'ACTIVE'
             )
-            ->with('serviceGroup')
+            ->with('serviceGroups')
             ->orderBy('display_order')
             ->orderBy('name')
             ->get();
@@ -181,7 +182,7 @@ class ServiceOrderController extends Controller
             'status',
         ]);
 
-        if ($visit->status?->name === 'COMPLETED') {
+        if (! in_array($visit->status?->name, ['IN_EXAMINATION', 'RETURNING'], true)) {
             return redirect()
                 ->route(
                     'admin.visits.show',
@@ -189,11 +190,11 @@ class ServiceOrderController extends Controller
                 )
                 ->with(
                     'error',
-                    'Lượt khám đã hoàn tất, không thể tạo thêm chỉ định dịch vụ.'
+                    'Chỉ được chỉ định dịch vụ khi đang khám hoặc đang khám lại sau dịch vụ.'
                 );
         }
 
-        if (!$visit->doctor_id) {
+        if (! $visit->doctor_id) {
             return redirect()
                 ->route(
                     'admin.visits.show',
@@ -216,10 +217,9 @@ class ServiceOrderController extends Controller
             )
             ->first();
 
-        if (!$pendingServiceStatus) {
+        if (! $pendingServiceStatus) {
             throw ValidationException::withMessages([
-                'medical_service_ids' =>
-                    'Không tìm thấy trạng thái dịch vụ PENDING đang hoạt động.',
+                'medical_service_ids' => 'Không tìm thấy trạng thái dịch vụ PENDING đang hoạt động.',
             ]);
         }
 
@@ -234,10 +234,9 @@ class ServiceOrderController extends Controller
             )
             ->first();
 
-        if (!$unpaidPaymentStatus) {
+        if (! $unpaidPaymentStatus) {
             throw ValidationException::withMessages([
-                'medical_service_ids' =>
-                    'Không tìm thấy trạng thái thanh toán UNPAID đang hoạt động.',
+                'medical_service_ids' => 'Không tìm thấy trạng thái thanh toán UNPAID đang hoạt động.',
             ]);
         }
 
@@ -268,8 +267,7 @@ class ServiceOrderController extends Controller
             $selectedServiceIds->count()
         ) {
             throw ValidationException::withMessages([
-                'medical_service_ids' =>
-                    'Có dịch vụ không tồn tại hoặc đã ngừng hoạt động.',
+                'medical_service_ids' => 'Có dịch vụ không tồn tại hoặc đã ngừng hoạt động.',
             ]);
         }
 
@@ -282,6 +280,17 @@ class ServiceOrderController extends Controller
                 $selectedServiceIds,
                 $services
             ) {
+                $visit = MedicalVisit::with('status')->whereKey($visit->id)->lockForUpdate()->firstOrFail();
+                if (! in_array($visit->status?->name, ['IN_EXAMINATION', 'RETURNING'], true) || ! $visit->status?->allows_transition) {
+                    throw ValidationException::withMessages(['medical_service_ids' => 'Lượt khám không còn ở giai đoạn cho phép chỉ định dịch vụ.']);
+                }
+                if (! VisitStatus::where('name', 'WAITING_FOR_SERVICE')->where('is_active', true)->exists()) {
+                    throw ValidationException::withMessages(['medical_service_ids' => 'Chưa cấu hình trạng thái chờ thực hiện dịch vụ đang hoạt động.']);
+                }
+                $services = MedicalService::whereIn('id', $selectedServiceIds)->where('status', 'ACTIVE')->lockForUpdate()->get()->keyBy('id');
+                if ($services->count() !== $selectedServiceIds->count()) {
+                    throw ValidationException::withMessages(['medical_service_ids' => 'Có dịch vụ vừa ngừng hoạt động. Vui lòng chọn lại.']);
+                }
                 /*
                 |--------------------------------------------------------------------------
                 | Sinh mã phiếu chỉ định
@@ -308,7 +317,7 @@ class ServiceOrderController extends Controller
                 do {
                     $serviceOrderCode =
                         'CD'
-                        . str_pad(
+                        .str_pad(
                             (string) $nextOrderNumber,
                             6,
                             '0',
@@ -354,29 +363,21 @@ class ServiceOrderController extends Controller
                 |--------------------------------------------------------------------------
                 */
                 $order = ServiceOrder::create([
-                    'service_order_code' =>
-                        $serviceOrderCode,
+                    'service_order_code' => $serviceOrderCode,
 
-                    'medical_visit_id' =>
-                        $visit->id,
+                    'medical_visit_id' => $visit->id,
 
-                    'ordered_by_doctor_id' =>
-                        $visit->doctor_id,
+                    'ordered_by_doctor_id' => $visit->doctor_id,
 
-                    'ordered_at' =>
-                        now(),
+                    'ordered_at' => now(),
 
-                    'reason' =>
-                        $request->validated('reason'),
+                    'reason' => $request->validated('reason'),
 
-                    'instructions' =>
-                        $request->validated('instructions'),
+                    'instructions' => $request->validated('instructions'),
 
-                    'status' =>
-                        'ACTIVE',
+                    'status' => 'ACTIVE',
 
-                    'order_pdf_path' =>
-                        null,
+                    'order_pdf_path' => null,
                 ]);
 
                 /*
@@ -385,38 +386,28 @@ class ServiceOrderController extends Controller
                 |--------------------------------------------------------------------------
                 */
                 foreach (
-                    $selectedServiceIds
-                    as
-                    $serviceId
+                    $selectedServiceIds as $serviceId
                 ) {
                     $service = $services->get(
                         $serviceId
                     );
 
                     $item = ServiceOrderItem::create([
-                        'service_order_id' =>
-                            $order->id,
+                        'service_order_id' => $order->id,
 
-                        'medical_service_id' =>
-                            $service->id,
+                        'medical_service_id' => $service->id,
 
-                        'service_status_id' =>
-                            $pendingServiceStatus->id,
+                        'service_status_id' => $pendingServiceStatus->id,
 
-                        'price_at_order' =>
-                            $service->price,
+                        'price_at_order' => $service->price,
 
-                        'started_at' =>
-                            null,
+                        'started_at' => null,
 
-                        'completed_at' =>
-                            null,
+                        'completed_at' => null,
 
-                        'performed_by_employee_id' =>
-                            null,
+                        'performed_by_employee_id' => null,
 
-                        'execution_notes' =>
-                            null,
+                        'execution_notes' => null,
                     ]);
 
                     /*
@@ -427,7 +418,7 @@ class ServiceOrderController extends Controller
                     do {
                         $payableCode =
                             'PT'
-                            . str_pad(
+                            .str_pad(
                                 (string) $nextPayableNumber,
                                 6,
                                 '0',
@@ -451,44 +442,32 @@ class ServiceOrderController extends Controller
                     |--------------------------------------------------------------------------
                     */
                     Payable::create([
-                        'payable_code' =>
-                            $payableCode,
+                        'payable_code' => $payableCode,
 
-                        'medical_visit_id' =>
-                            $visit->id,
+                        'medical_visit_id' => $visit->id,
 
-                        'service_order_item_id' =>
-                            $item->id,
+                        'service_order_item_id' => $item->id,
 
-                        'payment_type' =>
-                            'SERVICE_FEE',
+                        'payment_type' => 'SERVICE_FEE',
 
-                        'description' =>
-                            'Phí dịch vụ '
-                            . $service->name
-                            . ' - '
-                            . $service->service_code,
+                        'description' => 'Phí dịch vụ '
+                            .$service->name
+                            .' - '
+                            .$service->service_code,
 
-                        'amount' =>
-                            $item->price_at_order,
+                        'amount' => $item->price_at_order,
 
-                        'payment_status_id' =>
-                            $unpaidPaymentStatus->id,
+                        'payment_status_id' => $unpaidPaymentStatus->id,
 
-                        'due_at' =>
-                            null,
+                        'due_at' => null,
 
-                        'payment_qr_data' =>
-                            null,
+                        'payment_qr_data' => null,
 
-                        'generated_at' =>
-                            now(),
+                        'generated_at' => now(),
 
-                        'paid_at' =>
-                            null,
+                        'paid_at' => null,
 
-                        'notes' =>
-                            null,
+                        'notes' => null,
                     ]);
                 }
 
@@ -521,8 +500,7 @@ class ServiceOrderController extends Controller
 
                     if ($waitingForServiceStatus) {
                         $visit->update([
-                            'visit_status_id' =>
-                                $waitingForServiceStatus->id,
+                            'visit_status_id' => $waitingForServiceStatus->id,
                         ]);
                     }
                 }

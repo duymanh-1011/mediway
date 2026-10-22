@@ -1,18 +1,17 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'doctor-schedules-index')
 
 @section(
     'title',
-    'Lịch làm việc bác sĩ - Mediway Admin'
+    'Lịch làm việc bác sĩ - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-        Admin /
-        Lịch & đặt khám /
-        Lịch làm việc bác sĩ
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Lịch và đặt khám</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Lịch làm việc bác sĩ</strong>
 @endsection
 
 @section('content')
@@ -38,7 +37,7 @@
             href="{{ route(
                 'admin.doctor-schedules.calendar'
             ) }}"
-            class="btn btn-secondary"
+            class="admin-btn admin-btn-secondary btn btn-secondary"
         >
             Lịch tháng
         </a>
@@ -98,17 +97,19 @@
     </div>
 
 
-    <div class="card">
-
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc lịch bác sĩ',
+        'description' => 'Lọc theo từ khóa, bác sĩ, chuyên khoa, phòng khám, ngày làm việc và trạng thái.',
+    ])
         <form
             method="GET"
             action="{{ route(
                 'admin.doctor-schedules.index'
             ) }}"
-            class="filter-form"
+            class="filter-form admin-filter-form"
         >
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Tìm kiếm
@@ -121,11 +122,12 @@
                     value="{{ $keyword }}"
                     placeholder="Mã/tên bác sĩ, chuyên khoa, phòng..."
                 >
+@error('keyword')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Bác sĩ
@@ -156,11 +158,12 @@
                     @endforeach
 
                 </select>
+@error('doctor_id')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Chuyên khoa
@@ -194,11 +197,12 @@
                     @endforeach
 
                 </select>
+@error('specialty_id')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Phòng khám
@@ -232,11 +236,12 @@
                     @endforeach
 
                 </select>
+@error('examination_room_id')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Ngày làm việc
@@ -248,11 +253,12 @@
                     class="filter-control"
                     value="{{ $workDate }}"
                 >
+@error('work_date')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Trạng thái
@@ -273,7 +279,7 @@
                             $status === 'ACTIVE'
                         )
                     >
-                        ACTIVE
+                        Đang hoạt động
                     </option>
 
                     <option
@@ -282,35 +288,31 @@
                             $status === 'INACTIVE'
                         )
                     >
-                        INACTIVE
+                        Ngừng hoạt động
                     </option>
 
                 </select>
+@error('status')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-actions">
+            <div class="filter-actions admin-filter-layout">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Tìm kiếm
-                </button>
 
-                <a
-                    href="{{ route(
+
+
+
+            </div>
+
+
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route(
                         'admin.doctor-schedules.index'
-                    ) }}"
-                    class="btn btn-secondary"
-                >
-                    Đặt lại
-                </a>
-
-            </div>
-
+                    ), 'searchOnly' => false])
         </form>
+    @endcomponent
+
+    <div class="card">
 
 
         <div class="table-wrapper">
@@ -320,13 +322,13 @@
                 <thead>
 
                     <tr>
-                        <th>#</th>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Ngày</th>
                         <th>Bác sĩ</th>
                         <th>Chuyên khoa</th>
                         <th>Phòng</th>
                         <th>Thời gian</th>
-                        <th>Slot</th>
+                        <th>Khung giờ</th>
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
                     </tr>
@@ -342,10 +344,7 @@
 
                     <tr>
 
-                        <td>
-                            {{ $doctorSchedules->firstItem()
-                                + $loop->index }}
-                        </td>
+                        @include('admin.layouts.partials.row-number', ['rows' => $doctorSchedules, 'index' => $loop->index])
 
                         <td>
                             <strong>
@@ -416,7 +415,7 @@
                                 <span
                                     class="badge badge-success"
                                 >
-                                    ACTIVE
+                                    Đang hoạt động
                                 </span>
 
                             @else
@@ -424,7 +423,7 @@
                                 <span
                                     class="badge badge-danger"
                                 >
-                                    INACTIVE
+                                    Ngừng hoạt động
                                 </span>
 
                             @endif
@@ -440,22 +439,18 @@
                                         'admin.doctor-schedules.show',
                                         $schedule
                                     ) }}"
-                                    class="action-link view"
-                                >
-                                    Chi tiết
-                                </a>
+                                    class="admin-btn admin-btn-detail action-link view"
+                                >Chi tiết</a>
 
                                 <a
                                     href="{{ route(
                                         'admin.doctor-schedules.edit',
                                         $schedule
                                     ) }}"
-                                    class="action-link edit"
-                                >
-                                    Sửa
-                                </a>
+                                    class="admin-btn admin-btn-secondary action-link edit"
+                                >Sửa</a>
 
-                                <form
+                                <form novalidate
                                     method="POST"
                                     action="{{ route(
                                         'admin.doctor-schedules.destroy',
@@ -463,7 +458,7 @@
                                     ) }}"
                                     onsubmit="
                                         return confirm(
-                                            'Bạn có chắc muốn xóa lịch làm việc này? Lịch có slot hoặc lịch hẹn sẽ không được phép xóa.'
+                                            'Bạn có chắc muốn xóa lịch làm việc này? Lịch có khung giờ hoặc lịch hẹn sẽ không được phép xóa.'
                                         );
                                     "
                                 >
@@ -515,191 +510,3 @@
     </div>
 
 @endsection
-
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-
-        gap: 20px;
-
-        margin-bottom: 20px;
-    }
-
-    .stats-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 14px;
-
-        margin-bottom: 18px;
-    }
-
-    .mini-card {
-        padding: 16px 18px;
-
-        background: #ffffff;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 11px;
-    }
-
-    .mini-card-label {
-        margin-bottom: 7px;
-
-        color: #64748b;
-
-        font-size: 13px;
-    }
-
-    .mini-card-value {
-        font-size: 26px;
-        font-weight: 700;
-    }
-
-    .mini-card-value.success {
-        color: #059669;
-    }
-
-    .filter-form {
-        display: grid;
-
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 14px;
-
-        align-items: end;
-
-        margin-bottom: 20px;
-    }
-
-    .filter-label {
-        display: block;
-
-        margin-bottom: 6px;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        color: #475569;
-
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .filter-control {
-        width: 100%;
-
-        padding: 10px 12px;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-
-        background: #ffffff;
-
-        outline: none;
-    }
-
-    .filter-actions {
-        display: flex;
-
-        gap: 8px;
-    }
-
-    .action-group {
-        display: flex;
-        align-items: center;
-
-        gap: 7px;
-    }
-
-    .action-group form {
-        margin: 0;
-    }
-
-    .action-link {
-        padding: 6px 9px;
-
-        border: none;
-        border-radius: 6px;
-
-        text-decoration: none;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        font-size: 13px;
-        font-weight: 600;
-
-        cursor: pointer;
-    }
-
-    .action-link.view {
-        background: #eff6ff;
-        color: #1d4ed8;
-    }
-
-    .action-link.edit {
-        background: #fffbeb;
-        color: #b45309;
-    }
-
-    .action-link.delete {
-        background: #fef2f2;
-        color: #b91c1c;
-    }
-
-    .empty-state {
-        padding: 40px !important;
-
-        text-align: center !important;
-
-        color: #94a3b8 !important;
-    }
-
-    .pagination-wrapper {
-        margin-top: 18px;
-    }
-
-    @media (max-width: 900px) {
-
-        .filter-form {
-            grid-template-columns: 1fr 1fr;
-        }
-
-    }
-
-    @media (max-width: 700px) {
-
-        .stats-grid,
-        .filter-form {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-</style>
-
-@endpush

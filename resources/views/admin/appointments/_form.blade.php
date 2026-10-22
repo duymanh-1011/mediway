@@ -126,7 +126,7 @@
         @error('patient_id')
 
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
 
         @enderror
@@ -310,7 +310,7 @@
         @error('appointment_time_slot_id')
 
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
 
         @enderror
@@ -353,7 +353,7 @@
     @error('reason_for_visit')
 
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
 
     @enderror
@@ -389,7 +389,7 @@
     @error('patient_notes')
 
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
 
     @enderror

@@ -10,23 +10,11 @@
             <span class="required">*</span>
         </label>
 
-        <input
-            type="text"
-            id="room_code"
-            name="room_code"
-            class="form-control"
-            value="{{ old(
-                'room_code',
-                $examinationRoom->room_code ?? ''
-            ) }}"
-            placeholder="Ví dụ: PKTMH01"
-            maxlength="30"
-            required
-        >
+        @include('admin.layouts.partials.business-code', ['field' => 'room_code', 'record' => $room ?? null])
 
         @error('room_code')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -58,7 +46,7 @@
 
         @error('name')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -90,7 +78,7 @@
 
         @error('room_number')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -120,7 +108,7 @@
 
         @error('floor')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -150,7 +138,7 @@
 
         @error('building')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -186,7 +174,7 @@
                     ) === 'ACTIVE'
                 )
             >
-                ACTIVE
+                Đang hoạt động
             </option>
 
             <option
@@ -198,14 +186,14 @@
                     ) === 'INACTIVE'
                 )
             >
-                INACTIVE
+                Ngừng hoạt động
             </option>
 
         </select>
 
         @error('status')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -235,7 +223,7 @@
 
     @error('location_instructions')
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
     @enderror
 
@@ -263,7 +251,7 @@
 
     @error('description')
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
     @enderror
 
@@ -291,7 +279,7 @@
 
     @error('notes')
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
     @enderror
 

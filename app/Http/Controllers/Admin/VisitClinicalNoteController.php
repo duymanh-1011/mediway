@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateVisitClinicalNoteRequest;
+use App\Models\Doctor;
 use App\Models\VisitClinicalNote;
+use App\Models\VisitStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class VisitClinicalNoteController extends Controller
@@ -143,11 +146,11 @@ class VisitClinicalNoteController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $doctors = \App\Models\Doctor::query()
+        $doctors = Doctor::query()
             ->orderBy('full_name')
             ->get();
 
-        $visitStatuses = \App\Models\VisitStatus::query()
+        $visitStatuses = VisitStatus::query()
             ->orderBy('process_order')
             ->orderBy('id')
             ->get();
@@ -189,6 +192,8 @@ class VisitClinicalNoteController extends Controller
             'medicalVisit.status',
         ]);
 
+        abort_unless($clinicalNote->medicalVisit->canRecordClinicalData(), 403, 'Chỉ được sửa hồ sơ khi đang khám hoặc đã quay lại bác sĩ.');
+
         return view(
             'admin.clinical-notes.edit',
             compact('clinicalNote')
@@ -209,46 +214,37 @@ class VisitClinicalNoteController extends Controller
             'medicalVisit.status'
         );
 
-        if (
-            $clinicalNote->medicalVisit?->status?->name
-            ===
-            'COMPLETED'
-        ) {
+        if (! $clinicalNote->medicalVisit->canRecordClinicalData()) {
             return back()->with(
                 'error',
-                'Không thể chỉnh sửa nội dung khám của lượt khám đã hoàn tất.'
+                'Chỉ được sửa hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
             );
         }
 
         $data = $request->validated();
 
-        $clinicalNote->update([
-            'reason_for_visit' =>
-                $data['reason_for_visit'] ?? null,
+        DB::transaction(function () use ($clinicalNote, $data): void {
+            $clinicalNote->medicalVisit->lockForClinicalWrite();
+            $clinicalNote->update([
+                'reason_for_visit' => $data['reason_for_visit'] ?? null,
 
-            'current_symptoms' =>
-                $data['current_symptoms'] ?? null,
+                'current_symptoms' => $data['current_symptoms'] ?? null,
 
-            'present_illness_history' =>
-                $data['present_illness_history'] ?? null,
+                'present_illness_history' => $data['present_illness_history'] ?? null,
 
-            'relevant_medical_history' =>
-                $data['relevant_medical_history'] ?? null,
+                'relevant_medical_history' => $data['relevant_medical_history'] ?? null,
 
-            'physical_examination' =>
-                $data['physical_examination'] ?? null,
+                'physical_examination' => $data['physical_examination'] ?? null,
 
-            'initial_assessment' =>
-                $data['initial_assessment'] ?? null,
+                'initial_assessment' => $data['initial_assessment'] ?? null,
 
-            'notes' =>
-                $data['notes'] ?? null,
+                'notes' => $data['notes'] ?? null,
 
-            'recorded_at' =>
-                $data['recorded_at']
-                ?? $clinicalNote->recorded_at
-                ?? now(),
-        ]);
+                'recorded_at' => $data['recorded_at']
+                    ?? $clinicalNote->recorded_at
+                    ?? now(),
+            ]);
+        }, 3);
 
         return redirect()
             ->route(

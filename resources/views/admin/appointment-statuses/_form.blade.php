@@ -9,7 +9,7 @@
         <input
             type="text"
             class="form-control readonly-control"
-            value="{{ $appointmentStatus->name }}"
+            value="{{ \App\Models\AdminDisplay::label($appointmentStatus->name) }}"
             readonly
         >
 
@@ -44,7 +44,7 @@
 
         @error('process_order')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -99,7 +99,7 @@
 
         @error('allows_transition')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -154,7 +154,7 @@
 
         @error('is_active')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -179,12 +179,12 @@
         placeholder="Mô tả ý nghĩa và cách sử dụng trạng thái..."
     >{{ old(
         'description',
-        $appointmentStatus->description
+        \App\Models\AdminDisplay::text($appointmentStatus->description)
     ) }}</textarea>
 
     @error('description')
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
     @enderror
 

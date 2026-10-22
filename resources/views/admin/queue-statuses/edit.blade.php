@@ -1,19 +1,23 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'queue-statuses-edit')
 
 @section('title', 'Sửa trạng thái hàng đợi')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard /
-        Trạng thái hàng đợi /
-        {{ $queueStatus->name }} /
-        Sửa
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Cấu hình trạng thái</span>
+    <span aria-hidden="true">/</span>
+    <span>Trạng thái hàng đợi</span>
+    <span aria-hidden="true">/</span>
+    <span>{{ \App\Models\AdminDisplay::label($queueStatus->name) }}</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
 
-    <div style="margin-bottom: 22px;">
+    <div class="admin-u-ed1667a9">
 
         <h1 class="page-title">
             Sửa trạng thái hàng đợi
@@ -21,7 +25,7 @@
 
         <p class="page-description">
             Cập nhật cấu hình trạng thái
-            {{ $queueStatus->name }}.
+            {{ \App\Models\AdminDisplay::label($queueStatus->name) }}.
         </p>
 
     </div>
@@ -29,7 +33,7 @@
 
     <div class="card">
 
-        <form
+        <form novalidate
             method="POST"
             action="{{ route(
                 'admin.queue-statuses.update',
@@ -41,35 +45,22 @@
             @method('PUT')
 
 
-            <div style="
-                display: grid;
-                gap: 18px;
-            ">
+            <div class="admin-u-6691f14f">
 
                 <div>
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Tên trạng thái
                     </label>
 
-                    <input
+                    <input class="admin-u-f3c8faba"
                         type="text"
-                        value="{{ $queueStatus->name }}"
+                        value="{{ \App\Models\AdminDisplay::label($queueStatus->name) }}"
                         disabled
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: #f8fafc;
-                        "
+
                     >
 
-                    <small style="color: #64748b;">
+                    <small class="admin-u-a6f48144">
                         Tên trạng thái là khóa nghiệp vụ và không được thay đổi.
                     </small>
 
@@ -78,38 +69,26 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="description"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Mô tả
                     </label>
 
-                    <textarea
+                    <textarea class="admin-u-419e8d7e"
                         id="description"
                         name="description"
                         rows="4"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >{{ old(
                         'description',
                         $queueStatus->description
                     ) }}</textarea>
 
                     @error('description')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -118,18 +97,14 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="process_order"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Thứ tự xử lý
                     </label>
 
-                    <input
+                    <input class="admin-u-419e8d7e"
                         type="number"
                         id="process_order"
                         name="process_order"
@@ -139,20 +114,12 @@
                             $queueStatus->process_order
                         ) }}"
                         required
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
 
                     @error('process_order')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -161,24 +128,14 @@
 
                 <div>
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Cho phép chuyển trạng thái
                     </label>
 
-                    <select
+                    <select class="admin-u-184ecf5a"
                         name="allows_transition"
                         required
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option
@@ -208,11 +165,8 @@
                     </select>
 
                     @error('allows_transition')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -221,24 +175,14 @@
 
                 <div>
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Trạng thái hoạt động
                     </label>
 
-                    <select
+                    <select class="admin-u-184ecf5a"
                         name="is_active"
                         required
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option
@@ -268,21 +212,15 @@
                     </select>
 
                     @error('is_active')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
                 </div>
 
 
-                <div style="
-                    display: flex;
-                    gap: 8px;
-                ">
+                <div class="admin-u-5786f359">
 
                     <button
                         type="submit"
@@ -296,10 +234,8 @@
                             'admin.queue-statuses.show',
                             $queueStatus
                         ) }}"
-                        class="btn btn-secondary"
-                    >
-                        Hủy
-                    </a>
+                        class="admin-btn admin-btn-secondary btn btn-secondary"
+                    >Hủy</a>
 
                 </div>
 

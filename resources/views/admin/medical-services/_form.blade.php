@@ -1,5 +1,34 @@
+@php
+    $selectedServiceGroupIds =
+        old('service_group_ids');
+
+    if (
+        $selectedServiceGroupIds === null
+        &&
+        isset($medicalService)
+    ) {
+        $selectedServiceGroupIds =
+            $medicalService
+                ->serviceGroups
+                ->pluck('id')
+                ->map(
+                    fn ($id) =>
+                        (string) $id
+                )
+                ->all();
+    }
+
+    $selectedServiceGroupIds =
+        array_map(
+            'strval',
+            $selectedServiceGroupIds ?? $selectedGroupIds ?? []
+        );
+@endphp
+
+
 <div class="form-grid">
 
+    {{-- Mã dịch vụ --}}
     <div class="form-group">
 
         <label
@@ -10,79 +39,18 @@
             <span class="required">*</span>
         </label>
 
-        <input
-            type="text"
-            id="service_code"
-            name="service_code"
-            class="form-control"
-            value="{{ old(
-                'service_code',
-                $medicalService->service_code ?? ''
-            ) }}"
-            placeholder="Ví dụ: DVXN001"
-            maxlength="30"
-            required
-        >
+        @include('admin.layouts.partials.business-code', ['field' => 'service_code', 'record' => $medicalService ?? null])
 
         @error('service_code')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
     </div>
 
-    <div class="form-group">
 
-        <label
-            for="service_group_id"
-            class="form-label"
-        >
-            Nhóm dịch vụ
-            <span class="required">*</span>
-        </label>
-
-        <select
-            id="service_group_id"
-            name="service_group_id"
-            class="form-control"
-            required
-        >
-
-            <option value="">
-                -- Chọn nhóm dịch vụ --
-            </option>
-
-            @foreach ($serviceGroups as $serviceGroup)
-
-                <option
-                    value="{{ $serviceGroup->id }}"
-                    @selected(
-                        (string) old(
-                            'service_group_id',
-                            $medicalService->service_group_id ?? ''
-                        )
-                        ===
-                        (string) $serviceGroup->id
-                    )
-                >
-                    {{ $serviceGroup->service_group_code }}
-                    -
-                    {{ $serviceGroup->name }}
-                </option>
-
-            @endforeach
-
-        </select>
-
-        @error('service_group_id')
-            <div class="field-error">
-                {{ $message }}
-            </div>
-        @enderror
-
-    </div>
-
+    {{-- Tên dịch vụ --}}
     <div class="form-group">
 
         <label
@@ -109,12 +77,14 @@
 
         @error('name')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
     </div>
 
+
+    {{-- Giá --}}
     <div class="form-group">
 
         <label
@@ -142,12 +112,14 @@
 
         @error('price')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
     </div>
 
+
+    {{-- Đơn vị --}}
     <div class="form-group">
 
         <label
@@ -174,12 +146,14 @@
 
         @error('unit')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
     </div>
 
+
+    {{-- Thời lượng --}}
     <div class="form-group">
 
         <label
@@ -205,12 +179,14 @@
 
         @error('estimated_duration_minutes')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
     </div>
 
+
+    {{-- Thứ tự --}}
     <div class="form-group">
 
         <label
@@ -237,12 +213,14 @@
 
         @error('display_order')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
     </div>
 
+
+    {{-- Trạng thái --}}
     <div class="form-group">
 
         <label
@@ -260,20 +238,17 @@
             required
         >
 
-            <option value="">
-                -- Chọn trạng thái --
-            </option>
-
             <option
                 value="ACTIVE"
                 @selected(
                     old(
                         'status',
-                        $medicalService->status ?? 'ACTIVE'
+                        $medicalService->status
+                            ?? 'ACTIVE'
                     ) === 'ACTIVE'
                 )
             >
-                ACTIVE
+                Đang hoạt động
             </option>
 
             <option
@@ -281,18 +256,19 @@
                 @selected(
                     old(
                         'status',
-                        $medicalService->status ?? ''
+                        $medicalService->status
+                            ?? ''
                     ) === 'INACTIVE'
                 )
             >
-                INACTIVE
+                Ngừng hoạt động
             </option>
 
         </select>
 
         @error('status')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -300,6 +276,101 @@
 
 </div>
 
+
+{{-- =====================================================
+     NHÓM DỊCH VỤ
+===================================================== --}}
+
+<div class="form-group">
+
+    <label class="form-label">
+        Nhóm dịch vụ
+        <span class="required">*</span>
+    </label>
+
+    <p class="admin-u-3093b01f"
+
+    >
+        Có thể chọn nhiều nhóm cho cùng một dịch vụ.
+    </p>
+
+    <div class="admin-u-ac346560"
+
+    >
+
+        @forelse ($serviceGroups as $serviceGroup)
+
+            <label class="admin-u-f8f78645"
+
+            >
+
+                <input
+                    type="checkbox"
+                    name="service_group_ids[]"
+                    value="{{ $serviceGroup->id }}"
+                    @checked(
+                        in_array(
+                            (string) $serviceGroup->id,
+                            $selectedServiceGroupIds,
+                            true
+                        )
+                    )
+                >
+
+                <span>
+
+                    <strong class="admin-u-b50f5cea"
+
+                    >
+                        {{ $serviceGroup->name }}
+                    </strong>
+
+                    <span class="admin-u-fe84f0ba"
+
+                    >
+                        {{ $serviceGroup->service_group_code }}
+
+                        @if (
+                            $serviceGroup->status
+                            ===
+                            'INACTIVE'
+                        )
+                            · Ngừng hoạt động
+                        @endif
+                    </span>
+
+                </span>
+
+            </label>
+
+        @empty
+
+            <div class="admin-u-980de5d0"
+
+            >
+                Chưa có nhóm dịch vụ để lựa chọn.
+            </div>
+
+        @endforelse
+
+    </div>
+
+    @error('service_group_ids')
+        <div class="field-error">
+            {{ \App\Models\AdminDisplay::text($message) }}
+        </div>
+    @enderror
+
+    @error('service_group_ids.*')
+        <div class="field-error">
+            {{ \App\Models\AdminDisplay::text($message) }}
+        </div>
+    @enderror
+
+</div>
+
+
+{{-- Mô tả --}}
 <div class="form-group">
 
     <label
@@ -322,12 +393,14 @@
 
     @error('description')
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
     @enderror
 
 </div>
 
+
+{{-- Hướng dẫn chuẩn bị --}}
 <div class="form-group">
 
     <label
@@ -350,12 +423,14 @@
 
     @error('preparation_instructions')
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
     @enderror
 
 </div>
 
+
+{{-- Lưu ý --}}
 <div class="form-group">
 
     <label
@@ -378,7 +453,7 @@
 
     @error('precautions')
         <div class="field-error">
-            {{ $message }}
+            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
     @enderror
 

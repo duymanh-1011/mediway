@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePaymentTransactionRequest;
+use App\Models\MedicalVisit;
 use App\Models\Payable;
 use App\Models\PaymentStatus;
 use App\Models\PaymentTransaction;
+use App\Models\ServiceOrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -60,22 +62,22 @@ class PaymentTransactionController extends Controller
                     ->where(
                         'payment_transactions.transaction_code',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'payables.payable_code',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'medical_visits.visit_code',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'payment_transactions.provider_transaction_code',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     );
             });
         }
@@ -278,10 +280,9 @@ class PaymentTransactionController extends Controller
             )
             ->first();
 
-        if (!$paidStatus) {
+        if (! $paidStatus) {
             throw ValidationException::withMessages([
-                'payment_method' =>
-                    'Không tìm thấy trạng thái PAID hợp lệ cho phép thực hiện dịch vụ.',
+                'payment_method' => 'Không tìm thấy trạng thái PAID hợp lệ cho phép thực hiện dịch vụ.',
             ]);
         }
 
@@ -301,6 +302,14 @@ class PaymentTransactionController extends Controller
                     | Khóa payable trong lúc thanh toán
                     |--------------------------------------------------------------------------
                     */
+                    MedicalVisit::whereKey($payable->medical_visit_id)->lockForUpdate()->firstOrFail();
+                    $item = $payable->service_order_item_id
+                        ? ServiceOrderItem::with(['serviceStatus', 'serviceOrder'])->whereKey($payable->service_order_item_id)->lockForUpdate()->firstOrFail()
+                        : null;
+                    if ($item && ($item->serviceStatus?->name === 'CANCELLED'
+                        || $item->serviceOrder->medical_visit_id !== $payable->medical_visit_id)) {
+                        throw ValidationException::withMessages(['payment_method' => 'Không thể thanh toán dịch vụ đã hủy hoặc không khớp lượt khám.']);
+                    }
                     $lockedPayable =
                         Payable::query()
                             ->with('paymentStatus')
@@ -316,15 +325,13 @@ class PaymentTransactionController extends Controller
 
                     if ($lockedStatus === 'PAID') {
                         throw ValidationException::withMessages([
-                            'payment_method' =>
-                                'Khoản phải thanh toán đã được thanh toán bởi một giao dịch khác.',
+                            'payment_method' => 'Khoản phải thanh toán đã được thanh toán bởi một giao dịch khác.',
                         ]);
                     }
 
                     if ($lockedStatus === 'CANCELLED') {
                         throw ValidationException::withMessages([
-                            'payment_method' =>
-                                'Khoản phải thanh toán đã bị hủy.',
+                            'payment_method' => 'Khoản phải thanh toán đã bị hủy.',
                         ]);
                     }
 
@@ -357,7 +364,7 @@ class PaymentTransactionController extends Controller
                     do {
                         $transactionCode =
                             'GD'
-                            . str_pad(
+                            .str_pad(
                                 (string) $nextNumber,
                                 6,
                                 '0',
@@ -384,59 +391,46 @@ class PaymentTransactionController extends Controller
                     */
                     $transaction =
                         PaymentTransaction::create([
-                            'transaction_code' =>
-                                $transactionCode,
+                            'transaction_code' => $transactionCode,
 
-                            'payable_id' =>
-                                $lockedPayable->id,
+                            'payable_id' => $lockedPayable->id,
 
                             /*
                             | Không nhận số tiền từ form.
                             | Luôn lấy số tiền của payable.
                             */
-                            'amount' =>
-                                $lockedPayable->amount,
+                            'amount' => $lockedPayable->amount,
 
-                            'payment_method' =>
-                                $validated[
+                            'payment_method' => $validated[
                                     'payment_method'
                                 ],
 
-                            'transaction_result' =>
-                                'SUCCESS',
+                            'transaction_result' => 'SUCCESS',
 
-                            'provider_transaction_code' =>
-                                $validated[
+                            'provider_transaction_code' => $validated[
                                     'provider_transaction_code'
                                 ] ?? null,
 
-                            'started_at' =>
-                                $now,
+                            'started_at' => $now,
 
-                            'paid_at' =>
-                                $now,
+                            'paid_at' => $now,
 
-                            'confirmed_at' =>
-                                $now,
+                            'confirmed_at' => $now,
 
                             /*
                             | Hiện chức năng này thao tác trong khu vực Admin.
                             | Chưa ánh xạ tài khoản Admin sang employee,
                             | nên không tự gán sai employee_id.
                             */
-                            'collected_by_employee_id' =>
-                                null,
+                            'collected_by_employee_id' => null,
 
-                            'payment_content' =>
-                                $validated[
+                            'payment_content' => $validated[
                                     'payment_content'
                                 ] ?? null,
 
-                            'failure_reason' =>
-                                null,
+                            'failure_reason' => null,
 
-                            'notes' =>
-                                $validated[
+                            'notes' => $validated[
                                     'notes'
                                 ] ?? null,
                         ]);
@@ -447,11 +441,9 @@ class PaymentTransactionController extends Controller
                     |--------------------------------------------------------------------------
                     */
                     $lockedPayable->update([
-                        'payment_status_id' =>
-                            $paidStatus->id,
+                        'payment_status_id' => $paidStatus->id,
 
-                        'paid_at' =>
-                            $now,
+                        'paid_at' => $now,
                     ]);
 
                     /*
@@ -583,100 +575,79 @@ class PaymentTransactionController extends Controller
         }
 
         $newValues = [
-            'transaction_code' =>
-                $transaction
-                    ->transaction_code,
+            'transaction_code' => $transaction
+                ->transaction_code,
 
-            'payable_id' =>
-                $transaction
-                    ->payable_id,
+            'payable_id' => $transaction
+                ->payable_id,
 
-            'payable_code' =>
-                $payable
-                    ->payable_code,
+            'payable_code' => $payable
+                ->payable_code,
 
-            'amount' =>
-                $transaction
-                    ->amount,
+            'amount' => $transaction
+                ->amount,
 
-            'payment_method' =>
-                $transaction
-                    ->payment_method,
+            'payment_method' => $transaction
+                ->payment_method,
 
-            'transaction_result' =>
-                $transaction
-                    ->transaction_result,
+            'transaction_result' => $transaction
+                ->transaction_result,
 
-            'provider_transaction_code' =>
-                $transaction
-                    ->provider_transaction_code,
+            'provider_transaction_code' => $transaction
+                ->provider_transaction_code,
 
-            'paid_at' =>
-                $transaction
-                    ->paid_at
-                    ?->format(
-                        'Y-m-d H:i:s'
-                    ),
+            'paid_at' => $transaction
+                ->paid_at
+                ?->format(
+                    'Y-m-d H:i:s'
+                ),
         ];
 
         DB::table('audit_logs')
             ->insert([
-                'user_id' =>
-                    Auth::id(),
+                'user_id' => Auth::id(),
 
-                'role_name_snapshot' =>
-                    $roleNameSnapshot,
+                'role_name_snapshot' => $roleNameSnapshot,
 
-                'action' =>
-                    'CREATE',
+                'action' => 'CREATE',
 
-                'entity_type' =>
-                    'payment_transactions',
+                'entity_type' => 'payment_transactions',
 
-                'entity_id' =>
-                    $transaction->id,
+                'entity_id' => $transaction->id,
 
-                'entity_business_code' =>
-                    $transaction
-                        ->transaction_code,
+                'entity_business_code' => $transaction
+                    ->transaction_code,
 
-                'old_values' =>
-                    json_encode(
-                        [],
-                        JSON_UNESCAPED_UNICODE
-                        |
-                        JSON_UNESCAPED_SLASHES
-                    ),
+                'old_values' => json_encode(
+                    [],
+                    JSON_UNESCAPED_UNICODE
+                    |
+                    JSON_UNESCAPED_SLASHES
+                ),
 
-                'new_values' =>
-                    json_encode(
-                        $newValues,
-                        JSON_UNESCAPED_UNICODE
-                        |
-                        JSON_UNESCAPED_SLASHES
-                    ),
+                'new_values' => json_encode(
+                    $newValues,
+                    JSON_UNESCAPED_UNICODE
+                    |
+                    JSON_UNESCAPED_SLASHES
+                ),
 
-                'description' =>
-                    'Ghi nhận thanh toán '
-                    . $transaction
+                'description' => 'Ghi nhận thanh toán '
+                    .$transaction
                         ->transaction_code
-                    . ' cho khoản '
-                    . $payable
+                    .' cho khoản '
+                    .$payable
                         ->payable_code
-                    . '.',
+                    .'.',
 
-                'ip_address' =>
-                    $request->ip(),
+                'ip_address' => $request->ip(),
 
-                'user_agent' =>
-                    $request
-                        ->userAgent(),
+                'user_agent' => $request
+                    ->userAgent(),
 
-                'performed_at' =>
-                    now(),
+                'performed_at' => now(),
 
-                'created_at' =>
-                    now(),
+                'created_at' => now(),
             ]);
     }
 }

@@ -1,21 +1,19 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'doctor-schedules-calendar')
 
 @section(
     'title',
-    'Lịch bác sĩ theo tháng - Mediway Admin'
+    'Lịch bác sĩ theo tháng - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-
-        Admin /
-        Lịch & đặt khám /
-        Lịch làm việc bác sĩ /
-        Lịch tháng
-
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Lịch và đặt khám</span>
+    <span aria-hidden="true">/</span>
+    <span>Lịch làm việc bác sĩ</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Lịch tháng</strong>
 @endsection
 
 @section('content')
@@ -41,7 +39,7 @@
                 href="{{ route(
                     'admin.doctor-schedules.index'
                 ) }}"
-                class="btn btn-secondary"
+                class="admin-btn admin-btn-secondary btn btn-secondary"
             >
                 ☰ Danh sách
             </a>
@@ -60,17 +58,19 @@
     </div>
 
 
-    <div class="card filter-card">
-
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc lịch bác sĩ theo tháng',
+        'description' => 'Lọc theo tháng, bác sĩ, chuyên khoa và phòng khám.',
+    ])
         <form
             method="GET"
             action="{{ route(
                 'admin.doctor-schedules.calendar'
             ) }}"
-            class="filter-form"
+            class="filter-form admin-filter-form"
         >
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Tháng
@@ -82,11 +82,12 @@
                     class="filter-control"
                     value="{{ $month }}"
                 >
+@error('month')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Bác sĩ
@@ -119,11 +120,12 @@
                     @endforeach
 
                 </select>
+@error('doctor_id')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Chuyên khoa
@@ -157,11 +159,12 @@
                     @endforeach
 
                 </select>
+@error('specialty_id')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Phòng khám
@@ -197,33 +200,25 @@
                     @endforeach
 
                 </select>
+@error('examination_room_id')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
 
-            <div class="filter-actions">
+            <div class="filter-actions admin-filter-layout">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Xem lịch
-                </button>
 
-                <a
-                    href="{{ route(
+
+
+
+            </div>
+
+
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route(
                         'admin.doctor-schedules.calendar'
-                    ) }}"
-                    class="btn btn-secondary"
-                >
-                    Đặt lại
-                </a>
-
-            </div>
-
+                    ), 'searchOnly' => false])
         </form>
-
-    </div>
+    @endcomponent
 
 
     <div class="calendar-navigation">
@@ -440,307 +435,3 @@
     </div>
 
 @endsection
-
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-
-        gap: 20px;
-
-        margin-bottom: 20px;
-    }
-
-    .header-actions {
-        display: flex;
-
-        gap: 8px;
-    }
-
-    .filter-card {
-        margin-bottom: 18px;
-    }
-
-    .filter-form {
-        display: grid;
-
-        grid-template-columns:
-            170px
-            minmax(200px, 1fr)
-            minmax(180px, 1fr)
-            minmax(180px, 1fr)
-            auto;
-
-        gap: 12px;
-
-        align-items: end;
-    }
-
-    .filter-label {
-        display: block;
-
-        margin-bottom: 6px;
-
-        color: #475569;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .filter-control {
-        width: 100%;
-
-        padding: 9px 11px;
-
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-
-        background: #ffffff;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        outline: none;
-    }
-
-    .filter-actions {
-        display: flex;
-
-        gap: 8px;
-    }
-
-    .calendar-navigation {
-        display: grid;
-
-        grid-template-columns:
-            auto
-            1fr
-            auto;
-
-        gap: 15px;
-
-        align-items: center;
-
-        margin-bottom: 15px;
-    }
-
-    .calendar-month-title {
-        text-align: center;
-
-        color: #0f172a;
-
-        font-size: 22px;
-        font-weight: 700;
-    }
-
-    .calendar-container {
-        overflow-x: auto;
-
-        border: 1px solid #dbe3ef;
-        border-radius: 10px;
-
-        background: #ffffff;
-    }
-
-    .calendar-week-header {
-        min-width: 1050px;
-
-        display: grid;
-
-        grid-template-columns:
-            repeat(7, minmax(150px, 1fr));
-
-        background: #f8fafc;
-
-        border-bottom: 1px solid #dbe3ef;
-    }
-
-    .calendar-week-header div {
-        padding: 11px 8px;
-
-        text-align: center;
-
-        color: #334155;
-
-        font-size: 13px;
-        font-weight: 700;
-
-        border-right: 1px solid #e2e8f0;
-    }
-
-    .calendar-week-header div:last-child {
-        border-right: none;
-    }
-
-    .calendar-grid {
-        min-width: 1050px;
-
-        display: grid;
-
-        grid-template-columns:
-            repeat(7, minmax(150px, 1fr));
-    }
-
-    .calendar-day {
-        min-height: 150px;
-
-        padding: 8px;
-
-        border-right: 1px solid #e2e8f0;
-        border-bottom: 1px solid #e2e8f0;
-
-        background: #ffffff;
-    }
-
-    .calendar-day:nth-child(7n) {
-        border-right: none;
-    }
-
-    .calendar-day.other-month {
-        background: #f8fafc;
-    }
-
-    .calendar-day.today {
-        background: #eff6ff;
-    }
-
-    .calendar-day-number {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-
-        margin-bottom: 8px;
-
-        font-size: 14px;
-        font-weight: 700;
-    }
-
-    .other-month .calendar-day-number {
-        color: #94a3b8;
-    }
-
-    .today-label {
-        padding: 2px 5px;
-
-        border-radius: 5px;
-
-        background: #2563eb;
-        color: #ffffff;
-
-        font-size: 10px;
-    }
-
-    .calendar-events {
-        display: flex;
-        flex-direction: column;
-
-        gap: 6px;
-    }
-
-    .calendar-event {
-        display: block;
-
-        padding: 7px;
-
-        border: 1px solid #bfdbfe;
-        border-radius: 7px;
-
-        background: #eff6ff;
-
-        color: #1e3a8a;
-
-        text-decoration: none;
-
-        transition:
-            transform 0.12s ease,
-            box-shadow 0.12s ease;
-    }
-
-    .calendar-event:hover {
-        transform: translateY(-1px);
-
-        box-shadow:
-            0 2px 8px
-            rgba(15, 23, 42, 0.08);
-    }
-
-    .calendar-event.inactive {
-        border-color: #e2e8f0;
-
-        background: #f8fafc;
-        color: #64748b;
-    }
-
-    .event-time {
-        margin-bottom: 3px;
-
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .event-doctor {
-        margin-bottom: 2px;
-
-        overflow: hidden;
-
-        font-size: 12px;
-        font-weight: 600;
-
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .event-room {
-        font-size: 11px;
-    }
-
-    .no-event {
-        color: #cbd5e1;
-
-        text-align: center;
-
-        font-size: 12px;
-    }
-
-    @media (max-width: 1100px) {
-
-        .filter-form {
-            grid-template-columns:
-                repeat(2, 1fr);
-        }
-
-    }
-
-    @media (max-width: 700px) {
-
-        .page-header {
-            flex-direction: column;
-        }
-
-        .filter-form {
-            grid-template-columns: 1fr;
-        }
-
-        .calendar-navigation {
-            grid-template-columns: 1fr;
-
-            text-align: center;
-        }
-
-    }
-
-</style>
-
-@endpush

@@ -2,9 +2,12 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\ClinicalDocument;
+use App\Models\ServiceResult;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreServiceResultRequest extends FormRequest
 {
@@ -35,17 +38,10 @@ class StoreServiceResultRequest extends FormRequest
                 'json',
             ],
 
-            'result_pdf_path' => [
-                'nullable',
-                'string',
-                'max:500',
-            ],
-
-            'result_image_path' => [
-                'nullable',
-                'string',
-                'max:500',
-            ],
+            'result_pdf' => ClinicalDocument::pdfRules(),
+            'result_image' => ClinicalDocument::imageRules(),
+            'result_pdf_path' => ['prohibited'],
+            'result_image_path' => ['prohibited'],
 
             'verified_by_user_id' => [
                 'nullable',
@@ -76,29 +72,33 @@ class StoreServiceResultRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<\Closure(Validator): void>
+     */
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            $hasUpload = collect(array_keys(ClinicalDocument::RESULT_FILES))->contains(
+                fn (string $field): bool => $this->hasFile($field) && ! $validator->errors()->has($field)
+            );
+            if (! $hasUpload && ! ServiceResult::hasContentValues($this->only(['result_summary', 'result_conclusion']))) {
+                $validator->errors()->add('result_summary', 'Kết quả phải có ít nhất nội dung tóm tắt, kết luận hoặc tệp PDF/ảnh đính kèm.');
+            }
+        }];
+    }
+
     public function messages(): array
     {
         return [
-            'result_parameters.json' =>
-                'Thông số kết quả phải là JSON hợp lệ.',
+            'result_parameters.json' => 'Thông số kết quả phải là JSON hợp lệ.',
 
-            'result_pdf_path.max' =>
-                'Đường dẫn PDF không được vượt quá 500 ký tự.',
+            'verified_by_user_id.integer' => 'Người xác nhận không hợp lệ.',
 
-            'result_image_path.max' =>
-                'Đường dẫn ảnh không được vượt quá 500 ký tự.',
+            'verified_by_user_id.exists' => 'Người xác nhận phải là bác sĩ hợp lệ.',
 
-            'verified_by_user_id.integer' =>
-                'Người xác nhận không hợp lệ.',
+            'resulted_at.date' => 'Thời gian trả kết quả không hợp lệ.',
 
-            'verified_by_user_id.exists' =>
-                'Người xác nhận phải là bác sĩ hợp lệ.',
-
-            'resulted_at.date' =>
-                'Thời gian trả kết quả không hợp lệ.',
-
-            'confirm_create.accepted' =>
-                'Bạn phải xác nhận trước khi lưu kết quả dịch vụ.',
+            'confirm_create.accepted' => 'Bạn phải xác nhận trước khi lưu kết quả dịch vụ.',
         ];
     }
 }

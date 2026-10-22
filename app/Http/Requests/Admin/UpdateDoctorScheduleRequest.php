@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateDoctorScheduleRequest extends FormRequest
 {
@@ -17,19 +19,19 @@ class UpdateDoctorScheduleRequest extends FormRequest
             'doctor_id' => [
                 'required',
                 'integer',
-                'exists:doctors,id',
+                Rule::exists('doctors', 'id')->where(fn (Builder $query): Builder => $this->input('status') === 'ACTIVE' ? $query->where('status', 'ACTIVE') : $query),
             ],
 
             'specialty_id' => [
                 'required',
                 'integer',
-                'exists:specialties,id',
+                Rule::exists('specialties', 'id')->where(fn (Builder $query): Builder => $this->input('status') === 'ACTIVE' ? $query->where('status', 'ACTIVE') : $query),
             ],
 
             'examination_room_id' => [
                 'required',
                 'integer',
-                'exists:examination_rooms,id',
+                Rule::exists('examination_rooms', 'id')->where(fn (Builder $query): Builder => $this->input('status') === 'ACTIVE' ? $query->where('status', 'ACTIVE') : $query),
             ],
 
             'work_date' => [
@@ -63,41 +65,29 @@ class UpdateDoctorScheduleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'doctor_id.required' =>
-                'Vui lòng chọn bác sĩ.',
+            'doctor_id.required' => 'Vui lòng chọn bác sĩ.',
 
-            'doctor_id.exists' =>
-                'Bác sĩ được chọn không tồn tại.',
+            'doctor_id.exists' => 'Bác sĩ được chọn không tồn tại hoặc đã ngừng hoạt động.',
 
-            'specialty_id.required' =>
-                'Vui lòng chọn chuyên khoa.',
+            'specialty_id.required' => 'Vui lòng chọn chuyên khoa.',
 
-            'specialty_id.exists' =>
-                'Chuyên khoa được chọn không tồn tại.',
+            'specialty_id.exists' => 'Chuyên khoa được chọn không tồn tại hoặc đã ngừng hoạt động.',
 
-            'examination_room_id.required' =>
-                'Vui lòng chọn phòng khám.',
+            'examination_room_id.required' => 'Vui lòng chọn phòng khám.',
 
-            'examination_room_id.exists' =>
-                'Phòng khám được chọn không tồn tại.',
+            'examination_room_id.exists' => 'Phòng khám được chọn không tồn tại hoặc đã ngừng hoạt động.',
 
-            'work_date.required' =>
-                'Vui lòng chọn ngày làm việc.',
+            'work_date.required' => 'Vui lòng chọn ngày làm việc.',
 
-            'start_time.required' =>
-                'Vui lòng nhập giờ bắt đầu.',
+            'start_time.required' => 'Vui lòng nhập giờ bắt đầu.',
 
-            'end_time.required' =>
-                'Vui lòng nhập giờ kết thúc.',
+            'end_time.required' => 'Vui lòng nhập giờ kết thúc.',
 
-            'end_time.after' =>
-                'Giờ kết thúc phải sau giờ bắt đầu.',
+            'end_time.after' => 'Giờ kết thúc phải sau giờ bắt đầu.',
 
-            'status.required' =>
-                'Vui lòng chọn trạng thái.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' =>
-                'Trạng thái lịch làm việc không hợp lệ.',
+            'status.in' => 'Trạng thái lịch làm việc không hợp lệ.',
         ];
     }
 }

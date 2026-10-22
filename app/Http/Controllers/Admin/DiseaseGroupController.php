@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreDiseaseGroupRequest;
 use App\Http\Requests\Admin\UpdateDiseaseGroupRequest;
 use App\Models\DiseaseGroup;
-
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -40,11 +41,11 @@ class DiseaseGroupController extends Controller
                         'like',
                         "%{$keyword}%"
                     )
-                    ->orWhere(
-                        'name',
-                        'like',
-                        "%{$keyword}%"
-                    );
+                        ->orWhere(
+                            'name',
+                            'like',
+                            "%{$keyword}%"
+                        );
                 }
             );
         }
@@ -156,8 +157,16 @@ class DiseaseGroupController extends Controller
     }
 
     public function show(
+        Request $request,
         DiseaseGroup $diseaseGroup
-    ) {
+    ): View {
+        $filters = $request->validate([
+            'keyword' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'in:ACTIVE,INACTIVE'],
+        ]);
+        $keyword = trim($filters['keyword'] ?? '');
+        $status = $filters['status'] ?? null;
+
         $totalDiseases =
             DB::table('diseases')
                 ->where(
@@ -204,8 +213,16 @@ class DiseaseGroupController extends Controller
                     'common_symptoms',
                     'status',
                 ])
+                ->when($keyword !== '', fn (Builder $query): Builder => $query->where(
+                    fn (Builder $search): Builder => $search->where('disease_code', 'like', "%{$keyword}%")
+                        ->orWhere('name', 'like', "%{$keyword}%")
+                        ->orWhere('alternative_name', 'like', "%{$keyword}%")
+                ))
+                ->when($status, fn (Builder $query): Builder => $query->where('status', $status))
                 ->orderBy('name')
-                ->get();
+                ->orderBy('id')
+                ->paginate(10)
+                ->withQueryString();
 
         return view(
             'admin.disease-groups.show',

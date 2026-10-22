@@ -15,10 +15,7 @@ class StoreSpecialtyRequest extends FormRequest
     {
         return [
             'specialty_code' => [
-                'required',
-                'string',
-                'max:30',
-                'unique:specialties,specialty_code',
+                'exclude',
             ],
 
             'name' => [
@@ -60,38 +57,27 @@ class StoreSpecialtyRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'specialty_code.required' =>
-                'Vui lòng nhập mã chuyên khoa.',
+            'specialty_code.required' => 'Vui lòng nhập mã chuyên khoa.',
 
-            'specialty_code.max' =>
-                'Mã chuyên khoa không được vượt quá 30 ký tự.',
+            'specialty_code.max' => 'Mã chuyên khoa không được vượt quá 30 ký tự.',
 
-            'specialty_code.unique' =>
-                'Mã chuyên khoa đã tồn tại.',
+            'specialty_code.unique' => 'Mã chuyên khoa đã tồn tại.',
 
-            'name.required' =>
-                'Vui lòng nhập tên chuyên khoa.',
+            'name.required' => 'Vui lòng nhập tên chuyên khoa.',
 
-            'name.max' =>
-                'Tên chuyên khoa không được vượt quá 150 ký tự.',
+            'name.max' => 'Tên chuyên khoa không được vượt quá 150 ký tự.',
 
-            'name.unique' =>
-                'Tên chuyên khoa đã tồn tại.',
+            'name.unique' => 'Tên chuyên khoa đã tồn tại.',
 
-            'image.image' =>
-                'Tệp tải lên phải là hình ảnh.',
+            'image.image' => 'Tệp tải lên phải là hình ảnh.',
 
-            'image.mimes' =>
-                'Ảnh chỉ chấp nhận JPG, JPEG, PNG hoặc WEBP.',
+            'image.mimes' => 'Ảnh chỉ chấp nhận JPG, JPEG, PNG hoặc WEBP.',
 
-            'image.max' =>
-                'Dung lượng ảnh không được vượt quá 2MB.',
+            'image.max' => 'Dung lượng ảnh không được vượt quá 2MB.',
 
-            'status.required' =>
-                'Vui lòng chọn trạng thái.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' =>
-                'Trạng thái chuyên khoa không hợp lệ.',
+            'status.in' => 'Trạng thái chuyên khoa không hợp lệ.',
         ];
     }
 }

@@ -4,15 +4,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateMedicalVisitStatusRequest;
+use App\Models\AdminLookup;
 use App\Models\AppointmentStatus;
 use App\Models\Doctor;
 use App\Models\ExaminationRoom;
 use App\Models\MedicalVisit;
+use App\Models\ServiceOrderItem;
 use App\Models\Specialty;
 use App\Models\VisitStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class MedicalVisitController extends Controller
@@ -146,17 +149,11 @@ class MedicalVisitController extends Controller
             ->orderBy('process_order')
             ->get();
 
-        $doctors = Doctor::query()
-            ->orderBy('full_name')
-            ->get();
+        $doctors = AdminLookup::initial(Doctor::query()->orderBy('full_name'), $request->input('doctor_id'));
 
-        $specialties = Specialty::query()
-            ->orderBy('name')
-            ->get();
+        $specialties = AdminLookup::initial(Specialty::query()->orderBy('name'), $request->input('specialty_id'));
 
-        $examinationRooms = ExaminationRoom::query()
-            ->orderBy('name')
-            ->get();
+        $examinationRooms = AdminLookup::initial(ExaminationRoom::query()->orderBy('name'), $request->input('examination_room_id'));
 
         $receptionSources = MedicalVisit::query()
             ->whereNotNull('reception_source')
@@ -210,6 +207,27 @@ class MedicalVisitController extends Controller
             'clinicalNote',
             'diagnoses.disease',
             'conclusion.doctor',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Chỉ định dịch vụ
+            |--------------------------------------------------------------------------
+            */
+            'serviceOrders' => function ($query) {
+                $query
+                    ->orderByDesc('ordered_at')
+                    ->orderByDesc('id');
+            },
+
+            'serviceOrders.orderedByDoctor',
+
+            'serviceOrders.items' => function ($query) {
+                $query->orderBy('id');
+            },
+
+            'serviceOrders.items.medicalService',
+
+            'serviceOrders.items.serviceStatus',
         ]);
 
         $allowedStatusNames =
@@ -261,14 +279,14 @@ class MedicalVisitController extends Controller
         $currentStatus =
             $medicalVisit->status;
 
-        if (!$currentStatus) {
+        if (! $currentStatus) {
             return back()->with(
                 'error',
                 'Lượt khám chưa có trạng thái hợp lệ.'
             );
         }
 
-        if (!$currentStatus->allows_transition) {
+        if (! $currentStatus->allows_transition) {
             return back()->with(
                 'error',
                 'Trạng thái hiện tại không cho phép chuyển tiếp.'
@@ -294,7 +312,7 @@ class MedicalVisitController extends Controller
             );
 
         if (
-            !in_array(
+            ! in_array(
                 $newStatus->name,
                 $allowedTransitions,
                 true
@@ -303,10 +321,10 @@ class MedicalVisitController extends Controller
             return back()->with(
                 'error',
                 'Không thể chuyển từ trạng thái '
-                . $currentStatus->name
-                . ' sang '
-                . $newStatus->name
-                . '.'
+                .$currentStatus->name
+                .' sang '
+                .$newStatus->name
+                .'.'
             );
         }
 
@@ -315,9 +333,19 @@ class MedicalVisitController extends Controller
                 $medicalVisit,
                 $newStatus
             ) {
+                $medicalVisit = MedicalVisit::with('status')->whereKey($medicalVisit->id)->lockForUpdate()->firstOrFail();
+                if (! $medicalVisit->status?->allows_transition || ! in_array($newStatus->name, $this->allowedTransitions($medicalVisit->status?->name), true)) {
+                    throw ValidationException::withMessages(['visit_status_id' => 'Trạng thái lượt khám đã thay đổi. Vui lòng tải lại trang.']);
+                }
+                if ($newStatus->name === 'COMPLETED' && ServiceOrderItem::whereHas('serviceOrder', fn ($q) => $q->where('medical_visit_id', $medicalVisit->id))
+                    ->unresolved()->exists()) {
+                    throw ValidationException::withMessages(['visit_status_id' => 'Lượt khám còn dịch vụ chưa hoàn tất.']);
+                }
+                if ($newStatus->name === 'COMPLETED' && (! $medicalVisit->diagnoses()->exists() || ! $medicalVisit->conclusion()->exists())) {
+                    throw ValidationException::withMessages(['visit_status_id' => 'Phải có đầy đủ chẩn đoán và kết luận trước khi hoàn tất lượt khám.']);
+                }
                 $updateData = [
-                    'visit_status_id' =>
-                        $newStatus->id,
+                    'visit_status_id' => $newStatus->id,
                 ];
 
                 /*
@@ -332,7 +360,7 @@ class MedicalVisitController extends Controller
                     'IN_EXAMINATION'
                 ) {
                     if (
-                        !$medicalVisit
+                        ! $medicalVisit
                             ->examination_started_at
                     ) {
                         $updateData[
@@ -363,6 +391,9 @@ class MedicalVisitController extends Controller
                 $medicalVisit->update(
                     $updateData
                 );
+                if ($newStatus->name === 'COMPLETED') {
+                    $medicalVisit->completeOpenQueues($medicalVisit->examination_ended_at);
+                }
 
                 /*
                 |--------------------------------------------------------------------------
@@ -421,16 +452,12 @@ class MedicalVisitController extends Controller
             ],
 
             'IN_EXAMINATION' => [
-                'WAITING_FOR_SERVICE',
                 'COMPLETED',
             ],
 
-            'WAITING_FOR_SERVICE' => [
-                'RETURNING',
-            ],
+            'WAITING_FOR_SERVICE' => [],
 
             'RETURNING' => [
-                'WAITING_FOR_SERVICE',
                 'COMPLETED',
             ],
 
@@ -451,7 +478,7 @@ class MedicalVisitController extends Controller
         string $statusName
     ): void {
         if (
-            !$medicalVisit
+            ! $medicalVisit
                 ->appointment_id
         ) {
             return;
@@ -469,7 +496,7 @@ class MedicalVisitController extends Controller
                 )
                 ->first();
 
-        if (!$appointmentStatus) {
+        if (! $appointmentStatus) {
             return;
         }
 
@@ -480,11 +507,9 @@ class MedicalVisitController extends Controller
                     ->appointment_id
             )
             ->update([
-                'appointment_status_id' =>
-                    $appointmentStatus->id,
+                'appointment_status_id' => $appointmentStatus->id,
 
-                'updated_at' =>
-                    now(),
+                'updated_at' => now(),
             ]);
     }
 }

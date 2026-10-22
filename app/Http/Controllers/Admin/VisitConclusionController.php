@@ -8,6 +8,7 @@ use App\Models\Doctor;
 use App\Models\VisitConclusion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class VisitConclusionController extends Controller
@@ -208,14 +209,10 @@ class VisitConclusionController extends Controller
             'medicalVisit.status',
         ]);
 
-        if (
-            $conclusion->medicalVisit?->status?->name
-            ===
-            'COMPLETED'
-        ) {
+        if (! $conclusion->medicalVisit->canRecordClinicalData()) {
             abort(
                 403,
-                'Không thể chỉnh sửa kết luận của lượt khám đã hoàn tất.'
+                'Chỉ được sửa hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
             );
         }
 
@@ -249,14 +246,10 @@ class VisitConclusionController extends Controller
             'medicalVisit.status'
         );
 
-        if (
-            $conclusion->medicalVisit?->status?->name
-            ===
-            'COMPLETED'
-        ) {
+        if (! $conclusion->medicalVisit->canRecordClinicalData()) {
             return back()->with(
                 'error',
-                'Không thể chỉnh sửa kết luận của lượt khám đã hoàn tất.'
+                'Chỉ được sửa hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
             );
         }
 
@@ -270,43 +263,36 @@ class VisitConclusionController extends Controller
 
         $hasFollowUp = (bool) $data['has_follow_up'];
 
-        $conclusion->update([
-            'doctor_id' =>
-                $data['doctor_id'],
+        DB::transaction(function () use ($conclusion, $data, $hasFollowUp): void {
+            $conclusion->medicalVisit->lockForClinicalWrite();
+            $conclusion->update([
+                'doctor_id' => $data['doctor_id'],
 
-            'professional_conclusion' =>
-                $data['professional_conclusion'],
+                'professional_conclusion' => $data['professional_conclusion'],
 
-            'disposition' =>
-                $data['disposition'] ?? null,
+                'disposition' => $data['disposition'] ?? null,
 
-            'treatment_plan' =>
-                $data['treatment_plan'] ?? null,
+                'treatment_plan' => $data['treatment_plan'] ?? null,
 
-            'instructions' =>
-                $data['instructions'] ?? null,
+                'instructions' => $data['instructions'] ?? null,
 
-            'has_follow_up' =>
-                $hasFollowUp,
+                'has_follow_up' => $hasFollowUp,
 
-            'follow_up_date' =>
-                $hasFollowUp
-                    ? ($data['follow_up_date'] ?? null)
-                    : null,
+                'follow_up_date' => $hasFollowUp
+                        ? ($data['follow_up_date'] ?? null)
+                        : null,
 
-            'follow_up_reason' =>
-                $hasFollowUp
-                    ? ($data['follow_up_reason'] ?? null)
-                    : null,
+                'follow_up_reason' => $hasFollowUp
+                        ? ($data['follow_up_reason'] ?? null)
+                        : null,
 
-            'notes' =>
-                $data['notes'] ?? null,
+                'notes' => $data['notes'] ?? null,
 
-            'concluded_at' =>
-                $data['concluded_at']
-                ?? $conclusion->concluded_at
-                ?? now(),
-        ]);
+                'concluded_at' => $data['concluded_at']
+                    ?? $conclusion->concluded_at
+                    ?? now(),
+            ]);
+        }, 3);
 
         return redirect()
             ->route(

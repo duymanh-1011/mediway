@@ -1,7 +1,7 @@
 <header class="admin-header">
 
     <div class="header-left-title">
-        Hệ thống quản trị Mediway
+        Hệ thống quản lý bệnh viện Mediway
     </div>
 
     <div class="header-user">
@@ -25,7 +25,7 @@
             </div>
 
             <div class="header-user-role">
-                {{ auth()->user()->role->name }}
+                {{ \App\Models\AdminDisplay::label(auth()->user()->role?->name) }}
             </div>
 
         </div>

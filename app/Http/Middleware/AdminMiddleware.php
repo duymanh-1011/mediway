@@ -11,6 +11,7 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
+        app()->setLocale('vi');
         if (! Auth::check()) {
             return redirect()->route('admin.login');
         }

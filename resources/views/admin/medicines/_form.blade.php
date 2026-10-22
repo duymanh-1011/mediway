@@ -10,23 +10,11 @@
             <span class="required">*</span>
         </label>
 
-        <input
-            type="text"
-            id="medicine_code"
-            name="medicine_code"
-            class="form-control"
-            value="{{ old(
-                'medicine_code',
-                $medicine->medicine_code ?? ''
-            ) }}"
-            placeholder="Ví dụ: MED001"
-            maxlength="30"
-            required
-        >
+        @include('admin.layouts.partials.business-code', ['field' => 'medicine_code', 'record' => $medicine ?? null])
 
         @error('medicine_code')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -57,7 +45,7 @@
 
         @error('name')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -86,7 +74,7 @@
 
         @error('active_ingredient')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -115,7 +103,7 @@
 
         @error('strength')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -144,7 +132,7 @@
 
         @error('dosage_form')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -173,7 +161,7 @@
 
         @error('unit')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -202,7 +190,7 @@
 
         @error('route_of_administration')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -231,7 +219,7 @@
 
         @error('manufacturer')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -260,7 +248,7 @@
 
         @error('country_of_origin')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -296,7 +284,7 @@
                     ) === 'ACTIVE'
                 )
             >
-                ACTIVE
+                Đang hoạt động
             </option>
 
             <option
@@ -308,14 +296,14 @@
                     ) === 'INACTIVE'
                 )
             >
-                INACTIVE
+                Ngừng hoạt động
             </option>
 
         </select>
 
         @error('status')
             <div class="field-error">
-                {{ $message }}
+                {{ \App\Models\AdminDisplay::text($message) }}
             </div>
         @enderror
 
@@ -342,6 +330,7 @@
         'description',
         $medicine->description ?? ''
     ) }}</textarea>
+@error('description')<div class="field-error">{{ $message }}</div>@enderror
 
 </div>
 
@@ -364,6 +353,7 @@
         'indications',
         $medicine->indications ?? ''
     ) }}</textarea>
+@error('indications')<div class="field-error">{{ $message }}</div>@enderror
 
 </div>
 
@@ -386,6 +376,7 @@
         'contraindications',
         $medicine->contraindications ?? ''
     ) }}</textarea>
+@error('contraindications')<div class="field-error">{{ $message }}</div>@enderror
 
 </div>
 
@@ -408,6 +399,7 @@
         'warnings',
         $medicine->warnings ?? ''
     ) }}</textarea>
+@error('warnings')<div class="field-error">{{ $message }}</div>@enderror
 
 </div>
 
@@ -430,6 +422,7 @@
         'common_side_effects',
         $medicine->common_side_effects ?? ''
     ) }}</textarea>
+@error('common_side_effects')<div class="field-error">{{ $message }}</div>@enderror
 
 </div>
 
@@ -452,6 +445,7 @@
         'storage_instructions',
         $medicine->storage_instructions ?? ''
     ) }}</textarea>
+@error('storage_instructions')<div class="field-error">{{ $message }}</div>@enderror
 
 </div>
 
@@ -474,5 +468,6 @@
         'notes',
         $medicine->notes ?? ''
     ) }}</textarea>
+@error('notes')<div class="field-error">{{ $message }}</div>@enderror
 
 </div>

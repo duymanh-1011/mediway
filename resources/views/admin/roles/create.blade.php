@@ -1,13 +1,16 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'roles-create')
 
 @section('title', 'Thêm vai trò - Mediway')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Admin / Hệ thống /
-        <a href="{{ route('admin.roles.index') }}">Vai trò</a>
-        / Thêm mới
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Hệ thống</span>
+    <span aria-hidden="true">/</span>
+    <a href="{{ route('admin.roles.index') }}">Vai trò</a>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Thêm mới</strong>
 @endsection
 
 @section('content')
@@ -26,7 +29,7 @@
         </a>
     </div>
 
-    <form action="{{ route('admin.roles.store') }}" method="POST">
+    <form novalidate action="{{ route('admin.roles.store') }}" method="POST">
         @csrf
 
         <div class="card role-form-card">
@@ -52,7 +55,7 @@
                 >
 
                 @error('name')
-                    <div class="field-error">{{ $message }}</div>
+                    <div class="field-error">{{ \App\Models\AdminDisplay::text($message) }}</div>
                 @enderror
 
                 <small>
@@ -74,7 +77,7 @@
                 >{{ old('description') }}</textarea>
 
                 @error('description')
-                    <div class="field-error">{{ $message }}</div>
+                    <div class="field-error">{{ \App\Models\AdminDisplay::text($message) }}</div>
                 @enderror
             </div>
 
@@ -99,7 +102,7 @@
                 </select>
 
                 @error('status')
-                    <div class="field-error">{{ $message }}</div>
+                    <div class="field-error">{{ \App\Models\AdminDisplay::text($message) }}</div>
                 @enderror
             </div>
 
@@ -126,121 +129,3 @@
 
 </div>
 @endsection
-
-@push('styles')
-<style>
-    .role-form-page { max-width: 960px; margin: 0 auto; }
-
-    .role-page-heading {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 22px;
-    }
-
-    .role-page-heading .page-description { margin-bottom: 0; }
-
-    .role-form-card { padding: 28px; }
-
-    .role-card-heading {
-        padding-bottom: 18px;
-        border-bottom: 1px solid #e2e8f0;
-        margin-bottom: 24px;
-    }
-
-    .role-card-heading h2 {
-        font-size: 18px;
-        margin: 0 0 8px;
-    }
-
-    .role-card-heading p {
-        color: #64748b;
-        font-size: 13px;
-        margin: 0;
-    }
-
-    .role-form-group { margin-bottom: 22px; }
-
-    .role-form-group label {
-        display: block;
-        margin-bottom: 8px;
-        font-size: 13px;
-        font-weight: 700;
-        color: #334155;
-    }
-
-    .required { color: #dc2626; }
-
-    .role-form-group input,
-    .role-form-group textarea,
-    .role-form-group select {
-        display: block;
-        width: 100%;
-        padding: 11px 13px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        background: #fff;
-        color: #0f172a;
-        outline: none;
-    }
-
-    .role-form-group textarea {
-        resize: vertical;
-        min-height: 110px;
-    }
-
-    .role-form-group input:focus,
-    .role-form-group textarea:focus,
-    .role-form-group select:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px #dbeafe;
-    }
-
-    .role-form-group .input-invalid { border-color: #dc2626; }
-
-    .role-form-group small {
-        display: block;
-        color: #64748b;
-        font-size: 12px;
-        margin-top: 7px;
-    }
-.field-error {
-        color: #dc2626;
-        font-size: 12px;
-        margin-top: 6px;
-    }
-
-    .role-info-box {
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 24px;
-        font-size: 13px;
-        color: #1e40af;
-    }
-
-    .role-info-box p {
-        margin: 6px 0 0;
-        line-height: 1.6;
-    }
-
-    .role-form-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-        border-top: 1px solid #e2e8f0;
-        padding-top: 22px;
-    }
-
-    @media (max-width: 650px) {
-        .role-page-heading {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .role-form-card { padding: 18px; }
-    }
-</style>
-@endpush

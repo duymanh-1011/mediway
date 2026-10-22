@@ -3,14 +3,29 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreServiceResultRequest;
 use App\Http\Requests\Admin\UpdateServiceResultRequest;
+use App\Models\ClinicalDocument;
+use App\Models\ServiceOrderItem;
 use App\Models\ServiceResult;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ServiceResultController extends Controller
 {
+    public function document(int $id, string $type): StreamedResponse
+    {
+        abort_unless(in_array($type, ['pdf', 'image'], true), 404);
+        $result = ServiceResult::findOrFail($id);
+
+        return app(ClinicalDocument::class)->response(
+            $result->getAttribute('result_'.$type.'_path'), 'service-results/'.$result->service_order_item_id, $type
+        );
+    }
+
     /**
      * Danh sách kết quả dịch vụ.
      */
@@ -25,11 +40,6 @@ class ServiceResultController extends Controller
                 'verifier:id,business_code',
             ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Tìm kiếm
-        |--------------------------------------------------------------------------
-        */
         if ($request->filled('q')) {
             $keyword = trim($request->q);
 
@@ -38,12 +48,12 @@ class ServiceResultController extends Controller
                     ->where(
                         'result_summary',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'result_conclusion',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhereHas(
                         'serviceOrderItem.serviceOrder',
@@ -51,7 +61,7 @@ class ServiceResultController extends Controller
                             $orderQuery->where(
                                 'service_order_code',
                                 'like',
-                                '%' . $keyword . '%'
+                                '%'.$keyword.'%'
                             );
                         }
                     )
@@ -61,7 +71,7 @@ class ServiceResultController extends Controller
                             $visitQuery->where(
                                 'visit_code',
                                 'like',
-                                '%' . $keyword . '%'
+                                '%'.$keyword.'%'
                             );
                         }
                     )
@@ -72,12 +82,12 @@ class ServiceResultController extends Controller
                                 ->where(
                                     'service_code',
                                     'like',
-                                    '%' . $keyword . '%'
+                                    '%'.$keyword.'%'
                                 )
                                 ->orWhere(
                                     'name',
                                     'like',
-                                    '%' . $keyword . '%'
+                                    '%'.$keyword.'%'
                                 );
                         }
                     )
@@ -87,18 +97,13 @@ class ServiceResultController extends Controller
                             $userQuery->where(
                                 'business_code',
                                 'like',
-                                '%' . $keyword . '%'
+                                '%'.$keyword.'%'
                             );
                         }
                     );
             });
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Lọc thời gian trả kết quả
-        |--------------------------------------------------------------------------
-        */
         if ($request->filled('date_from')) {
             $query->whereDate(
                 'resulted_at',
@@ -115,11 +120,6 @@ class ServiceResultController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Lọc người xác nhận
-        |--------------------------------------------------------------------------
-        */
         if ($request->filled('verified_by_user_id')) {
             $query->where(
                 'verified_by_user_id',
@@ -127,11 +127,6 @@ class ServiceResultController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Người xác nhận đang xuất hiện trong dữ liệu
-        |--------------------------------------------------------------------------
-        */
         $verifiers = DB::table('users')
             ->whereIn(
                 'id',
@@ -145,11 +140,6 @@ class ServiceResultController extends Controller
                 'business_code',
             ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Phân trang
-        |--------------------------------------------------------------------------
-        */
         $results = $query
             ->orderByDesc('resulted_at')
             ->orderByDesc('id')
@@ -163,6 +153,275 @@ class ServiceResultController extends Controller
                 'verifiers'
             )
         );
+    }
+
+    /**
+     * Form tạo kết quả dịch vụ.
+     */
+    public function create(
+        ServiceOrderItem $serviceOrderItem
+    ) {
+        $serviceOrderItem->load([
+            'serviceOrder.medicalVisit',
+            'serviceOrder.orderedByDoctor',
+            'medicalService',
+            'serviceStatus',
+            'performer',
+            'result',
+        ]);
+
+        if ($serviceOrderItem->result) {
+            return redirect()
+                ->route(
+                    'admin.service-results.show',
+                    $serviceOrderItem->result->id
+                )
+                ->with(
+                    'error',
+                    'Dịch vụ này đã có kết quả.'
+                );
+        }
+
+        if (
+            $serviceOrderItem
+                ->serviceStatus
+                ?->name
+            !== 'PROCESSING'
+        ) {
+            return redirect()
+                ->route(
+                    'admin.service-orders.show',
+                    $serviceOrderItem->service_order_id
+                )
+                ->with(
+                    'error',
+                    'Chỉ có thể nhập kết quả khi dịch vụ đang được thực hiện.'
+                );
+        }
+
+        $verifiers = DB::table('users')
+            ->join(
+                'roles',
+                'roles.id',
+                '=',
+                'users.role_id'
+            )
+            ->where(
+                'roles.name',
+                'Doctor'
+            )
+            ->orderBy('users.business_code')
+            ->get([
+                'users.id',
+                'users.business_code',
+            ]);
+
+        return view(
+            'admin.service-results.create',
+            compact(
+                'serviceOrderItem',
+                'verifiers'
+            )
+        );
+    }
+
+    /**
+     * Lưu kết quả dịch vụ.
+     */
+    public function store(
+        StoreServiceResultRequest $request,
+        ServiceOrderItem $serviceOrderItem
+    ) {
+        $validated = $request->validated();
+
+        $result = ClinicalDocument::transaction(
+            function (ClinicalDocument $documents) use (
+                $request,
+                $serviceOrderItem,
+                $validated
+            ) {
+                $lockedItem = ServiceOrderItem::query()
+                    ->with([
+                        'serviceOrder',
+                        'medicalService',
+                        'serviceStatus',
+                        'result',
+                    ])
+                    ->lockForUpdate()
+                    ->findOrFail(
+                        $serviceOrderItem->id
+                    );
+
+                if ($lockedItem->result) {
+                    return $lockedItem->result;
+                }
+
+                if (
+                    $lockedItem
+                        ->serviceStatus
+                        ?->name
+                    !== 'PROCESSING'
+                ) {
+                    return null;
+                }
+
+                $paths = $documents->store($request, 'service-results/'.$lockedItem->id, ClinicalDocument::RESULT_FILES);
+                $result = ServiceResult::create([
+                    'service_order_item_id' => $lockedItem->id,
+
+                    'result_summary' => $validated['result_summary']
+                        ?? null,
+
+                    'result_conclusion' => $validated['result_conclusion']
+                        ?? null,
+
+                    'result_parameters' => null,
+
+                    'result_pdf_path' => $paths['result_pdf_path']
+                        ?? null,
+
+                    'result_image_path' => $paths['result_image_path']
+                        ?? null,
+
+                    'verified_by_user_id' => $validated['verified_by_user_id']
+                        ?? null,
+
+                    'resulted_at' => $validated['resulted_at']
+                        ?? null,
+
+                    'notes' => $validated['notes']
+                        ?? null,
+                ]);
+
+                if (! $result->hasContent()) {
+                    throw ValidationException::withMessages(['result_summary' => 'Kết quả phải có nội dung hoặc tệp hợp lệ còn tồn tại.']);
+                }
+
+                $roleNameSnapshot = null;
+
+                if (Auth::check()) {
+                    $roleNameSnapshot = DB::table('users')
+                        ->join(
+                            'roles',
+                            'roles.id',
+                            '=',
+                            'users.role_id'
+                        )
+                        ->where(
+                            'users.id',
+                            Auth::id()
+                        )
+                        ->value('roles.name');
+                }
+
+                $newValues = [
+                    'service_order_item_id' => $result->service_order_item_id,
+
+                    'result_summary' => $result->result_summary,
+
+                    'result_conclusion' => $result->result_conclusion,
+
+                    'result_pdf_path' => $result->result_pdf_path,
+
+                    'result_image_path' => $result->result_image_path,
+
+                    'verified_by_user_id' => $result->verified_by_user_id,
+
+                    'resulted_at' => $result->resulted_at
+                        ?->format(
+                            'Y-m-d H:i:s'
+                        ),
+
+                    'notes' => $result->notes,
+                ];
+
+                $orderCode =
+                    $lockedItem
+                        ->serviceOrder
+                        ?->service_order_code;
+
+                $serviceCode =
+                    $lockedItem
+                        ->medicalService
+                        ?->service_code;
+
+                $description =
+                    'Tạo kết quả dịch vụ';
+
+                if ($orderCode && $serviceCode) {
+                    $description .=
+                        ' của phiếu '
+                        .$orderCode
+                        .', dịch vụ '
+                        .$serviceCode
+                        .'.';
+                } else {
+                    $description .= '.';
+                }
+
+                DB::table('audit_logs')->insert([
+                    'user_id' => Auth::id(),
+
+                    'role_name_snapshot' => $roleNameSnapshot,
+
+                    'action' => 'CREATE',
+
+                    'entity_type' => 'service_results',
+
+                    'entity_id' => $result->id,
+
+                    'entity_business_code' => null,
+
+                    'old_values' => json_encode(
+                        [],
+                        JSON_UNESCAPED_UNICODE
+                        |
+                        JSON_UNESCAPED_SLASHES
+                    ),
+
+                    'new_values' => json_encode(
+                        $newValues,
+                        JSON_UNESCAPED_UNICODE
+                        |
+                        JSON_UNESCAPED_SLASHES
+                    ),
+
+                    'description' => $description,
+
+                    'ip_address' => $request->ip(),
+
+                    'user_agent' => $request->userAgent(),
+
+                    'performed_at' => now(),
+
+                    'created_at' => now(),
+                ]);
+
+                return $result;
+            }
+        );
+
+        if (! $result) {
+            return redirect()
+                ->route(
+                    'admin.service-orders.show',
+                    $serviceOrderItem->service_order_id
+                )
+                ->with(
+                    'error',
+                    'Không thể tạo kết quả vì dịch vụ không còn ở trạng thái PROCESSING.'
+                );
+        }
+
+        return redirect()
+            ->route(
+                'admin.service-results.show',
+                $result->id
+            )
+            ->with(
+                'success',
+                'Tạo kết quả dịch vụ thành công.'
+            );
     }
 
     /**
@@ -205,11 +464,6 @@ class ServiceResultController extends Controller
             ])
             ->findOrFail($id);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Danh sách bác sĩ có thể xác nhận kết quả
-        |--------------------------------------------------------------------------
-        */
         $verifiers = DB::table('users')
             ->join(
                 'roles',
@@ -237,7 +491,7 @@ class ServiceResultController extends Controller
     }
 
     /**
-     * Cập nhật kết quả dịch vụ có kiểm soát.
+     * Cập nhật kết quả dịch vụ.
      */
     public function update(
         UpdateServiceResultRequest $request,
@@ -250,89 +504,31 @@ class ServiceResultController extends Controller
             ])
             ->findOrFail($id);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validation đã được xử lý trong FormRequest
-        |--------------------------------------------------------------------------
-        */
         $validated = $request->validated();
 
         /*
         |--------------------------------------------------------------------------
-        | Dữ liệu cũ để ghi Audit Log
-        |--------------------------------------------------------------------------
-        */
-        $oldValues = [
-            'result_summary' =>
-            $result->result_summary,
-
-            'result_conclusion' =>
-            $result->result_conclusion,
-
-            'result_parameters' =>
-            $result->result_parameters,
-
-            'result_pdf_path' =>
-            $result->result_pdf_path,
-
-            'result_image_path' =>
-            $result->result_image_path,
-
-            'verified_by_user_id' =>
-            $result->verified_by_user_id,
-
-            'resulted_at' =>
-            $result->resulted_at
-                ? $result->resulted_at->format(
-                    'Y-m-d H:i:s'
-                )
-                : null,
-
-            'notes' =>
-            $result->notes,
-        ];
-
-        /*
-        |--------------------------------------------------------------------------
-        | Dữ liệu cập nhật
+        | Không cập nhật result_parameters.
+        | Trường này không còn hiển thị trên form.
         |--------------------------------------------------------------------------
         */
         $updateData = [
-            'result_summary' =>
-            $validated['result_summary'] ?? null,
+            'result_summary' => $validated['result_summary']
+                ?? null,
 
-            'result_conclusion' =>
-            $validated['result_conclusion'] ?? null,
+            'result_conclusion' => $validated['result_conclusion']
+                ?? null,
 
-            'result_parameters' =>
-            !empty($validated['result_parameters'])
-                ? json_decode(
-                    $validated['result_parameters'],
-                    true
-                )
-                : null,
+            'verified_by_user_id' => $validated['verified_by_user_id']
+                ?? null,
 
-            'result_pdf_path' =>
-            $validated['result_pdf_path'] ?? null,
+            'resulted_at' => $validated['resulted_at']
+                ?? null,
 
-            'result_image_path' =>
-            $validated['result_image_path'] ?? null,
-
-            'verified_by_user_id' =>
-            $validated['verified_by_user_id'] ?? null,
-
-            'resulted_at' =>
-            $validated['resulted_at'] ?? null,
-
-            'notes' =>
-            $validated['notes'] ?? null,
+            'notes' => $validated['notes']
+                ?? null,
         ];
 
-        /*
-        |--------------------------------------------------------------------------
-        | Role snapshot của người đang thao tác
-        |--------------------------------------------------------------------------
-        */
         $roleNameSnapshot = null;
 
         if (Auth::check()) {
@@ -350,150 +546,114 @@ class ServiceResultController extends Controller
                 ->value('roles.name');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Transaction
-        |--------------------------------------------------------------------------
-        */
-        DB::transaction(function () use (
-            $request,
-            $result,
-            $updateData,
-            $oldValues,
-            $roleNameSnapshot
-        ) {
-            /*
-            |--------------------------------------------------------------------------
-            | Cập nhật kết quả
-            |--------------------------------------------------------------------------
-            */
-            $result->update($updateData);
+        ClinicalDocument::transaction(
+            function (ClinicalDocument $documents) use (
+                $request,
+                $result,
+                $updateData,
+                $roleNameSnapshot
+            ) {
+                ServiceOrderItem::whereKey($result->service_order_item_id)->lockForUpdate()->firstOrFail();
+                $result = ServiceResult::with(['serviceOrderItem.serviceOrder', 'serviceOrderItem.medicalService'])
+                    ->whereKey($result->id)->lockForUpdate()->firstOrFail();
+                $oldValues = $result->only(['result_summary', 'result_conclusion', 'result_parameters', 'result_pdf_path', 'result_image_path', 'verified_by_user_id', 'notes']);
+                $oldValues['resulted_at'] = $result->resulted_at?->format('Y-m-d H:i:s');
+                $updateData = array_merge($updateData, $documents->store($request, 'service-results/'.$result->service_order_item_id, ClinicalDocument::RESULT_FILES));
+                if (! ServiceResult::hasContentValues(array_merge($result->getAttributes(), $updateData), $result->service_order_item_id)) {
+                    throw ValidationException::withMessages(['result_summary' => 'Kết quả phải có nội dung hoặc tệp hợp lệ còn tồn tại.']);
+                }
+                $result->update(
+                    $updateData
+                );
 
-            $result->refresh();
+                $result->refresh();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Dữ liệu sau cập nhật
-            |--------------------------------------------------------------------------
-            */
-            $newValues = [
-                'result_summary' =>
-                $result->result_summary,
+                $newValues = [
+                    'result_summary' => $result->result_summary,
 
-                'result_conclusion' =>
-                $result->result_conclusion,
+                    'result_conclusion' => $result->result_conclusion,
 
-                'result_parameters' =>
-                $result->result_parameters,
+                    'result_parameters' => $result->result_parameters,
 
-                'result_pdf_path' =>
-                $result->result_pdf_path,
+                    'result_pdf_path' => $result->result_pdf_path,
 
-                'result_image_path' =>
-                $result->result_image_path,
+                    'result_image_path' => $result->result_image_path,
 
-                'verified_by_user_id' =>
-                $result->verified_by_user_id,
+                    'verified_by_user_id' => $result->verified_by_user_id,
 
-                'resulted_at' =>
-                $result->resulted_at
-                    ? $result->resulted_at->format(
-                        'Y-m-d H:i:s'
-                    )
-                    : null,
+                    'resulted_at' => $result->resulted_at
+                        ?->format(
+                            'Y-m-d H:i:s'
+                        ),
 
-                'notes' =>
-                $result->notes,
-            ];
+                    'notes' => $result->notes,
+                ];
 
-            /*
-            |--------------------------------------------------------------------------
-            | Thông tin nghiệp vụ phục vụ Audit Log
-            |--------------------------------------------------------------------------
-            */
-            $orderCode =
-                $result->serviceOrderItem
-                ?->serviceOrder
-                ?->service_order_code;
+                $orderCode =
+                    $result
+                        ->serviceOrderItem
+                        ?->serviceOrder
+                        ?->service_order_code;
 
-            $serviceCode =
-                $result->serviceOrderItem
-                ?->medicalService
-                ?->service_code;
+                $serviceCode =
+                    $result
+                        ->serviceOrderItem
+                        ?->medicalService
+                        ?->service_code;
 
-            $description =
-                'Cập nhật kết quả dịch vụ';
+                $description =
+                    'Cập nhật kết quả dịch vụ';
 
-            if ($orderCode && $serviceCode) {
-                $description .=
-                    ' của phiếu '
-                    . $orderCode
-                    . ', dịch vụ '
-                    . $serviceCode
-                    . '.';
-            } else {
-                $description .= '.';
+                if ($orderCode && $serviceCode) {
+                    $description .=
+                        ' của phiếu '
+                        .$orderCode
+                        .', dịch vụ '
+                        .$serviceCode
+                        .'.';
+                } else {
+                    $description .= '.';
+                }
+
+                DB::table('audit_logs')->insert([
+                    'user_id' => Auth::id(),
+
+                    'role_name_snapshot' => $roleNameSnapshot,
+
+                    'action' => 'UPDATE',
+
+                    'entity_type' => 'service_results',
+
+                    'entity_id' => $result->id,
+
+                    'entity_business_code' => null,
+
+                    'old_values' => json_encode(
+                        $oldValues,
+                        JSON_UNESCAPED_UNICODE
+                        |
+                        JSON_UNESCAPED_SLASHES
+                    ),
+
+                    'new_values' => json_encode(
+                        $newValues,
+                        JSON_UNESCAPED_UNICODE
+                        |
+                        JSON_UNESCAPED_SLASHES
+                    ),
+
+                    'description' => $description,
+
+                    'ip_address' => $request->ip(),
+
+                    'user_agent' => $request->userAgent(),
+
+                    'performed_at' => now(),
+
+                    'created_at' => now(),
+                ]);
             }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Ghi Audit Log
-            |--------------------------------------------------------------------------
-            */
-            DB::table('audit_logs')->insert([
-                'user_id' =>
-                Auth::id(),
-
-                'role_name_snapshot' =>
-                $roleNameSnapshot,
-
-                'action' =>
-                'UPDATE',
-
-                'entity_type' =>
-                'service_results',
-
-                'entity_id' =>
-                $result->id,
-
-                /*
-                 * service_results không có business_code riêng.
-                 */
-                'entity_business_code' =>
-                null,
-
-                'old_values' =>
-                json_encode(
-                    $oldValues,
-                    JSON_UNESCAPED_UNICODE
-                        |
-                        JSON_UNESCAPED_SLASHES
-                ),
-
-                'new_values' =>
-                json_encode(
-                    $newValues,
-                    JSON_UNESCAPED_UNICODE
-                        |
-                        JSON_UNESCAPED_SLASHES
-                ),
-
-                'description' =>
-                $description,
-
-                'ip_address' =>
-                $request->ip(),
-
-                'user_agent' =>
-                $request->userAgent(),
-
-                'performed_at' =>
-                now(),
-
-                'created_at' =>
-                now(),
-            ]);
-        });
+        );
 
         return redirect()
             ->route(

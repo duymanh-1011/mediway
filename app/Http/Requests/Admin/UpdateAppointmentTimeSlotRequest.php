@@ -29,6 +29,7 @@ class UpdateAppointmentTimeSlotRequest extends FormRequest
                 'required',
                 'integer',
                 'min:1',
+                'max:65535',
             ],
 
             'status' => [
@@ -46,35 +47,25 @@ class UpdateAppointmentTimeSlotRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'start_time.required' =>
-                'Vui lòng nhập giờ bắt đầu.',
+            'start_time.required' => 'Vui lòng nhập giờ bắt đầu.',
 
-            'start_time.date_format' =>
-                'Giờ bắt đầu không hợp lệ.',
+            'start_time.date_format' => 'Giờ bắt đầu không hợp lệ.',
 
-            'end_time.required' =>
-                'Vui lòng nhập giờ kết thúc.',
+            'end_time.required' => 'Vui lòng nhập giờ kết thúc.',
 
-            'end_time.date_format' =>
-                'Giờ kết thúc không hợp lệ.',
+            'end_time.date_format' => 'Giờ kết thúc không hợp lệ.',
 
-            'end_time.after' =>
-                'Giờ kết thúc phải sau giờ bắt đầu.',
+            'end_time.after' => 'Giờ kết thúc phải sau giờ bắt đầu.',
 
-            'max_patients.required' =>
-                'Vui lòng nhập sức chứa.',
+            'max_patients.required' => 'Vui lòng nhập sức chứa.',
 
-            'max_patients.integer' =>
-                'Sức chứa phải là số nguyên.',
+            'max_patients.integer' => 'Sức chứa phải là số nguyên.',
 
-            'max_patients.min' =>
-                'Sức chứa phải lớn hơn hoặc bằng 1.',
+            'max_patients.min' => 'Sức chứa phải lớn hơn hoặc bằng 1.',
 
-            'status.required' =>
-                'Vui lòng chọn trạng thái.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' =>
-                'Trạng thái khung giờ không hợp lệ.',
+            'status.in' => 'Trạng thái khung giờ không hợp lệ.',
         ];
     }
 }

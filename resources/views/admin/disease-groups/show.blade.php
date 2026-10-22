@@ -1,469 +1,98 @@
 @extends('admin.layouts.app')
-
-@section(
-    'title',
-    'Chi tiết nhóm bệnh - Mediway Admin'
-)
-
+@section('admin-page', 'disease-groups-show')
+@section('title', 'Chi tiết nhóm bệnh - Mediway')
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-
-        Admin /
-        Danh mục /
-        Nhóm bệnh /
-        {{ $diseaseGroup->disease_group_code }}
-
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Danh mục</span>
+    <span aria-hidden="true">/</span>
+    <a href="{{ route('admin.disease-groups.index') }}">Nhóm bệnh</a>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ $diseaseGroup->disease_group_code }}</strong>
 @endsection
-
 @section('content')
-
-    <div class="page-header">
-
+    @include('admin.layouts.partials.disease-catalog-tabs')
+    <div class="admin-page-header">
         <div>
-
-            <h1 class="page-title">
-                {{ $diseaseGroup->name }}
-            </h1>
-
-            <p class="page-description">
-                Mã nhóm bệnh:
-                {{ $diseaseGroup->disease_group_code }}
-            </p>
-
+            <h1>{{ $diseaseGroup->name }}</h1>
+            <p class="page-description">Mã nhóm bệnh: {{ $diseaseGroup->disease_group_code }}</p>
         </div>
-
-        <div class="header-actions">
-
-            <a
-                href="{{ route(
-                    'admin.disease-groups.index'
-                ) }}"
-                class="btn btn-secondary"
-            >
-                ← Danh sách
-            </a>
-
-            <a
-                href="{{ route(
-                    'admin.disease-groups.edit',
-                    $diseaseGroup
-                ) }}"
-                class="btn btn-primary"
-            >
-                Sửa nhóm bệnh
-            </a>
-
+        <div class="admin-actions">
+            <a class="admin-btn admin-btn-secondary" href="{{ route('admin.disease-groups.index') }}">Quay lại</a>
+            <a class="admin-btn admin-btn-primary" href="{{ route('admin.disease-groups.edit', $diseaseGroup) }}">Sửa nhóm bệnh</a>
+            @if ($diseaseGroup->status === 'ACTIVE')
+                <a class="admin-btn admin-btn-success" href="{{ route('admin.diseases.create', ['disease_group_id' => $diseaseGroup->id]) }}">Thêm bệnh</a>
+            @endif
         </div>
-
     </div>
 
     <div class="stats-grid">
-
-        <div class="stat-card">
-
-            <div class="stat-label">
-                Tổng bệnh
-            </div>
-
-            <div class="stat-value">
-                {{ $totalDiseases }}
-            </div>
-
-        </div>
-
-        <div class="stat-card">
-
-            <div class="stat-label">
-                Đang hoạt động
-            </div>
-
-            <div class="stat-value success">
-                {{ $activeDiseases }}
-            </div>
-
-        </div>
-
-        <div class="stat-card">
-
-            <div class="stat-label">
-                Ngừng hoạt động
-            </div>
-
-            <div class="stat-value danger">
-                {{ $inactiveDiseases }}
-            </div>
-
-        </div>
-
+        <div class="stat-card"><div class="stat-label">Tổng bệnh</div><div class="stat-value">{{ $totalDiseases }}</div></div>
+        <div class="stat-card"><div class="stat-label">Đang hoạt động</div><div class="stat-value success">{{ $activeDiseases }}</div></div>
+        <div class="stat-card"><div class="stat-label">Ngừng hoạt động</div><div class="stat-value danger">{{ $inactiveDiseases }}</div></div>
     </div>
 
-    <div class="detail-grid">
+    <section class="admin-card">
+        <h2>Thông tin nhóm bệnh</h2>
+        <dl class="detail-grid">
+            <div><dt>Mã nhóm</dt><dd>{{ $diseaseGroup->disease_group_code }}</dd></div>
+            <div><dt>Tên nhóm</dt><dd>{{ $diseaseGroup->name }}</dd></div>
+            <div><dt>Trạng thái</dt><dd><span class="admin-badge admin-badge-{{ $diseaseGroup->status === 'ACTIVE' ? 'success' : 'danger' }}">{{ \App\Models\AdminDisplay::label($diseaseGroup->status) }}</span></dd></div>
+            <div><dt>Mô tả</dt><dd>{{ $diseaseGroup->description ?: '—' }}</dd></div>
+            <div><dt>Ghi chú</dt><dd>{{ $diseaseGroup->notes ?: '—' }}</dd></div>
+            <div><dt>Ngày tạo</dt><dd>{{ $diseaseGroup->created_at?->format('d/m/Y H:i') }}</dd></div>
+        </dl>
+    </section>
 
-        <div class="card">
-
-            <h3 class="section-title">
-                Thông tin nhóm bệnh
-            </h3>
-
-            <div class="detail-row">
-
-                <div class="detail-label">
-                    Mã nhóm
-                </div>
-
-                <div class="detail-value">
-                    {{ $diseaseGroup
-                        ->disease_group_code }}
-                </div>
-
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc bệnh trong nhóm',
+        'description' => 'Lọc theo mã, tên, tên thay thế và trạng thái bệnh trong nhóm hiện tại.',
+    ])
+        <form method="GET" action="{{ route('admin.disease-groups.show', $diseaseGroup) }}" class="admin-filter-form">
+            <div class="admin-filter-field">
+                <label for="group-disease-keyword">Từ khóa</label>
+                <input id="group-disease-keyword" name="keyword" value="{{ request('keyword') }}" placeholder="Mã, tên hoặc tên thay thế của bệnh...">
+                @error('keyword')<div class="field-error">{{ $message }}</div>@enderror
             </div>
-
-            <div class="detail-row">
-
-                <div class="detail-label">
-                    Tên nhóm
-                </div>
-
-                <div class="detail-value">
-                    {{ $diseaseGroup->name }}
-                </div>
-
+            <div class="admin-filter-field">
+                <label for="group-disease-status">Trạng thái</label>
+                <select id="group-disease-status" name="status">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="ACTIVE" @selected(request('status') === 'ACTIVE')>Đang hoạt động</option>
+                    <option value="INACTIVE" @selected(request('status') === 'INACTIVE')>Ngừng hoạt động</option>
+                </select>
+                @error('status')<div class="field-error">{{ $message }}</div>@enderror
             </div>
+            @include('admin.layouts.partials.filter-actions', ['resetUrl' => route('admin.disease-groups.show', $diseaseGroup)])
+        </form>
+    @endcomponent
 
-            <div class="detail-row">
-
-                <div class="detail-label">
-                    Trạng thái
-                </div>
-
-                <div class="detail-value">
-
-                    @if (
-                        $diseaseGroup->status
-                        === 'ACTIVE'
-                    )
-
-                        <span
-                            class="badge badge-success"
-                        >
-                            ACTIVE
-                        </span>
-
-                    @else
-
-                        <span
-                            class="badge badge-danger"
-                        >
-                            INACTIVE
-                        </span>
-
-                    @endif
-
-                </div>
-
-            </div>
-
-            <div class="detail-row">
-
-                <div class="detail-label">
-                    Mô tả
-                </div>
-
-                <div class="detail-value">
-                    {{ $diseaseGroup
-                        ->description
-                        ?? '—' }}
-                </div>
-
-            </div>
-
-            <div class="detail-row">
-
-                <div class="detail-label">
-                    Ghi chú
-                </div>
-
-                <div class="detail-value">
-                    {{ $diseaseGroup
-                        ->notes
-                        ?? '—' }}
-                </div>
-
-            </div>
-
-            <div class="detail-row">
-
-                <div class="detail-label">
-                    Ngày tạo
-                </div>
-
-                <div class="detail-value">
-                    {{ $diseaseGroup
-                        ->created_at
-                        ?->format(
-                            'd/m/Y H:i'
-                        ) }}
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="card">
-
-            <h3 class="section-title">
-                Danh mục bệnh thuộc nhóm
-            </h3>
-
-            <div class="table-wrapper">
-
-                <table class="admin-table">
-
-                    <thead>
-
+    <section class="admin-card" id="group-diseases">
+        <h2>Danh mục bệnh thuộc nhóm</h2>
+        <div class="table-wrapper">
+            <table class="admin-table">
+                <thead><tr><th scope="col" class="admin-row-number">STT</th>
+                <th>Mã bệnh</th><th>Tên bệnh</th><th>Tên khác</th><th>Triệu chứng thường gặp</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                <tbody>
+                    @forelse ($diseases as $disease)
                         <tr>
-                            <th>Mã bệnh</th>
-                            <th>Tên bệnh</th>
-                            <th>Tên khác</th>
-                            <th>Triệu chứng thường gặp</th>
-                            <th>Trạng thái</th>
+                            @include('admin.layouts.partials.row-number', ['rows' => $diseases, 'index' => $loop->index])
+                            <td><strong>{{ $disease->disease_code }}</strong></td>
+                            <td>{{ $disease->name }}</td>
+                            <td>{{ $disease->alternative_name ?: '—' }}</td>
+                            <td>{{ $disease->common_symptoms ?: '—' }}</td>
+                            <td><span class="admin-badge admin-badge-{{ $disease->status === 'ACTIVE' ? 'success' : 'danger' }}">{{ \App\Models\AdminDisplay::label($disease->status) }}</span></td>
+                            <td><div class="admin-actions">
+                                <a class="admin-btn admin-btn-detail" href="{{ route('admin.diseases.show', $disease->id) }}">Chi tiết</a>
+                                <a class="admin-btn admin-btn-secondary" href="{{ route('admin.diseases.edit', $disease->id) }}">Sửa</a>
+                            </div></td>
                         </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                    @forelse (
-                        $diseases
-                        as $disease
-                    )
-
-                        <tr>
-
-                            <td>
-                                <strong>
-                                    {{ $disease
-                                        ->disease_code }}
-                                </strong>
-                            </td>
-
-                            <td>
-                                {{ $disease->name }}
-                            </td>
-
-                            <td>
-                                {{ $disease
-                                    ->alternative_name
-                                    ?? '—' }}
-                            </td>
-
-                            <td class="symptom-cell">
-                                {{ $disease
-                                    ->common_symptoms
-                                    ?? '—' }}
-                            </td>
-
-                            <td>
-
-                                @if (
-                                    $disease->status
-                                    === 'ACTIVE'
-                                )
-
-                                    <span
-                                        class="badge badge-success"
-                                    >
-                                        ACTIVE
-                                    </span>
-
-                                @else
-
-                                    <span
-                                        class="badge badge-danger"
-                                    >
-                                        INACTIVE
-                                    </span>
-
-                                @endif
-
-                            </td>
-
-                        </tr>
-
                     @empty
-
-                        <tr>
-
-                            <td
-                                colspan="5"
-                                class="empty-state"
-                            >
-                                Nhóm này chưa có bệnh.
-                            </td>
-
-                        </tr>
-
+                        <tr><td colspan="7" class="empty-state">Không có bệnh phù hợp trong nhóm.</td></tr>
                     @endforelse
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
+                </tbody>
+            </table>
         </div>
-
-    </div>
-
+        <div class="admin-pagination">{{ $diseases->links() }}</div>
+    </section>
 @endsection
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-
-        gap: 20px;
-
-        margin-bottom: 20px;
-    }
-
-    .header-actions {
-        display: flex;
-
-        gap: 8px;
-    }
-
-    .stats-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 14px;
-
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        padding: 16px 18px;
-
-        background: #ffffff;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-    }
-
-    .stat-label {
-        margin-bottom: 6px;
-
-        color: #64748b;
-
-        font-size: 12px;
-    }
-
-    .stat-value {
-        font-size: 26px;
-        font-weight: 700;
-    }
-
-    .stat-value.success {
-        color: #059669;
-    }
-
-    .stat-value.danger {
-        color: #dc2626;
-    }
-
-    .detail-grid {
-        display: grid;
-
-        grid-template-columns:
-            minmax(300px, 0.75fr)
-            minmax(0, 1.5fr);
-
-        gap: 20px;
-    }
-
-    .section-title {
-        margin:
-            0
-            0
-            16px;
-
-        font-size: 17px;
-    }
-
-    .detail-row {
-        display: grid;
-
-        grid-template-columns:
-            140px
-            minmax(0, 1fr);
-
-        gap: 15px;
-
-        padding: 12px 0;
-
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-label {
-        color: #64748b;
-
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .detail-value {
-        color: #334155;
-
-        font-size: 13px;
-        line-height: 1.55;
-    }
-
-    .symptom-cell {
-        max-width: 300px;
-
-        white-space: normal !important;
-
-        line-height: 1.45;
-    }
-
-    .empty-state {
-        padding: 30px !important;
-
-        text-align: center !important;
-
-        color: #94a3b8 !important;
-    }
-
-    @media (max-width: 1000px) {
-
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-    @media (max-width: 700px) {
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

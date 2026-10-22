@@ -62,27 +62,27 @@ class PatientController extends Controller
                     $q->where(
                         'patient_code',
                         'like',
-                        '%' . $search . '%'
+                        '%'.$search.'%'
                     )
-                    ->orWhere(
-                        'full_name',
-                        'like',
-                        '%' . $search . '%'
-                    )
-                    ->orWhereHas('user', function ($userQuery) use ($search) {
-                        $userQuery->where(
-                            'phone',
+                        ->orWhere(
+                            'full_name',
                             'like',
-                            '%' . $search . '%'
-                        );
-                    })
-                    ->orWhereHas('detail', function ($detailQuery) use ($search) {
-                        $detailQuery->where(
-                            'citizen_id_number',
-                            'like',
-                            '%' . $search . '%'
-                        );
-                    });
+                            '%'.$search.'%'
+                        )
+                        ->orWhereHas('user', function ($userQuery) use ($search) {
+                            $userQuery->where(
+                                'phone',
+                                'like',
+                                '%'.$search.'%'
+                            );
+                        })
+                        ->orWhereHas('detail', function ($detailQuery) use ($search) {
+                            $detailQuery->where(
+                                'citizen_id_number',
+                                'like',
+                                '%'.$search.'%'
+                            );
+                        });
                 });
             })
             ->when(
@@ -123,9 +123,9 @@ class PatientController extends Controller
                     ->lockForUpdate()
                     ->first();
 
-                if (!$patientRole) {
+                if (! $patientRole) {
                     throw ValidationException::withMessages([
-                        'user_id' => 'Hệ thống chưa có vai trò Patient.',
+                        'user_id' => 'Hệ thống chưa có vai trò bệnh nhân.',
                     ]);
                 }
 
@@ -230,9 +230,9 @@ class PatientController extends Controller
                     ->lockForUpdate()
                     ->first();
 
-                if (!$patientRole) {
+                if (! $patientRole) {
                     throw ValidationException::withMessages([
-                        'user_id' => 'Hệ thống chưa có vai trò Patient.',
+                        'user_id' => 'Hệ thống chưa có vai trò bệnh nhân.',
                     ]);
                 }
 
@@ -336,12 +336,12 @@ class PatientController extends Controller
          * Ngăn việc sử dụng đường dẫn ngoài thư mục
          * tài liệu dành riêng cho bệnh nhân này.
          */
-        $expectedPrefix = 'patient-documents/' . $patient->id . '/';
+        $expectedPrefix = 'patient-documents/'.$patient->id.'/';
 
         abort_unless(
             str_starts_with($path, $expectedPrefix)
-                && !str_contains($path, '..')
-                && !str_contains($path, '\\'),
+                && ! str_contains($path, '..')
+                && ! str_contains($path, '\\'),
             404
         );
 
@@ -374,24 +374,24 @@ class PatientController extends Controller
         $paths = [];
 
         foreach (self::FILE_FIELDS as $input => $column) {
-            if (!$request->hasFile($input)) {
+            if (! $request->hasFile($input)) {
                 continue;
             }
 
             $file = $request->file($input);
 
-            if (!$file || !$file->isValid()) {
+            if (! $file || ! $file->isValid()) {
                 throw ValidationException::withMessages([
                     $input => 'Tệp tải lên không hợp lệ.',
                 ]);
             }
 
             $path = $file->store(
-                'patient-documents/' . $patient->id,
+                'patient-documents/'.$patient->id,
                 'local'
             );
 
-            if (!$path) {
+            if (! $path) {
                 throw ValidationException::withMessages([
                     $input => 'Không thể lưu tệp. Vui lòng thử lại.',
                 ]);
@@ -454,9 +454,9 @@ class PatientController extends Controller
             ->lockForUpdate()
             ->find($userId);
 
-        if (!$user || $user->role_id !== $roleId) {
+        if (! $user || $user->role_id !== $roleId) {
             throw ValidationException::withMessages([
-                'user_id' => 'Tài khoản không tồn tại hoặc không thuộc vai trò Patient.',
+                'user_id' => 'Tài khoản không tồn tại hoặc không thuộc vai trò bệnh nhân.',
             ]);
         }
 
@@ -493,7 +493,7 @@ class PatientController extends Controller
             $this->codeNumber($lastUserCode)
         );
 
-        return 'BN' . str_pad(
+        return 'BN'.str_pad(
             (string) ($lastNumber + 1),
             6,
             '0',

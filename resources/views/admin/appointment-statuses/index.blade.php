@@ -1,18 +1,17 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'appointment-statuses-index')
 
 @section(
     'title',
-    'Trạng thái lịch hẹn - Mediway Admin'
+    'Trạng thái lịch hẹn - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-        Admin /
-        Cấu hình trạng thái /
-        Trạng thái lịch hẹn
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Cấu hình trạng thái</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Trạng thái lịch hẹn</strong>
 @endsection
 
 @section('content')
@@ -74,17 +73,19 @@
 
     </div>
 
-    <div class="card">
-
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc trạng thái lịch hẹn',
+        'description' => 'Lọc theo từ khóa, hoạt động và chuyển tiếp.',
+    ])
         <form
             method="GET"
             action="{{ route(
                 'admin.appointment-statuses.index'
             ) }}"
-            class="filter-form"
+            class="filter-form admin-filter-form"
         >
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Tìm kiếm
@@ -97,10 +98,11 @@
                     value="{{ $keyword }}"
                     placeholder="Tên hoặc mô tả trạng thái..."
                 >
+@error('keyword')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Hoạt động
@@ -134,10 +136,11 @@
                     </option>
 
                 </select>
+@error('is_active')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
                 <label class="filter-label">
                     Chuyển tiếp
@@ -171,30 +174,26 @@
                     </option>
 
                 </select>
+@error('allows_transition')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-actions">
+            <div class="filter-actions admin-filter-layout">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Tìm kiếm
-                </button>
 
-                <a
-                    href="{{ route(
+
+
+
+            </div>
+
+
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route(
                         'admin.appointment-statuses.index'
-                    ) }}"
-                    class="btn btn-secondary"
-                >
-                    Đặt lại
-                </a>
-
-            </div>
-
+                    ), 'searchOnly' => false])
         </form>
+    @endcomponent
+
+    <div class="card">
 
         <div class="table-wrapper">
 
@@ -203,7 +202,8 @@
                 <thead>
 
                     <tr>
-                        <th>Thứ tự</th>
+                        <th scope="col" class="admin-row-number">STT</th>
+                        <th>Thứ tự xử lý</th>
                         <th>Tên trạng thái</th>
                         <th>Mô tả</th>
                         <th>Cho phép chuyển tiếp</th>
@@ -222,6 +222,7 @@
 
                     <tr>
 
+                        @include('admin.layouts.partials.row-number', ['rows' => $appointmentStatuses, 'index' => $loop->index])
                         <td>
                             <span class="order-badge">
                                 {{ $appointmentStatus
@@ -231,14 +232,12 @@
 
                         <td>
                             <strong>
-                                {{ $appointmentStatus->name }}
+                                {{ \App\Models\AdminDisplay::label($appointmentStatus->name) }}
                             </strong>
                         </td>
 
                         <td class="description-cell">
-                            {{ $appointmentStatus
-                                ->description
-                                ?? '—' }}
+                            {{ \App\Models\AdminDisplay::text($appointmentStatus->description ?? '—') }}
                         </td>
 
                         <td>
@@ -270,13 +269,13 @@
                             )
 
                                 <span class="badge badge-success">
-                                    ACTIVE
+                                    Đang hoạt động
                                 </span>
 
                             @else
 
                                 <span class="badge badge-danger">
-                                    INACTIVE
+                                    Ngừng hoạt động
                                 </span>
 
                             @endif
@@ -292,20 +291,16 @@
                                         'admin.appointment-statuses.show',
                                         $appointmentStatus
                                     ) }}"
-                                    class="action-link view"
-                                >
-                                    Chi tiết
-                                </a>
+                                    class="admin-btn admin-btn-detail action-link view"
+                                >Chi tiết</a>
 
                                 <a
                                     href="{{ route(
                                         'admin.appointment-statuses.edit',
                                         $appointmentStatus
                                     ) }}"
-                                    class="action-link edit"
-                                >
-                                    Sửa
-                                </a>
+                                    class="admin-btn admin-btn-secondary action-link edit"
+                                >Sửa</a>
 
                             </div>
 
@@ -318,7 +313,7 @@
                     <tr>
 
                         <td
-                            colspan="6"
+                            colspan="7"
                             class="empty-state"
                         >
                             Không tìm thấy trạng thái phù hợp.
@@ -341,208 +336,3 @@
     </div>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-
-        gap: 20px;
-
-        margin-bottom: 20px;
-    }
-
-    .stats-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 14px;
-
-        margin-bottom: 18px;
-    }
-
-    .mini-card {
-        padding: 16px 18px;
-
-        background: #ffffff;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 11px;
-    }
-
-    .mini-card-label {
-        margin-bottom: 7px;
-
-        color: #64748b;
-
-        font-size: 13px;
-    }
-
-    .mini-card-value {
-        font-size: 26px;
-        font-weight: 700;
-    }
-
-    .mini-card-value.success {
-        color: #059669;
-    }
-
-    .filter-form {
-        display: grid;
-
-        grid-template-columns:
-            minmax(240px, 1fr)
-            190px
-            210px
-            auto;
-
-        gap: 14px;
-
-        align-items: end;
-
-        margin-bottom: 20px;
-    }
-
-    .filter-label {
-        display: block;
-
-        margin-bottom: 6px;
-
-        color: #475569;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .filter-control {
-        width: 100%;
-
-        padding: 10px 12px;
-
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-
-        background: #ffffff;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        outline: none;
-    }
-
-    .filter-control:focus {
-        border-color: #3b82f6;
-
-        box-shadow:
-            0 0 0 3px
-            rgba(59, 130, 246, 0.1);
-    }
-
-    .filter-actions {
-        display: flex;
-
-        gap: 8px;
-    }
-
-    .order-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-
-        width: 30px;
-        height: 30px;
-
-        border-radius: 50%;
-
-        background: #eff6ff;
-        color: #1d4ed8;
-
-        font-weight: 700;
-    }
-
-    .description-cell {
-        max-width: 360px;
-
-        white-space: normal !important;
-
-        line-height: 1.5;
-    }
-
-    .action-group {
-        display: flex;
-        align-items: center;
-
-        gap: 7px;
-    }
-
-    .action-link {
-        padding: 6px 9px;
-
-        border-radius: 6px;
-
-        text-decoration: none;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .action-link.view {
-        background: #eff6ff;
-        color: #1d4ed8;
-    }
-
-    .action-link.edit {
-        background: #fffbeb;
-        color: #b45309;
-    }
-
-    .empty-state {
-        padding: 40px !important;
-
-        text-align: center !important;
-
-        color: #94a3b8 !important;
-    }
-
-    .pagination-wrapper {
-        margin-top: 18px;
-    }
-
-    @media (max-width: 1000px) {
-
-        .filter-form {
-            grid-template-columns: 1fr 1fr;
-        }
-
-    }
-
-    @media (max-width: 700px) {
-
-        .stats-grid,
-        .filter-form {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

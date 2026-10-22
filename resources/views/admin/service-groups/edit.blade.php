@@ -1,25 +1,25 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'service-groups-edit')
 
 @section(
     'title',
-    'Sửa nhóm dịch vụ - Mediway Admin'
+    'Sửa nhóm dịch vụ - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-
-        Admin /
-        Danh mục /
-        Nhóm dịch vụ /
-        {{ $serviceGroup->service_group_code }} /
-        Sửa
-
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Danh mục</span>
+    <span aria-hidden="true">/</span>
+    <span>Nhóm dịch vụ</span>
+    <span aria-hidden="true">/</span>
+    <span>{{ $serviceGroup->service_group_code }}</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
+    @include('admin.layouts.partials.service-catalog-tabs')
 
     <div class="page-header">
 
@@ -41,14 +41,14 @@
                 'admin.service-groups.show',
                 $serviceGroup
             ) }}"
-            class="btn btn-secondary"
+            class="admin-btn admin-btn-secondary btn btn-secondary"
         >
             ← Quay lại
         </a>
 
     </div>
 
-    <form
+    <form novalidate
         method="POST"
         action="{{ route(
             'admin.service-groups.update',
@@ -73,9 +73,7 @@
                         $serviceGroup
                     ) }}"
                     class="btn btn-secondary"
-                >
-                    Hủy
-                </a>
+                >Hủy</a>
 
                 <button
                     type="submit"
@@ -91,101 +89,3 @@
     </form>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-
-        gap: 20px;
-
-        margin-bottom: 20px;
-    }
-
-    .form-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-
-        gap: 18px;
-    }
-
-    .form-group {
-        margin-bottom: 18px;
-    }
-
-    .form-label {
-        display: block;
-
-        margin-bottom: 7px;
-
-        color: #334155;
-
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .required {
-        color: #dc2626;
-    }
-
-    .form-control {
-        width: 100%;
-
-        padding: 10px 12px;
-
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-
-        background: #ffffff;
-
-        outline: none;
-    }
-
-    .form-control:focus {
-        border-color: #3b82f6;
-
-        box-shadow:
-            0 0 0 3px
-            rgba(59, 130, 246, 0.1);
-    }
-
-    textarea.form-control {
-        resize: vertical;
-    }
-
-    .field-error {
-        margin-top: 5px;
-
-        color: #dc2626;
-
-        font-size: 12px;
-    }
-
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-
-        gap: 10px;
-
-        padding-top: 18px;
-
-        border-top: 1px solid #e2e8f0;
-    }
-
-    @media (max-width: 800px) {
-
-        .form-grid {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

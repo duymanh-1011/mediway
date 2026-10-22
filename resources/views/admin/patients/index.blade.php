@@ -1,9 +1,14 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'patients-index')
 
 @section('title', 'Quản lý bệnh nhân - Mediway')
 
 @section('breadcrumb')
-    Admin / Nhân sự & bệnh nhân / Bệnh nhân
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Nhân sự & bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Bệnh nhân</strong>
 @endsection
 
 @section('content')
@@ -16,7 +21,7 @@
             </p>
         </div>
 
-        <a href="{{ route('admin.patients.create') }}" class="pt-btn pt-primary">
+        <a href="{{ route('admin.patients.create') }}" class="admin-btn pt-btn pt-primary admin-btn-primary">
             + Thêm bệnh nhân
         </a>
     </div>
@@ -29,21 +34,25 @@
         <div class="pt-alert pt-danger">{{ session('error') }}</div>
     @endif
 
-    <div class="pt-card">
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc bệnh nhân',
+        'description' => 'Lọc theo từ khóa và trạng thái hồ sơ.',
+    ])
         <form method="GET"
               action="{{ route('admin.patients.index') }}"
-              class="pt-filters">
+              class="pt-filters admin-filter-form">
 
-            <div class="pt-field pt-search">
+            <div class="pt-field pt-search admin-filter-field">
                 <label for="search">Tìm kiếm</label>
                 <input type="text"
                        id="search"
                        name="search"
                        value="{{ $search }}"
                        placeholder="Mã BN, họ tên, SĐT hoặc CCCD...">
+@error('search')<div class="field-error">{{ $message }}</div>@enderror
             </div>
 
-            <div class="pt-field">
+            <div class="pt-field admin-filter-field">
                 <label for="status">Trạng thái hồ sơ</label>
                 <select id="status" name="status">
                     <option value="">Tất cả</option>
@@ -51,22 +60,24 @@
                         Hoạt động
                     </option>
                 </select>
+@error('status')<div class="field-error">{{ $message }}</div>@enderror
             </div>
 
-            <button type="submit" class="pt-btn pt-primary">
-                Tìm kiếm
-            </button>
 
-            <a href="{{ route('admin.patients.index') }}"
-               class="pt-btn pt-light">
-                Đặt lại
-            </a>
+
+
+
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route('admin.patients.index'), 'searchOnly' => false])
         </form>
+    @endcomponent
+
+    <div class="pt-card">
 
         <div class="pt-table-wrap">
             <table class="pt-table">
                 <thead>
                     <tr>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Mã bệnh nhân</th>
                         <th>Họ và tên</th>
                         <th>Ngày sinh</th>
@@ -81,6 +92,7 @@
                 <tbody>
                     @forelse($patients as $patient)
                         <tr>
+                            @include('admin.layouts.partials.row-number', ['rows' => $patients, 'index' => $loop->index])
                             <td>
                                 <strong>{{ $patient->patient_code }}</strong>
                             </td>
@@ -114,7 +126,7 @@
                                     </span>
                                 @else
                                     <span class="pt-badge pt-neutral">
-                                        {{ $patient->status }}
+                                        {{ \App\Models\AdminDisplay::label($patient->status) }}
                                     </span>
                                 @endif
                             </td>
@@ -122,20 +134,16 @@
                             <td>
                                 <div class="pt-actions">
                                     <a href="{{ route('admin.patients.show', $patient) }}"
-                                       class="pt-action pt-view">
-                                        Chi tiết
-                                    </a>
+                                       class="admin-btn admin-btn-detail pt-action pt-view">Chi tiết</a>
 
                                     <a href="{{ route('admin.patients.edit', $patient) }}"
-                                       class="pt-action pt-edit">
-                                        Sửa
-                                    </a>
+                                       class="admin-btn admin-btn-secondary pt-action pt-edit">Sửa</a>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="pt-empty">
+                            <td colspan="9" class="pt-empty">
                                 Không tìm thấy hồ sơ bệnh nhân phù hợp.
                             </td>
                         </tr>
@@ -178,43 +186,3 @@
     </div>
 </div>
 @endsection
-
-@push('styles')
-<style>
-.patients-page{min-width:0}
-.patients-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px}
-.patients-heading .page-description{margin:7px 0 0;color:#64748b}
-.pt-card{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:22px;box-shadow:0 4px 20px rgba(15,23,42,.035)}
-.pt-filters{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin-bottom:22px}
-.pt-field{display:flex;flex-direction:column;gap:7px;min-width:170px}
-.pt-search{flex:1;min-width:220px}
-.pt-field label{font-size:12px;font-weight:700;color:#475569}
-.pt-field input,.pt-field select{width:100%;min-height:41px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;padding:10px 12px;outline:none;color:#0f172a}
-.pt-field input:focus,.pt-field select:focus{border-color:#2563eb;box-shadow:0 0 0 3px #dbeafe}
-.pt-btn{display:inline-flex;align-items:center;justify-content:center;min-height:41px;padding:10px 15px;border:1px solid transparent;border-radius:9px;text-decoration:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
-.pt-primary{background:#2563eb;color:#fff}
-.pt-light{background:#fff;border-color:#cbd5e1;color:#334155}
-.pt-table-wrap{overflow-x:auto}
-.pt-table{min-width:940px;width:100%;border-collapse:collapse;text-align:left}
-.pt-table th{background:#f8fafc;padding:14px 12px;font-size:12px;font-weight:700;color:#64748b;white-space:nowrap}
-.pt-table td{padding:15px 12px;font-size:13px;color:#334155;border-bottom:1px solid #edf2f7}
-.pt-table tbody tr:hover{background:#fafcff}
-.pt-table tbody tr:last-child td{border-bottom:0}
-.pt-badge{display:inline-block;padding:6px 10px;border-radius:30px;font-size:11px;font-weight:700;white-space:nowrap}
-.pt-green{background:#dcfce7;color:#166534}
-.pt-blue{background:#dbeafe;color:#1d4ed8}
-.pt-neutral{background:#f1f5f9;color:#475569}
-.pt-actions{display:flex;gap:7px}
-.pt-action{text-decoration:none;padding:7px 10px;border-radius:7px;font-size:12px;font-weight:700}
-.pt-view{background:#eff6ff;color:#1d4ed8}
-.pt-edit{background:#f1f5f9;color:#334155}
-.pt-empty{text-align:center;padding:38px!important;color:#64748b!important}
-.pt-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:20px;font-size:12px;color:#64748b}
-.pt-pagination{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.pt-disabled{opacity:.45;cursor:default}
-.pt-alert{padding:13px 15px;border-radius:9px;margin-bottom:17px;font-size:13px}
-.pt-success{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
-.pt-danger{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
-@media(max-width:680px){.pt-card{padding:14px}.pt-filters{flex-direction:column;align-items:stretch}.pt-field{width:100%}}
-</style>
-@endpush

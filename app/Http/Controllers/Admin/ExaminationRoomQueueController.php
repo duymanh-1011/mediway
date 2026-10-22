@@ -7,11 +7,14 @@ use App\Models\AppointmentStatus;
 use App\Models\Doctor;
 use App\Models\ExaminationRoom;
 use App\Models\ExaminationRoomQueue;
+use App\Models\MedicalVisit;
 use App\Models\QueueStatus;
+use App\Models\ServiceOrderItem;
 use App\Models\VisitStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ExaminationRoomQueueController extends Controller
@@ -234,7 +237,7 @@ class ExaminationRoomQueueController extends Controller
         $queue->load('status');
 
         if (
-            !in_array(
+            ! in_array(
                 $queue->status?->name,
                 [
                     'WAITING',
@@ -262,7 +265,7 @@ class ExaminationRoomQueueController extends Controller
                 )
                 ->first();
 
-        if (!$calledStatus) {
+        if (! $calledStatus) {
             return back()->with(
                 'error',
                 'Không tìm thấy trạng thái CALLED đang hoạt động.'
@@ -273,15 +276,13 @@ class ExaminationRoomQueueController extends Controller
             $queue,
             $calledStatus
         ) {
+            $queue = $this->lockQueue($queue, ['WAITING', 'CALLED', 'SKIPPED']);
             $queue->update([
-                'queue_status_id' =>
-                    $calledStatus->id,
+                'queue_status_id' => $calledStatus->id,
 
-                'called_at' =>
-                    now(),
+                'called_at' => now(),
 
-                'call_count' =>
-                    ((int) $queue->call_count) + 1,
+                'call_count' => ((int) $queue->call_count) + 1,
             ]);
         });
 
@@ -322,7 +323,7 @@ class ExaminationRoomQueueController extends Controller
                 )
                 ->first();
 
-        if (!$inServiceStatus) {
+        if (! $inServiceStatus) {
             return back()->with(
                 'error',
                 'Không tìm thấy trạng thái IN_SERVICE đang hoạt động.'
@@ -333,12 +334,26 @@ class ExaminationRoomQueueController extends Controller
             $queue,
             $inServiceStatus
         ) {
+            $queue = $this->lockQueue($queue, ['CALLED']);
+            $expectedVisitStatuses = $queue->queue_type === 'RETURN_AFTER_SERVICE'
+                ? ['WAITING_FOR_SERVICE']
+                : ['WAITING', 'IN_EXAMINATION'];
+            $nextVisitStatus = $queue->queue_type === 'RETURN_AFTER_SERVICE' ? 'RETURNING' : 'IN_EXAMINATION';
+            if (! in_array($queue->queue_type, ['INITIAL_EXAM', 'RETURN_AFTER_SERVICE'], true)
+                || ! in_array($queue->medicalVisit->status?->name, $expectedVisitStatuses, true)
+                || ! VisitStatus::where('name', $nextVisitStatus)->where('is_active', true)->exists()) {
+                throw ValidationException::withMessages(['queue' => 'Trạng thái lượt khám không cho phép bắt đầu phục vụ.']);
+            }
+            if ($queue->queue_type === 'RETURN_AFTER_SERVICE') {
+                $items = ServiceOrderItem::whereHas('serviceOrder', fn ($q) => $q->where('medical_visit_id', $queue->medical_visit_id));
+                if (! $items->exists() || (clone $items)->unresolved()->exists()) {
+                    throw ValidationException::withMessages(['queue' => 'Phải hoàn tất các dịch vụ chưa hủy trước khi quay lại bác sĩ.']);
+                }
+            }
             $queue->update([
-                'queue_status_id' =>
-                    $inServiceStatus->id,
+                'queue_status_id' => $inServiceStatus->id,
 
-                'service_started_at' =>
-                    $queue->service_started_at
+                'service_started_at' => $queue->service_started_at
                     ?? now(),
             ]);
 
@@ -367,12 +382,10 @@ class ExaminationRoomQueueController extends Controller
 
                 if ($visitStatus) {
                     $queue->medicalVisit->update([
-                        'visit_status_id' =>
-                            $visitStatus->id,
+                        'visit_status_id' => $visitStatus->id,
 
-                        'examination_started_at' =>
-                            $queue->medicalVisit
-                                ->examination_started_at
+                        'examination_started_at' => $queue->medicalVisit
+                            ->examination_started_at
                             ?? now(),
                     ]);
                 }
@@ -415,8 +428,7 @@ class ExaminationRoomQueueController extends Controller
 
                 if ($visitStatus) {
                     $queue->medicalVisit->update([
-                        'visit_status_id' =>
-                            $visitStatus->id,
+                        'visit_status_id' => $visitStatus->id,
                     ]);
                 }
             }
@@ -456,7 +468,7 @@ class ExaminationRoomQueueController extends Controller
                 )
                 ->first();
 
-        if (!$completedStatus) {
+        if (! $completedStatus) {
             return back()->with(
                 'error',
                 'Không tìm thấy trạng thái COMPLETED đang hoạt động.'
@@ -467,12 +479,11 @@ class ExaminationRoomQueueController extends Controller
             $queue,
             $completedStatus
         ) {
+            $queue = $this->lockQueue($queue, ['IN_SERVICE']);
             $queue->update([
-                'queue_status_id' =>
-                    $completedStatus->id,
+                'queue_status_id' => $completedStatus->id,
 
-                'completed_at' =>
-                    $queue->completed_at
+                'completed_at' => $queue->completed_at
                     ?? now(),
             ]);
         });
@@ -489,7 +500,7 @@ class ExaminationRoomQueueController extends Controller
         $queue->load('status');
 
         if (
-            !in_array(
+            ! in_array(
                 $queue->status?->name,
                 [
                     'WAITING',
@@ -516,7 +527,7 @@ class ExaminationRoomQueueController extends Controller
                 )
                 ->first();
 
-        if (!$skippedStatus) {
+        if (! $skippedStatus) {
             return back()->with(
                 'error',
                 'Không tìm thấy trạng thái SKIPPED đang hoạt động.'
@@ -527,9 +538,9 @@ class ExaminationRoomQueueController extends Controller
             $queue,
             $skippedStatus
         ) {
+            $queue = $this->lockQueue($queue, ['WAITING', 'CALLED']);
             $queue->update([
-                'queue_status_id' =>
-                    $skippedStatus->id,
+                'queue_status_id' => $skippedStatus->id,
             ]);
         });
 
@@ -539,11 +550,25 @@ class ExaminationRoomQueueController extends Controller
         );
     }
 
+    private function lockQueue(ExaminationRoomQueue $queue, array $allowed): ExaminationRoomQueue
+    {
+        MedicalVisit::whereKey($queue->medical_visit_id)->lockForUpdate()->firstOrFail();
+        $queue = ExaminationRoomQueue::with(['status', 'medicalVisit.status'])->whereKey($queue->id)->lockForUpdate()->firstOrFail();
+        if ($queue->medicalVisit->status?->name === 'COMPLETED') {
+            throw ValidationException::withMessages(['queue' => 'Lượt khám đã hoàn tất, không thể tiếp tục thao tác hàng đợi.']);
+        }
+        if (! in_array($queue->status?->name, $allowed, true) || ! $queue->status?->allows_transition) {
+            throw ValidationException::withMessages(['queue' => 'Hàng đợi đã đổi trạng thái. Vui lòng tải lại trang.']);
+        }
+
+        return $queue;
+    }
+
     private function syncAppointmentStatus(
         ?int $appointmentId,
         string $statusName
     ): void {
-        if (!$appointmentId) {
+        if (! $appointmentId) {
             return;
         }
 
@@ -559,7 +584,7 @@ class ExaminationRoomQueueController extends Controller
                 )
                 ->first();
 
-        if (!$appointmentStatus) {
+        if (! $appointmentStatus) {
             return;
         }
 
@@ -569,11 +594,9 @@ class ExaminationRoomQueueController extends Controller
                 $appointmentId
             )
             ->update([
-                'appointment_status_id' =>
-                    $appointmentStatus->id,
+                'appointment_status_id' => $appointmentStatus->id,
 
-                'updated_at' =>
-                    now(),
+                'updated_at' => now(),
             ]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StorePersonalHealthRecordRequest extends FormRequest
 {
@@ -44,6 +45,22 @@ class StorePersonalHealthRecordRequest extends FormRequest
 
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
+    }
+
+    /** @return array<\Closure(Validator): void> */
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            if ($validator->errors()->has('height_cm') || $validator->errors()->has('weight_kg')
+                || ! $this->filled('height_cm') || ! $this->filled('weight_kg')) {
+                return;
+            }
+            $heightInMeters = (float) $this->input('height_cm') / 100;
+            $bmi = round((float) $this->input('weight_kg') / ($heightInMeters * $heightInMeters), 2);
+            if ($bmi > 999.99) {
+                $validator->errors()->add('weight_kg', 'BMI tính từ chiều cao và cân nặng vượt giới hạn lưu trữ 999,99. Vui lòng kiểm tra lại các chỉ số.');
+            }
+        }];
     }
 
     public function messages(): array

@@ -7,361 +7,131 @@ use App\Http\Requests\Admin\StoreMedicalServiceRequest;
 use App\Http\Requests\Admin\UpdateMedicalServiceRequest;
 use App\Models\MedicalService;
 use App\Models\ServiceGroup;
-
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class MedicalServiceController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $keyword = trim(
-            (string) $request->get('keyword')
-        );
+        $filters = $request->validate([
+            'keyword' => ['nullable', 'string', 'max:150'],
+            'group_id' => ['nullable', 'integer', 'exists:service_groups,id'],
+            'status' => ['nullable', 'in:ACTIVE,INACTIVE'],
+            'min_price' => ['nullable', 'numeric', 'min:0'],
+            'max_price' => ['nullable', 'numeric', 'min:0', 'gte:min_price'],
+        ]);
+        $keyword = trim($filters['keyword'] ?? '');
+        $serviceGroupId = $filters['group_id'] ?? null;
+        $status = $filters['status'] ?? null;
+        $minPrice = $filters['min_price'] ?? null;
+        $maxPrice = $filters['max_price'] ?? null;
+        $medicalServices = MedicalService::query()->with('serviceGroups')
+            ->when($keyword !== '', fn ($q) => $q->where(fn ($q) => $q
+                ->where('service_code', 'like', "%{$keyword}%")->orWhere('name', 'like', "%{$keyword}%")))
+            ->when($serviceGroupId, fn ($q) => $q->whereHas('serviceGroups', fn ($q) => $q->whereKey($serviceGroupId)))
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($minPrice !== null, fn ($q) => $q->where('price', '>=', $minPrice))
+            ->when($maxPrice !== null, fn ($q) => $q->where('price', '<=', $maxPrice))
+            ->orderBy('display_order')->orderBy('name')->paginate(10)->withQueryString();
+        $serviceGroups = ServiceGroup::query()->orderBy('display_order')->orderBy('name')->get();
+        $totalServices = MedicalService::count();
+        $activeServices = MedicalService::where('status', 'ACTIVE')->count();
+        $inactiveServices = MedicalService::where('status', 'INACTIVE')->count();
 
-        $serviceGroupId =
-            $request->get('service_group_id');
-
-        $status =
-            $request->get('status');
-
-        $minPrice =
-            $request->get('min_price');
-
-        $maxPrice =
-            $request->get('max_price');
-
-        $query =
-            MedicalService::query()
-                ->with('serviceGroup');
-
-        if ($keyword !== '') {
-
-            $query->where(
-                function ($q) use ($keyword) {
-
-                    $q->where(
-                        'service_code',
-                        'like',
-                        "%{$keyword}%"
-                    )
-                    ->orWhere(
-                        'name',
-                        'like',
-                        "%{$keyword}%"
-                    );
-                }
-            );
-        }
-
-        if (!empty($serviceGroupId)) {
-
-            $query->where(
-                'service_group_id',
-                $serviceGroupId
-            );
-        }
-
-        if (
-            in_array(
-                $status,
-                ['ACTIVE', 'INACTIVE'],
-                true
-            )
-        ) {
-            $query->where(
-                'status',
-                $status
-            );
-        }
-
-        if (
-            $minPrice !== null
-            && $minPrice !== ''
-        ) {
-            $query->where(
-                'price',
-                '>=',
-                $minPrice
-            );
-        }
-
-        if (
-            $maxPrice !== null
-            && $maxPrice !== ''
-        ) {
-            $query->where(
-                'price',
-                '<=',
-                $maxPrice
-            );
-        }
-
-        $medicalServices =
-            $query
-                ->orderBy('display_order')
-                ->orderBy('name')
-                ->paginate(10)
-                ->withQueryString();
-
-        $serviceGroups =
-            ServiceGroup::query()
-                ->orderBy('display_order')
-                ->orderBy('name')
-                ->get();
-
-        $totalServices =
-            MedicalService::count();
-
-        $activeServices =
-            MedicalService::where(
-                'status',
-                'ACTIVE'
-            )->count();
-
-        $inactiveServices =
-            MedicalService::where(
-                'status',
-                'INACTIVE'
-            )->count();
-
-        return view(
-            'admin.medical-services.index',
-            compact(
-                'medicalServices',
-                'serviceGroups',
-                'keyword',
-                'serviceGroupId',
-                'status',
-                'minPrice',
-                'maxPrice',
-                'totalServices',
-                'activeServices',
-                'inactiveServices'
-            )
-        );
+        return view('admin.medical-services.index', compact('medicalServices', 'serviceGroups', 'keyword', 'serviceGroupId', 'status', 'minPrice', 'maxPrice', 'totalServices', 'activeServices', 'inactiveServices'));
     }
 
-    public function create()
+    public function create(Request $request): View
     {
-        $serviceGroups =
-            ServiceGroup::query()
-                ->where(
-                    'status',
-                    'ACTIVE'
-                )
-                ->orderBy('display_order')
-                ->orderBy('name')
-                ->get();
+        $request->validate(['group_id' => ['nullable', 'integer', 'exists:service_groups,id']]);
+        $serviceGroups = ServiceGroup::where('status', 'ACTIVE')->orderBy('display_order')->orderBy('name')->get();
+        $selectedGroupIds = $serviceGroups->where('id', $request->integer('group_id'))->values()->modelKeys();
 
-        return view(
-            'admin.medical-services.create',
-            compact('serviceGroups')
-        );
+        return view('admin.medical-services.create', compact('serviceGroups', 'selectedGroupIds'));
     }
 
-    public function store(
-        StoreMedicalServiceRequest $request
-    ) {
-        $medicalService =
-            MedicalService::create(
-                $request->validated()
-            );
+    public function store(StoreMedicalServiceRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+        $groupIds = $data['service_group_ids'];
+        unset($data['service_group_ids']);
+        $medicalService = DB::transaction(function () use ($data, $groupIds) {
+            $this->ensureNameAvailable($data['name']);
+            $service = MedicalService::create($data);
+            $service->serviceGroups()->sync($groupIds);
 
-        return redirect()
-            ->route(
-                'admin.medical-services.show',
-                $medicalService
-            )
-            ->with(
-                'success',
-                'Thêm dịch vụ y tế thành công.'
-            );
+            return $service;
+        });
+
+        return to_route('admin.medical-services.show', $medicalService)->with('success', 'Thêm dịch vụ y tế thành công.');
     }
 
-    public function show(
-        MedicalService $medicalService
-    ) {
-        $medicalService->load(
-            'serviceGroup'
-        );
+    public function show(MedicalService $medicalService): View
+    {
+        $medicalService->load('serviceGroups');
+        $serviceOrderItemCount = $medicalService->serviceOrderItems()->count();
+        $orderedValue = $medicalService->serviceOrderItems()->sum('price_at_order');
+        $recentOrderItems = DB::table('service_order_items')
+            ->join('service_orders', 'service_order_items.service_order_id', '=', 'service_orders.id')
+            ->join('medical_visits', 'service_orders.medical_visit_id', '=', 'medical_visits.id')
+            ->join('patients', 'medical_visits.patient_id', '=', 'patients.id')
+            ->join('service_statuses', 'service_order_items.service_status_id', '=', 'service_statuses.id')
+            ->where('service_order_items.medical_service_id', $medicalService->id)
+            ->select('service_order_items.id', 'service_order_items.price_at_order', 'service_order_items.started_at', 'service_order_items.completed_at', 'service_orders.service_order_code', 'service_orders.ordered_at', 'medical_visits.visit_code', 'patients.patient_code', 'patients.full_name as patient_name', 'service_statuses.name as service_status')
+            ->orderByDesc('service_orders.ordered_at')->limit(10)->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Số lần dịch vụ đã được chỉ định
-        |--------------------------------------------------------------------------
-        */
-
-        $serviceOrderItemCount =
-            DB::table('service_order_items')
-                ->where(
-                    'medical_service_id',
-                    $medicalService->id
-                )
-                ->count();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Tổng doanh thu lý thuyết theo giá snapshot của order item
-        |--------------------------------------------------------------------------
-        */
-
-        $orderedValue =
-            DB::table('service_order_items')
-                ->where(
-                    'medical_service_id',
-                    $medicalService->id
-                )
-                ->sum('price_at_order');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Các lần chỉ định gần đây
-        |--------------------------------------------------------------------------
-        */
-
-        $recentOrderItems =
-            DB::table('service_order_items')
-                ->join(
-                    'service_orders',
-                    'service_order_items.service_order_id',
-                    '=',
-                    'service_orders.id'
-                )
-                ->join(
-                    'medical_visits',
-                    'service_orders.medical_visit_id',
-                    '=',
-                    'medical_visits.id'
-                )
-                ->join(
-                    'patients',
-                    'medical_visits.patient_id',
-                    '=',
-                    'patients.id'
-                )
-                ->join(
-                    'service_statuses',
-                    'service_order_items.service_status_id',
-                    '=',
-                    'service_statuses.id'
-                )
-                ->where(
-                    'service_order_items.medical_service_id',
-                    $medicalService->id
-                )
-                ->select([
-                    'service_order_items.id',
-                    'service_order_items.price_at_order',
-                    'service_order_items.started_at',
-                    'service_order_items.completed_at',
-
-                    'service_orders.service_order_code',
-                    'service_orders.ordered_at',
-
-                    'medical_visits.visit_code',
-
-                    'patients.patient_code',
-                    'patients.full_name as patient_name',
-
-                    'service_statuses.name as service_status',
-                ])
-                ->orderByDesc(
-                    'service_orders.ordered_at'
-                )
-                ->limit(10)
-                ->get();
-
-        return view(
-            'admin.medical-services.show',
-            compact(
-                'medicalService',
-                'serviceOrderItemCount',
-                'orderedValue',
-                'recentOrderItems'
-            )
-        );
+        return view('admin.medical-services.show', compact('medicalService', 'serviceOrderItemCount', 'orderedValue', 'recentOrderItems'));
     }
 
-    public function edit(
-        MedicalService $medicalService
-    ) {
-        $serviceGroups =
-            ServiceGroup::query()
-                ->orderBy('display_order')
-                ->orderBy('name')
-                ->get();
+    public function edit(MedicalService $medicalService): View
+    {
+        $medicalService->load('serviceGroups');
+        $serviceGroups = ServiceGroup::where('status', 'ACTIVE')
+            ->orWhereHas('medicalServices', fn ($q) => $q->whereKey($medicalService->id))
+            ->orderBy('display_order')->orderBy('name')->get();
 
-        return view(
-            'admin.medical-services.edit',
-            compact(
-                'medicalService',
-                'serviceGroups'
-            )
-        );
+        return view('admin.medical-services.edit', compact('medicalService', 'serviceGroups'));
     }
 
-    public function update(
-        UpdateMedicalServiceRequest $request,
-        MedicalService $medicalService
-    ) {
-        $medicalService->update(
-            $request->validated()
-        );
+    public function update(UpdateMedicalServiceRequest $request, MedicalService $medicalService): RedirectResponse
+    {
+        $data = $request->validated();
+        $groupIds = $data['service_group_ids'];
+        unset($data['service_group_ids']);
+        DB::transaction(function () use ($medicalService, $data, $groupIds) {
+            $this->ensureNameAvailable($data['name'], $medicalService);
+            $service = MedicalService::whereKey($medicalService->id)->lockForUpdate()->firstOrFail();
+            $service->update($data);
+            $service->serviceGroups()->sync($groupIds);
+        });
 
-        return redirect()
-            ->route(
-                'admin.medical-services.show',
-                $medicalService
-            )
-            ->with(
-                'success',
-                'Cập nhật dịch vụ y tế thành công.'
-            );
+        return to_route('admin.medical-services.show', $medicalService)->with('success', 'Cập nhật dịch vụ y tế thành công.');
     }
 
-    public function destroy(
-        MedicalService $medicalService
-    ) {
-        /*
-        |--------------------------------------------------------------------------
-        | Đã được chỉ định?
-        |--------------------------------------------------------------------------
-        */
-
-        $hasOrderItems =
-            DB::table('service_order_items')
-                ->where(
-                    'medical_service_id',
-                    $medicalService->id
-                )
-                ->exists();
-
-        if ($hasOrderItems) {
-
-            $medicalService->update([
-                'status' => 'INACTIVE',
-            ]);
-
-            return redirect()
-                ->route(
-                    'admin.medical-services.index'
-                )
-                ->with(
-                    'success',
-                    'Dịch vụ đã được sử dụng trong chỉ định nên không thể xóa. Hệ thống đã chuyển dịch vụ sang trạng thái INACTIVE.'
-                );
+    private function ensureNameAvailable(string $name, ?MedicalService $current = null): void
+    {
+        /** Keep concurrent application writes on the validation path; the DB unique also protects other writers. */
+        ServiceGroup::query()->orderBy('id')->lockForUpdate()->firstOrFail();
+        if (MedicalService::where('name', $name)->when($current, fn ($query) => $query->where('id', '!=', $current->id))->exists()) {
+            throw ValidationException::withMessages(['name' => 'Tên dịch vụ đã tồn tại. Hãy gán dịch vụ hiện có vào nhóm.']);
         }
+    }
 
-        $medicalService->delete();
+    public function destroy(MedicalService $medicalService): RedirectResponse
+    {
+        $medicalService->update(['status' => 'INACTIVE']);
 
-        return redirect()
-            ->route(
-                'admin.medical-services.index'
-            )
-            ->with(
-                'success',
-                'Xóa dịch vụ y tế thành công.'
-            );
+        return to_route('admin.medical-services.index')->with('success', 'Đã ngừng hoạt động dịch vụ y tế.');
+    }
+
+    public function activate(MedicalService $medicalService): RedirectResponse
+    {
+        $medicalService->update(['status' => 'ACTIVE']);
+
+        return back()->with('success', 'Đã kích hoạt lại dịch vụ y tế.');
     }
 }

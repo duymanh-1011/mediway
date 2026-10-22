@@ -1,16 +1,19 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'queues-index')
 
 @section('title', 'Hàng đợi phòng khám')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard / Vận hành khám / Hàng đợi phòng khám
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Hàng đợi phòng khám</strong>
 @endsection
 
 @section('content')
 
-    <div style="margin-bottom: 22px;">
+    <div class="admin-u-ed1667a9">
         <h1 class="page-title">
             Hàng đợi phòng khám
         </h1>
@@ -22,66 +25,41 @@
     </div>
 
 
-    <div
-        class="card"
-        style="margin-bottom: 18px;"
-    >
-
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc hàng đợi phòng khám',
+        'description' => 'Lọc theo từ khóa, trạng thái, loại hàng đợi, ngày, bác sĩ và phòng khám.',
+    ])
         <form
             method="GET"
             action="{{ route('admin.queues.index') }}"
-        >
+         class="admin-filter-form">
 
-            <div style="
-                display: grid;
-                grid-template-columns:
-                    repeat(auto-fit, minmax(180px, 1fr));
-                gap: 14px;
-                align-items: end;
-            ">
+            <div class="admin-u-c6c96973 admin-filter-layout">
 
-                <div>
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                <div class="admin-filter-field">
+                    <label class="admin-u-63101fce">
                         Tìm kiếm
                     </label>
 
-                    <input
+                    <input class="admin-u-19b29622"
                         type="text"
                         name="search"
                         value="{{ request('search') }}"
                         placeholder="Mã lượt khám, bệnh nhân..."
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
+@error('search')<div class="field-error">{{ $message }}</div>@enderror
                 </div>
 
 
-                <div>
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                <div class="admin-filter-field">
+                    <label class="admin-u-63101fce">
                         Trạng thái
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="queue_status_id"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -98,33 +76,24 @@
                                     (string) $status->id
                                 )
                             >
-                                {{ $status->name }}
+                                {{ \App\Models\AdminDisplay::label($status->name) }}
                             </option>
 
                         @endforeach
 
                     </select>
+@error('queue_status_id')<div class="field-error">{{ $message }}</div>@enderror
                 </div>
 
 
-                <div>
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                <div class="admin-filter-field">
+                    <label class="admin-u-63101fce">
                         Loại hàng đợi
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="queue_type"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -154,50 +123,33 @@
                         </option>
 
                     </select>
+@error('queue_type')<div class="field-error">{{ $message }}</div>@enderror
                 </div>
 
 
-                <div>
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                <div class="admin-filter-field">
+                    <label class="admin-u-63101fce">
                         Ngày
                     </label>
 
-                    <input
+                    <input class="admin-u-19b29622"
                         type="date"
                         name="date"
                         value="{{ request('date') }}"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
+@error('date')<div class="field-error">{{ $message }}</div>@enderror
                 </div>
 
 
-                <div>
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                <div class="admin-filter-field">
+                    <label class="admin-u-63101fce">
                         Bác sĩ
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="doctor_id"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -220,27 +172,18 @@
                         @endforeach
 
                     </select>
+@error('doctor_id')<div class="field-error">{{ $message }}</div>@enderror
                 </div>
 
 
-                <div>
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                <div class="admin-filter-field">
+                    <label class="admin-u-63101fce">
                         Phòng khám
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="examination_room_id"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -265,36 +208,24 @@
                         @endforeach
 
                     </select>
+@error('examination_room_id')<div class="field-error">{{ $message }}</div>@enderror
                 </div>
 
             </div>
 
 
-            <div style="
-                display: flex;
-                gap: 8px;
-                margin-top: 16px;
-            ">
+            <div class="admin-u-0c24989a admin-filter-layout">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Lọc
-                </button>
 
-                <a
-                    href="{{ route('admin.queues.index') }}"
-                    class="btn btn-secondary"
-                >
-                    Đặt lại
-                </a>
+
+
 
             </div>
 
-        </form>
 
-    </div>
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route('admin.queues.index'), 'searchOnly' => false])
+        </form>
+    @endcomponent
 
 
     <div class="card">
@@ -307,7 +238,8 @@
 
                     <thead>
                     <tr>
-                        <th>STT</th>
+                        <th scope="col" class="admin-row-number">STT</th>
+                        <th>Số hàng đợi</th>
                         <th>Lượt khám</th>
                         <th>Bệnh nhân</th>
                         <th>Loại</th>
@@ -326,6 +258,7 @@
 
                         <tr>
 
+                            @include('admin.layouts.partials.row-number', ['rows' => $queues, 'index' => $loop->index])
                             <td>
                                 <strong>
                                     {{ $queue->queue_number }}
@@ -346,7 +279,7 @@
                                 @elseif ($queue->queue_type === 'RETURN_AFTER_SERVICE')
                                     Quay lại sau dịch vụ
                                 @else
-                                    {{ $queue->queue_type }}
+                                    {{ \App\Models\AdminDisplay::label($queue->queue_type) }}
                                 @endif
                             </td>
 
@@ -360,7 +293,7 @@
 
                             <td>
                                 <span class="badge">
-                                    {{ $queue->status?->name ?: '—' }}
+                                    {{ \App\Models\AdminDisplay::label($queue->status?->name ?: '—') }}
                                 </span>
                             </td>
 
@@ -380,10 +313,8 @@
                                         'admin.queues.show',
                                         $queue
                                     ) }}"
-                                    class="btn btn-secondary"
-                                >
-                                    Chi tiết
-                                </a>
+                                    class="admin-btn admin-btn-detail btn btn-secondary"
+                                >Chi tiết</a>
                             </td>
 
                         </tr>
@@ -397,17 +328,13 @@
             </div>
 
 
-            <div style="margin-top: 18px;">
+            <div class="admin-u-6840f0a6">
                 {{ $queues->links() }}
             </div>
 
         @else
 
-            <div style="
-                padding: 30px;
-                text-align: center;
-                color: #64748b;
-            ">
+            <div class="admin-u-caa0d3af">
                 Không có dữ liệu hàng đợi phù hợp.
             </div>
 

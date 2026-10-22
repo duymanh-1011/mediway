@@ -1,16 +1,19 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'visits-index')
 
 @section('title', 'Lượt khám')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard / Vận hành khám / Lượt khám
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Lượt khám</strong>
 @endsection
 
 @section('content')
 
-    <div style="margin-bottom: 22px;">
+    <div class="admin-u-ed1667a9">
 
         <h1 class="page-title">
             Lượt khám
@@ -25,69 +28,44 @@
     </div>
 
 
-    <div
-        class="card"
-        style="margin-bottom: 18px;"
-    >
-
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc lượt khám',
+        'description' => 'Lọc theo từ khóa, trạng thái, bác sĩ, chuyên khoa, phòng khám, nguồn tiếp nhận và khoảng thời gian.',
+    ])
         <form
             method="GET"
             action="{{ route('admin.visits.index') }}"
-        >
+         class="admin-filter-form">
 
-            <div style="
-                display: grid;
-                grid-template-columns:
-                    repeat(auto-fit, minmax(190px, 1fr));
-                gap: 14px;
-                align-items: end;
-            ">
+            <div class="admin-u-e6828601 admin-filter-layout">
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Tìm kiếm
                     </label>
 
-                    <input
+                    <input class="admin-u-19b29622"
                         type="text"
                         name="search"
                         value="{{ request('search') }}"
                         placeholder="Mã lượt khám, BN, BS, lịch hẹn..."
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
+@error('search')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Trạng thái
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="visit_status_id"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -104,35 +82,26 @@
                                     (string) $status->id
                                 )
                             >
-                                {{ $status->name }}
+                                {{ \App\Models\AdminDisplay::label($status->name) }}
                             </option>
 
                         @endforeach
 
                     </select>
+@error('visit_status_id')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Bác sĩ
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="doctor_id"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -157,29 +126,20 @@
                         @endforeach
 
                     </select>
+@error('doctor_id')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Chuyên khoa
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="specialty_id"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -202,29 +162,20 @@
                         @endforeach
 
                     </select>
+@error('specialty_id')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Phòng khám
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="examination_room_id"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -249,29 +200,20 @@
                         @endforeach
 
                     </select>
+@error('examination_room_id')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Nguồn tiếp nhận
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="reception_source"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -288,93 +230,65 @@
                                     $source
                                 )
                             >
-                                {{ $source }}
+                                {{ \App\Models\AdminDisplay::label($source) }}
                             </option>
 
                         @endforeach
 
                     </select>
+@error('reception_source')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Từ ngày
                     </label>
 
-                    <input
+                    <input class="admin-u-19b29622"
                         type="date"
                         name="date_from"
                         value="{{ request('date_from') }}"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
+@error('date_from')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Đến ngày
                     </label>
 
-                    <input
+                    <input class="admin-u-19b29622"
                         type="date"
                         name="date_to"
                         value="{{ request('date_to') }}"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
+@error('date_to')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
             </div>
 
 
-            <div style="
-                display: flex;
-                gap: 8px;
-                margin-top: 16px;
-            ">
+            <div class="admin-u-0c24989a admin-filter-layout">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Lọc dữ liệu
-                </button>
 
-                <a
-                    href="{{ route('admin.visits.index') }}"
-                    class="btn btn-secondary"
-                >
-                    Đặt lại
-                </a>
+
+
 
             </div>
 
-        </form>
 
-    </div>
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route('admin.visits.index'), 'searchOnly' => false])
+        </form>
+    @endcomponent
 
 
     <div class="card">
@@ -387,12 +301,13 @@
 
                     <thead>
                     <tr>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Mã lượt khám</th>
                         <th>Bệnh nhân</th>
                         <th>Bác sĩ</th>
                         <th>Chuyên khoa</th>
                         <th>Phòng</th>
-                        <th>Check-in</th>
+                        <th>Tiếp nhận</th>
                         <th>Trạng thái</th>
                         <th>Hành động</th>
                     </tr>
@@ -405,6 +320,7 @@
 
                         <tr>
 
+                            @include('admin.layouts.partials.row-number', ['rows' => $medicalVisits, 'index' => $loop->index])
                             <td>
                                 <strong>
                                     {{ $visit->visit_code }}
@@ -418,11 +334,7 @@
                                         {{ $visit->patient->full_name }}
                                     </strong>
 
-                                    <div style="
-                                        margin-top: 3px;
-                                        color: #64748b;
-                                        font-size: 12px;
-                                    ">
+                                    <div class="admin-u-ade7448d">
                                         {{ $visit->patient->patient_code }}
                                     </div>
 
@@ -454,7 +366,7 @@
                                 @if ($visit->status)
 
                                     <span class="badge">
-                                        {{ $visit->status->name }}
+                                        {{ \App\Models\AdminDisplay::label($visit->status->name) }}
                                     </span>
 
                                 @else
@@ -474,10 +386,8 @@
                                         'admin.visits.show',
                                         $visit
                                     ) }}"
-                                    class="btn btn-secondary"
-                                >
-                                    Chi tiết
-                                </a>
+                                    class="admin-btn admin-btn-detail btn btn-secondary"
+                                >Chi tiết</a>
 
                             </td>
 
@@ -492,17 +402,13 @@
             </div>
 
 
-            <div style="margin-top: 18px;">
+            <div class="admin-u-6840f0a6">
                 {{ $medicalVisits->links() }}
             </div>
 
         @else
 
-            <div style="
-                padding: 32px;
-                text-align: center;
-                color: #64748b;
-            ">
+            <div class="admin-u-f98eb126">
                 Không tìm thấy lượt khám phù hợp.
             </div>
 

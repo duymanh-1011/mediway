@@ -1,60 +1,49 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\Admin\AuthController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\AuditLogController;
-
-// ============================================================
-// PHẦN CỦA TẠO
-// ============================================================
-
-use App\Http\Controllers\Admin\ServiceStatusController;
-use App\Http\Controllers\Admin\PaymentStatusController;
-use App\Http\Controllers\Admin\ServiceOrderController;
-use App\Http\Controllers\Admin\ServiceResultController;
-use App\Http\Controllers\Admin\PrescriptionController;
-use App\Http\Controllers\Admin\PayableController;
-use App\Http\Controllers\Admin\PaymentTransactionController;
-
-// ============================================================
-// PHẦN TỪ MAIN
-// ============================================================
-
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\AdministratorController;
-use App\Http\Controllers\Admin\PatientController;
-use App\Http\Controllers\Admin\PersonalHealthRecordController;
-use App\Http\Controllers\Admin\DoctorController;
-use App\Http\Controllers\Admin\EmployeeController;
-
-use App\Http\Controllers\Admin\SpecialtyController;
-use App\Http\Controllers\Admin\ExaminationRoomController;
-use App\Http\Controllers\Admin\ServiceGroupController;
-use App\Http\Controllers\Admin\MedicalServiceController;
-use App\Http\Controllers\Admin\DiseaseGroupController;
-use App\Http\Controllers\Admin\DiseaseController;
-use App\Http\Controllers\Admin\MedicineController;
-
-use App\Http\Controllers\Admin\AppointmentStatusController;
-use App\Http\Controllers\Admin\DoctorScheduleController;
-use App\Http\Controllers\Admin\AppointmentTimeSlotController;
 use App\Http\Controllers\Admin\AppointmentController;
-
-use App\Http\Controllers\Admin\QueueStatusController;
-use App\Http\Controllers\Admin\MedicalVisitController;
+use App\Http\Controllers\Admin\AppointmentStatusController;
+use App\Http\Controllers\Admin\AppointmentTimeSlotController;
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\CatalogStatusController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DiseaseController;
+use App\Http\Controllers\Admin\DiseaseGroupController;
+use App\Http\Controllers\Admin\DoctorController;
+use App\Http\Controllers\Admin\DoctorScheduleController;
+use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\ExaminationRoomController;
 use App\Http\Controllers\Admin\ExaminationRoomQueueController;
-use App\Http\Controllers\Admin\VisitClinicalNoteController;
+use App\Http\Controllers\Admin\LookupController;
+use App\Http\Controllers\Admin\MedicalServiceController;
 use App\Http\Controllers\Admin\MedicalVisitClinicalNoteController;
-use App\Http\Controllers\Admin\VisitDiagnosisController;
-use App\Http\Controllers\Admin\MedicalVisitDiagnosisController;
-use App\Http\Controllers\Admin\VisitConclusionController;
 use App\Http\Controllers\Admin\MedicalVisitConclusionController;
-
+use App\Http\Controllers\Admin\MedicalVisitController;
+use App\Http\Controllers\Admin\MedicalVisitDiagnosisController;
+use App\Http\Controllers\Admin\MedicineController;
+use App\Http\Controllers\Admin\PatientController;
+use App\Http\Controllers\Admin\PayableController;
+use App\Http\Controllers\Admin\PaymentStatusController;
+use App\Http\Controllers\Admin\PaymentTransactionController;
+use App\Http\Controllers\Admin\PersonalHealthRecordController;
+use App\Http\Controllers\Admin\PrescriptionController;
+use App\Http\Controllers\Admin\QueueStatusController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\ServiceGroupController;
+use App\Http\Controllers\Admin\ServiceOrderController;
+use App\Http\Controllers\Admin\ServiceOrderItemController;
+use App\Http\Controllers\Admin\ServiceResultController;
+use App\Http\Controllers\Admin\ServiceStatusController;
+use App\Http\Controllers\Admin\SpecialtyController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VisitClinicalNoteController;
+use App\Http\Controllers\Admin\VisitConclusionController;
+use App\Http\Controllers\Admin\VisitDiagnosisController;
+use App\Http\Controllers\Admin\VisitStatusController;
 use App\Http\Middleware\AdminMiddleware;
-
+use App\Http\Middleware\ValidateAdminFilters;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,7 +54,6 @@ use App\Http\Middleware\AdminMiddleware;
 Route::get('/', function () {
     return redirect()->route('admin.login');
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -93,7 +81,6 @@ Route::prefix('admin')
             [AuthController::class, 'login']
         )->name('login.submit');
 
-
         /*
         |--------------------------------------------------------------------------
         | Khu vực Admin
@@ -101,8 +88,9 @@ Route::prefix('admin')
         */
 
         Route::middleware(
-            AdminMiddleware::class
+            [AdminMiddleware::class, ValidateAdminFilters::class]
         )->group(function () {
+            Route::get('/lookups', [LookupController::class, 'index'])->name('lookups');
 
             /*
             |--------------------------------------------------------------------------
@@ -114,7 +102,6 @@ Route::prefix('admin')
                 '/dashboard',
                 [DashboardController::class, 'index']
             )->name('dashboard');
-
 
             /*
             |--------------------------------------------------------------------------
@@ -132,7 +119,6 @@ Route::prefix('admin')
                 [AuditLogController::class, 'show']
             )->name('audit-logs.show');
 
-
             /*
             |--------------------------------------------------------------------------
             | Vai trò
@@ -143,7 +129,6 @@ Route::prefix('admin')
                 'roles',
                 RoleController::class
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -168,7 +153,6 @@ Route::prefix('admin')
                 'destroy',
             ]);
 
-
             /*
             |--------------------------------------------------------------------------
             | Quản trị viên
@@ -186,7 +170,6 @@ Route::prefix('admin')
             )->except([
                 'destroy',
             ]);
-
 
             /*
             |--------------------------------------------------------------------------
@@ -211,7 +194,6 @@ Route::prefix('admin')
                 'destroy',
             ]);
 
-
             /*
             |--------------------------------------------------------------------------
             | Hồ sơ sức khỏe cá nhân
@@ -224,7 +206,6 @@ Route::prefix('admin')
             )->except([
                 'destroy',
             ]);
-
 
             /*
             |--------------------------------------------------------------------------
@@ -249,7 +230,6 @@ Route::prefix('admin')
                 'destroy',
             ]);
 
-
             /*
             |--------------------------------------------------------------------------
             | Nhân viên
@@ -273,7 +253,6 @@ Route::prefix('admin')
                 'destroy',
             ]);
 
-
             /*
             |--------------------------------------------------------------------------
             | Chuyên khoa
@@ -284,7 +263,6 @@ Route::prefix('admin')
                 'specialties',
                 SpecialtyController::class
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -297,7 +275,6 @@ Route::prefix('admin')
                 ExaminationRoomController::class
             );
 
-
             /*
             |--------------------------------------------------------------------------
             | Nhóm dịch vụ
@@ -309,6 +286,10 @@ Route::prefix('admin')
                 ServiceGroupController::class
             );
 
+            Route::post('service-groups/{serviceGroup}/services', [ServiceGroupController::class, 'assign'])->name('service-groups.assign');
+            Route::patch('catalog/{catalog}/{id}/status', [CatalogStatusController::class, 'update'])->whereNumber('id')->name('catalog.status');
+            Route::patch('service-groups/{serviceGroup}/activate', [ServiceGroupController::class, 'activate'])->name('service-groups.activate');
+            Route::patch('medical-services/{medicalService}/activate', [MedicalServiceController::class, 'activate'])->name('medical-services.activate');
 
             /*
             |--------------------------------------------------------------------------
@@ -321,7 +302,6 @@ Route::prefix('admin')
                 MedicalServiceController::class
             );
 
-
             /*
             |--------------------------------------------------------------------------
             | Nhóm bệnh
@@ -332,7 +312,6 @@ Route::prefix('admin')
                 'disease-groups',
                 DiseaseGroupController::class
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -345,7 +324,6 @@ Route::prefix('admin')
                 DiseaseController::class
             );
 
-
             /*
             |--------------------------------------------------------------------------
             | Thuốc
@@ -356,7 +334,6 @@ Route::prefix('admin')
                 'medicines',
                 MedicineController::class
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -374,7 +351,6 @@ Route::prefix('admin')
                 'update',
             ]);
 
-
             /*
             |--------------------------------------------------------------------------
             | Lịch làm việc bác sĩ
@@ -390,7 +366,6 @@ Route::prefix('admin')
                 'doctor-schedules',
                 DoctorScheduleController::class
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -433,7 +408,6 @@ Route::prefix('admin')
                 'appointment-time-slots.destroy'
             );
 
-
             /*
             |--------------------------------------------------------------------------
             | Lịch hẹn
@@ -466,6 +440,21 @@ Route::prefix('admin')
                 'update',
             ]);
 
+            /*
+            |--------------------------------------------------------------------------
+            | Trạng thái lượt khám
+            |--------------------------------------------------------------------------
+            */
+
+            Route::resource(
+                'visit-statuses',
+                VisitStatusController::class
+            )->only([
+                'index',
+                'show',
+                'edit',
+                'update',
+            ]);
 
             /*
             |--------------------------------------------------------------------------
@@ -482,7 +471,6 @@ Route::prefix('admin')
                 'edit',
                 'update',
             ]);
-
 
             /*
             |--------------------------------------------------------------------------
@@ -504,7 +492,6 @@ Route::prefix('admin')
                 'index',
                 'show',
             ]);
-
 
             /*
             |--------------------------------------------------------------------------
@@ -551,7 +538,6 @@ Route::prefix('admin')
                 'show',
             ]);
 
-
             /*
             |--------------------------------------------------------------------------
             | Nội dung khám
@@ -587,7 +573,6 @@ Route::prefix('admin')
                 'edit',
                 'update',
             ]);
-
 
             /*
             |--------------------------------------------------------------------------
@@ -625,7 +610,6 @@ Route::prefix('admin')
                 'update',
             ]);
 
-
             /*
             |--------------------------------------------------------------------------
             | Kết luận lượt khám
@@ -662,13 +646,11 @@ Route::prefix('admin')
                 'update',
             ]);
 
-
             /*
             |--------------------------------------------------------------------------
             | PHẦN CỦA TẠO
             |--------------------------------------------------------------------------
             */
-
 
             /*
             |--------------------------------------------------------------------------
@@ -704,7 +686,6 @@ Route::prefix('admin')
                 'service-statuses.update'
             );
 
-
             /*
             |--------------------------------------------------------------------------
             | Trạng thái thanh toán
@@ -739,12 +720,25 @@ Route::prefix('admin')
                 'payment-statuses.update'
             );
 
-
             /*
             |--------------------------------------------------------------------------
             | Chỉ định dịch vụ
             |--------------------------------------------------------------------------
             */
+
+            Route::get(
+                '/visits/{visit}/service-orders/create',
+                [ServiceOrderController::class, 'create']
+            )->name(
+                'visits.service-orders.create'
+            );
+
+            Route::post(
+                '/visits/{visit}/service-orders',
+                [ServiceOrderController::class, 'store']
+            )->name(
+                'visits.service-orders.store'
+            );
 
             Route::get(
                 '/service-orders',
@@ -760,6 +754,31 @@ Route::prefix('admin')
                 'service-orders.show'
             );
 
+            /*
+            |--------------------------------------------------------------------------
+            | Thực hiện dịch vụ
+            |--------------------------------------------------------------------------
+            */
+
+            Route::post(
+                '/service-order-items/{serviceOrderItem}/start',
+                [
+                    ServiceOrderItemController::class,
+                    'start',
+                ]
+            )->name(
+                'service-order-items.start'
+            );
+
+            Route::post(
+                '/service-order-items/{serviceOrderItem}/complete',
+                [
+                    ServiceOrderItemController::class,
+                    'complete',
+                ]
+            )->name(
+                'service-order-items.complete'
+            );
 
             /*
             |--------------------------------------------------------------------------
@@ -768,11 +787,34 @@ Route::prefix('admin')
             */
 
             Route::get(
+                '/service-order-items/{serviceOrderItem}/service-result/create',
+                [
+                    ServiceResultController::class,
+                    'create',
+                ]
+            )->name(
+                'service-order-items.service-results.create'
+            );
+
+            Route::post(
+                '/service-order-items/{serviceOrderItem}/service-result',
+                [
+                    ServiceResultController::class,
+                    'store',
+                ]
+            )->name(
+                'service-order-items.service-results.store'
+            );
+
+            Route::get(
                 '/service-results',
                 [ServiceResultController::class, 'index']
             )->name(
                 'service-results.index'
             );
+
+            Route::get('/service-results/{id}/documents/{type}', [ServiceResultController::class, 'document'])
+                ->whereIn('type', ['pdf', 'image'])->name('service-results.document');
 
             Route::get(
                 '/service-results/{id}',
@@ -795,7 +837,6 @@ Route::prefix('admin')
                 'service-results.update'
             );
 
-
             /*
             |--------------------------------------------------------------------------
             | Đơn thuốc
@@ -808,6 +849,9 @@ Route::prefix('admin')
             )->name(
                 'prescriptions.index'
             );
+
+            Route::get('/prescriptions/{id}/document', [PrescriptionController::class, 'document'])
+                ->name('prescriptions.document');
 
             Route::get(
                 '/prescriptions/{id}',
@@ -829,7 +873,6 @@ Route::prefix('admin')
             )->name(
                 'prescriptions.update'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -865,12 +908,25 @@ Route::prefix('admin')
                 'payables.cancel'
             );
 
-
             /*
             |--------------------------------------------------------------------------
             | Giao dịch thanh toán
             |--------------------------------------------------------------------------
             */
+
+            Route::get(
+                '/payables/{payable}/payment-transactions/create',
+                [PaymentTransactionController::class, 'create']
+            )->name(
+                'payables.payment-transactions.create'
+            );
+
+            Route::post(
+                '/payables/{payable}/payment-transactions',
+                [PaymentTransactionController::class, 'store']
+            )->name(
+                'payables.payment-transactions.store'
+            );
 
             Route::get(
                 '/payment-transactions',
@@ -886,7 +942,6 @@ Route::prefix('admin')
                 'payment-transactions.show'
             );
 
-
             /*
             |--------------------------------------------------------------------------
             | Đăng xuất
@@ -899,5 +954,7 @@ Route::prefix('admin')
             )->name(
                 'logout'
             );
+
         });
+
     });

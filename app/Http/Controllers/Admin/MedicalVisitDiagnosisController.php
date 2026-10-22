@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreVisitDiagnosisRequest;
+use App\Models\AdminLookup;
 use App\Models\Disease;
 use App\Models\MedicalVisit;
 use App\Models\VisitDiagnosis;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class MedicalVisitDiagnosisController extends Controller
@@ -24,23 +26,16 @@ class MedicalVisitDiagnosisController extends Controller
             'status',
         ]);
 
-        if ($visit->status?->name === 'COMPLETED') {
+        if (! $visit->canRecordClinicalData()) {
             return redirect()
                 ->route('admin.visits.show', $visit)
                 ->with(
                     'error',
-                    'Không thể thêm chẩn đoán cho lượt khám đã hoàn tất.'
+                    'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
                 );
         }
 
-        $diseases = Disease::query()
-            ->where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get([
-                'id',
-                'disease_code',
-                'name',
-            ]);
+        $diseases = AdminLookup::initial(Disease::query()->where('status', 'ACTIVE')->orderBy('name'), old('disease_id'));
 
         $diagnosisTypes = [
             'PRIMARY' => 'Chẩn đoán chính',
@@ -73,12 +68,12 @@ class MedicalVisitDiagnosisController extends Controller
     ): RedirectResponse {
         $visit->load('status');
 
-        if ($visit->status?->name === 'COMPLETED') {
+        if (! $visit->canRecordClinicalData()) {
             return redirect()
                 ->route('admin.visits.show', $visit)
                 ->with(
                     'error',
-                    'Không thể thêm chẩn đoán cho lượt khám đã hoàn tất.'
+                    'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
                 );
         }
 
@@ -104,29 +99,27 @@ class MedicalVisitDiagnosisController extends Controller
                 $visit,
                 $data
             ) {
+                $visit = $visit->lockForClinicalWrite();
+                if ($visit->diagnoses()->where('disease_id', $data['disease_id'])->where('diagnosis_type', $data['diagnosis_type'])->exists()) {
+                    throw ValidationException::withMessages(['disease_id' => 'Lượt khám đã có chẩn đoán cùng bệnh và cùng loại.']);
+                }
+
                 return VisitDiagnosis::create([
-                    'medical_visit_id' =>
-                        $visit->id,
+                    'medical_visit_id' => $visit->id,
 
-                    'disease_id' =>
-                        $data['disease_id'],
+                    'disease_id' => $data['disease_id'],
 
-                    'diagnosis_type' =>
-                        $data['diagnosis_type'],
+                    'diagnosis_type' => $data['diagnosis_type'],
 
-                    'severity' =>
-                        $data['severity']
+                    'severity' => $data['severity']
                         ?? null,
 
-                    'diagnosis_description' =>
-                        $data['diagnosis_description']
+                    'diagnosis_description' => $data['diagnosis_description']
                         ?? null,
 
-                    'diagnosed_at' =>
-                        now(),
+                    'diagnosed_at' => now(),
 
-                    'notes' =>
-                        $data['notes']
+                    'notes' => $data['notes']
                         ?? null,
                 ]);
             }

@@ -1,10 +1,17 @@
 
 @extends('admin.layouts.app')
+@section('admin-page', 'doctors-show')
 
 @section('title', 'Chi tiết bác sĩ - Mediway')
 
 @section('breadcrumb')
-    Admin / Nhân sự & bệnh nhân / Bác sĩ / Chi tiết
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Nhân sự & bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Bác sĩ</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Chi tiết</strong>
 @endsection
 
 @section('content')
@@ -96,7 +103,7 @@
                     <div><dt>Họ tên</dt><dd>{{ $doctor->full_name }}</dd></div>
                     <div><dt>Ngày sinh</dt><dd>{{ $doctor->date_of_birth?->format('d/m/Y') ?? '-' }}</dd></div>
                     <div><dt>Giới tính</dt><dd>{{ $doctor->gender ?? '-' }}</dd></div>
-                    <div><dt>Trạng thái hồ sơ</dt><dd>{{ $doctor->status }}</dd></div>
+                    <div><dt>Trạng thái hồ sơ</dt><dd>{{ \App\Models\AdminDisplay::label($doctor->status) }}</dd></div>
                     <div><dt>Ngày tạo</dt><dd>{{ $doctor->created_at?->format('d/m/Y H:i') }}</dd></div>
                 </dl>
             </section>
@@ -106,8 +113,8 @@
                 <dl class="ds-list">
                     <div><dt>Mã tài khoản</dt><dd>{{ $user?->business_code ?? '-' }}</dd></div>
                     <div><dt>Số điện thoại</dt><dd>{{ $user?->phone ?? '-' }}</dd></div>
-                    <div><dt>Vai trò</dt><dd>{{ $user?->role?->name ?? '-' }}</dd></div>
-                    <div><dt>Trạng thái tài khoản</dt><dd>{{ $user?->status ?? '-' }}</dd></div>
+                    <div><dt>Vai trò</dt><dd>{{ \App\Models\AdminDisplay::label($user?->role?->name ?? '-') }}</dd></div>
+                    <div><dt>Trạng thái tài khoản</dt><dd>{{ \App\Models\AdminDisplay::label($user?->status ?? '-') }}</dd></div>
                 </dl>
 
                 @if($user)
@@ -209,51 +216,7 @@
 </div>
 @endsection
 
-@push('styles')
-<style>
-.doctor-detail-page{min-width:0}
-.ds-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:22px}
-.ds-description{display:flex;align-items:center;gap:12px;color:#64748b;font-size:13px;margin:7px 0 0}
-.ds-actions{display:flex;gap:10px;flex-wrap:wrap}
-.ds-btn{display:inline-flex;align-items:center;justify-content:center;min-height:41px;padding:10px 15px;border:1px solid transparent;border-radius:9px;font-size:13px;font-weight:700;text-decoration:none}
-.ds-primary{background:#2563eb;color:#fff}
-.ds-light{background:#fff;border-color:#cbd5e1;color:#334155}
-.ds-status{padding:6px 10px;border-radius:20px;font-size:11px;font-weight:700}
-.ds-active{background:#dcfce7;color:#166534}
-.ds-inactive{background:#f1f5f9;color:#475569}
-.ds-tabs{display:flex;gap:8px;border-bottom:1px solid #e2e8f0;overflow-x:auto;margin-bottom:22px}
-.ds-tab{border:0;border-bottom:3px solid transparent;background:transparent;padding:13px 17px;font-size:13px;font-weight:700;color:#64748b;white-space:nowrap;cursor:pointer;font-family:inherit}
-.ds-tab.active{color:#1d4ed8;border-bottom-color:#2563eb}
-.ds-panel[hidden]{display:none!important}
-.ds-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:18px}
-.ds-card{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:23px;min-width:0;box-shadow:0 4px 20px rgba(15,23,42,.035)}
-.ds-card h2{font-size:17px;color:#0f172a;margin:0 0 18px}
-.ds-section{margin-bottom:18px}
-.ds-list{margin:0}
-.ds-list>div{display:flex;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
-.ds-list dt,.ds-information dt{color:#64748b}
-.ds-list dd{margin:0;text-align:right;color:#0f172a;overflow-wrap:anywhere}
-.ds-account-link{margin-top:18px}
-.ds-information{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 22px;margin:0}
-.ds-information>div{padding:14px 0;border-bottom:1px solid #f1f5f9;min-width:0}
-.ds-information dt{font-size:12px;font-weight:700;margin-bottom:8px}
-.ds-information dd{font-size:13px;line-height:1.6;color:#0f172a;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
-.ds-long{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:#475569;line-height:1.8;margin:0}
-.ds-help{font-size:13px;color:#64748b;line-height:1.8;margin:0}
-.ds-section-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
-.ds-section-heading h2{margin:0}
-.ds-documents{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
-.ds-document{min-width:0;padding:14px;background:#fafcff;border:1px solid #e2e8f0;border-radius:11px}
-.ds-document strong{display:block;font-size:13px;margin-bottom:12px;color:#334155}
-.ds-document img{display:block;width:100%;height:170px;object-fit:contain;background:#f1f5f9;border-radius:9px}
-.ds-document a{display:inline-block;margin-top:12px;color:#1d4ed8;font-size:12px;font-weight:700;text-decoration:none}
-.ds-no-file,.ds-file-placeholder{height:170px;display:flex;justify-content:center;align-items:center;background:#f1f5f9;border-radius:9px;color:#94a3b8;font-size:12px;text-align:center}
-.ds-file-placeholder{background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:17px}
-.ds-success{padding:13px 15px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:9px;font-size:13px;margin-bottom:18px}
-@media(max-width:850px){.ds-two{grid-template-columns:1fr}.ds-documents{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){.ds-card{padding:16px}.ds-information{grid-template-columns:1fr}.ds-documents{grid-template-columns:1fr}}
-</style>
-@endpush
+
 
 @push('scripts')
 <script>

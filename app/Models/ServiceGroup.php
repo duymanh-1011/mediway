@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ServiceGroup extends Model
 {
@@ -19,11 +20,16 @@ class ServiceGroup extends Model
         'display_order' => 'integer',
     ];
 
-    public function medicalServices()
+    /**
+     * Các dịch vụ thuộc nhóm này.
+     */
+    public function medicalServices(): BelongsToMany
     {
-        return $this->hasMany(
+        return $this->belongsToMany(
             MedicalService::class,
-            'service_group_id'
-        );
+            'service_group_medical_service',
+            'service_group_id',
+            'medical_service_id'
+        )->withTimestamps();
     }
 }

@@ -4,13 +4,24 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdatePrescriptionRequest;
+use App\Models\ClinicalDocument;
+use App\Models\MedicalVisit;
 use App\Models\Prescription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PrescriptionController extends Controller
 {
+    public function document(int $id): StreamedResponse
+    {
+        $prescription = Prescription::findOrFail($id);
+
+        return app(ClinicalDocument::class)->response($prescription->prescription_pdf_path, 'prescriptions/'.$prescription->id, 'pdf');
+    }
+
     /**
      * Danh sách đơn thuốc.
      */
@@ -35,7 +46,8 @@ class PrescriptionController extends Controller
                 'doctors.doctor_code',
                 'doctors.full_name as doctor_name',
             ])
-            ->withCount('items');
+            ->withCount('items')
+            ->with('medicalVisit.status');
 
         /*
         |--------------------------------------------------------------------------
@@ -50,22 +62,22 @@ class PrescriptionController extends Controller
                     ->where(
                         'prescriptions.prescription_code',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'medical_visits.visit_code',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'doctors.doctor_code',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'doctors.full_name',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     );
             });
         }
@@ -142,6 +154,7 @@ class PrescriptionController extends Controller
     {
         $prescription = Prescription::query()
             ->with([
+                'medicalVisit.status',
                 'items' => function ($query) {
                     $query->orderBy('id');
                 },
@@ -235,6 +248,8 @@ class PrescriptionController extends Controller
             ->withCount('items')
             ->findOrFail($id);
 
+        abort_if($prescription->medicalVisit->status?->name === 'COMPLETED', 403, 'Lượt khám đã hoàn tất, không thể sửa đơn thuốc.');
+
         /*
         |--------------------------------------------------------------------------
         | Lượt khám
@@ -319,50 +334,18 @@ class PrescriptionController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Dữ liệu cũ để ghi Audit Log
-        |--------------------------------------------------------------------------
-        */
-        $oldValues = [
-            'prescribed_at' =>
-            $prescription->prescribed_at
-                ? $prescription->prescribed_at->format(
-                    'Y-m-d H:i:s'
-                )
-                : null,
-
-            'general_instructions' =>
-            $prescription->general_instructions,
-
-            'doctor_notes' =>
-            $prescription->doctor_notes,
-
-            'status' =>
-            $prescription->status,
-
-            'prescription_pdf_path' =>
-            $prescription->prescription_pdf_path,
-        ];
-
-        /*
-        |--------------------------------------------------------------------------
         | Dữ liệu cập nhật
         |--------------------------------------------------------------------------
         */
         $updateData = [
-            'prescribed_at' =>
-            $validated['prescribed_at'],
+            'prescribed_at' => $validated['prescribed_at'],
 
-            'general_instructions' =>
-            $validated['general_instructions'] ?? null,
+            'general_instructions' => $validated['general_instructions'] ?? null,
 
-            'doctor_notes' =>
-            $validated['doctor_notes'] ?? null,
+            'doctor_notes' => $validated['doctor_notes'] ?? null,
 
-            'status' =>
-            $validated['status'],
+            'status' => $validated['status'],
 
-            'prescription_pdf_path' =>
-            $validated['prescription_pdf_path'] ?? null,
         ];
 
         /*
@@ -392,11 +375,10 @@ class PrescriptionController extends Controller
         | Transaction
         |--------------------------------------------------------------------------
         */
-        DB::transaction(function () use (
+        ClinicalDocument::transaction(function (ClinicalDocument $documents) use (
             $request,
             $prescription,
             $updateData,
-            $oldValues,
             $roleNameSnapshot
         ) {
             /*
@@ -404,6 +386,14 @@ class PrescriptionController extends Controller
             | Cập nhật đơn thuốc
             |--------------------------------------------------------------------------
             */
+            $visit = MedicalVisit::with('status')->whereKey($prescription->medical_visit_id)->lockForUpdate()->firstOrFail();
+            if ($visit->status?->name === 'COMPLETED') {
+                throw ValidationException::withMessages(['prescription' => 'Lượt khám đã hoàn tất, không thể sửa đơn thuốc.']);
+            }
+            $prescription = Prescription::whereKey($prescription->id)->lockForUpdate()->firstOrFail();
+            $oldValues = $prescription->only(['general_instructions', 'doctor_notes', 'status', 'prescription_pdf_path']);
+            $oldValues['prescribed_at'] = $prescription->prescribed_at?->format('Y-m-d H:i:s');
+            $updateData = array_merge($updateData, $documents->store($request, 'prescriptions/'.$prescription->id, ['prescription_pdf' => 'prescription_pdf_path']));
             $prescription->update($updateData);
 
             $prescription->refresh();
@@ -414,24 +404,19 @@ class PrescriptionController extends Controller
             |--------------------------------------------------------------------------
             */
             $newValues = [
-                'prescribed_at' =>
-                $prescription->prescribed_at
+                'prescribed_at' => $prescription->prescribed_at
                     ? $prescription->prescribed_at->format(
                         'Y-m-d H:i:s'
                     )
                     : null,
 
-                'general_instructions' =>
-                $prescription->general_instructions,
+                'general_instructions' => $prescription->general_instructions,
 
-                'doctor_notes' =>
-                $prescription->doctor_notes,
+                'doctor_notes' => $prescription->doctor_notes,
 
-                'status' =>
-                $prescription->status,
+                'status' => $prescription->status,
 
-                'prescription_pdf_path' =>
-                $prescription->prescription_pdf_path,
+                'prescription_pdf_path' => $prescription->prescription_pdf_path,
             ];
 
             /*
@@ -440,56 +425,43 @@ class PrescriptionController extends Controller
             |--------------------------------------------------------------------------
             */
             DB::table('audit_logs')->insert([
-                'user_id' =>
-                Auth::id(),
+                'user_id' => Auth::id(),
 
-                'role_name_snapshot' =>
-                $roleNameSnapshot,
+                'role_name_snapshot' => $roleNameSnapshot,
 
-                'action' =>
-                'UPDATE',
+                'action' => 'UPDATE',
 
-                'entity_type' =>
-                'prescriptions',
+                'entity_type' => 'prescriptions',
 
-                'entity_id' =>
-                $prescription->id,
+                'entity_id' => $prescription->id,
 
-                'entity_business_code' =>
-                $prescription->prescription_code,
+                'entity_business_code' => $prescription->prescription_code,
 
-                'old_values' =>
-                json_encode(
+                'old_values' => json_encode(
                     $oldValues,
                     JSON_UNESCAPED_UNICODE
                         |
                         JSON_UNESCAPED_SLASHES
                 ),
 
-                'new_values' =>
-                json_encode(
+                'new_values' => json_encode(
                     $newValues,
                     JSON_UNESCAPED_UNICODE
                         |
                         JSON_UNESCAPED_SLASHES
                 ),
 
-                'description' =>
-                'Cập nhật đơn thuốc '
-                    . $prescription->prescription_code
-                    . '.',
+                'description' => 'Cập nhật đơn thuốc '
+                    .$prescription->prescription_code
+                    .'.',
 
-                'ip_address' =>
-                $request->ip(),
+                'ip_address' => $request->ip(),
 
-                'user_agent' =>
-                $request->userAgent(),
+                'user_agent' => $request->userAgent(),
 
-                'performed_at' =>
-                now(),
+                'performed_at' => now(),
 
-                'created_at' =>
-                now(),
+                'created_at' => now(),
             ]);
         });
 

@@ -19,7 +19,7 @@ class MedicalServiceSeeder extends Seeder
             ['DVCD003', 'CDHA', 'Siêu âm ổ bụng',         300000, 'lần', 25, 3],
 
             ['DVTDCN001', 'TDCN', 'Điện tâm đồ',          150000, 'lần', 15, 1],
-            ['DVTDCN002', 'TDCN', 'Nội soi Tai Mũi Họng',250000, 'lần', 20, 2],
+            ['DVTDCN002', 'TDCN', 'Nội soi Tai Mũi Họng', 250000, 'lần', 20, 2],
 
             ['DVTT001', 'TT', 'Rửa tai',                  180000, 'lần', 20, 1],
             ['DVTT002', 'TT', 'Khí dung Tai Mũi Họng',   120000, 'lần', 20, 2],
@@ -35,7 +35,6 @@ class MedicalServiceSeeder extends Seeder
             DB::table('medical_services')->updateOrInsert(
                 ['service_code' => $code],
                 [
-                    'service_group_id' => $groupId,
                     'name' => $name,
                     'description' => null,
                     'price' => $price,
@@ -49,6 +48,13 @@ class MedicalServiceSeeder extends Seeder
                     'updated_at' => now(),
                 ]
             );
+            if (! $groupId) {
+                throw new \RuntimeException('Không tìm thấy nhóm dịch vụ: '.$groupCode);
+            }
+            DB::table('service_group_medical_service')->updateOrInsert([
+                'service_group_id' => $groupId,
+                'medical_service_id' => DB::table('medical_services')->where('service_code', $code)->value('id'),
+            ], ['created_at' => now(), 'updated_at' => now()]);
         }
     }
 }

@@ -1,13 +1,16 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'roles-edit')
 
 @section('title', 'Chỉnh sửa vai trò - Mediway')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Admin / Hệ thống /
-        <a href="{{ route('admin.roles.index') }}">Vai trò</a>
-        / Chỉnh sửa
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Hệ thống</span>
+    <span aria-hidden="true">/</span>
+    <a href="{{ route('admin.roles.index') }}">Vai trò</a>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Chỉnh sửa</strong>
 @endsection
 
 @section('content')
@@ -17,7 +20,7 @@
         <div>
             <h1 class="page-title">Chỉnh sửa vai trò</h1>
             <p class="page-description">
-                Cập nhật thông tin vai trò {{ $role->name }}.
+                Cập nhật thông tin vai trò {{ \App\Models\AdminDisplay::label($role->name) }}.
             </p>
         </div>
 
@@ -27,7 +30,7 @@
         </a>
     </div>
 
-    <form action="{{ route('admin.roles.update', $role) }}" method="POST">
+    <form novalidate action="{{ route('admin.roles.update', $role) }}" method="POST">
         @csrf
         @method('PUT')
 
@@ -65,7 +68,7 @@
                 >
 
                 @error('name')
-                    <div class="field-error">{{ $message }}</div>
+                    <div class="field-error">{{ \App\Models\AdminDisplay::text($message) }}</div>
                 @enderror
             </div>
 
@@ -81,7 +84,7 @@
                 >{{ old('description', $role->description) }}</textarea>
 
                 @error('description')
-                    <div class="field-error">{{ $message }}</div>
+                    <div class="field-error">{{ \App\Models\AdminDisplay::text($message) }}</div>
                 @enderror
             </div>
 
@@ -111,7 +114,7 @@ name="status"
                 </select>
 
                 @error('status')
-                    <div class="field-error">{{ $message }}</div>
+                    <div class="field-error">{{ \App\Models\AdminDisplay::text($message) }}</div>
                 @enderror
             </div>
 
@@ -131,100 +134,3 @@ name="status"
 
 </div>
 @endsection
-
-@push('styles')
-<style>
-    .role-edit-page { max-width: 960px; margin: 0 auto; }
-
-    .role-edit-heading {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-bottom: 22px;
-    }
-
-    .role-edit-heading .page-description { margin-bottom: 0; }
-
-    .role-edit-card { padding: 28px; }
-
-    .role-edit-title {
-        font-size: 18px;
-        margin: 0 0 22px;
-        padding-bottom: 17px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .role-warning {
-        padding: 15px;
-        margin-bottom: 22px;
-        border-radius: 9px;
-        background: #fffbeb;
-        border: 1px solid #fde68a;
-        color: #92400e;
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    .role-warning p { margin: 6px 0 0; }
-
-    .role-edit-field { margin-bottom: 23px; }
-
-    .role-edit-field label {
-        display: block;
-        font-size: 13px;
-        font-weight: 700;
-        color: #334155;
-        margin-bottom: 8px;
-    }
-
-    .role-edit-field input,
-    .role-edit-field textarea,
-    .role-edit-field select {
-        width: 100%;
-        padding: 11px 13px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        background: #fff;
-        color: #0f172a;
-        outline: none;
-    }
-
-    .role-edit-field textarea { resize: vertical; }
-
-    .role-edit-field input:focus,
-    .role-edit-field textarea:focus,
-    .role-edit-field select:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px #dbeafe;
-    }
-
-    .role-edit-field input:disabled,
-    .role-edit-field select:disabled {
-        background: #f1f5f9;
-color: #64748b;
-        cursor: not-allowed;
-    }
-
-    .role-edit-field .input-invalid { border-color: #dc2626; }
-
-    .field-error {
-        margin-top: 6px;
-        font-size: 12px;
-        color: #dc2626;
-    }
-
-    .role-edit-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-        padding-top: 20px;
-        border-top: 1px solid #e2e8f0;
-    }
-
-    @media (max-width: 650px) {
-        .role-edit-card { padding: 18px; }
-    }
-</style>
-@endpush

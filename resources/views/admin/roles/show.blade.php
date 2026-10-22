@@ -1,13 +1,16 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'roles-show')
 
 @section('title', 'Chi tiết vai trò - Mediway')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Admin / Hệ thống /
-        <a href="{{ route('admin.roles.index') }}">Vai trò</a>
-        / Chi tiết
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Hệ thống</span>
+    <span aria-hidden="true">/</span>
+    <a href="{{ route('admin.roles.index') }}">Vai trò</a>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Chi tiết</strong>
 @endsection
 
 @section('content')
@@ -16,7 +19,7 @@
     <div class="role-detail-header">
         <div>
             <h1 class="page-title">
-                Chi tiết vai trò: {{ $role->name }}
+                Chi tiết vai trò: {{ \App\Models\AdminDisplay::label($role->name) }}
             </h1>
 
             <p class="page-description">
@@ -48,7 +51,7 @@
 
             <div class="role-detail-field">
                 <span>Tên vai trò</span>
-                <strong>{{ $role->name }}</strong>
+                <strong>{{ \App\Models\AdminDisplay::label($role->name) }}</strong>
             </div>
 
             <div class="role-detail-field">
@@ -114,11 +117,11 @@
             @endif
 
             @if (!$role->isSystemRole() && $role->users_count === 0)
-                <form
+                <form novalidate class="admin-u-86de7ac6"
                     action="{{ route('admin.roles.destroy', $role) }}"
                     method="POST"
                     onsubmit="return confirm('Bạn có chắc chắn muốn xóa vai trò này?');"
-                    style="margin-top:18px;"
+
                 >
                     @csrf
                     @method('DELETE')
@@ -140,6 +143,7 @@
             <table class="admin-table">
                 <thead>
                     <tr>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Mã tài khoản</th>
                         <th>Số điện thoại</th>
                         <th>Trạng thái</th>
@@ -150,6 +154,7 @@
                 <tbody>
                     @forelse ($users as $user)
                         <tr>
+                            @include('admin.layouts.partials.row-number', ['rows' => $users, 'index' => $loop->index])
                             <td>
                                 <strong>{{ $user->business_code }}</strong>
                             </td>
@@ -158,7 +163,7 @@
 
                             <td>
                                 <span class="badge {{ $user->status === 'ACTIVE' ? 'badge-success' : 'badge-danger' }}">
-                                    {{ $user->status }}
+                                    {{ \App\Models\AdminDisplay::label($user->status) }}
                                 </span>
                             </td>
 
@@ -168,7 +173,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="role-empty">
+                            <td colspan="5" class="role-empty">
                                 Chưa có tài khoản nào thuộc vai trò này.
                             </td>
 </tr>
@@ -208,103 +213,3 @@
 
 </div>
 @endsection
-
-@push('styles')
-<style>
-    .role-detail-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-bottom: 22px;
-    }
-
-    .role-detail-header .page-description { margin-bottom: 0; }
-
-    .role-detail-actions { display: flex; gap: 10px; }
-
-    .role-detail-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 2fr) minmax(250px, 1fr);
-        gap: 18px;
-        margin-bottom: 20px;
-    }
-
-    .role-section-title {
-        margin: 0 0 18px;
-        font-size: 17px;
-        font-weight: 700;
-    }
-
-    .role-detail-field {
-        display: grid;
-        grid-template-columns: 170px minmax(0, 1fr);
-        gap: 12px;
-        padding: 13px 0;
-        border-bottom: 1px solid #f1f5f9;
-        font-size: 13px;
-        overflow-wrap: anywhere;
-    }
-
-    .role-detail-field:last-child { border-bottom: none; }
-
-    .role-detail-field > span { color: #64748b; }
-    .role-detail-field > strong { color: #0f172a; }
-
-    .role-big-count {
-        font-size: 46px;
-        font-weight: 800;
-        color: #2563eb;
-        line-height: 1.2;
-    }
-
-    .role-summary-card p {
-        color: #64748b;
-        font-size: 13px;
-        margin: 8px 0 20px;
-    }
-
-    .role-notice {
-        padding: 14px;
-        border-radius: 9px;
-        background: #eff6ff;
-        color: #1e40af;
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    .role-empty {
-        text-align: center;
-        padding: 30px !important;
-        color: #64748b;
-    }
-
-    .role-users-pagination {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 12px;
-        font-size: 13px;
-        color: #64748b;
-    }
-
-    .role-pagination-actions {
-        display: flex;
-gap: 12px;
-        align-items: center;
-    }
-
-    .role-disabled { opacity: .45; cursor: default; }
-
-    @media (max-width: 900px) {
-        .role-detail-grid { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 600px) {
-        .role-detail-field { grid-template-columns: 1fr; gap: 5px; }
-    }
-</style>
-@endpush

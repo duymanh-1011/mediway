@@ -1,31 +1,33 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'medical-services-index')
 
 @section(
     'title',
-    'Quản lý dịch vụ y tế - Mediway Admin'
+    'Quản lý dịch vụ y tế - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-        Admin / Danh mục / Dịch vụ y tế
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Danh mục</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Dịch vụ y tế</strong>
 @endsection
 
 @section('content')
+    @include('admin.layouts.partials.service-catalog-tabs')
 
     <div class="page-header">
 
         <div>
 
             <h1 class="page-title">
-                Quản lý dịch vụ y tế
+                Dịch vụ y tế
             </h1>
 
             <p class="page-description">
-                Quản lý danh mục dịch vụ,
-                giá và thông tin thực hiện.
+                Quản lý dịch vụ, nhóm dịch vụ,
+                mức giá và thông tin thực hiện.
             </p>
 
         </div>
@@ -34,12 +36,17 @@
             href="{{ route(
                 'admin.medical-services.create'
             ) }}"
-            class="btn btn-primary"
+            class="admin-btn btn btn-primary admin-btn-primary"
         >
             + Thêm dịch vụ
         </a>
 
     </div>
+
+
+    {{-- =====================================================
+         THỐNG KÊ
+    ====================================================== --}}
 
     <div class="stats-grid">
 
@@ -55,6 +62,7 @@
 
         </div>
 
+
         <div class="mini-card">
 
             <div class="mini-card-label">
@@ -66,6 +74,7 @@
             </div>
 
         </div>
+
 
         <div class="mini-card">
 
@@ -81,40 +90,53 @@
 
     </div>
 
-    <div class="card">
 
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc dịch vụ y tế',
+        'description' => 'Lọc theo từ khóa, nhóm dịch vụ, giá từ, giá đến và trạng thái.',
+    ])
         <form
             method="GET"
             action="{{ route(
                 'admin.medical-services.index'
             ) }}"
-            class="filter-form"
+            class="filter-form admin-filter-form"
         >
 
-            <div class="filter-item">
+            <div class="filter-item admin-filter-field">
 
-                <label class="filter-label">
-                    Tìm kiếm
+                <label
+                    for="keyword"
+                    class="filter-label"
+                >
+                    Từ khóa
                 </label>
 
                 <input
                     type="text"
+                    id="keyword"
                     name="keyword"
                     class="filter-control"
                     value="{{ $keyword }}"
-                    placeholder="Mã hoặc tên dịch vụ..."
+                    placeholder="Mã hoặc tên dịch vụ"
                 >
+@error('keyword')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-item">
 
-                <label class="filter-label">
+            <div class="filter-item admin-filter-field">
+
+                <label
+                    for="group_id"
+                    class="filter-label"
+                >
                     Nhóm dịch vụ
                 </label>
 
                 <select
-                    name="service_group_id"
+                    id="group_id"
+                    name="group_id"
                     class="filter-control"
                 >
 
@@ -138,50 +160,68 @@
                     @endforeach
 
                 </select>
+@error('group_id')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-item">
 
-                <label class="filter-label">
+            <div class="filter-item admin-filter-field">
+
+                <label
+                    for="min_price"
+                    class="filter-label"
+                >
                     Giá từ
                 </label>
 
                 <input
                     type="number"
+                    id="min_price"
                     name="min_price"
                     class="filter-control"
                     value="{{ $minPrice }}"
                     min="0"
                     placeholder="0"
                 >
+@error('min_price')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-item">
 
-                <label class="filter-label">
+            <div class="filter-item admin-filter-field">
+
+                <label
+                    for="max_price"
+                    class="filter-label"
+                >
                     Giá đến
                 </label>
 
                 <input
                     type="number"
+                    id="max_price"
                     name="max_price"
                     class="filter-control"
                     value="{{ $maxPrice }}"
                     min="0"
-                    placeholder="..."
+                    placeholder="Không giới hạn"
                 >
+@error('max_price')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-item">
 
-                <label class="filter-label">
+            <div class="filter-item admin-filter-field">
+
+                <label
+                    for="status"
+                    class="filter-label"
+                >
                     Trạng thái
                 </label>
 
                 <select
+                    id="status"
                     name="status"
                     class="filter-control"
                 >
@@ -196,7 +236,7 @@
                             $status === 'ACTIVE'
                         )
                     >
-                        ACTIVE
+                        Đang hoạt động
                     </option>
 
                     <option
@@ -205,34 +245,36 @@
                             $status === 'INACTIVE'
                         )
                     >
-                        INACTIVE
+                        Ngừng hoạt động
                     </option>
 
                 </select>
+@error('status')<div class="field-error">{{ $message }}</div>@enderror
 
             </div>
 
-            <div class="filter-actions">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Tìm kiếm
-                </button>
+            <div class="filter-actions admin-filter-layout">
 
-                <a
-                    href="{{ route(
+
+
+
+
+            </div>
+
+
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route(
                         'admin.medical-services.index'
-                    ) }}"
-                    class="btn btn-secondary"
-                >
-                    Đặt lại
-                </a>
-
-            </div>
-
+                    ), 'searchOnly' => false])
         </form>
+    @endcomponent
+
+    <div class="card">
+
+
+        {{-- =====================================================
+             DANH SÁCH
+        ====================================================== --}}
 
         <div class="table-wrapper">
 
@@ -241,10 +283,10 @@
                 <thead>
 
                     <tr>
-                        <th>#</th>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Mã dịch vụ</th>
                         <th>Tên dịch vụ</th>
-                        <th>Nhóm</th>
+                        <th>Nhóm dịch vụ</th>
                         <th>Giá</th>
                         <th>Đơn vị</th>
                         <th>Thời lượng</th>
@@ -263,40 +305,69 @@
 
                     <tr>
 
-                        <td>
-                            {{ $medicalServices->firstItem()
-                                + $loop->index }}
-                        </td>
+                        @include('admin.layouts.partials.row-number', ['rows' => $medicalServices, 'index' => $loop->index])
+
 
                         <td>
-                            <strong>
+                            <strong class="service-code">
                                 {{ $service->service_code }}
                             </strong>
                         </td>
 
-                        <td>
-                            {{ $service->name }}
-                        </td>
 
                         <td>
-                            {{ $service->serviceGroup?->name ?? '—' }}
+                            <strong class="service-name">
+                                {{ $service->name }}
+                            </strong>
                         </td>
 
+
+                        {{-- Nhiều nhóm dịch vụ --}}
                         <td>
-                            {{
-                                number_format(
-                                    $service->price,
-                                    0,
-                                    ',',
-                                    '.'
+
+                            <div class="group-badges">
+
+                                @forelse (
+                                    $service->serviceGroups
+                                    as $group
                                 )
-                            }}
-                            đ
+
+                                    <span class="group-badge">
+                                        {{ $group->name }}
+                                    </span>
+
+                                @empty
+
+                                    <span class="text-muted">
+                                        Chưa phân nhóm
+                                    </span>
+
+                                @endforelse
+
+                            </div>
+
                         </td>
 
+
                         <td>
-                            {{ $service->unit }}
+                            <strong class="price-text">
+                                {{
+                                    number_format(
+                                        (float) $service->price,
+                                        0,
+                                        ',',
+                                        '.'
+                                    )
+                                }}
+                                đ
+                            </strong>
                         </td>
+
+
+                        <td>
+                            {{ $service->unit ?: '—' }}
+                        </td>
+
 
                         <td>
 
@@ -305,27 +376,33 @@
                                     ->estimated_duration_minutes
                             )
 
-                                {{ $service
-                                    ->estimated_duration_minutes }}
+                                {{
+                                    $service
+                                        ->estimated_duration_minutes
+                                }}
                                 phút
 
                             @else
+
                                 —
+
                             @endif
 
                         </td>
+
 
                         <td>
 
                             @if (
                                 $service->status
-                                === 'ACTIVE'
+                                ===
+                                'ACTIVE'
                             )
 
                                 <span
                                     class="badge badge-success"
                                 >
-                                    ACTIVE
+                                    Đang hoạt động
                                 </span>
 
                             @else
@@ -333,61 +410,34 @@
                                 <span
                                     class="badge badge-danger"
                                 >
-                                    INACTIVE
+                                    Ngừng hoạt động
                                 </span>
 
                             @endif
 
                         </td>
 
+
                         <td>
 
                             <div class="action-group">
+                                @include('admin.layouts.partials.catalog-status', ['record' => $service, 'catalog' => 'medical-services'])
 
                                 <a
                                     href="{{ route(
                                         'admin.medical-services.show',
                                         $service
                                     ) }}"
-                                    class="action-link view"
-                                >
-                                    Chi tiết
-                                </a>
+                                    class="admin-btn admin-btn-detail action-link action-link-view"
+                                >Chi tiết</a>
 
                                 <a
                                     href="{{ route(
                                         'admin.medical-services.edit',
                                         $service
                                     ) }}"
-                                    class="action-link edit"
-                                >
-                                    Sửa
-                                </a>
-
-                                <form
-                                    method="POST"
-                                    action="{{ route(
-                                        'admin.medical-services.destroy',
-                                        $service
-                                    ) }}"
-                                    onsubmit="
-                                        return confirm(
-                                            'Bạn có chắc muốn xóa dịch vụ này? Nếu dịch vụ đã được chỉ định, hệ thống sẽ chuyển sang INACTIVE thay vì xóa.'
-                                        );
-                                    "
-                                >
-
-                                    @csrf
-                                    @method('DELETE')
-
-                                    <button
-                                        type="submit"
-                                        class="action-link delete"
-                                    >
-                                        Xóa
-                                    </button>
-
-                                </form>
+                                    class="admin-btn admin-btn-secondary action-link action-link-edit"
+                                >Sửa</a>
 
                             </div>
 
@@ -403,7 +453,8 @@
                             colspan="9"
                             class="empty-state"
                         >
-                            Không tìm thấy dịch vụ phù hợp.
+                            Không có dịch vụ phù hợp
+                            với bộ lọc hiện tại.
                         </td>
 
                     </tr>
@@ -416,169 +467,21 @@
 
         </div>
 
-        <div class="pagination-wrapper">
 
-            {{ $medicalServices->links() }}
+        {{-- =====================================================
+             PHÂN TRANG
+        ====================================================== --}}
 
-        </div>
+        @if ($medicalServices->hasPages())
+
+            <div class="pagination-wrapper">
+
+                {{ $medicalServices->links() }}
+
+            </div>
+
+        @endif
 
     </div>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-        gap: 14px;
-        margin-bottom: 18px;
-    }
-
-    .mini-card {
-        padding: 16px 18px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 11px;
-    }
-
-    .mini-card-label {
-        color: #64748b;
-        font-size: 12px;
-        margin-bottom: 7px;
-    }
-
-    .mini-card-value {
-        font-size: 26px;
-        font-weight: 700;
-    }
-
-    .mini-card-value.success {
-        color: #059669;
-    }
-
-    .mini-card-value.danger {
-        color: #dc2626;
-    }
-
-    .filter-form {
-        display: grid;
-        grid-template-columns:
-            minmax(200px, 1fr)
-            180px
-            130px
-            130px
-            160px
-            auto;
-        gap: 10px;
-        align-items: end;
-        margin-bottom: 20px;
-    }
-
-    .filter-label {
-        display: block;
-        margin-bottom: 6px;
-        color: #475569;
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .filter-control {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        background: #ffffff;
-        outline: none;
-    }
-
-    .filter-control:focus {
-        border-color: #3b82f6;
-        box-shadow:
-            0 0 0 3px
-            rgba(59, 130, 246, 0.1);
-    }
-
-    .filter-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .action-group {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-    }
-
-    .action-group form {
-        margin: 0;
-    }
-
-    .action-link {
-        padding: 6px 9px;
-        border: none;
-        border-radius: 6px;
-        text-decoration: none;
-        font-family: inherit;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    .action-link.view {
-        background: #eff6ff;
-        color: #1d4ed8;
-    }
-
-    .action-link.edit {
-        background: #fffbeb;
-        color: #b45309;
-    }
-
-    .action-link.delete {
-        background: #fef2f2;
-        color: #b91c1c;
-    }
-
-    .empty-state {
-        padding: 40px !important;
-        text-align: center !important;
-        color: #94a3b8 !important;
-    }
-
-    .pagination-wrapper {
-        margin-top: 18px;
-    }
-
-    @media (max-width: 1200px) {
-
-        .filter-form {
-            grid-template-columns:
-                repeat(2, minmax(0, 1fr));
-        }
-
-    }
-
-    @media (max-width: 800px) {
-
-        .stats-grid,
-        .filter-form {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

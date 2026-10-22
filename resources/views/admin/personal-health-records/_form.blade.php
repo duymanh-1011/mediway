@@ -52,7 +52,7 @@
                 @endforeach
             </select>
             @error('patient_id')
-                <small class="hr-error">{{ $message }}</small>
+                <small class="hr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
         @endif
     </div>
@@ -68,7 +68,7 @@
             required
         >
         @error('recorded_at')
-            <small class="hr-error">{{ $message }}</small>
+            <small class="hr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 </div>
@@ -93,7 +93,7 @@
                 placeholder="Chưa ghi nhận"
             >
             @error($field['name'])
-                <small class="hr-error">{{ $message }}</small>
+                <small class="hr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
         </div>
     @endforeach
@@ -119,7 +119,7 @@
             placeholder="Ghi chú về lần đo sức khỏe..."
         >{{ old('notes', $editing ? $record->notes : '') }}</textarea>
         @error('notes')
-            <small class="hr-error">{{ $message }}</small>
+            <small class="hr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 </div>

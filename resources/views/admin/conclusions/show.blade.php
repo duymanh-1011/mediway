@@ -1,24 +1,21 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'conclusions-show')
 
 @section('title', 'Chi tiết kết luận lượt khám')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard /
-        Kết luận /
-        {{ $conclusion->medicalVisit?->visit_code }}
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <span>Kết luận</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ $conclusion->medicalVisit?->visit_code }}</strong>
 @endsection
 
 @section('content')
 
-    <div style="
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 22px;
-    ">
+    <div class="admin-u-e0f559a1">
 
         <div>
 
@@ -33,34 +30,23 @@
         </div>
 
 
-        <div style="
-            display: flex;
-            gap: 8px;
-        ">
+        <div class="admin-u-5786f359">
 
             <a
                 href="{{ route('admin.conclusions.index') }}"
-                class="btn btn-secondary"
-            >
-                Quay lại
-            </a>
+                class="admin-btn admin-btn-secondary btn btn-secondary"
+            >Quay lại</a>
 
 
-            @if (
-                $conclusion->medicalVisit?->status?->name
-                !==
-                'COMPLETED'
-            )
+            @if ($conclusion->medicalVisit?->canRecordClinicalData())
 
                 <a
                     href="{{ route(
                         'admin.conclusions.edit',
                         $conclusion
                     ) }}"
-                    class="btn btn-primary"
-                >
-                    Sửa
-                </a>
+                    class="admin-btn btn btn-primary admin-btn-primary"
+                >Sửa</a>
 
             @endif
 
@@ -70,20 +56,15 @@
 
 
     <div
-        class="card"
-        style="margin-bottom: 18px;"
+        class="admin-u-2f23af6b card"
+
     >
 
-        <h2 style="margin-top: 0;">
+        <h2 class="admin-u-ec0f7ffa">
             Lượt khám
         </h2>
 
-        <div style="
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(220px, 1fr));
-            gap: 18px;
-        ">
+        <div class="admin-u-5811d829">
 
             <div>
                 <strong>Mã lượt khám</strong>
@@ -130,7 +111,7 @@
             <div>
                 <strong>Trạng thái</strong>
                 <div>
-                    {{ $conclusion->medicalVisit?->status?->name ?: '—' }}
+                    {{ \App\Models\AdminDisplay::label($conclusion->medicalVisit?->status?->name ?: '—') }}
                 </div>
             </div>
 
@@ -148,7 +129,7 @@
 
         @if ($conclusion->medicalVisit)
 
-            <div style="margin-top: 18px;">
+            <div class="admin-u-6840f0a6">
 
                 <a
                     href="{{ route(
@@ -168,58 +149,46 @@
 
 
     <div
-        class="card"
-        style="margin-bottom: 18px;"
+        class="admin-u-2f23af6b card"
+
     >
 
-        <h2 style="margin-top: 0;">
+        <h2 class="admin-u-ec0f7ffa">
             Kết luận chuyên môn
         </h2>
 
-        <div style="
-            white-space: pre-line;
-            line-height: 1.7;
-            margin-bottom: 22px;
-        ">
+        <div class="admin-u-0c8bc1bc">
             {{ $conclusion->professional_conclusion }}
         </div>
 
 
-        <div style="margin-bottom: 22px;">
+        <div class="admin-u-ed1667a9">
 
             <strong>Hướng xử trí</strong>
 
-            <div style="margin-top: 6px;">
-                {{ $conclusion->disposition ?: '—' }}
+            <div class="admin-u-a5595d11">
+                {{ \App\Models\AdminDisplay::label($conclusion->disposition ?: '—') }}
             </div>
 
         </div>
 
 
-        <div style="margin-bottom: 22px;">
+        <div class="admin-u-ed1667a9">
 
             <strong>Kế hoạch điều trị</strong>
 
-            <div style="
-                margin-top: 6px;
-                white-space: pre-line;
-                line-height: 1.7;
-            ">
+            <div class="admin-u-411f0bf0">
                 {{ $conclusion->treatment_plan ?: '—' }}
             </div>
 
         </div>
 
 
-        <div style="margin-bottom: 22px;">
+        <div class="admin-u-ed1667a9">
 
             <strong>Dặn dò</strong>
 
-            <div style="
-                margin-top: 6px;
-                white-space: pre-line;
-                line-height: 1.7;
-            ">
+            <div class="admin-u-411f0bf0">
                 {{ $conclusion->instructions ?: '—' }}
             </div>
 
@@ -230,11 +199,7 @@
 
             <strong>Ghi chú</strong>
 
-            <div style="
-                margin-top: 6px;
-                white-space: pre-line;
-                line-height: 1.7;
-            ">
+            <div class="admin-u-411f0bf0">
                 {{ $conclusion->notes ?: '—' }}
             </div>
 
@@ -244,28 +209,23 @@
 
 
     <div
-        class="card"
-        style="margin-bottom: 18px;"
+        class="admin-u-2f23af6b card"
+
     >
 
-        <h2 style="margin-top: 0;">
+        <h2 class="admin-u-ec0f7ffa">
             Tái khám
         </h2>
 
         @if ($conclusion->has_follow_up)
 
-            <div style="
-                display: grid;
-                grid-template-columns:
-                    repeat(auto-fit, minmax(220px, 1fr));
-                gap: 18px;
-            ">
+            <div class="admin-u-5933b926">
 
                 <div>
 
                     <strong>Ngày tái khám</strong>
 
-                    <div style="margin-top: 5px;">
+                    <div class="admin-u-035790fa">
                         {{ $conclusion->follow_up_date?->format(
                             'd/m/Y'
                         ) ?: '—' }}
@@ -278,10 +238,7 @@
 
                     <strong>Lý do tái khám</strong>
 
-                    <div style="
-                        margin-top: 5px;
-                        white-space: pre-line;
-                    ">
+                    <div class="admin-u-7041c3b9">
                         {{ $conclusion->follow_up_reason ?: '—' }}
                     </div>
 
@@ -291,7 +248,7 @@
 
         @else
 
-            <p style="color: #64748b;">
+            <p class="admin-u-a6f48144">
                 Không yêu cầu tái khám.
             </p>
 
@@ -302,7 +259,7 @@
 
     <div class="card">
 
-        <h2 style="margin-top: 0;">
+        <h2 class="admin-u-ec0f7ffa">
             Phiếu kết luận
         </h2>
 
@@ -314,8 +271,8 @@
 
         @else
 
-            <p style="color: #64748b;">
-                Chưa có file PDF kết luận.
+            <p class="admin-u-a6f48144">
+                Chưa có tệp PDF kết luận.
             </p>
 
         @endif

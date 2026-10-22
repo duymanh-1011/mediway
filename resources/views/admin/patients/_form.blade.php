@@ -64,7 +64,7 @@
             required
         >
         @error('full_name')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -78,7 +78,7 @@
             max="{{ now()->toDateString() }}"
         >
         @error('date_of_birth')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -98,7 +98,7 @@
         </select>
 
         @error('gender')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -121,7 +121,7 @@
         </select>
 
         @error('user_id')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
 
         <small class="pf-help">
@@ -149,7 +149,7 @@
             placeholder="12 chữ số"
         >
         @error('citizen_id_number')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -163,7 +163,7 @@
             value="{{ old('email', $detail?->email) }}"
         >
         @error('email')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -177,7 +177,7 @@
             value="{{ old('citizen_id_issue_date', $detail?->citizen_id_issue_date?->format('Y-m-d')) }}"
         >
         @error('citizen_id_issue_date')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -191,7 +191,7 @@
             value="{{ old('citizen_id_issue_place', $detail?->citizen_id_issue_place) }}"
         >
         @error('citizen_id_issue_place')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -205,7 +205,7 @@
             value="{{ old('nationality', $detail?->nationality ?? 'Việt Nam') }}"
         >
         @error('nationality')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -219,7 +219,7 @@
             value="{{ old('ethnicity', $detail?->ethnicity) }}"
         >
         @error('ethnicity')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -233,7 +233,7 @@
             value="{{ old('occupation', $detail?->occupation) }}"
         >
         @error('occupation')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -253,7 +253,7 @@
         </select>
 
         @error('blood_type')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -267,7 +267,7 @@
             value="{{ old('hometown', $detail?->hometown) }}"
         >
         @error('hometown')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -281,7 +281,7 @@
             value="{{ old('permanent_address', $detail?->permanent_address) }}"
         >
         @error('permanent_address')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -295,7 +295,7 @@
             value="{{ old('current_address', $detail?->current_address) }}"
         >
         @error('current_address')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 </div>
@@ -316,7 +316,7 @@
             value="{{ old('emergency_contact_name', $detail?->emergency_contact_name) }}"
         >
         @error('emergency_contact_name')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -331,7 +331,7 @@
             value="{{ old('emergency_contact_phone', $detail?->emergency_contact_phone) }}"
         >
         @error('emergency_contact_phone')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -345,7 +345,7 @@
             value="{{ old('emergency_contact_relationship', $detail?->emergency_contact_relationship) }}"
         >
         @error('emergency_contact_relationship')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -360,7 +360,7 @@
         >{{ old('notes', $detail?->notes) }}</textarea>
 
         @error('notes')
-            <small class="pf-error">{{ $message }}</small>
+            <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 </div>
@@ -403,13 +403,13 @@
                         src="{{ $documentUrl ?? '' }}"
                         alt="{{ $document['label'] }}"
                         class="pf-current-image"
-                        style="{{ $hasCurrentFile ? '' : 'display:none;' }}"
+                        @if (! $hasCurrentFile) hidden @endif
                     >
 
                     <div
                         id="empty-{{ $document['input'] }}"
                         class="pf-image-empty"
-                        style="{{ $hasCurrentFile ? 'display:none;' : '' }}"
+                        @if ($hasCurrentFile) hidden @endif
                     >
                         <span>Chưa có ảnh</span>
                     </div>
@@ -448,7 +448,7 @@
             >
 
             @error($document['input'])
-                <small class="pf-error">{{ $message }}</small>
+                <small class="pf-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
 
             <small class="pf-help">
@@ -462,86 +462,7 @@
 </div>
 
 {{-- CSS RIÊNG CHO KHUNG XEM TRƯỚC --}}
-<style>
-.pf-document-grid {
-    margin-top: 4px;
-}
 
-.pf-document-card {
-    padding: 17px;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    background: #fafcff;
-}
-
-.pf-preview-area {
-    width: 100%;
-    height: 205px;
-    overflow: hidden;
-    border-radius: 10px;
-    background: #f1f5f9;
-    border: 1px dashed #cbd5e1;
-    margin-bottom: 13px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.pf-current-image {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background: #f8fafc;
-}
-
-.pf-image-empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    color: #94a3b8;
-    font-size: 13px;
-    text-align: center;
-}
-
-.pf-pdf-preview {
-    flex-direction: column;
-    gap: 10px;
-}
-
-.pf-pdf-symbol {
-    padding: 14px 18px;
-    border-radius: 12px;
-    background: #fee2e2;
-    color: #b91c1c;
-    font-size: 24px;
-    font-weight: 800;
-}
-
-.pf-pdf-name {
-    font-size: 12px;
-    color: #64748b;
-    text-align: center;
-}
-
-.pf-current-link {
-    display: inline-block;
-    color: #2563eb;
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 700;
-    margin-bottom: 13px;
-}
-
-.pf-current-link:hover {
-    text-decoration: underline;
-}
-
-.pf-document-card .pf-file-input {
-    margin-top: 4px;
-}
-</style>
 
 {{-- JAVASCRIPT XEM TRƯỚC ẢNH MỚI --}}
 <script>
@@ -575,15 +496,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!file) {
                 if (originalImage) {
                     originalImage.src = originalSrc || '';
-                    originalImage.style.display = originalSrc
-                        ? 'block'
-                        : 'none';
+                    originalImage.hidden = !originalSrc;
                 }
 
                 if (emptyBox) {
-                    emptyBox.style.display = originalSrc
-                        ? 'none'
-                        : 'flex';
+                    emptyBox.hidden = Boolean(originalSrc);
                 }
 
                 if (pdfLabel) {
@@ -605,11 +522,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (originalImage) {
                     originalImage.src = objectUrl;
-                    originalImage.style.display = 'block';
+                    originalImage.hidden = false;
                 }
 
                 if (emptyBox) {
-                    emptyBox.style.display = 'none';
+                    emptyBox.hidden = true;
                 }
             } else if (pdfLabel) {
                 pdfLabel.textContent = 'Đã chọn: ' + file.name;

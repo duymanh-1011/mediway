@@ -1,24 +1,21 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'clinical-notes-show')
 
 @section('title', 'Chi tiết nội dung khám')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard /
-        Nội dung khám /
-        {{ $clinicalNote->medicalVisit?->visit_code }}
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <span>Nội dung khám</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ $clinicalNote->medicalVisit?->visit_code }}</strong>
 @endsection
 
 @section('content')
 
-    <div style="
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 22px;
-    ">
+    <div class="admin-u-e0f559a1">
 
         <div>
 
@@ -33,35 +30,24 @@
         </div>
 
 
-        <div style="
-            display: flex;
-            gap: 8px;
-        ">
+        <div class="admin-u-5786f359">
 
             <a
                 href="{{ route(
                     'admin.clinical-notes.index'
                 ) }}"
-                class="btn btn-secondary"
-            >
-                Quay lại
-            </a>
+                class="admin-btn admin-btn-secondary btn btn-secondary"
+            >Quay lại</a>
 
-            @if (
-                $clinicalNote->medicalVisit?->status?->name
-                !==
-                'COMPLETED'
-            )
+            @if ($clinicalNote->medicalVisit?->canRecordClinicalData())
 
                 <a
                     href="{{ route(
                         'admin.clinical-notes.edit',
                         $clinicalNote
                     ) }}"
-                    class="btn btn-primary"
-                >
-                    Sửa
-                </a>
+                    class="admin-btn btn btn-primary admin-btn-primary"
+                >Sửa</a>
 
             @endif
 
@@ -71,20 +57,15 @@
 
 
     <div
-        class="card"
-        style="margin-bottom: 18px;"
+        class="admin-u-2f23af6b card"
+
     >
 
-        <h2 style="margin-top: 0;">
+        <h2 class="admin-u-ec0f7ffa">
             Thông tin lượt khám
         </h2>
 
-        <div style="
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(220px, 1fr));
-            gap: 18px;
-        ">
+        <div class="admin-u-5811d829">
 
             <div>
                 <strong>Mã lượt khám</strong>
@@ -130,7 +111,7 @@
                 <strong>Trạng thái</strong>
 
                 <div>
-                    {{ $clinicalNote->medicalVisit?->status?->name ?: '—' }}
+                    {{ \App\Models\AdminDisplay::label($clinicalNote->medicalVisit?->status?->name ?: '—') }}
                 </div>
             </div>
 
@@ -139,7 +120,7 @@
 
         @if ($clinicalNote->medicalVisit)
 
-            <div style="margin-top: 18px;">
+            <div class="admin-u-6840f0a6">
 
                 <a
                     href="{{ route(
@@ -188,19 +169,13 @@
 
         @foreach ($fields as $label => $value)
 
-            <div style="
-                margin-bottom: 22px;
-            ">
+            <div class="admin-u-ed1667a9">
 
                 <strong>
                     {{ $label }}
                 </strong>
 
-                <div style="
-                    margin-top: 7px;
-                    line-height: 1.7;
-                    white-space: pre-line;
-                ">
+                <div class="admin-u-8354f4bb">
                     {{ $value ?: '—' }}
                 </div>
 
@@ -215,7 +190,7 @@
                 Thời điểm ghi nhận
             </strong>
 
-            <div style="margin-top: 7px;">
+            <div class="admin-u-ade9f648">
                 {{ $clinicalNote->recorded_at?->format(
                     'd/m/Y H:i:s'
                 ) ?: '—' }}

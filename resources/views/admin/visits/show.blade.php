@@ -1,18 +1,19 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'visits-show')
 
 @section(
     'title',
-    'Chi tiết lượt khám - Mediway Admin'
+    'Chi tiết lượt khám - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-        Admin /
-        Lượt khám /
-        {{ $medicalVisit->visit_code }}
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <span>Lượt khám</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ $medicalVisit->visit_code }}</strong>
 @endsection
 
 
@@ -43,7 +44,7 @@
 
             <a
                 href="{{ route('admin.visits.index') }}"
-                class="btn btn-secondary"
+                class="admin-btn admin-btn-detail btn btn-secondary"
             >
                 ← Danh sách
             </a>
@@ -84,7 +85,7 @@
             </span>
 
             <strong class="status-badge">
-                {{ $currentStatus ?? '—' }}
+                {{ \App\Models\AdminDisplay::label($currentStatus ?? '—') }}
             </strong>
 
         </div>
@@ -94,7 +95,7 @@
 
             <div class="status-actions">
 
-                <form
+                <form novalidate
                     method="POST"
                     action="{{ route(
                         'admin.visits.update-status',
@@ -127,12 +128,16 @@
                             @foreach ($allowedVisitStatuses as $status)
 
                                 <option value="{{ $status->id }}">
-                                    {{ $status->name }}
+                                    {{ \App\Models\AdminDisplay::label($status->name) }}
                                 </option>
 
                             @endforeach
 
                         </select>
+@error('visit_status_id')<div class="field-error">{{ $message }}</div>@enderror
+                        @if ($completedStatus)
+                            <p class="form-help">Chỉ hoàn tất khi đã có đầy đủ chẩn đoán, kết luận và không còn dịch vụ cần chờ.</p>
+                        @endif
 
                     </div>
 
@@ -149,7 +154,7 @@
 
                 @if ($completedStatus)
 
-                    <form
+                    <form novalidate
                         method="POST"
                         action="{{ route(
                             'admin.visits.update-status',
@@ -219,13 +224,13 @@
                 <span>Nguồn tiếp nhận</span>
 
                 <strong>
-                    {{ $medicalVisit->reception_source ?? '—' }}
+                    {{ \App\Models\AdminDisplay::label($medicalVisit->reception_source ?? '—') }}
                 </strong>
             </div>
 
 
             <div class="detail-row">
-                <span>Check-in lúc</span>
+                <span>Tiếp nhận lúc</span>
 
                 <strong>
                     {{ $medicalVisit
@@ -264,7 +269,7 @@
                 <span>Ghi chú tiếp nhận</span>
 
                 <strong>
-                    {{ $medicalVisit->reception_notes ?? '—' }}
+                    {{ \App\Models\AdminDisplay::text($medicalVisit->reception_notes ?? '—') }}
                 </strong>
             </div>
 
@@ -316,7 +321,7 @@
                 </div>
 
 
-                <div style="margin-top: 15px;">
+                <div class="admin-u-c0e2fdc5">
 
                     <a
                         href="{{ route(
@@ -405,7 +410,7 @@
 
             @if ($medicalVisit->patient)
 
-                <div style="margin-top: 15px;">
+                <div class="admin-u-c0e2fdc5">
 
                     <a
                         href="{{ route(
@@ -513,7 +518,8 @@
 
                     <thead>
                         <tr>
-                            <th>Số</th>
+                            <th scope="col" class="admin-row-number">STT</th>
+                            <th>Số hàng đợi</th>
                             <th>Loại</th>
                             <th>Trạng thái</th>
                             <th>Vào hàng</th>
@@ -532,19 +538,20 @@
 
                             <tr>
 
+                                @include('admin.layouts.partials.row-number', ['rows' => $medicalVisit->queues, 'index' => $loop->index])
                                 <td>
                                     {{ $queue->queue_number }}
                                 </td>
 
                                 <td>
-                                    {{ $queue->queue_type }}
+                                    {{ \App\Models\AdminDisplay::label($queue->queue_type) }}
                                 </td>
 
                                 <td>
-                                    {{ $queue
+                                    {{ \App\Models\AdminDisplay::label($queue
                                         ->status
                                         ?->name
-                                        ?? '—' }}
+                                        ?? '—') }}
                                 </td>
 
                                 <td>
@@ -587,9 +594,7 @@
                                             $queue
                                         ) }}"
                                         class="btn btn-secondary"
-                                    >
-                                        Chi tiết
-                                    </a>
+                                    >Chi tiết</a>
 
                                 </td>
 
@@ -672,7 +677,7 @@
                         'admin.clinical-notes.show',
                         $medicalVisit->clinicalNote
                     ) }}"
-                    class="btn btn-secondary"
+                    class="admin-btn admin-btn-detail btn btn-secondary"
                 >
                     Xem nội dung khám
                 </a>
@@ -685,7 +690,7 @@
                 Chưa có nội dung khám.
             </p>
 
-            @if ($currentStatus !== 'COMPLETED')
+            @if ($medicalVisit->canRecordClinicalData())
 
                 <div class="section-link">
 
@@ -725,6 +730,7 @@
 
                     <thead>
                         <tr>
+                            <th scope="col" class="admin-row-number">STT</th>
                             <th>Bệnh</th>
                             <th>Loại</th>
                             <th>Mức độ</th>
@@ -741,6 +747,7 @@
 
                             <tr>
 
+                                @include('admin.layouts.partials.row-number', ['rows' => $medicalVisit->diagnoses, 'index' => $loop->index])
                                 <td>
                                     {{ $diagnosis
                                         ->disease
@@ -749,15 +756,15 @@
                                 </td>
 
                                 <td>
-                                    {{ $diagnosis
+                                    {{ \App\Models\AdminDisplay::label($diagnosis
                                         ->diagnosis_type
-                                        ?? '—' }}
+                                        ?? '—') }}
                                 </td>
 
                                 <td>
-                                    {{ $diagnosis
+                                    {{ \App\Models\AdminDisplay::label($diagnosis
                                         ->severity
-                                        ?? '—' }}
+                                        ?? '—') }}
                                 </td>
 
                                 <td>
@@ -781,9 +788,7 @@
                                             $diagnosis
                                         ) }}"
                                         class="btn btn-secondary"
-                                    >
-                                        Chi tiết
-                                    </a>
+                                    >Chi tiết</a>
 
                                 </td>
 
@@ -806,7 +811,7 @@
         @endif
 
 
-        @if ($currentStatus !== 'COMPLETED')
+        @if ($medicalVisit->canRecordClinicalData())
 
             <div class="section-link">
 
@@ -815,10 +820,239 @@
                         'admin.visits.diagnoses.create',
                         $medicalVisit
                     ) }}"
-                    class="btn btn-primary"
+                    class="admin-btn admin-btn-detail btn btn-primary"
                 >
                     + Thêm chẩn đoán
                 </a>
+
+            </div>
+
+        @endif
+
+    </div>
+
+
+    {{-- CHỈ ĐỊNH DỊCH VỤ --}}
+
+    <div class="card section-spacing">
+
+        <div class="section-header">
+
+            <div>
+                <h3 class="section-title">
+                    Chỉ định dịch vụ
+                </h3>
+
+                <p class="muted-text section-description">
+                    Các phiếu dịch vụ được chỉ định trong lượt khám này.
+                </p>
+            </div>
+
+
+            @if (in_array($currentStatus, ['IN_EXAMINATION', 'RETURNING'], true))
+
+                <a
+                    href="{{ route(
+                        'admin.visits.service-orders.create',
+                        $medicalVisit
+                    ) }}"
+                    class="btn btn-primary"
+                >
+                    + Tạo chỉ định dịch vụ
+                </a>
+
+            @endif
+
+        </div>
+
+
+        @if ($medicalVisit->serviceOrders->isNotEmpty())
+
+            <div class="table-wrapper service-orders-table">
+
+                <table class="admin-table">
+
+                    <thead>
+                        <tr>
+                            <th scope="col" class="admin-row-number">STT</th>
+                            <th>Mã phiếu</th>
+                            <th>Bác sĩ chỉ định</th>
+                            <th>Thời gian</th>
+                            <th>Số dịch vụ</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+
+
+                    <tbody>
+
+                        @foreach ($medicalVisit->serviceOrders as $order)
+
+                            @php
+                                $orderTotal = $order->items
+                                    ->sum(
+                                        fn ($item) =>
+                                            (float) $item->price_at_order
+                                    );
+                            @endphp
+
+                            <tr>
+
+                                @include('admin.layouts.partials.row-number', ['rows' => $medicalVisit->serviceOrders, 'index' => $loop->index])
+                                <td>
+                                    <strong>
+                                        {{ $order->service_order_code }}
+                                    </strong>
+                                </td>
+
+
+                                <td>
+                                    {{ $order
+                                        ->orderedByDoctor
+                                        ?->full_name
+                                        ?? '—' }}
+                                </td>
+
+
+                                <td>
+                                    {{ $order
+                                        ->ordered_at
+                                        ?->format('d/m/Y H:i')
+                                        ?? '—' }}
+                                </td>
+
+
+                                <td>
+                                    {{ $order->items->count() }}
+                                </td>
+
+
+                                <td>
+                                    <strong>
+                                        {{ number_format(
+                                            $orderTotal,
+                                            0,
+                                            ',',
+                                            '.'
+                                        ) }}
+                                        đ
+                                    </strong>
+                                </td>
+
+
+                                <td>
+                                    <span class="order-status-badge">
+                                        {{ \App\Models\AdminDisplay::label($order->status ?? '—') }}
+                                    </span>
+                                </td>
+
+
+                                <td>
+
+                                    <a
+                                        href="{{ route(
+                                            'admin.service-orders.show',
+                                            $order->id
+                                        ) }}"
+                                        class="btn btn-secondary"
+                                    >Chi tiết</a>
+
+                                </td>
+
+                            </tr>
+
+
+                            <tr class="service-items-row">
+
+                                <td colspan="8">
+
+                                    <div class="service-items">
+
+                                        @foreach ($order->items as $item)
+
+                                            <div class="service-item-summary">
+
+                                                <div>
+
+                                                    <strong>
+                                                        {{ $item
+                                                            ->medicalService
+                                                            ?->name
+                                                            ?? 'Dịch vụ không xác định' }}
+                                                    </strong>
+
+                                                    <span class="service-code">
+                                                        {{ $item
+                                                            ->medicalService
+                                                            ?->service_code
+                                                            ?? '' }}
+                                                    </span>
+
+                                                </div>
+
+
+                                                <div class="service-item-meta">
+
+                                                    <span>
+                                                        {{ number_format(
+                                                            (float) $item->price_at_order,
+                                                            0,
+                                                            ',',
+                                                            '.'
+                                                        ) }}
+                                                        đ
+                                                    </span>
+
+                                                    <span class="service-status">
+                                                        {{ \App\Models\AdminDisplay::label($item
+                                                            ->serviceStatus
+                                                            ?->name
+                                                            ?? '—') }}
+                                                    </span>
+
+                                                </div>
+
+                                            </div>
+
+                                        @endforeach
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                        @endforeach
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        @else
+
+            <div class="empty-service-orders">
+
+                <p>
+                    Lượt khám này chưa có phiếu chỉ định dịch vụ.
+                </p>
+
+                @if (in_array($currentStatus, ['IN_EXAMINATION', 'RETURNING'], true))
+
+                    <a
+                        href="{{ route(
+                            'admin.visits.service-orders.create',
+                            $medicalVisit
+                        ) }}"
+                        class="btn btn-primary"
+                    >
+                        + Tạo chỉ định đầu tiên
+                    </a>
+
+                @endif
 
             </div>
 
@@ -875,10 +1109,10 @@
                     </strong>
 
                     <p>
-                        {{ $medicalVisit
+                        {{ \App\Models\AdminDisplay::label($medicalVisit
                             ->conclusion
                             ->disposition
-                            ?? '—' }}
+                            ?? '—') }}
                     </p>
                 </div>
 
@@ -964,7 +1198,7 @@
                 Chưa có kết luận.
             </p>
 
-            @if ($currentStatus !== 'COMPLETED')
+            @if ($medicalVisit->canRecordClinicalData())
 
                 <div class="section-link">
 
@@ -987,236 +1221,3 @@
     </div>
 
 @endsection
-
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-
-    .header-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-
-    .section-spacing {
-        margin-top: 20px;
-    }
-
-
-    .section-title {
-        margin-top: 0;
-        margin-bottom: 15px;
-    }
-
-
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 15px;
-        flex-wrap: wrap;
-    }
-
-
-    .status-card {
-        margin-bottom: 20px;
-    }
-
-
-    .status-current {
-        margin-bottom: 18px;
-    }
-
-
-    .status-badge {
-        display: inline-block;
-        margin-left: 6px;
-        padding: 6px 12px;
-        border-radius: 999px;
-        background: #e2e8f0;
-    }
-
-
-    .status-actions {
-        display: flex;
-        align-items: flex-end;
-        gap: 14px;
-        flex-wrap: wrap;
-    }
-
-
-    .status-form {
-        display: flex;
-        align-items: flex-end;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-
-    .form-group {
-        min-width: 260px;
-    }
-
-
-    .form-group label {
-        display: block;
-        margin-bottom: 6px;
-        font-weight: 700;
-    }
-
-
-    .form-control {
-        width: 100%;
-        padding: 9px 11px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-    }
-
-
-    .btn-complete {
-        padding: 10px 18px;
-        border: none;
-        border-radius: 8px;
-
-        background: #16a34a;
-        color: #ffffff;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        font-size: 15px;
-        font-weight: 700;
-
-        cursor: pointer;
-    }
-
-
-    .btn-complete:hover {
-        opacity: 0.9;
-    }
-
-
-    .detail-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-
-        gap: 20px;
-    }
-
-
-    .detail-row {
-        display: grid;
-
-        grid-template-columns:
-            145px minmax(0, 1fr);
-
-        gap: 15px;
-
-        padding: 11px 0;
-
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-
-    .detail-row span {
-        color: #64748b;
-    }
-
-
-    .clinical-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(
-                auto-fit,
-                minmax(250px, 1fr)
-            );
-
-        gap: 18px;
-    }
-
-
-    .clinical-item {
-        padding: 14px;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-    }
-
-
-    .clinical-item p {
-        margin-bottom: 0;
-
-        line-height: 1.6;
-        white-space: pre-line;
-    }
-
-
-    .section-link {
-        margin-top: 16px;
-    }
-
-
-    .muted-text {
-        color: #64748b;
-    }
-
-
-    .table-wrapper {
-        overflow-x: auto;
-    }
-
-
-    @media (max-width: 800px) {
-
-        .page-header {
-            flex-direction: column;
-        }
-
-
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-
-
-        .status-actions,
-        .status-form {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-
-        .form-group {
-            min-width: 0;
-        }
-
-    }
-
-</style>
-
-@endpush

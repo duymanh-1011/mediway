@@ -1,21 +1,19 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'appointments-edit')
 
 @section(
     'title',
-    'Sửa lịch hẹn - Mediway Admin'
+    'Sửa lịch hẹn - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-
-        Admin /
-        Lịch & đặt khám /
-        {{ $appointment->appointment_code }} /
-        Sửa
-
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Lịch và đặt khám</span>
+    <span aria-hidden="true">/</span>
+    <span>{{ $appointment->appointment_code }}</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
@@ -39,7 +37,7 @@
                 'admin.appointments.show',
                 $appointment
             ) }}"
-            class="btn btn-secondary"
+            class="admin-btn admin-btn-secondary btn btn-secondary"
         >
             ← Quay lại
         </a>
@@ -47,7 +45,7 @@
     </div>
 
 
-    <form
+    <form novalidate
         method="POST"
         action="{{ route(
             'admin.appointments.update',
@@ -72,9 +70,7 @@
                         $appointment
                     ) }}"
                     class="btn btn-secondary"
-                >
-                    Hủy
-                </a>
+                >Hủy</a>
 
                 <button
                     type="submit"
@@ -90,79 +86,3 @@
     </form>
 
 @endsection
-
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .form-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-        gap: 18px;
-    }
-
-    .form-group {
-        margin-bottom: 18px;
-    }
-
-    .form-label {
-        display: block;
-        margin-bottom: 7px;
-        font-weight: 700;
-    }
-
-    .required {
-        color: #dc2626;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 10px 12px;
-
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-
-        background: #ffffff;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-    }
-
-    .field-error {
-        margin-top: 5px;
-        color: #dc2626;
-        font-size: 13px;
-    }
-
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-
-        padding-top: 18px;
-
-        border-top: 1px solid #e2e8f0;
-    }
-
-    @media (max-width: 800px) {
-
-        .form-grid {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

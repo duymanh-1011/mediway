@@ -25,12 +25,12 @@ class AdministratorController extends Controller
             ->with('user.role')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('full_name', 'like', '%' . $search . '%')
-                        ->orWhere('email', 'like', '%' . $search . '%')
+                    $q->where('full_name', 'like', '%'.$search.'%')
+                        ->orWhere('email', 'like', '%'.$search.'%')
                         ->orWhereHas('user', function ($userQuery) use ($search) {
                             $userQuery
-                                ->where('business_code', 'like', '%' . $search . '%')
-                                ->orWhere('phone', 'like', '%' . $search . '%');
+                                ->where('business_code', 'like', '%'.$search.'%')
+                                ->orWhere('phone', 'like', '%'.$search.'%');
                         });
                 });
             })
@@ -73,9 +73,9 @@ class AdministratorController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if (!$role) {
+            if (! $role) {
                 throw ValidationException::withMessages([
-                    'role' => 'Vai trò Administrator không tồn tại hoặc đã bị vô hiệu hóa.',
+                    'role' => 'Vai trò quản trị viên không tồn tại hoặc đã bị vô hiệu hóa.',
                 ]);
             }
 
@@ -97,7 +97,7 @@ class AdministratorController extends Controller
                 $lastNumber = (int) $matches[1];
             }
 
-            $businessCode = 'QT' . str_pad(
+            $businessCode = 'QT'.str_pad(
                 (string) ($lastNumber + 1),
                 6,
                 '0',
@@ -172,7 +172,7 @@ class AdministratorController extends Controller
                 'full_name' => trim($data['full_name']),
                 'email' => $this->nullableText($data['email'] ?? null),
                 'date_of_birth' => $data['date_of_birth'] ?? null,
-'gender' => $data['gender'] ?? null,
+                'gender' => $data['gender'] ?? null,
                 'address' => $this->nullableText($data['address'] ?? null),
             ]);
         });
@@ -214,7 +214,7 @@ class AdministratorController extends Controller
 
             if ($user->role_id !== $role->id) {
                 throw ValidationException::withMessages([
-                    'status' => 'Tài khoản này không thuộc vai trò Administrator.',
+                    'status' => 'Tài khoản này không thuộc vai trò quản trị viên.',
                 ]);
             }
 
@@ -259,7 +259,7 @@ class AdministratorController extends Controller
         }, 3);
 
         return redirect()
-->route('admin.administrators.show', $administrator)
+            ->route('admin.administrators.show', $administrator)
             ->with(
                 'success',
                 $data['status'] === 'ACTIVE'

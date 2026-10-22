@@ -1,4 +1,5 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'payables-show')
 
 @section('title', 'Chi tiết khoản thanh toán')
 
@@ -22,38 +23,41 @@
             'SERVICE_FEE' => 'Phí dịch vụ',
             default => $payable->payment_type,
         };
+
+        $canCancel = !in_array($statusName, ['PAID', 'CANCELLED'], true)
+            && !$payable->paid_at && !$payable->transactions->contains('transaction_result', 'SUCCESS')
+            && (!$payable->serviceOrderItem || $payable->serviceOrderItem->canBeCancelled());
     @endphp
 
 
     <div class="payable-detail-page">
 
-        <div class="payable-breadcrumb">
+        <nav class="admin-breadcrumb" aria-label="Đường dẫn">
 
             <a href="{{ route('admin.dashboard') }}">
-                Dashboard
+                Bảng điều khiển
             </a>
 
-            <span>/</span>
+            <span aria-hidden="true">/</span>
+            <span>Thanh toán</span>
+            <span aria-hidden="true">/</span>
 
             <a href="{{ route('admin.payables.index') }}">
                 Khoản phải thanh toán
             </a>
 
-            <span>/</span>
+            <span aria-hidden="true">/</span>
 
-            <strong>
+            <strong aria-current="page">
                 {{ $payable->payable_code }}
             </strong>
 
-        </div>
+        </nav>
 
 
-        <div class="payable-detail-header">
+        <div class="admin-info-header payable-detail-header">
 
             <div>
-                <div class="payable-module-label">
-                    THANH TOÁN
-                </div>
 
                 <h1>
                     Chi tiết khoản phải thanh toán
@@ -68,7 +72,7 @@
                     payable-status
                     {{ $statusClass }}
                 ">
-                {{ $payable->paymentStatus?->name ?? '—' }}
+                {{ \App\Models\AdminDisplay::label($payable->paymentStatus?->name ?? '—') }}
             </span>
 
         </div>
@@ -105,9 +109,11 @@
                     Đổi trạng thái
                 </label>
 
+                @if ($canCancel)
                 <label for="cancel-modal" class="payable-btn payable-btn-danger-outline">
                     Hủy nghiệp vụ
                 </label>
+                @endif
 
             @endif
 
@@ -177,7 +183,7 @@
                     <span>Trạng thái</span>
 
                     <strong>
-                        {{ $payable->paymentStatus?->name ?? '—' }}
+                        {{ \App\Models\AdminDisplay::label($payable->paymentStatus?->name ?? '—') }}
                     </strong>
                 </div>
 
@@ -422,6 +428,7 @@
 
                     <thead>
                         <tr>
+                            <th scope="col" class="admin-row-number">STT</th>
                             <th>Mã giao dịch</th>
                             <th>Phương thức</th>
                             <th>Kết quả</th>
@@ -451,6 +458,7 @@
 
                                             <tr>
 
+                                                @include('admin.layouts.partials.row-number', ['rows' => $payable->transactions, 'index' => $loop->index])
                                                 <td>
                                                     <strong class="payable-code">
                                                         {{ $transaction->transaction_code }}
@@ -459,7 +467,7 @@
 
 
                                                 <td>
-                                                    {{ $transaction->payment_method }}
+                                                    {{ \App\Models\AdminDisplay::label($transaction->payment_method) }}
                                                 </td>
 
 
@@ -468,7 +476,7 @@
                                                                 transaction-result
                                                                 {{ $resultClass }}
                                                             ">
-                                                        {{ $transaction->transaction_result }}
+                                                        {{ \App\Models\AdminDisplay::label($transaction->transaction_result) }}
                                                     </span>
                                                 </td>
 
@@ -513,9 +521,7 @@
                                                     <a href="{{ route(
                                 'admin.payment-transactions.show',
                                 $transaction->id
-                            ) }}" class="payable-detail-link">
-                                                        Chi tiết
-                                                    </a>
+                            ) }}" class="payable-detail-link">Chi tiết</a>
 
                                                 </td>
 
@@ -524,7 +530,7 @@
                         @empty
 
                             <tr>
-                                <td colspan="7" class="payable-empty-state">
+                                <td colspan="8" class="payable-empty-state">
                                     Chưa có giao dịch thanh toán.
                                 </td>
                             </tr>
@@ -593,7 +599,7 @@
                 )
             )
 
-            <form method="POST" action="{{ route(
+            <form novalidate method="POST" action="{{ route(
                 'admin.payables.update-status',
                 $payable->id
             ) }}">
@@ -660,7 +666,7 @@
                     ) === (string) $status->id
                 )
             >
-                {{ $status->name }}
+                {{ \App\Models\AdminDisplay::label($status->name) }}
             </option>
 
         @endif
@@ -671,7 +677,7 @@
 
 @error('payment_status_id')
     <div class="payable-error">
-        {{ $message }}
+        {{ \App\Models\AdminDisplay::text($message) }}
     </div>
 @enderror
 
@@ -699,7 +705,7 @@
 
             {{-- MODAL HỦY NGHIỆP VỤ --}}
 
-            <form method="POST" action="{{ route(
+            <form novalidate method="POST" action="{{ route(
                 'admin.payables.cancel',
                 $payable->id
             ) }}">
@@ -733,7 +739,9 @@
                         <p>
                             Bản ghi không bị xóa.
                             Trạng thái sẽ chuyển sang
-                            <strong>CANCELLED</strong>.
+                            <strong>Đã hủy</strong>.
+                            Nếu khoản thu gắn với dịch vụ chưa bắt đầu, dịch vụ đó cũng được hủy.
+                            Khi không còn dịch vụ cần chờ, bệnh nhân được đưa vào hàng đợi quay lại bác sĩ.
                         </p>
 
 
@@ -759,7 +767,7 @@
 
 @error('cancel_reason')
     <div class="payable-error">
-        {{ $message }}
+        {{ \App\Models\AdminDisplay::text($message) }}
     </div>
 @enderror
                         </div>
@@ -788,462 +796,6 @@
     </div>
 
 
-    <style>
-        .payable-detail-page {
-            --primary: #2563eb;
-            --border: #e2e8f0;
-            --muted: #64748b;
 
-            width: 100%;
-            color: #0f172a;
-        }
-
-        .payable-detail-page * {
-            box-sizing: border-box;
-        }
-
-        .payable-breadcrumb {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 18px;
-            color: #94a3b8;
-            font-size: 13px;
-        }
-
-        .payable-breadcrumb a {
-            color: #64748b;
-            text-decoration: none;
-        }
-
-        .payable-detail-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .payable-module-label {
-            margin-bottom: 7px;
-            color: #2563eb;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: .08em;
-        }
-
-        .payable-detail-header h1 {
-            margin: 0;
-            font-size: 28px;
-        }
-
-        .payable-detail-header p {
-            margin: 7px 0 0;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        .payable-alert {
-            margin-bottom: 18px;
-            padding: 13px 15px;
-            border-radius: 10px;
-            font-size: 11px;
-        }
-
-        .payable-alert-success {
-            border: 1px solid #bbf7d0;
-            background: #f0fdf4;
-            color: #15803d;
-        }
-
-        .payable-alert-error {
-            border: 1px solid #fecaca;
-            background: #fef2f2;
-            color: #b91c1c;
-        }
-
-        .payable-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .payable-btn {
-            display: inline-flex;
-            min-width: 110px;
-            height: 39px;
-            align-items: center;
-            justify-content: center;
-            padding: 0 13px;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 10px;
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .payable-btn-primary {
-            border: 1px solid #2563eb;
-            background: #2563eb;
-            color: #ffffff;
-        }
-
-        .payable-btn-secondary {
-            border: 1px solid #cbd5e1;
-            background: #ffffff;
-            color: #475569;
-        }
-
-        .payable-btn-danger,
-        .payable-btn-danger-outline {
-            border: 1px solid #dc2626;
-        }
-
-        .payable-btn-danger {
-            background: #dc2626;
-            color: #ffffff;
-        }
-
-        .payable-btn-danger-outline {
-            background: #ffffff;
-            color: #dc2626;
-        }
-
-        .payable-card {
-            overflow: hidden;
-            margin-bottom: 20px;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            background: #ffffff;
-        }
-
-        .payable-card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-            padding: 17px 20px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .payable-card-header h2 {
-            margin: 0;
-            font-size: 15px;
-        }
-
-        .payable-card-header p {
-            margin: 4px 0 0;
-            color: #64748b;
-            font-size: 10px;
-        }
-
-        .payable-info-grid,
-        .payable-time-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .payable-info-grid>div,
-        .payable-time-grid>div {
-            padding: 18px 20px;
-            border-right: 1px solid #edf2f7;
-            border-bottom: 1px solid #edf2f7;
-        }
-
-        .payable-info-grid>div:nth-child(3n),
-        .payable-time-grid>div:nth-child(3n) {
-            border-right: none;
-        }
-
-        .payable-info-grid span,
-        .payable-time-grid span,
-        .payable-text-grid span {
-            display: block;
-            margin-bottom: 6px;
-            color: #64748b;
-            font-size: 9px;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
-
-        .payable-info-grid strong,
-        .payable-time-grid strong {
-            font-size: 11px;
-        }
-
-        .payable-code {
-            color: #1d4ed8 !important;
-            font-family: Consolas, Monaco, monospace;
-        }
-
-        .payable-amount {
-            font-size: 14px !important;
-        }
-
-        .payable-text-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .payable-text-grid>div {
-            padding: 20px;
-            border-right: 1px solid #edf2f7;
-        }
-
-        .payable-text-grid>div:last-child {
-            border-right: none;
-        }
-
-        .payable-text-grid p {
-            margin: 0;
-            color: #475569;
-            font-size: 11px;
-            line-height: 1.65;
-            white-space: pre-line;
-        }
-
-        .payable-status,
-        .transaction-result {
-            display: inline-flex;
-            padding: 6px 10px;
-            border-radius: 999px;
-            font-size: 9px;
-            font-weight: 800;
-        }
-
-        .payable-status.paid,
-        .transaction-result.success {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .payable-status.unpaid,
-        .transaction-result.failed {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .payable-status.pending {
-            background: #fef3c7;
-            color: #b45309;
-        }
-
-        .payable-status.cancelled,
-        .payable-status.default,
-        .transaction-result.default {
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .payable-qr {
-            padding: 20px;
-        }
-
-        .payable-qr pre {
-            overflow-x: auto;
-            margin: 0;
-            padding: 14px;
-            border-radius: 9px;
-            background: #f8fafc;
-            color: #334155;
-            font-size: 10px;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .payable-table-wrapper {
-            overflow-x: auto;
-        }
-
-        .payable-table {
-            width: 100%;
-            min-width: 900px;
-            border-collapse: collapse;
-        }
-
-        .payable-table th {
-            padding: 11px 14px;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-            color: #64748b;
-            font-size: 9px;
-            text-align: left;
-            text-transform: uppercase;
-        }
-
-        .payable-table td {
-            padding: 13px 14px;
-            border-bottom: 1px solid #edf2f7;
-            color: #334155;
-            font-size: 10px;
-        }
-
-        .text-right {
-            text-align: right !important;
-        }
-
-        .payable-detail-link {
-            display: inline-flex;
-            height: 29px;
-            align-items: center;
-            padding: 0 10px;
-            border: 1px solid #bfdbfe;
-            border-radius: 7px;
-            background: #eff6ff;
-            color: #1d4ed8;
-            font-size: 9px;
-            text-decoration: none;
-        }
-
-        .payable-count {
-            display: inline-flex;
-            min-width: 28px;
-            height: 28px;
-            align-items: center;
-            justify-content: center;
-            border-radius: 999px;
-            background: #f1f5f9;
-            font-size: 10px;
-            font-weight: 800;
-        }
-
-        .payable-empty,
-        .payable-empty-state {
-            color: #94a3b8;
-        }
-
-        .payable-empty-state {
-            padding: 35px !important;
-            text-align: center;
-        }
-
-        .payable-form-group {
-            text-align: left;
-        }
-
-        .payable-form-group label {
-            display: block;
-            margin-bottom: 7px;
-            color: #475569;
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        .payable-control {
-            width: 100%;
-            min-height: 40px;
-            padding: 8px 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 11px;
-        }
-        .payable-control-error {
-    border-color: #dc2626;
-}
-
-.payable-error {
-    margin-top: 6px;
-    color: #b91c1c;
-    font-size: 10px;
-    line-height: 1.5;
-}
-
-        .payable-textarea {
-            height: auto;
-            resize: vertical;
-        }
-
-        .payable-modal-toggle {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .payable-modal {
-            position: fixed;
-            z-index: 9999;
-            inset: 0;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .payable-modal-toggle:checked+.payable-modal {
-            display: flex;
-        }
-
-        .payable-modal-backdrop {
-            position: absolute;
-            inset: 0;
-            background: rgba(15, 23, 42, .55);
-        }
-
-        .payable-modal-dialog {
-            position: relative;
-            z-index: 2;
-            width: 100%;
-            max-width: 450px;
-            padding: 24px;
-            border-radius: 14px;
-            background: #ffffff;
-        }
-
-        .payable-modal-dialog h3 {
-            margin: 0 0 8px;
-            font-size: 17px;
-        }
-
-        .payable-modal-dialog>p {
-            margin: 0 0 18px;
-            color: #64748b;
-            font-size: 11px;
-            line-height: 1.6;
-        }
-
-        .payable-modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-top: 20px;
-        }
-
-        @media (max-width: 800px) {
-
-            .payable-detail-header,
-            .payable-actions {
-                flex-direction: column;
-            }
-
-            .payable-actions .payable-btn {
-                width: 100%;
-            }
-
-            .payable-info-grid,
-            .payable-time-grid,
-            .payable-text-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .payable-info-grid>div,
-            .payable-time-grid>div,
-            .payable-text-grid>div {
-                border-right: none;
-            }
-
-            .payable-modal-actions {
-                flex-direction: column-reverse;
-            }
-
-            .payable-modal-actions .payable-btn {
-                width: 100%;
-            }
-        }
-    </style>
 
 @endsection

@@ -1,19 +1,23 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'conclusions-edit')
 
 @section('title', 'Sửa kết luận lượt khám')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard /
-        Kết luận /
-        {{ $conclusion->medicalVisit?->visit_code }} /
-        Sửa
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <span>Kết luận</span>
+    <span aria-hidden="true">/</span>
+    <span>{{ $conclusion->medicalVisit?->visit_code }}</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
 
-    <div style="margin-bottom: 22px;">
+    <div class="admin-u-ed1667a9">
 
         <h1 class="page-title">
             Sửa kết luận lượt khám
@@ -29,7 +33,7 @@
 
     <div class="card">
 
-        <form
+        <form novalidate
             method="POST"
             action="{{ route(
                 'admin.conclusions.update',
@@ -41,32 +45,22 @@
             @method('PUT')
 
 
-            <div style="display: grid; gap: 18px;">
+            <div class="admin-u-6691f14f">
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="doctor_id"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Bác sĩ kết luận
                     </label>
 
-                    <select
+                    <select class="admin-u-184ecf5a"
                         id="doctor_id"
                         name="doctor_id"
                         required
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -96,11 +90,8 @@
                     </select>
 
                     @error('doctor_id')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -109,40 +100,27 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="professional_conclusion"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Kết luận chuyên môn
                     </label>
 
-                    <textarea
+                    <textarea class="admin-u-fb28156a"
                         id="professional_conclusion"
                         name="professional_conclusion"
                         rows="5"
                         required
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            resize: vertical;
-                        "
+
                     >{{ old(
                         'professional_conclusion',
                         $conclusion->professional_conclusion
                     ) }}</textarea>
 
                     @error('professional_conclusion')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -151,18 +129,14 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="disposition"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Hướng xử trí
                     </label>
 
-                    <input
+                    <input class="admin-u-419e8d7e"
                         type="text"
                         id="disposition"
                         name="disposition"
@@ -171,12 +145,7 @@
                             'disposition',
                             $conclusion->disposition
                         ) }}"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
 
                     <datalist id="disposition-options">
@@ -186,11 +155,8 @@
                     </datalist>
 
                     @error('disposition')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -199,39 +165,26 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="treatment_plan"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Kế hoạch điều trị
                     </label>
 
-                    <textarea
+                    <textarea class="admin-u-fb28156a"
                         id="treatment_plan"
                         name="treatment_plan"
                         rows="4"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            resize: vertical;
-                        "
+
                     >{{ old(
                         'treatment_plan',
                         $conclusion->treatment_plan
                     ) }}</textarea>
 
                     @error('treatment_plan')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -240,39 +193,26 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="instructions"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Dặn dò
                     </label>
 
-                    <textarea
+                    <textarea class="admin-u-fb28156a"
                         id="instructions"
                         name="instructions"
                         rows="4"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            resize: vertical;
-                        "
+
                     >{{ old(
                         'instructions',
                         $conclusion->instructions
                     ) }}</textarea>
 
                     @error('instructions')
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
                     @enderror
 
@@ -281,25 +221,15 @@
 
                 <div>
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Có tái khám
                     </label>
 
-                    <select
+                    <select class="admin-u-184ecf5a"
                         id="has_follow_up"
                         name="has_follow_up"
                         required
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option
@@ -331,26 +261,23 @@
                         </option>
 
                     </select>
+@error('has_follow_up')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
                 <div id="follow-up-fields">
 
-                    <div style="margin-bottom: 18px;">
+                    <div class="admin-u-2f23af6b">
 
-                        <label
+                        <label class="admin-u-63101fce"
                             for="follow_up_date"
-                            style="
-                                display: block;
-                                margin-bottom: 6px;
-                                font-weight: 700;
-                            "
+
                         >
                             Ngày tái khám
                         </label>
 
-                        <input
+                        <input class="admin-u-419e8d7e"
                             type="date"
                             id="follow_up_date"
                             name="follow_up_date"
@@ -362,20 +289,12 @@
                                     )
                                     : ''
                             ) }}"
-                            style="
-                                width: 100%;
-                                padding: 10px 12px;
-                                border: 1px solid #e2e8f0;
-                                border-radius: 8px;
-                            "
+
                         >
 
                         @error('follow_up_date')
-                            <div style="
-                                margin-top: 5px;
-                                color: #dc2626;
-                            ">
-                                {{ $message }}
+                            <div class="admin-u-6aa3ac13">
+                                {{ \App\Models\AdminDisplay::text($message) }}
                             </div>
                         @enderror
 
@@ -384,38 +303,26 @@
 
                     <div>
 
-                        <label
+                        <label class="admin-u-63101fce"
                             for="follow_up_reason"
-                            style="
-                                display: block;
-                                margin-bottom: 6px;
-                                font-weight: 700;
-                            "
+
                         >
                             Lý do tái khám
                         </label>
 
-                        <textarea
+                        <textarea class="admin-u-419e8d7e"
                             id="follow_up_reason"
                             name="follow_up_reason"
                             rows="3"
-                            style="
-                                width: 100%;
-                                padding: 10px 12px;
-                                border: 1px solid #e2e8f0;
-                                border-radius: 8px;
-                            "
+
                         >{{ old(
                             'follow_up_reason',
                             $conclusion->follow_up_reason
                         ) }}</textarea>
 
                         @error('follow_up_reason')
-                            <div style="
-                                margin-top: 5px;
-                                color: #dc2626;
-                            ">
-                                {{ $message }}
+                            <div class="admin-u-6aa3ac13">
+                                {{ \App\Models\AdminDisplay::text($message) }}
                             </div>
                         @enderror
 
@@ -426,18 +333,14 @@
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="concluded_at"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Thời điểm kết luận
                     </label>
 
-                    <input
+                    <input class="admin-u-419e8d7e"
                         type="datetime-local"
                         id="concluded_at"
                         name="concluded_at"
@@ -449,52 +352,37 @@
                                 )
                                 : ''
                         ) }}"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
+@error('concluded_at')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
                 <div>
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="notes"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         Ghi chú
                     </label>
 
-                    <textarea
+                    <textarea class="admin-u-419e8d7e"
                         id="notes"
                         name="notes"
                         rows="4"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >{{ old(
                         'notes',
                         $conclusion->notes
                     ) }}</textarea>
+@error('notes')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div style="
-                    display: flex;
-                    gap: 8px;
-                ">
+                <div class="admin-u-5786f359">
 
                     <button
                         type="submit"
@@ -508,10 +396,8 @@
                             'admin.conclusions.show',
                             $conclusion
                         ) }}"
-                        class="btn btn-secondary"
-                    >
-                        Hủy
-                    </a>
+                        class="admin-btn admin-btn-secondary btn btn-secondary"
+                    >Hủy</a>
 
                 </div>
 

@@ -1,19 +1,23 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'clinical-notes-edit')
 
 @section('title', 'Sửa nội dung khám')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard /
-        Nội dung khám /
-        {{ $clinicalNote->medicalVisit?->visit_code }} /
-        Sửa
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <span>Nội dung khám</span>
+    <span aria-hidden="true">/</span>
+    <span>{{ $clinicalNote->medicalVisit?->visit_code }}</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
 
-    <div style="margin-bottom: 22px;">
+    <div class="admin-u-ed1667a9">
 
         <h1 class="page-title">
             Sửa nội dung khám
@@ -28,8 +32,8 @@
 
 
     <div
-        class="card"
-        style="margin-bottom: 18px;"
+        class="admin-u-2f23af6b card"
+
     >
 
         <strong>Bệnh nhân:</strong>
@@ -45,7 +49,7 @@
 
     <div class="card">
 
-        <form
+        <form novalidate
             method="POST"
             action="{{ route(
                 'admin.clinical-notes.update',
@@ -85,32 +89,20 @@
 
             @foreach ($textareas as $field => $label)
 
-                <div style="
-                    margin-bottom: 18px;
-                ">
+                <div class="admin-u-2f23af6b">
 
-                    <label
+                    <label class="admin-u-63101fce"
                         for="{{ $field }}"
-                        style="
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 700;
-                        "
+
                     >
                         {{ $label }}
                     </label>
 
-                    <textarea
+                    <textarea class="admin-u-fb28156a"
                         id="{{ $field }}"
                         name="{{ $field }}"
                         rows="4"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            resize: vertical;
-                        "
+
                     >{{ old(
                         $field,
                         $clinicalNote->{$field}
@@ -118,11 +110,8 @@
 
                     @error($field)
 
-                        <div style="
-                            margin-top: 5px;
-                            color: #dc2626;
-                        ">
-                            {{ $message }}
+                        <div class="admin-u-6aa3ac13">
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </div>
 
                     @enderror
@@ -132,22 +121,16 @@
             @endforeach
 
 
-            <div style="
-                margin-bottom: 18px;
-            ">
+            <div class="admin-u-2f23af6b">
 
-                <label
+                <label class="admin-u-63101fce"
                     for="recorded_at"
-                    style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    "
+
                 >
                     Thời điểm ghi nhận
                 </label>
 
-                <input
+                <input class="admin-u-419e8d7e"
                     type="datetime-local"
                     id="recorded_at"
                     name="recorded_at"
@@ -159,21 +142,13 @@
                             )
                             : ''
                     ) }}"
-                    style="
-                        width: 100%;
-                        padding: 10px 12px;
-                        border: 1px solid #e2e8f0;
-                        border-radius: 8px;
-                    "
+
                 >
 
                 @error('recorded_at')
 
-                    <div style="
-                        margin-top: 5px;
-                        color: #dc2626;
-                    ">
-                        {{ $message }}
+                    <div class="admin-u-6aa3ac13">
+                        {{ \App\Models\AdminDisplay::text($message) }}
                     </div>
 
                 @enderror
@@ -181,10 +156,7 @@
             </div>
 
 
-            <div style="
-                display: flex;
-                gap: 8px;
-            ">
+            <div class="admin-u-5786f359">
 
                 <button
                     type="submit"
@@ -198,10 +170,8 @@
                         'admin.clinical-notes.show',
                         $clinicalNote
                     ) }}"
-                    class="btn btn-secondary"
-                >
-                    Hủy
-                </a>
+                    class="admin-btn admin-btn-secondary btn btn-secondary"
+                >Hủy</a>
 
             </div>
 

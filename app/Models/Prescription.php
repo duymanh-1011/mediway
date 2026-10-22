@@ -25,6 +25,11 @@ class Prescription extends Model
         'prescribed_at' => 'datetime',
     ];
 
+    public function hasPdf(): bool
+    {
+        return app(ClinicalDocument::class)->exists($this->prescription_pdf_path, 'prescriptions/'.$this->id, 'pdf');
+    }
+
     /**
      * Lượt khám của đơn thuốc.
      *

@@ -1,21 +1,19 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'appointment-statuses-show')
 
 @section(
     'title',
-    'Chi tiết trạng thái lịch hẹn - Mediway Admin'
+    'Chi tiết trạng thái lịch hẹn - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-
-        Admin /
-        Cấu hình trạng thái /
-        Trạng thái lịch hẹn /
-        {{ $appointmentStatus->name }}
-
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Cấu hình trạng thái</span>
+    <span aria-hidden="true">/</span>
+    <span>Trạng thái lịch hẹn</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ \App\Models\AdminDisplay::label($appointmentStatus->name) }}</strong>
 @endsection
 
 @section('content')
@@ -25,7 +23,7 @@
         <div>
 
             <h1 class="page-title">
-                {{ $appointmentStatus->name }}
+                {{ \App\Models\AdminDisplay::label($appointmentStatus->name) }}
             </h1>
 
             <p class="page-description">
@@ -116,13 +114,13 @@
                 )
 
                     <span class="badge badge-success">
-                        ACTIVE
+                        Đang hoạt động
                     </span>
 
                 @else
 
                     <span class="badge badge-danger">
-                        INACTIVE
+                        Ngừng hoạt động
                     </span>
 
                 @endif
@@ -159,7 +157,7 @@
 
             <div class="detail-value">
                 <strong>
-                    {{ $appointmentStatus->name }}
+                    {{ \App\Models\AdminDisplay::label($appointmentStatus->name) }}
                 </strong>
             </div>
 
@@ -172,9 +170,7 @@
             </div>
 
             <div class="detail-value">
-                {{ $appointmentStatus
-                    ->description
-                    ?? '—' }}
+                {{ \App\Models\AdminDisplay::text($appointmentStatus->description ?? '—') }}
             </div>
 
         </div>
@@ -257,134 +253,3 @@
     </div>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-
-        gap: 20px;
-
-        margin-bottom: 20px;
-    }
-
-    .header-actions {
-        display: flex;
-
-        gap: 8px;
-    }
-
-    .stats-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 14px;
-
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        padding: 16px 18px;
-
-        background: #ffffff;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-    }
-
-    .stat-label {
-        margin-bottom: 7px;
-
-        color: #64748b;
-
-        font-size: 13px;
-    }
-
-    .stat-value {
-        font-size: 26px;
-        font-weight: 700;
-    }
-
-    .stat-text {
-        font-size: 16px;
-        font-weight: 700;
-    }
-
-    .section-title {
-        margin: 0 0 18px;
-
-        font-size: 18px;
-    }
-
-    .detail-row {
-        display: grid;
-
-        grid-template-columns:
-            210px
-            minmax(0, 1fr);
-
-        gap: 20px;
-
-        padding: 13px 0;
-
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-label {
-        color: #64748b;
-
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .detail-value {
-        color: #334155;
-
-        font-size: 14px;
-        line-height: 1.6;
-    }
-
-    .information-box {
-        margin-top: 20px;
-
-        padding: 14px 16px;
-
-        border: 1px solid #bfdbfe;
-        border-radius: 9px;
-
-        background: #eff6ff;
-        color: #1e3a8a;
-
-        font-family:
-            "Times New Roman",
-            Times,
-            serif;
-
-        line-height: 1.6;
-    }
-
-    @media (max-width: 700px) {
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .detail-row {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

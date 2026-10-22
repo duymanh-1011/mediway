@@ -1,9 +1,18 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'personal-health-records-create')
 
 @section('title', 'Thêm chỉ số sức khỏe - Mediway')
 
 @section('breadcrumb')
-    Admin / Bệnh nhân / Sức khỏe / Thêm mới
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Nhân sự & bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Sức khỏe</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Thêm mới</strong>
 @endsection
 
 @section('content')
@@ -28,13 +37,13 @@
                 <strong>Vui lòng kiểm tra dữ liệu:</strong>
                 <ul>
                     @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
+                        <li>{{ \App\Models\AdminDisplay::text($error) }}</li>
                     @endforeach
                 </ul>
             </div>
         @endif
 
-        <form method="POST"
+        <form novalidate method="POST"
               action="{{ route('admin.personal-health-records.store') }}">
             @csrf
 
@@ -59,7 +68,3 @@
     </div>
 </div>
 @endsection
-
-@push('styles')
-@include('admin.personal-health-records._styles')
-@endpush

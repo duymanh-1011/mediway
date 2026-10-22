@@ -1,22 +1,19 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'visit-statuses-index')
 
 @section('title', 'Trạng thái lượt khám')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard / Cấu hình trạng thái / Trạng thái lượt khám
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Cấu hình trạng thái</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Trạng thái lượt khám</strong>
 @endsection
 
 @section('content')
 
-    <div style="
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 22px;
-    ">
+    <div class="admin-u-e0f559a1">
 
         <div>
 
@@ -33,65 +30,44 @@
     </div>
 
 
-    <div class="card" style="margin-bottom: 18px;">
-
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc trạng thái lượt khám',
+        'description' => 'Lọc theo từ khóa và hoạt động.',
+    ])
         <form
             method="GET"
             action="{{ route('admin.visit-statuses.index') }}"
-        >
+         class="admin-filter-form">
 
-            <div style="
-                display: grid;
-                grid-template-columns: minmax(220px, 1fr) 220px auto;
-                gap: 12px;
-                align-items: end;
-            ">
+            <div class="admin-u-b5392107 admin-filter-layout">
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Tìm kiếm
                     </label>
 
-                    <input
+                    <input class="admin-u-19b29622"
                         type="text"
                         name="search"
                         value="{{ request('search') }}"
                         placeholder="Tên hoặc mô tả trạng thái..."
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
+@error('search')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Hoạt động
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="is_active"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -113,36 +89,25 @@
                         </option>
 
                     </select>
+@error('is_active')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div style="
-                    display: flex;
-                    gap: 8px;
-                ">
+                <div class="admin-u-5786f359 admin-filter-layout">
 
-                    <button
-                        type="submit"
-                        class="btn btn-primary"
-                    >
-                        Lọc
-                    </button>
 
-                    <a
-                        href="{{ route('admin.visit-statuses.index') }}"
-                        class="btn btn-secondary"
-                    >
-                        Đặt lại
-                    </a>
+
+
 
                 </div>
 
             </div>
 
-        </form>
 
-    </div>
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route('admin.visit-statuses.index'), 'searchOnly' => false])
+        </form>
+    @endcomponent
 
 
     <div class="card">
@@ -156,10 +121,10 @@
                     <thead>
 
                     <tr>
-                        <th>ID</th>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Tên trạng thái</th>
                         <th>Mô tả</th>
-                        <th>Thứ tự</th>
+                        <th>Thứ tự xử lý</th>
                         <th>Cho phép chuyển</th>
                         <th>Hoạt động</th>
                         <th>Hành động</th>
@@ -174,13 +139,11 @@
 
                         <tr>
 
-                            <td>
-                                {{ $status->id }}
-                            </td>
+                            @include('admin.layouts.partials.row-number', ['rows' => $visitStatuses, 'index' => $loop->index])
 
                             <td>
                                 <strong>
-                                    {{ $status->name }}
+                                    {{ \App\Models\AdminDisplay::label($status->name) }}
                                 </strong>
                             </td>
 
@@ -230,31 +193,23 @@
 
                             <td>
 
-                                <div style="
-                                    display: flex;
-                                    flex-wrap: wrap;
-                                    gap: 6px;
-                                ">
+                                <div class="admin-u-c9035c8e">
 
                                     <a
                                         href="{{ route(
                                             'admin.visit-statuses.show',
                                             $status
                                         ) }}"
-                                        class="btn btn-secondary"
-                                    >
-                                        Chi tiết
-                                    </a>
+                                        class="admin-btn admin-btn-detail btn btn-secondary"
+                                    >Chi tiết</a>
 
                                     <a
                                         href="{{ route(
                                             'admin.visit-statuses.edit',
                                             $status
                                         ) }}"
-                                        class="btn btn-primary"
-                                    >
-                                        Sửa
-                                    </a>
+                                        class="admin-btn btn btn-primary admin-btn-primary"
+                                    >Sửa</a>
 
                                 </div>
 
@@ -271,19 +226,13 @@
             </div>
 
 
-            <div style="
-                margin-top: 18px;
-            ">
+            <div class="admin-u-6840f0a6">
                 {{ $visitStatuses->links() }}
             </div>
 
         @else
 
-            <div style="
-                padding: 30px;
-                text-align: center;
-                color: #64748b;
-            ">
+            <div class="admin-u-caa0d3af">
                 Không tìm thấy trạng thái lượt khám phù hợp.
             </div>
 

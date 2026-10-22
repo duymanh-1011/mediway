@@ -15,10 +15,7 @@ class StoreDiseaseGroupRequest extends FormRequest
     {
         return [
             'disease_group_code' => [
-                'required',
-                'string',
-                'max:30',
-                'unique:disease_groups,disease_group_code',
+                'exclude',
             ],
 
             'name' => [
@@ -48,29 +45,21 @@ class StoreDiseaseGroupRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'disease_group_code.required' =>
-                'Vui lòng nhập mã nhóm bệnh.',
+            'disease_group_code.required' => 'Vui lòng nhập mã nhóm bệnh.',
 
-            'disease_group_code.max' =>
-                'Mã nhóm bệnh không được vượt quá 30 ký tự.',
+            'disease_group_code.max' => 'Mã nhóm bệnh không được vượt quá 30 ký tự.',
 
-            'disease_group_code.unique' =>
-                'Mã nhóm bệnh đã tồn tại.',
+            'disease_group_code.unique' => 'Mã nhóm bệnh đã tồn tại.',
 
-            'name.required' =>
-                'Vui lòng nhập tên nhóm bệnh.',
+            'name.required' => 'Vui lòng nhập tên nhóm bệnh.',
 
-            'name.max' =>
-                'Tên nhóm bệnh không được vượt quá 150 ký tự.',
+            'name.max' => 'Tên nhóm bệnh không được vượt quá 150 ký tự.',
 
-            'name.unique' =>
-                'Tên nhóm bệnh đã tồn tại.',
+            'name.unique' => 'Tên nhóm bệnh đã tồn tại.',
 
-            'status.required' =>
-                'Vui lòng chọn trạng thái.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' =>
-                'Trạng thái nhóm bệnh không hợp lệ.',
+            'status.in' => 'Trạng thái nhóm bệnh không hợp lệ.',
         ];
     }
 }

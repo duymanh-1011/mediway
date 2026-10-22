@@ -1,29 +1,26 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'visit-statuses-show')
 
 @section('title', 'Chi tiết trạng thái lượt khám')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard /
-        Trạng thái lượt khám /
-        {{ $visitStatus->name }}
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Cấu hình trạng thái</span>
+    <span aria-hidden="true">/</span>
+    <span>Trạng thái lượt khám</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ \App\Models\AdminDisplay::label($visitStatus->name) }}</strong>
 @endsection
 
 @section('content')
 
-    <div style="
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 22px;
-    ">
+    <div class="admin-u-e0f559a1">
 
         <div>
 
             <h1 class="page-title">
-                {{ $visitStatus->name }}
+                {{ \App\Models\AdminDisplay::label($visitStatus->name) }}
             </h1>
 
             <p class="page-description">
@@ -33,27 +30,20 @@
         </div>
 
 
-        <div style="
-            display: flex;
-            gap: 8px;
-        ">
+        <div class="admin-u-5786f359">
 
             <a
                 href="{{ route('admin.visit-statuses.index') }}"
-                class="btn btn-secondary"
-            >
-                Quay lại
-            </a>
+                class="admin-btn admin-btn-secondary btn btn-secondary"
+            >Quay lại</a>
 
             <a
                 href="{{ route(
                     'admin.visit-statuses.edit',
                     $visitStatus
                 ) }}"
-                class="btn btn-primary"
-            >
-                Sửa
-            </a>
+                class="admin-btn btn btn-primary admin-btn-primary"
+            >Sửa</a>
 
         </div>
 
@@ -62,20 +52,15 @@
 
     <div class="card">
 
-        <div style="
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-        ">
+        <div class="admin-u-6b3ec5d8">
 
             <div>
                 <strong>
                     Tên trạng thái
                 </strong>
 
-                <div style="margin-top: 6px;">
-                    {{ $visitStatus->name }}
+                <div class="admin-u-a5595d11">
+                    {{ \App\Models\AdminDisplay::label($visitStatus->name) }}
                 </div>
             </div>
 
@@ -85,7 +70,7 @@
                     Thứ tự xử lý
                 </strong>
 
-                <div style="margin-top: 6px;">
+                <div class="admin-u-a5595d11">
                     {{ $visitStatus->process_order }}
                 </div>
             </div>
@@ -96,7 +81,7 @@
                     Cho phép chuyển trạng thái
                 </strong>
 
-                <div style="margin-top: 6px;">
+                <div class="admin-u-a5595d11">
 
                     @if ($visitStatus->allows_transition)
 
@@ -121,7 +106,7 @@
                     Hoạt động
                 </strong>
 
-                <div style="margin-top: 6px;">
+                <div class="admin-u-a5595d11">
 
                     @if ($visitStatus->is_active)
 
@@ -146,7 +131,7 @@
                     Số lượt khám đang sử dụng
                 </strong>
 
-                <div style="margin-top: 6px;">
+                <div class="admin-u-a5595d11">
                     {{ $visitStatus->medical_visits_count }}
                 </div>
             </div>
@@ -157,7 +142,7 @@
                     Ngày tạo
                 </strong>
 
-                <div style="margin-top: 6px;">
+                <div class="admin-u-a5595d11">
                     {{ $visitStatus->created_at?->format('d/m/Y H:i') }}
                 </div>
             </div>
@@ -165,11 +150,7 @@
         </div>
 
 
-        <hr style="
-            margin: 24px 0;
-            border: 0;
-            border-top: 1px solid #e2e8f0;
-        ">
+        <hr class="admin-u-20f76a32">
 
 
         <div>
@@ -178,11 +159,7 @@
                 Mô tả
             </strong>
 
-            <div style="
-                margin-top: 8px;
-                line-height: 1.7;
-                white-space: pre-line;
-            ">
+            <div class="admin-u-c6ec35a1">
                 {{ $visitStatus->description ?: 'Chưa có mô tả.' }}
             </div>
 

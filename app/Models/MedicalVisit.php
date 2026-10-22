@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Validation\ValidationException;
 
 class MedicalVisit extends Model
 {
@@ -34,6 +36,39 @@ class MedicalVisit extends Model
             'examination_started_at' => 'datetime',
             'examination_ended_at' => 'datetime',
         ];
+    }
+
+    public function canRecordClinicalData(): bool
+    {
+        return in_array($this->status?->name, ['IN_EXAMINATION', 'RETURNING'], true);
+    }
+
+    /** Acquire inside a transaction, before writing clinical child records. */
+    public function lockForClinicalWrite(): self
+    {
+        $visit = self::with('status')->whereKey($this->id)->lockForUpdate()->firstOrFail();
+        if (! $visit->canRecordClinicalData()) {
+            throw ValidationException::withMessages(['visit' => 'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.']);
+        }
+
+        return $visit;
+    }
+
+    /** The caller must hold the visit lock before closing its queues. */
+    public function completeOpenQueues(CarbonInterface $completedAt): void
+    {
+        $queues = $this->queues()->whereHas('status', fn ($query) => $query->whereIn('name', ['WAITING', 'CALLED', 'IN_SERVICE', 'SKIPPED']))
+            ->lockForUpdate()->get();
+        if ($queues->isEmpty()) {
+            return;
+        }
+        $completedStatus = QueueStatus::where('name', 'COMPLETED')->where('is_active', true)->first();
+        if (! $completedStatus) {
+            throw ValidationException::withMessages(['visit_status_id' => 'Thiếu trạng thái hoàn tất hàng đợi đang hoạt động.']);
+        }
+        foreach ($queues as $queue) {
+            $queue->update(['queue_status_id' => $completedStatus->id, 'completed_at' => $queue->completed_at ?? $completedAt]);
+        }
     }
 
     public function appointment(): BelongsTo
@@ -112,6 +147,22 @@ class MedicalVisit extends Model
     {
         return $this->hasOne(
             VisitConclusion::class,
+            'medical_visit_id'
+        );
+    }
+
+    /**
+     * Các phiếu chỉ định dịch vụ của lượt khám.
+     */
+    public function prescription(): HasOne
+    {
+        return $this->hasOne(Prescription::class, 'medical_visit_id');
+    }
+
+    public function serviceOrders(): HasMany
+    {
+        return $this->hasMany(
+            ServiceOrder::class,
             'medical_visit_id'
         );
     }

@@ -1,4 +1,5 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'payment-transactions-show')
 
 @section('title', 'Chi tiết giao dịch thanh toán')
 
@@ -17,25 +18,27 @@
 
     <div class="transaction-detail-page">
 
-        <div class="transaction-breadcrumb">
+        <nav class="admin-breadcrumb" aria-label="Đường dẫn">
 
             <a href="{{ route('admin.dashboard') }}">
-                Dashboard
+                Bảng điều khiển
             </a>
 
-            <span>/</span>
+            <span aria-hidden="true">/</span>
+            <span>Thanh toán</span>
+            <span aria-hidden="true">/</span>
 
             <a href="{{ route('admin.payment-transactions.index') }}">
                 Giao dịch thanh toán
             </a>
 
-            <span>/</span>
+            <span aria-hidden="true">/</span>
 
-            <strong>
+            <strong aria-current="page">
                 {{ $transaction->transaction_code }}
             </strong>
 
-        </div>
+        </nav>
 
 
         <div class="transaction-detail-header">
@@ -61,7 +64,7 @@
                     transaction-result
                     {{ $resultClass }}
                 ">
-                {{ $transaction->transaction_result }}
+                {{ \App\Models\AdminDisplay::label($transaction->transaction_result) }}
             </span>
 
         </div>
@@ -130,7 +133,7 @@
                     <span>Phương thức</span>
 
                     <strong>
-                        {{ $transaction->payment_method }}
+                        {{ \App\Models\AdminDisplay::label($transaction->payment_method) }}
                     </strong>
                 </div>
 
@@ -139,7 +142,7 @@
                     <span>Kết quả</span>
 
                     <strong>
-                        {{ $transaction->transaction_result }}
+                        {{ \App\Models\AdminDisplay::label($transaction->transaction_result) }}
                     </strong>
                 </div>
 
@@ -356,7 +359,7 @@
                             @elseif ($payable->payment_type === 'SERVICE_FEE')
                                 Phí dịch vụ
                             @else
-                                {{ $payable->payment_type }}
+                                {{ \App\Models\AdminDisplay::label($payable->payment_type) }}
                             @endif
                         </strong>
                     </div>
@@ -366,7 +369,7 @@
                         <span>Trạng thái khoản thu</span>
 
                         <strong>
-                            {{ $payable->paymentStatus?->name ?? '—' }}
+                            {{ \App\Models\AdminDisplay::label($payable->paymentStatus?->name ?? '—') }}
                         </strong>
                     </div>
 
@@ -453,245 +456,6 @@
     </div>
 
 
-    <style>
-        .transaction-detail-page {
-            --primary: #2563eb;
-            --border: #e2e8f0;
 
-            width: 100%;
-            color: #0f172a;
-        }
-
-        .transaction-detail-page * {
-            box-sizing: border-box;
-        }
-
-        .transaction-breadcrumb {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 18px;
-            color: #94a3b8;
-            font-size: 13px;
-        }
-
-        .transaction-breadcrumb a {
-            color: #64748b;
-            text-decoration: none;
-        }
-
-        .transaction-detail-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .transaction-module-label {
-            margin-bottom: 7px;
-            color: #2563eb;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: .08em;
-        }
-
-        .transaction-detail-header h1 {
-            margin: 0;
-            font-size: 28px;
-        }
-
-        .transaction-detail-header p {
-            margin: 7px 0 0;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        .transaction-result {
-            display: inline-flex;
-            padding: 7px 11px;
-            border-radius: 999px;
-            font-size: 9px;
-            font-weight: 800;
-        }
-
-        .transaction-result.success {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .transaction-result.failed {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .transaction-result.default {
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .transaction-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .transaction-btn {
-            display: inline-flex;
-            height: 39px;
-            align-items: center;
-            justify-content: center;
-            padding: 0 13px;
-            border-radius: 8px;
-            font-size: 10px;
-            font-weight: 700;
-            text-decoration: none;
-        }
-
-        .transaction-btn-primary {
-            border: 1px solid #2563eb;
-            background: #2563eb;
-            color: #ffffff;
-        }
-
-        .transaction-btn-secondary {
-            border: 1px solid #cbd5e1;
-            background: #ffffff;
-            color: #475569;
-        }
-
-        .transaction-card {
-            overflow: hidden;
-            margin-bottom: 20px;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            background: #ffffff;
-        }
-
-        .transaction-card-header {
-            padding: 17px 20px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .transaction-card-header h2 {
-            margin: 0;
-            font-size: 15px;
-        }
-
-        .transaction-info-grid,
-        .transaction-time-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .transaction-info-grid>div,
-        .transaction-time-grid>div {
-            padding: 18px 20px;
-            border-right: 1px solid #edf2f7;
-            border-bottom: 1px solid #edf2f7;
-        }
-
-        .transaction-info-grid>div:nth-child(3n),
-        .transaction-time-grid>div:nth-child(3n) {
-            border-right: none;
-        }
-
-        .transaction-info-grid span,
-        .transaction-time-grid span,
-        .transaction-text-block span {
-            display: block;
-            margin-bottom: 6px;
-            color: #64748b;
-            font-size: 9px;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
-
-        .transaction-info-grid strong,
-        .transaction-time-grid strong {
-            font-size: 11px;
-        }
-
-        .transaction-info-grid small {
-            display: block;
-            margin-top: 4px;
-            color: #94a3b8;
-            font-size: 9px;
-        }
-
-        .transaction-code {
-            color: #1d4ed8 !important;
-            font-family: Consolas, Monaco, monospace;
-        }
-
-        .transaction-amount {
-            font-size: 14px !important;
-        }
-
-        .transaction-text-block {
-            padding: 20px;
-        }
-
-        .transaction-text-block p {
-            margin: 0;
-            color: #475569;
-            font-size: 11px;
-            line-height: 1.7;
-            white-space: pre-line;
-        }
-
-        .transaction-failure-card {
-            border-color: #fecaca;
-        }
-
-        .transaction-failure-card .transaction-card-header {
-            background: #fff7f7;
-            color: #b91c1c;
-        }
-
-        .transaction-policy {
-            padding: 15px 17px;
-            border: 1px solid #cbd5e1;
-            border-radius: 11px;
-            background: #f8fafc;
-        }
-
-        .transaction-policy strong {
-            display: block;
-            margin-bottom: 5px;
-            color: #334155;
-            font-size: 11px;
-        }
-
-        .transaction-policy p {
-            margin: 0;
-            color: #64748b;
-            font-size: 10px;
-            line-height: 1.6;
-        }
-
-        @media (max-width: 800px) {
-
-            .transaction-detail-header,
-            .transaction-actions {
-                flex-direction: column;
-            }
-
-            .transaction-actions .transaction-btn {
-                width: 100%;
-            }
-
-            .transaction-info-grid,
-            .transaction-time-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .transaction-info-grid>div,
-            .transaction-time-grid>div {
-                border-right: none;
-            }
-        }
-    </style>
 
 @endsection

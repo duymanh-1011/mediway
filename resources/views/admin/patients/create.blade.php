@@ -1,9 +1,16 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'patients-create')
 
 @section('title', 'Thêm bệnh nhân - Mediway')
 
 @section('breadcrumb')
-    Admin / Bệnh nhân / Thêm mới
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Nhân sự & bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Thêm mới</strong>
 @endsection
 
 @section('content')
@@ -16,7 +23,7 @@
             </p>
         </div>
 
-        <a href="{{ route('admin.patients.index') }}" class="pf-btn pf-light">
+        <a href="{{ route('admin.patients.index') }}" class="admin-btn admin-btn-secondary pf-btn pf-light">
             ← Danh sách
         </a>
     </div>
@@ -27,13 +34,13 @@
                 <strong>Vui lòng kiểm tra lại dữ liệu:</strong>
                 <ul>
                     @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
+                        <li>{{ \App\Models\AdminDisplay::text($error) }}</li>
                     @endforeach
                 </ul>
             </div>
         @endif
 
-        <form
+        <form novalidate
             method="POST"
             action="{{ route('admin.patients.store') }}"
             enctype="multipart/form-data"
@@ -53,9 +60,7 @@
 
             <div class="pf-actions">
                 <a href="{{ route('admin.patients.index') }}"
-                   class="pf-btn pf-light">
-                    Hủy
-                </a>
+                   class="pf-btn pf-light">Hủy</a>
 
                 <button type="submit" class="pf-btn pf-primary">
                     Tạo bệnh nhân
@@ -65,7 +70,3 @@
     </div>
 </div>
 @endsection
-
-@push('styles')
-@include('admin.patients._styles')
-@endpush

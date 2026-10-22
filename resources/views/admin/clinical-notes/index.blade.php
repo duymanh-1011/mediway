@@ -1,16 +1,19 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'clinical-notes-index')
 
 @section('title', 'Nội dung khám')
 
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Dashboard / Vận hành khám / Nội dung khám
-    </div>
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Vận hành khám</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Nội dung khám</strong>
 @endsection
 
 @section('content')
 
-    <div style="margin-bottom: 22px;">
+    <div class="admin-u-ed1667a9">
 
         <h1 class="page-title">
             Nội dung khám
@@ -24,69 +27,44 @@
     </div>
 
 
-    <div
-        class="card"
-        style="margin-bottom: 18px;"
-    >
-
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc nội dung khám',
+        'description' => 'Lọc theo từ khóa, bác sĩ, trạng thái lượt khám và khoảng thời gian.',
+    ])
         <form
             method="GET"
             action="{{ route('admin.clinical-notes.index') }}"
-        >
+         class="admin-filter-form">
 
-            <div style="
-                display: grid;
-                grid-template-columns:
-                    repeat(auto-fit, minmax(190px, 1fr));
-                gap: 14px;
-                align-items: end;
-            ">
+            <div class="admin-u-e6828601 admin-filter-layout">
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Tìm kiếm
                     </label>
 
-                    <input
+                    <input class="admin-u-19b29622"
                         type="text"
                         name="search"
                         value="{{ request('search') }}"
                         placeholder="Mã lượt khám, bệnh nhân, triệu chứng..."
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
+@error('search')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Bác sĩ
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="doctor_id"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -109,29 +87,20 @@
                         @endforeach
 
                     </select>
+@error('doctor_id')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Trạng thái lượt khám
                     </label>
 
-                    <select
+                    <select class="admin-u-181f32ca"
                         name="visit_status_id"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            background: white;
-                        "
+
                     >
 
                         <option value="">
@@ -150,95 +119,67 @@
                                     (string) $status->id
                                 )
                             >
-                                {{ $status->name }}
+                                {{ \App\Models\AdminDisplay::label($status->name) }}
                             </option>
 
                         @endforeach
 
                     </select>
+@error('visit_status_id')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Từ ngày
                     </label>
 
-                    <input
+                    <input class="admin-u-19b29622"
                         type="date"
                         name="date_from"
                         value="{{ request('date_from') }}"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
+@error('date_from')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
 
-                <div>
+                <div class="admin-filter-field">
 
-                    <label style="
-                        display: block;
-                        margin-bottom: 6px;
-                        font-weight: 700;
-                    ">
+                    <label class="admin-u-63101fce">
                         Đến ngày
                     </label>
 
-                    <input
+                    <input class="admin-u-19b29622"
                         type="date"
                         name="date_to"
                         value="{{ request('date_to') }}"
-                        style="
-                            width: 100%;
-                            padding: 9px 11px;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                        "
+
                     >
+@error('date_to')<div class="field-error">{{ $message }}</div>@enderror
 
                 </div>
 
             </div>
 
 
-            <div style="
-                display: flex;
-                gap: 8px;
-                margin-top: 16px;
-            ">
+            <div class="admin-u-0c24989a admin-filter-layout">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Lọc
-                </button>
 
-                <a
-                    href="{{ route(
-                        'admin.clinical-notes.index'
-                    ) }}"
-                    class="btn btn-secondary"
-                >
-                    Đặt lại
-                </a>
+
+
 
             </div>
 
-        </form>
 
-    </div>
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route(
+                        'admin.clinical-notes.index'
+                    ), 'searchOnly' => false])
+        </form>
+    @endcomponent
 
 
     <div class="card">
@@ -251,6 +192,7 @@
 
                     <thead>
                     <tr>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Lượt khám</th>
                         <th>Bệnh nhân</th>
                         <th>Bác sĩ</th>
@@ -268,6 +210,7 @@
 
                         <tr>
 
+                            @include('admin.layouts.partials.row-number', ['rows' => $clinicalNotes, 'index' => $loop->index])
                             <td>
                                 <strong>
                                     {{ $note->medicalVisit?->visit_code ?: '—' }}
@@ -280,11 +223,7 @@
 
                                 @if ($note->medicalVisit?->patient)
 
-                                    <div style="
-                                        font-size: 12px;
-                                        color: #64748b;
-                                        margin-top: 3px;
-                                    ">
+                                    <div class="admin-u-3e8f8985">
                                         {{ $note->medicalVisit->patient->patient_code }}
                                     </div>
 
@@ -318,37 +257,25 @@
 
                             <td>
 
-                                <div style="
-                                    display: flex;
-                                    flex-wrap: wrap;
-                                    gap: 6px;
-                                ">
+                                <div class="admin-u-c9035c8e">
 
                                     <a
                                         href="{{ route(
                                             'admin.clinical-notes.show',
                                             $note
                                         ) }}"
-                                        class="btn btn-secondary"
-                                    >
-                                        Chi tiết
-                                    </a>
+                                        class="admin-btn admin-btn-detail btn btn-secondary"
+                                    >Chi tiết</a>
 
-                                    @if (
-                                        $note->medicalVisit?->status?->name
-                                        !==
-                                        'COMPLETED'
-                                    )
+                                    @if ($note->medicalVisit?->canRecordClinicalData())
 
                                         <a
                                             href="{{ route(
                                                 'admin.clinical-notes.edit',
                                                 $note
                                             ) }}"
-                                            class="btn btn-primary"
-                                        >
-                                            Sửa
-                                        </a>
+                                            class="admin-btn btn btn-primary admin-btn-primary"
+                                        >Sửa</a>
 
                                     @endif
 
@@ -367,17 +294,13 @@
             </div>
 
 
-            <div style="margin-top: 18px;">
+            <div class="admin-u-6840f0a6">
                 {{ $clinicalNotes->links() }}
             </div>
 
         @else
 
-            <div style="
-                padding: 30px;
-                text-align: center;
-                color: #64748b;
-            ">
+            <div class="admin-u-caa0d3af">
                 Không tìm thấy nội dung khám phù hợp.
             </div>
 

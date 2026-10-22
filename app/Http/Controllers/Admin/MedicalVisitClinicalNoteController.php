@@ -36,11 +36,7 @@ class MedicalVisitClinicalNoteController extends Controller
                 );
         }
 
-        if (
-            $visit->status?->name
-            ===
-            'COMPLETED'
-        ) {
+        if (! $visit->canRecordClinicalData()) {
             return redirect()
                 ->route(
                     'admin.visits.show',
@@ -48,7 +44,7 @@ class MedicalVisitClinicalNoteController extends Controller
                 )
                 ->with(
                     'error',
-                    'Không thể thêm nội dung khám cho lượt khám đã hoàn tất.'
+                    'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
                 );
         }
 
@@ -79,11 +75,7 @@ class MedicalVisitClinicalNoteController extends Controller
                 );
         }
 
-        if (
-            $visit->status?->name
-            ===
-            'COMPLETED'
-        ) {
+        if (! $visit->canRecordClinicalData()) {
             return redirect()
                 ->route(
                     'admin.visits.show',
@@ -91,7 +83,7 @@ class MedicalVisitClinicalNoteController extends Controller
                 )
                 ->with(
                     'error',
-                    'Không thể thêm nội dung khám cho lượt khám đã hoàn tất.'
+                    'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
                 );
         }
 
@@ -102,40 +94,36 @@ class MedicalVisitClinicalNoteController extends Controller
                 $visit,
                 $data
             ) {
+                $visit = $visit->lockForClinicalWrite();
+                if ($existing = $visit->clinicalNote()->first()) {
+                    return $existing;
+                }
+
                 return VisitClinicalNote::create([
-                    'medical_visit_id' =>
-                        $visit->id,
+                    'medical_visit_id' => $visit->id,
 
-                    'reason_for_visit' =>
-                        $data['reason_for_visit']
+                    'reason_for_visit' => $data['reason_for_visit']
                         ?? null,
 
-                    'current_symptoms' =>
-                        $data['current_symptoms']
+                    'current_symptoms' => $data['current_symptoms']
                         ?? null,
 
-                    'present_illness_history' =>
-                        $data['present_illness_history']
+                    'present_illness_history' => $data['present_illness_history']
                         ?? null,
 
-                    'relevant_medical_history' =>
-                        $data['relevant_medical_history']
+                    'relevant_medical_history' => $data['relevant_medical_history']
                         ?? null,
 
-                    'physical_examination' =>
-                        $data['physical_examination']
+                    'physical_examination' => $data['physical_examination']
                         ?? null,
 
-                    'initial_assessment' =>
-                        $data['initial_assessment']
+                    'initial_assessment' => $data['initial_assessment']
                         ?? null,
 
-                    'notes' =>
-                        $data['notes']
+                    'notes' => $data['notes']
                         ?? null,
 
-                    'recorded_at' =>
-                        now(),
+                    'recorded_at' => now(),
                 ]);
             }
         );

@@ -1,24 +1,29 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'medical-services-show')
 
 @section(
     'title',
-    'Chi tiết dịch vụ y tế - Mediway Admin'
+    'Chi tiết dịch vụ y tế - Mediway'
 )
 
 @section('breadcrumb')
-
-    <div class="breadcrumb">
-
-        Admin /
-        Danh mục /
-        Dịch vụ y tế /
-        {{ $medicalService->service_code }}
-
-    </div>
-
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Danh mục</span>
+    <span aria-hidden="true">/</span>
+    <span>Dịch vụ y tế</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">{{ $medicalService->service_code }}</strong>
 @endsection
 
+
 @section('content')
+    @include('admin.layouts.partials.service-catalog-tabs')
+
+
+    {{-- =====================================================
+         HEADER
+    ====================================================== --}}
 
     <div class="page-header">
 
@@ -30,12 +35,16 @@
 
             <p class="page-description">
                 Mã dịch vụ:
-                {{ $medicalService->service_code }}
+                <strong>
+                    {{ $medicalService->service_code }}
+                </strong>
             </p>
 
         </div>
 
+
         <div class="header-actions">
+            @include('admin.layouts.partials.catalog-status', ['record' => $medicalService, 'catalog' => 'medical-services'])
 
             <a
                 href="{{ route(
@@ -43,7 +52,7 @@
                 ) }}"
                 class="btn btn-secondary"
             >
-                ← Danh sách
+                ← Quay lại
             </a>
 
             <a
@@ -60,6 +69,11 @@
 
     </div>
 
+
+    {{-- =====================================================
+         THỐNG KÊ
+    ====================================================== --}}
+
     <div class="stats-grid">
 
         <div class="stat-card">
@@ -74,55 +88,67 @@
 
         </div>
 
+
         <div class="stat-card">
 
             <div class="stat-label">
                 Giá hiện tại
             </div>
 
-            <div class="stat-value">
+            <div class="stat-value stat-value-price">
+
                 {{
                     number_format(
-                        $medicalService->price,
+                        (float) $medicalService->price,
                         0,
                         ',',
                         '.'
                     )
                 }}
                 đ
+
             </div>
 
         </div>
 
+
         <div class="stat-card">
 
             <div class="stat-label">
-                Tổng giá trị chỉ định
+                Tổng giá trị đã chỉ định
             </div>
 
-            <div class="stat-value">
+            <div class="stat-value stat-value-price">
+
                 {{
                     number_format(
-                        $orderedValue,
+                        (float) $orderedValue,
                         0,
                         ',',
                         '.'
                     )
                 }}
                 đ
+
             </div>
 
         </div>
 
     </div>
 
+
     <div class="detail-grid">
+
+        {{-- =====================================================
+             THÔNG TIN DỊCH VỤ
+        ====================================================== --}}
 
         <div class="card">
 
-            <h3 class="section-title">
+            <h2 class="section-title">
                 Thông tin dịch vụ
-            </h3>
+            </h2>
+
 
             <div class="detail-row">
 
@@ -130,11 +156,12 @@
                     Mã dịch vụ
                 </div>
 
-                <div class="detail-value">
+                <div class="detail-value detail-code">
                     {{ $medicalService->service_code }}
                 </div>
 
             </div>
+
 
             <div class="detail-row">
 
@@ -143,10 +170,13 @@
                 </div>
 
                 <div class="detail-value">
-                    {{ $medicalService->name }}
+                    <strong>
+                        {{ $medicalService->name }}
+                    </strong>
                 </div>
 
             </div>
+
 
             <div class="detail-row">
 
@@ -155,33 +185,69 @@
                 </div>
 
                 <div class="detail-value">
-                    {{ $medicalService
-                        ->serviceGroup
-                        ?->name
-                        ?? '—' }}
+
+                    <div class="group-badges">
+
+                        @forelse (
+                            $medicalService->serviceGroups
+                            as $group
+                        )
+
+                            <a class="group-badge" href="{{ route('admin.service-groups.show', $group) }}">
+
+                                {{ $group->name }}
+
+                                @if (
+                                    $group->status
+                                    ===
+                                    'INACTIVE'
+                                )
+
+                                    <small>
+                                        · Ngừng hoạt động
+                                    </small>
+
+                                @endif
+
+                            </a>
+
+                        @empty
+
+                            <span class="text-muted">
+                                Chưa phân nhóm
+                            </span>
+
+                        @endforelse
+
+                    </div>
+
                 </div>
 
             </div>
 
+
             <div class="detail-row">
 
                 <div class="detail-label">
-                    Giá
+                    Giá dịch vụ
                 </div>
 
-                <div class="detail-value">
+                <div class="detail-value detail-price">
+
                     {{
                         number_format(
-                            $medicalService->price,
+                            (float) $medicalService->price,
                             0,
                             ',',
                             '.'
                         )
                     }}
                     đ
+
                 </div>
 
             </div>
+
 
             <div class="detail-row">
 
@@ -190,15 +256,16 @@
                 </div>
 
                 <div class="detail-value">
-                    {{ $medicalService->unit }}
+                    {{ $medicalService->unit ?: '—' }}
                 </div>
 
             </div>
 
+
             <div class="detail-row">
 
                 <div class="detail-label">
-                    Thời lượng
+                    Thời lượng dự kiến
                 </div>
 
                 <div class="detail-value">
@@ -208,22 +275,27 @@
                             ->estimated_duration_minutes
                     )
 
-                        {{ $medicalService
-                            ->estimated_duration_minutes }}
+                        {{
+                            $medicalService
+                                ->estimated_duration_minutes
+                        }}
                         phút
 
                     @else
+
                         —
+
                     @endif
 
                 </div>
 
             </div>
 
+
             <div class="detail-row">
 
                 <div class="detail-label">
-                    Thứ tự
+                    Thứ tự hiển thị
                 </div>
 
                 <div class="detail-value">
@@ -231,6 +303,7 @@
                 </div>
 
             </div>
+
 
             <div class="detail-row">
 
@@ -242,13 +315,14 @@
 
                     @if (
                         $medicalService->status
-                        === 'ACTIVE'
+                        ===
+                        'ACTIVE'
                     )
 
                         <span
                             class="badge badge-success"
                         >
-                            ACTIVE
+                            Đang hoạt động
                         </span>
 
                     @else
@@ -256,7 +330,7 @@
                         <span
                             class="badge badge-danger"
                         >
-                            INACTIVE
+                            Ngừng hoạt động
                         </span>
 
                     @endif
@@ -265,55 +339,89 @@
 
             </div>
 
+
             <div class="detail-row">
 
                 <div class="detail-label">
                     Mô tả
                 </div>
 
-                <div class="detail-value">
-                    {{ $medicalService
-                        ->description
-                        ?? '—' }}
+                <div class="detail-value detail-long-text">
+
+                    {{
+                        $medicalService
+                            ->description
+                        ?: 'Chưa có thông tin.'
+                    }}
+
                 </div>
 
             </div>
 
+
             <div class="detail-row">
 
                 <div class="detail-label">
-                    Chuẩn bị
+                    Hướng dẫn chuẩn bị
                 </div>
 
-                <div class="detail-value">
-                    {{ $medicalService
-                        ->preparation_instructions
-                        ?? '—' }}
+                <div class="detail-value detail-long-text">
+
+                    {{
+                        $medicalService
+                            ->preparation_instructions
+                        ?: 'Không có yêu cầu chuẩn bị đặc biệt.'
+                    }}
+
                 </div>
 
             </div>
 
+
             <div class="detail-row">
 
                 <div class="detail-label">
-                    Lưu ý
+                    Lưu ý / Cảnh báo
                 </div>
 
-                <div class="detail-value">
-                    {{ $medicalService
-                        ->precautions
-                        ?? '—' }}
+                <div class="detail-value detail-long-text">
+
+                    {{
+                        $medicalService
+                            ->precautions
+                        ?: 'Không có lưu ý.'
+                    }}
+
                 </div>
 
             </div>
 
         </div>
 
+
+        {{-- =====================================================
+             CHỈ ĐỊNH GẦN ĐÂY
+        ====================================================== --}}
+
         <div class="card">
 
-            <h3 class="section-title">
-                Chỉ định gần đây
-            </h3>
+            <div class="section-heading">
+
+                <div>
+
+                    <h2 class="section-title">
+                        Lịch sử chỉ định gần đây
+                    </h2>
+
+                    <p class="section-description">
+                        Các lượt khám gần nhất đã sử dụng
+                        dịch vụ này.
+                    </p>
+
+                </div>
+
+            </div>
+
 
             <div class="table-wrapper">
 
@@ -322,15 +430,17 @@
                     <thead>
 
                         <tr>
-                            <th>Phiếu</th>
+                            <th scope="col" class="admin-row-number">STT</th>
+                            <th>Phiếu chỉ định</th>
                             <th>Lượt khám</th>
                             <th>Bệnh nhân</th>
-                            <th>Giá tại thời điểm chỉ định</th>
+                            <th>Giá chỉ định</th>
                             <th>Trạng thái</th>
-                            <th>Ngày chỉ định</th>
+                            <th>Thời gian</th>
                         </tr>
 
                     </thead>
+
 
                     <tbody>
 
@@ -339,32 +449,52 @@
                         as $item
                     )
 
+                        @php
+                            $itemStatus =
+                                $item->service_status
+                                ?? null;
+
+                            $itemStatusLabel = \App\Models\AdminDisplay::label($itemStatus, 'service');
+                            $itemStatusClass = 'badge-'.\App\Models\AdminDisplay::badge($itemStatus);
+                        @endphp
+
+
                         <tr>
 
+                            @include('admin.layouts.partials.row-number', ['rows' => $recentOrderItems, 'index' => $loop->index])
                             <td>
-                                {{ $item
-                                    ->service_order_code }}
+                                <strong>
+                                    {{
+                                        $item
+                                            ->service_order_code
+                                    }}
+                                </strong>
                             </td>
+
 
                             <td>
                                 {{ $item->visit_code }}
                             </td>
 
+
                             <td>
 
-                                {{ $item->patient_code }}
-
-                                <br>
-
-                                <small>
+                                <strong>
                                     {{ $item->patient_name }}
-                                </small>
+                                </strong>
+
+                                <div class="sub-text">
+                                    {{ $item->patient_code }}
+                                </div>
 
                             </td>
 
-                            <td>
+
+                            <td class="price-cell">
+
                                 {{
                                     number_format(
+                                        (float)
                                         $item->price_at_order,
                                         0,
                                         ',',
@@ -372,11 +502,21 @@
                                     )
                                 }}
                                 đ
+
                             </td>
 
+
                             <td>
-                                {{ $item->service_status }}
+
+                                <span
+                                    class="badge
+                                        {{ $itemStatusClass }}"
+                                >
+                                    {{ $itemStatusLabel }}
+                                </span>
+
                             </td>
+
 
                             <td>
 
@@ -391,7 +531,9 @@
                                     }}
 
                                 @else
+
                                     —
+
                                 @endif
 
                             </td>
@@ -403,10 +545,11 @@
                         <tr>
 
                             <td
-                                colspan="6"
+                                colspan="7"
                                 class="empty-state"
                             >
-                                Dịch vụ này chưa được chỉ định.
+                                Dịch vụ này chưa từng
+                                được chỉ định.
                             </td>
 
                         </tr>
@@ -424,111 +567,3 @@
     </div>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-        gap: 14px;
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        padding: 16px 18px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-    }
-
-    .stat-label {
-        color: #64748b;
-        font-size: 12px;
-        margin-bottom: 6px;
-    }
-
-    .stat-value {
-        font-size: 24px;
-        font-weight: 700;
-    }
-
-    .detail-grid {
-        display: grid;
-        grid-template-columns:
-            minmax(320px, 0.8fr)
-            minmax(0, 1.5fr);
-        gap: 20px;
-    }
-
-    .section-title {
-        margin: 0 0 16px;
-        font-size: 17px;
-    }
-
-    .detail-row {
-        display: grid;
-        grid-template-columns:
-            150px
-            minmax(0, 1fr);
-        gap: 15px;
-        padding: 12px 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-label {
-        color: #64748b;
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .detail-value {
-        color: #334155;
-        font-size: 13px;
-        line-height: 1.55;
-    }
-
-    .empty-state {
-        padding: 30px !important;
-        text-align: center !important;
-        color: #94a3b8 !important;
-    }
-
-    @media (max-width: 1000px) {
-
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-    @media (max-width: 700px) {
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

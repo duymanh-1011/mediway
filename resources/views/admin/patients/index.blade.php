@@ -92,7 +92,7 @@
                         <tr>
                             @include('admin.layouts.partials.row-number', ['rows' => $patients, 'index' => $loop->index])
                             <td>
-                                <strong>{{ $patient->patient_code }}</strong>
+                                <strong>@include('admin.layouts.partials.record-code', ['code' => $patient->patient_code])</strong>
                             </td>
 
                             <td>{{ $patient->full_name }}</td>

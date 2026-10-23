@@ -251,7 +251,7 @@
                             @include('admin.layouts.partials.row-number', ['rows' => $conclusions, 'index' => $loop->index])
                             <td>
                                 <strong>
-                                    {{ $conclusion->medicalVisit?->visit_code ?: '—' }}
+                                    @include('admin.layouts.partials.record-code', ['code' => $conclusion->medicalVisit?->visit_code ?: '—'])
                                 </strong>
                             </td>
 

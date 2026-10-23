@@ -215,7 +215,7 @@
                             @include('admin.layouts.partials.row-number', ['rows' => $clinicalNotes, 'index' => $loop->index])
                             <td>
                                 <strong>
-                                    {{ $note->medicalVisit?->visit_code ?: '—' }}
+                                    @include('admin.layouts.partials.record-code', ['code' => $note->medicalVisit?->visit_code ?: '—'])
                                 </strong>
                             </td>
 
@@ -226,7 +226,7 @@
                                 @if ($note->medicalVisit?->patient)
 
                                     <div class="admin-u-3e8f8985">
-                                        {{ $note->medicalVisit->patient->patient_code }}
+                                        @include('admin.layouts.partials.record-code', ['code' => $note->medicalVisit->patient->patient_code])
                                     </div>
 
                                 @endif

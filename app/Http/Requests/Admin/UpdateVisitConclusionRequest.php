@@ -2,11 +2,28 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Doctor;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateVisitConclusionRequest extends FormRequest
 {
+    public function after(): array
+    {
+        return [function (Validator $validator) {
+            $conclusion = $this->route('conclusion');
+            if ($validator->errors()->has('doctor_id') || ! is_object($conclusion)
+                || $this->integer('doctor_id') === (int) $conclusion->doctor_id) {
+                return;
+            }
+            $doctor = Doctor::with('specialty')->find($this->integer('doctor_id'));
+            if ($doctor?->status !== 'ACTIVE' || ! $doctor->canPracticeSpecialty((int) $conclusion->medicalVisit->specialty_id)) {
+                $validator->errors()->add('doctor_id', 'Vui lòng chọn bác sĩ đang hoạt động thuộc chuyên khoa của lượt khám hoặc bác sĩ Đa khoa.');
+            }
+        }];
+    }
+
     public function authorize(): bool
     {
         return true;

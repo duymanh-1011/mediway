@@ -248,7 +248,7 @@
                                                 <td>
 
                                                     <div class="prescription-code">
-                                                        {{ $prescription->prescription_code }}
+                                                        @include('admin.layouts.partials.record-code', ['code' => $prescription->prescription_code])
                                                     </div>
 
                                                 </td>
@@ -260,7 +260,7 @@
                                                     @if ($prescription->visit_code)
 
                                                         <span class="prescription-secondary-code">
-                                                            {{ $prescription->visit_code }}
+                                                            @include('admin.layouts.partials.record-code', ['code' => $prescription->visit_code])
                                                         </span>
 
                                                     @else
@@ -292,7 +292,7 @@
                                                             @if ($prescription->doctor_code)
 
                                                                 <span>
-                                                                    {{ $prescription->doctor_code }}
+                                                                    @include('admin.layouts.partials.record-code', ['code' => $prescription->doctor_code])
                                                                 </span>
 
                                                             @endif

@@ -143,7 +143,9 @@
                     @foreach ($doctors as $doctor)
 
                         <option
-                            value="{{ $doctor->id }}"
+                    value="{{ $doctor->id }}"
+                    data-specialty-id="{{ $doctor->specialty_id }}"
+                    data-is-general="{{ $doctor->specialty?->is_general ? '1' : '0' }}"
                             @selected(
                                 (string) $doctorId
                                 ===
@@ -356,9 +358,9 @@
 
                         <td>
 
-                            {{ $schedule
+                            @include('admin.layouts.partials.record-code', ['code' => $schedule
                                 ->doctor
-                                ?->doctor_code }}
+                                ?->doctor_code])
 
                             -
 

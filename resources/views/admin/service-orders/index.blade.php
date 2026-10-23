@@ -246,7 +246,7 @@
                                                 <td>
 
                                                     <div class="order-code">
-                                                        {{ $order->service_order_code }}
+                                                        @include('admin.layouts.partials.record-code', ['code' => $order->service_order_code])
                                                     </div>
 
                                                 </td>
@@ -258,7 +258,7 @@
                                                     @if ($order->medicalVisit)
 
                                                         <div class="order-visit-code">
-                                                            {{ $order->medicalVisit->visit_code }}
+                                                            @include('admin.layouts.partials.record-code', ['code' => $order->medicalVisit->visit_code])
                                                         </div>
 
                                                     @else
@@ -284,7 +284,7 @@
                                                             </strong>
 
                                                             <span>
-                                                                {{ $order->orderedByDoctor->doctor_code }}
+                                                                @include('admin.layouts.partials.record-code', ['code' => $order->orderedByDoctor->doctor_code])
                                                             </span>
 
                                                         </div>

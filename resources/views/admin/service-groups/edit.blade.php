@@ -13,7 +13,7 @@
     <span aria-hidden="true">/</span>
     <span>Nhóm dịch vụ</span>
     <span aria-hidden="true">/</span>
-    <span>{{ $serviceGroup->service_group_code }}</span>
+    <span>@include('admin.layouts.partials.record-code', ['code' => $serviceGroup->service_group_code])</span>
     <span aria-hidden="true">/</span>
     <strong aria-current="page">Sửa</strong>
 @endsection

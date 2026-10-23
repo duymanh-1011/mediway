@@ -35,7 +35,7 @@
                 'admin.service-orders.show',
                 $item->service_order_id
             ) }}">
-                {{ $order?->service_order_code ?? 'Phiếu chỉ định' }}
+                @include('admin.layouts.partials.record-code', ['code' => $order?->service_order_code ?? 'Phiếu chỉ định'])
             </a>
 
             <span aria-hidden="true">/</span>
@@ -111,7 +111,7 @@
                     </span>
 
                     <strong>
-                        {{ $order?->service_order_code ?? '—' }}
+                        @include('admin.layouts.partials.record-code', ['code' => $order?->service_order_code ?? '—'])
                     </strong>
 
                 </div>
@@ -124,7 +124,7 @@
                     </span>
 
                     <strong>
-                        {{ $visit?->visit_code ?? '—' }}
+                        @include('admin.layouts.partials.record-code', ['code' => $visit?->visit_code ?? '—'])
                     </strong>
 
                 </div>
@@ -137,7 +137,7 @@
                     </span>
 
                     <strong>
-                        {{ $service?->service_code ?? '—' }}
+                        @include('admin.layouts.partials.record-code', ['code' => $service?->service_code ?? '—'])
                     </strong>
 
                     <small>

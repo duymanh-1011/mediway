@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreDoctorRequest;
 use App\Http\Requests\Admin\UpdateDoctorRequest;
+use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\DoctorDetail;
+use App\Models\MedicalVisit;
 use App\Models\Role;
+use App\Models\Specialty;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -69,13 +72,15 @@ class DoctorController extends Controller
         $request->validate([
             'search' => ['nullable', 'string', 'max:150'],
             'status' => ['nullable', 'in:ACTIVE,INACTIVE'],
+            'specialty_id' => ['nullable', 'integer', 'exists:specialties,id'],
         ]);
 
         $search = trim((string) $request->query('search', ''));
         $status = (string) $request->query('status', '');
 
         $doctors = Doctor::query()
-            ->with(['user', 'detail'])
+            ->with(['user', 'detail', 'specialty'])
+            ->when($request->filled('specialty_id'), fn ($query) => $query->forSpecialty($request->integer('specialty_id')))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner
@@ -112,8 +117,11 @@ class DoctorController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        $specialties = Specialty::orderBy('name')->get();
+
         return view('admin.doctors.index', compact(
             'doctors',
+            'specialties',
             'search',
             'status'
         ));
@@ -122,8 +130,9 @@ class DoctorController extends Controller
     public function create()
     {
         $availableUsers = $this->availableDoctorUsers();
+        $specialties = Specialty::where('status', 'ACTIVE')->orderBy('name')->get();
 
-        return view('admin.doctors.create', compact('availableUsers'));
+        return view('admin.doctors.create', compact('availableUsers', 'specialties'));
     }
 
     public function store(StoreDoctorRequest $request)
@@ -195,6 +204,7 @@ class DoctorController extends Controller
 
                 $doctor = Doctor::create([
                     'user_id' => $user->id,
+                    'specialty_id' => $this->lockSelectedSpecialty((int) $data['specialty_id'])->id,
                     'doctor_code' => $doctorCode,
                     'full_name' => trim($data['full_name']),
                     'date_of_birth' => $data['date_of_birth'] ?? null,
@@ -231,16 +241,17 @@ class DoctorController extends Controller
 
     public function show(Doctor $doctor)
     {
-        $doctor->load(['user.role', 'detail']);
+        $doctor->load(['user.role', 'detail', 'specialty']);
 
         return view('admin.doctors.show', compact('doctor'));
     }
 
     public function edit(Doctor $doctor)
     {
-        $doctor->load(['user', 'detail']);
+        $doctor->load(['user', 'detail', 'specialty']);
+        $specialties = Specialty::where('status', 'ACTIVE')->orWhere('id', $doctor->specialty_id)->orderBy('name')->get();
 
-        return view('admin.doctors.edit', compact('doctor'));
+        return view('admin.doctors.edit', compact('doctor', 'specialties'));
     }
 
     public function update(
@@ -264,12 +275,9 @@ class DoctorController extends Controller
                  * Khóa tài khoản trước, sau đó khóa hồ sơ bác sĩ.
                  * Thứ tự này giúp nhất quán với các thao tác khóa User.
                  */
-                $current = Doctor::query()
-                    ->findOrFail($doctor->id);
-
                 $user = User::query()
                     ->lockForUpdate()
-                    ->findOrFail($current->user_id);
+                    ->findOrFail($doctor->user_id);
 
                 $lockedDoctor = Doctor::query()
                     ->lockForUpdate()
@@ -281,7 +289,22 @@ class DoctorController extends Controller
                     ]);
                 }
 
+                $specialty = $this->lockSelectedSpecialty((int) $data['specialty_id']);
+                if ((int) $lockedDoctor->specialty_id !== (int) $specialty->id && ! $specialty->is_general) {
+                    $hasSchedules = $lockedDoctor->schedules()->where('status', 'ACTIVE')->whereDate('work_date', '>=', today())
+                        ->where('specialty_id', '!=', $specialty->id)->exists();
+                    $hasAppointments = Appointment::where('doctor_id', $lockedDoctor->id)->whereDate('appointment_date', '>=', today())
+                        ->where('specialty_id', '!=', $specialty->id)
+                        ->whereHas('appointmentStatus', fn ($query) => $query->whereNotIn('name', ['CANCELLED', 'COMPLETED']))->exists();
+                    $hasOpenVisits = MedicalVisit::where('doctor_id', $lockedDoctor->id)->where('specialty_id', '!=', $specialty->id)
+                        ->whereHas('status', fn ($query) => $query->where('name', '!=', 'COMPLETED'))->exists();
+                    if ($hasSchedules || $hasAppointments || $hasOpenVisits) {
+                        throw ValidationException::withMessages(['specialty_id' => 'Bác sĩ còn lịch làm việc, lịch hẹn hoặc lượt khám chưa hoàn tất ở chuyên khoa khác. Vui lòng xử lý các hồ sơ đó trước khi đổi chuyên khoa.']);
+                    }
+                }
+
                 $lockedDoctor->update([
+                    'specialty_id' => $specialty->id,
                     'full_name' => trim($data['full_name']),
                     'date_of_birth' => $data['date_of_birth'] ?? null,
                     'gender' => $data['gender'] ?? null,
@@ -424,6 +447,16 @@ class DoctorController extends Controller
                 'phone',
                 'status',
             ]);
+    }
+
+    private function lockSelectedSpecialty(int $id): Specialty
+    {
+        $specialty = Specialty::whereKey($id)->lockForUpdate()->first();
+        if (! $specialty || $specialty->status !== 'ACTIVE') {
+            throw ValidationException::withMessages(['specialty_id' => 'Chuyên khoa đã ngừng hoạt động. Vui lòng chọn lại chuyên khoa.']);
+        }
+
+        return $specialty;
     }
 
     private function validateAndLockDoctorUser(

@@ -223,7 +223,7 @@
 
                         <td>
                             <strong>
-                                {{ $medicine->medicine_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $medicine->medicine_code])
                             </strong>
                         </td>
 

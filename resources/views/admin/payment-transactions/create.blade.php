@@ -11,7 +11,7 @@
     <span aria-hidden="true">/</span>
     <span>Thanh toán</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">{{ $payable->payable_code }}</strong>
+    <strong aria-current="page">@include('admin.layouts.partials.record-code', ['code' => $payable->payable_code])</strong>
 @endsection
 
 
@@ -39,7 +39,7 @@
 
             <p class="page-description">
                 Xác nhận thanh toán cho khoản
-                {{ $payable->payable_code }}.
+                @include('admin.layouts.partials.record-code', ['code' => $payable->payable_code]).
             </p>
 
         </div>
@@ -101,7 +101,7 @@
                 </span>
 
                 <strong>
-                    {{ $payable->payable_code }}
+                    @include('admin.layouts.partials.record-code', ['code' => $payable->payable_code])
                 </strong>
 
             </div>
@@ -179,10 +179,10 @@
                 </span>
 
                 <strong>
-                    {{ $payable
+                    @include('admin.layouts.partials.record-code', ['code' => $payable
                         ->medicalVisit
                         ?->visit_code
-                        ?? '—' }}
+                        ?? '—'])
                 </strong>
 
             </div>
@@ -195,9 +195,9 @@
                 </span>
 
                 <strong>
-                    {{ $order
+                    @include('admin.layouts.partials.record-code', ['code' => $order
                         ?->service_order_code
-                        ?? '—' }}
+                        ?? '—'])
                 </strong>
 
             </div>
@@ -210,9 +210,9 @@
                 </span>
 
                 <strong>
-                    {{ $service
+                    @include('admin.layouts.partials.record-code', ['code' => $service
                         ?->service_code
-                        ?? '—' }}
+                        ?? '—'])
 
                     @if ($service)
 

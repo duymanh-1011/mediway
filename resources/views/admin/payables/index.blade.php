@@ -230,14 +230,14 @@
                                                 @include('admin.layouts.partials.row-number', ['rows' => $payables, 'index' => $loop->index])
                                                 <td>
                                                     <strong class="payable-code">
-                                                        {{ $payable->payable_code }}
+                                                        @include('admin.layouts.partials.record-code', ['code' => $payable->payable_code])
                                                     </strong>
                                                 </td>
 
 
                                                 <td>
                                                     <span class="payable-secondary-code">
-                                                        {{ $payable->visit_code ?? '—' }}
+                                                        @include('admin.layouts.partials.record-code', ['code' => $payable->visit_code ?? '—'])
                                                     </span>
                                                 </td>
 

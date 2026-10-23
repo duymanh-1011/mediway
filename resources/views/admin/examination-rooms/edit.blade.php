@@ -13,7 +13,7 @@
     <span aria-hidden="true">/</span>
     <span>Phòng khám</span>
     <span aria-hidden="true">/</span>
-    <span>{{ $examinationRoom->room_code }}</span>
+    <span>@include('admin.layouts.partials.record-code', ['code' => $examinationRoom->room_code])</span>
     <span aria-hidden="true">/</span>
     <strong aria-current="page">Sửa</strong>
 @endsection

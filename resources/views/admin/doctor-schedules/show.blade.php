@@ -28,7 +28,7 @@
 
             <p class="page-description">
 
-                {{ $doctorSchedule->doctor?->doctor_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $doctorSchedule->doctor?->doctor_code])
 
                 -
 
@@ -117,7 +117,7 @@
 
                 <div class="detail-value">
 
-                    {{ $doctorSchedule->doctor?->doctor_code }}
+                    @include('admin.layouts.partials.record-code', ['code' => $doctorSchedule->doctor?->doctor_code])
 
                     -
 
@@ -152,9 +152,9 @@
 
                 <div class="detail-value">
 
-                    {{ $doctorSchedule
+                    @include('admin.layouts.partials.record-code', ['code' => $doctorSchedule
                         ->examinationRoom
-                        ?->room_code }}
+                        ?->room_code])
 
                     -
 

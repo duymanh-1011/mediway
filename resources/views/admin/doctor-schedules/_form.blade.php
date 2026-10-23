@@ -34,6 +34,8 @@
 
                 <option
                     value="{{ $doctor->id }}"
+                    data-specialty-id="{{ $doctor->specialty_id }}"
+                    data-is-general="{{ $doctor->specialty?->is_general ? '1' : '0' }}"
                     @selected(
                         (string) old(
                             'doctor_id',

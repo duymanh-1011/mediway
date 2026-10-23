@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class DoctorSchedule extends Model
@@ -20,6 +21,14 @@ class DoctorSchedule extends Model
     protected $casts = [
         'work_date' => 'date',
     ];
+
+    public function scopeWithQualifiedDoctor(Builder $query): Builder
+    {
+        return $query->whereHas('doctor', fn (Builder $doctor) => $doctor
+            ->whereHas('specialty', fn (Builder $specialty) => $specialty->where('status', 'ACTIVE'))
+            ->where(fn (Builder $eligible) => $eligible->whereColumn('doctors.specialty_id', 'doctor_schedules.specialty_id')
+                ->orWhereHas('specialty', fn (Builder $specialty) => $specialty->where('is_general', true))));
+    }
 
     public function doctor()
     {

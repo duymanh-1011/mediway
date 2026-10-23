@@ -1,0 +1,180 @@
+/* Shared typography and navigation; page-specific styles must not redefine these roles. */
+:root {
+    --admin-font-body: 14px;
+    --admin-font-small: 12px;
+    --admin-code-color: #334155;
+    --admin-code-weight: 600;
+}
+
+body.admin-ui,
+body.admin-ui .admin-content {
+    font-size: var(--admin-font-body);
+    line-height: 1.5;
+}
+
+body.admin-ui .admin-content table,
+body.admin-ui .admin-content table tbody td,
+body.admin-ui .admin-content table tfoot td {
+    font-size: var(--admin-font-body);
+    line-height: 1.5;
+}
+
+body.admin-ui .admin-content table th {
+    font-size: var(--admin-font-small);
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: .02em;
+}
+
+body.admin-ui .admin-content table td :is(div, p, span, strong, a, time):not(.admin-btn, .admin-badge, .admin-record-code, [data-status]) {
+    font-size: inherit;
+    line-height: inherit;
+}
+
+body.admin-ui .admin-content :is(h2, h3) {
+    font-size: 18px;
+    font-weight: 650;
+    line-height: 1.5;
+}
+
+body.admin-ui .admin-content :is(small, .form-help, .admin-empty-note) {
+    font-size: var(--admin-font-small);
+    line-height: 1.5;
+}
+
+body.admin-ui .admin-content .admin-record-code,
+body.admin-ui .admin-content input.admin-record-code,
+body.admin-ui .admin-content input[name$="_code"][readonly] {
+    color: var(--admin-code-color);
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    font-size: var(--admin-font-body);
+    font-weight: var(--admin-code-weight);
+    font-style: normal;
+    line-height: 1.5;
+    letter-spacing: normal;
+    font-variant-numeric: tabular-nums;
+    text-transform: none;
+    white-space: nowrap;
+}
+
+body.admin-ui .admin-content a:has(.admin-record-code):not(.admin-btn):hover .admin-record-code {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+body.admin-ui .admin-sidebar {
+    overscroll-behavior: contain;
+}
+
+html[data-sidebar-animated="true"] body.admin-ui .admin-sidebar {
+    transition: transform .18s ease, visibility .18s;
+}
+
+html[data-sidebar-animated="true"] body.admin-ui .admin-main {
+    transition: margin-left .18s ease, width .18s ease;
+}
+
+html[data-sidebar-state="closed"] body.admin-ui .admin-sidebar {
+    transform: translateX(-100%);
+    visibility: hidden;
+}
+
+html[data-sidebar-state="closed"] body.admin-ui .admin-main {
+    width: 100%;
+    margin-left: 0;
+}
+
+.admin-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.admin-sidebar-toggle,
+.admin-sidebar-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    cursor: pointer;
+}
+
+.admin-sidebar-toggle:hover { background: #f1f5f9; }
+.admin-sidebar-toggle:focus-visible,
+.admin-sidebar-close:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+
+.sidebar-brand { position: relative; }
+.admin-sidebar-close { display: none; }
+.admin-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgb(15 23 42 / 45%);
+    cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+    body.admin-ui .admin-wrapper { display: block; }
+    body.admin-ui .admin-main { width: 100%; margin-left: 0; }
+    body.admin-ui .admin-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: min(290px, calc(100vw - 56px));
+        height: 100dvh;
+        max-height: none;
+        border-right: 1px solid rgb(255 255 255 / 8%);
+        border-bottom: 0;
+        transform: translateX(-100%);
+        visibility: hidden;
+    }
+    body.admin-ui.admin-sidebar-open { overflow: hidden; }
+    html[data-sidebar-state="open"] body.admin-ui .admin-sidebar { transform: none; visibility: visible; }
+    body.admin-ui .sidebar-nav { display: block; padding: 14px 12px 28px; }
+    body.admin-ui .sidebar-section { margin-bottom: 18px; }
+    body.admin-ui .sidebar-brand {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 22px 62px 18px 18px;
+        background: var(--sidebar-bg);
+    }
+    .admin-sidebar-close {
+        position: absolute;
+        top: 18px;
+        right: 12px;
+        display: inline-flex;
+        color: #e2e8f0;
+        border-color: #334155;
+        background: transparent;
+    }
+    .admin-sidebar-close:hover { background: #1e293b; }
+}
+
+@media (max-width: 520px) {
+    body.admin-ui .admin-header { align-items: center; }
+    .header-left-title { font-size: var(--admin-font-small); }
+    .admin-header-left { gap: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-sidebar-animated] body.admin-ui .admin-sidebar,
+    html[data-sidebar-animated] body.admin-ui .admin-main { transition: none; }
+}
+
+@media print {
+    body.admin-ui .admin-sidebar,
+    .admin-sidebar-toggle,
+    .admin-sidebar-backdrop { display: none; }
+    body.admin-ui .admin-main { width: 100%; margin-left: 0; }
+}

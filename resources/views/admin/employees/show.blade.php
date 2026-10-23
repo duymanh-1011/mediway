@@ -79,7 +79,7 @@
         <div>
             <h1 class="page-title">{{ $employee->full_name }}</h1>
             <p class="es-description">
-                {{ $employee->employee_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $employee->employee_code])
                 @include('admin.layouts.partials.status-badge', ['badgeCode' => $employee->status])
             </p>
         </div>
@@ -123,7 +123,7 @@
             <section class="es-card">
                 <h2>Thông tin cơ bản</h2>
                 <dl class="es-list">
-                    <div><dt>Mã nhân viên</dt><dd>{{ $employee->employee_code }}</dd></div>
+                    <div><dt>Mã nhân viên</dt><dd>@include('admin.layouts.partials.record-code', ['code' => $employee->employee_code])</dd></div>
                     <div><dt>Họ và tên</dt><dd>{{ $employee->full_name }}</dd></div>
                     <div><dt>Ngày sinh</dt><dd>{{ $employee->date_of_birth?->format('d/m/Y') ?? '-' }}</dd></div>
                     <div><dt>Giới tính</dt><dd>{{ $employee->gender ?? '-' }}</dd></div>
@@ -135,7 +135,7 @@
             <section class="es-card">
                 <h2>Tài khoản liên kết</h2>
                 <dl class="es-list">
-                    <div><dt>Mã tài khoản</dt><dd>{{ $user?->business_code ?? '-' }}</dd></div>
+                    <div><dt>Mã tài khoản</dt><dd>@include('admin.layouts.partials.record-code', ['code' => $user?->business_code ?? '-'])</dd></div>
                     <div><dt>Số điện thoại</dt><dd>{{ $user?->phone ?? '-' }}</dd></div>
                     <div><dt>Vai trò</dt><dd>{{ \App\Models\AdminDisplay::label($user?->role?->name ?? '-') }}</dd></div>
                     <div><dt>Trạng thái tài khoản</dt><dd>@include('admin.layouts.partials.status-badge', ['badgeCode' => $user?->status ?? '-'])</dd></div>

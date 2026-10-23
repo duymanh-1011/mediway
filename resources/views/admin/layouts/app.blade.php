@@ -13,6 +13,15 @@
         @yield('title', 'Quản trị Mediway')
     </title>
 
+    <script data-sidebar-prepaint>
+        (() => {
+            let saved = null;
+            try { saved = localStorage.getItem('mediway_sidebar_state'); } catch { /* Storage is optional. */ }
+            document.documentElement.dataset.sidebarState =
+                !window.matchMedia('(max-width: 1024px)').matches && saved !== 'closed' ? 'open' : 'closed';
+        })();
+    </script>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @stack('styles')
@@ -25,6 +34,8 @@
         @include(
             'admin.layouts.partials.sidebar'
         )
+
+        <button type="button" class="admin-sidebar-backdrop" data-sidebar-close aria-label="Đóng thanh điều hướng" tabindex="-1" hidden></button>
 
         <div class="admin-main">
 
@@ -48,42 +59,6 @@
 
     </div>
 
-
-    <script>
-        document.addEventListener(
-            'DOMContentLoaded',
-            function () {
-                const sidebar =
-                    document.querySelector(
-                        '.admin-sidebar'
-                    );
-
-                if (!sidebar) {
-                    return;
-                }
-
-                const savedScrollPosition =
-                    localStorage.getItem(
-                        'mediway_sidebar_scroll'
-                    );
-
-                if (savedScrollPosition) {
-                    sidebar.scrollTop =
-                        Number(savedScrollPosition);
-                }
-
-                sidebar.addEventListener(
-                    'scroll',
-                    function () {
-                        localStorage.setItem(
-                            'mediway_sidebar_scroll',
-                            sidebar.scrollTop
-                        );
-                    }
-                );
-            }
-        );
-    </script>
 
     @stack('scripts')
 

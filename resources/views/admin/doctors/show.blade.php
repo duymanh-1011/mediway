@@ -32,6 +32,7 @@
     ];
 
     $professional = [
+        'Chuyên khoa' => $doctor->specialty?->name ?? 'Chưa phân chuyên khoa',
         'Trình độ học vấn' => $detail?->education_level,
         'Trình độ chuyên môn' => $detail?->professional_qualification,
         'Học hàm / Học vị' => $detail?->academic_title_degree,
@@ -67,7 +68,7 @@
         <div>
             <h1 class="page-title">{{ $doctor->full_name }}</h1>
             <p class="ds-description">
-                {{ $doctor->doctor_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $doctor->doctor_code])
                 @include('admin.layouts.partials.status-badge', ['badgeCode' => $doctor->status])
             </p>
         </div>
@@ -95,8 +96,9 @@
             <section class="ds-card">
                 <h2>Thông tin cơ bản</h2>
                 <dl class="ds-list">
-                    <div><dt>Mã bác sĩ</dt><dd>{{ $doctor->doctor_code }}</dd></div>
+                    <div><dt>Mã bác sĩ</dt><dd>@include('admin.layouts.partials.record-code', ['code' => $doctor->doctor_code])</dd></div>
                     <div><dt>Họ tên</dt><dd>{{ $doctor->full_name }}</dd></div>
+                    <div><dt>Chuyên khoa</dt><dd>{{ $doctor->specialty?->name ?? 'Chưa phân chuyên khoa' }}</dd></div>
                     <div><dt>Ngày sinh</dt><dd>{{ $doctor->date_of_birth?->format('d/m/Y') ?? '-' }}</dd></div>
                     <div><dt>Giới tính</dt><dd>{{ $doctor->gender ?? '-' }}</dd></div>
                     <div><dt>Trạng thái hồ sơ</dt><dd>@include('admin.layouts.partials.status-badge', ['badgeCode' => $doctor->status])</dd></div>
@@ -107,7 +109,7 @@
             <section class="ds-card">
                 <h2>Tài khoản liên kết</h2>
                 <dl class="ds-list">
-                    <div><dt>Mã tài khoản</dt><dd>{{ $user?->business_code ?? '-' }}</dd></div>
+                    <div><dt>Mã tài khoản</dt><dd>@include('admin.layouts.partials.record-code', ['code' => $user?->business_code ?? '-'])</dd></div>
                     <div><dt>Số điện thoại</dt><dd>{{ $user?->phone ?? '-' }}</dd></div>
                     <div><dt>Vai trò</dt><dd>{{ \App\Models\AdminDisplay::label($user?->role?->name ?? '-') }}</dd></div>
                     <div><dt>Trạng thái tài khoản</dt><dd>@include('admin.layouts.partials.status-badge', ['badgeCode' => $user?->status ?? '-'])</dd></div>

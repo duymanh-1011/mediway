@@ -19,7 +19,7 @@
         <div>
             <h1 class="page-title">Chỉnh sửa bệnh nhân</h1>
             <p class="page-description">
-                {{ $patient->patient_code }} — {{ $patient->full_name }}
+                @include('admin.layouts.partials.record-code', ['code' => $patient->patient_code]) — {{ $patient->full_name }}
             </p>
         </div>
 

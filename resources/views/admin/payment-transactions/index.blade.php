@@ -201,21 +201,21 @@
                                                 @include('admin.layouts.partials.row-number', ['rows' => $transactions, 'index' => $loop->index])
                                                 <td>
                                                     <strong class="transaction-code">
-                                                        {{ $transaction->transaction_code }}
+                                                        @include('admin.layouts.partials.record-code', ['code' => $transaction->transaction_code])
                                                     </strong>
                                                 </td>
 
 
                                                 <td>
                                                     <span class="transaction-secondary-code">
-                                                        {{ $transaction->payable_code ?? '—' }}
+                                                        @include('admin.layouts.partials.record-code', ['code' => $transaction->payable_code ?? '—'])
                                                     </span>
                                                 </td>
 
 
                                                 <td>
                                                     <span class="transaction-secondary-code">
-                                                        {{ $transaction->visit_code ?? '—' }}
+                                                        @include('admin.layouts.partials.record-code', ['code' => $transaction->visit_code ?? '—'])
                                                     </span>
                                                 </td>
 
@@ -258,7 +258,7 @@
                                                             </strong>
 
                                                             <span>
-                                                                {{ $transaction->employee_code }}
+                                                                @include('admin.layouts.partials.record-code', ['code' => $transaction->employee_code])
                                                             </span>
 
                                                         </div>

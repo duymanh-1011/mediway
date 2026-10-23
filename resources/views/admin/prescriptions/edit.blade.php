@@ -27,7 +27,7 @@
         'admin.prescriptions.show',
         $prescription->id
     ) }}">
-                {{ $prescription->prescription_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $prescription->prescription_code])
             </a>
 
             <span aria-hidden="true">/</span>
@@ -117,7 +117,7 @@
                         </span>
 
                         <strong>
-                            {{ $prescription->prescription_code }}
+                            @include('admin.layouts.partials.record-code', ['code' => $prescription->prescription_code])
                         </strong>
 
                     </div>
@@ -130,7 +130,7 @@
                         </span>
 
                         <strong>
-                            {{ $visit?->visit_code ?? '—' }}
+                            @include('admin.layouts.partials.record-code', ['code' => $visit?->visit_code ?? '—'])
                         </strong>
 
                     </div>
@@ -149,7 +149,7 @@
                         @if ($doctor?->doctor_code)
 
                             <small>
-                                {{ $doctor->doctor_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $doctor->doctor_code])
                             </small>
 
                         @endif
@@ -376,7 +376,7 @@
                     <p>
                         Bạn đang thay đổi dữ liệu y tế của đơn
                         <strong>
-                            {{ $prescription->prescription_code }}
+                            @include('admin.layouts.partials.record-code', ['code' => $prescription->prescription_code])
                         </strong>.
                     </p>
 

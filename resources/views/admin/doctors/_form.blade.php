@@ -56,12 +56,12 @@
     @if($editing)
         <div class="dr-field">
             <label>Mã bác sĩ</label>
-            <input type="text" value="{{ $doctor->doctor_code }}" disabled>
+            <input class="admin-record-code" type="text" value="{{ $doctor->doctor_code }}" disabled>
         </div>
 
         <div class="dr-field">
             <label>Tài khoản liên kết</label>
-            <input type="text"
+            <input class="admin-record-code" type="text"
                    value="{{ $doctor->user?->business_code }} — {{ $doctor->user?->phone }}"
                    disabled>
         </div>
@@ -114,6 +114,17 @@
     </div>
 
     <div class="dr-field">
+        <label for="specialty_id">Chuyên khoa <span>*</span></label>
+        <select id="specialty_id" name="specialty_id" required>
+            <option value="">-- Chọn chuyên khoa --</option>
+            @foreach($specialties as $specialty)
+                <option value="{{ $specialty->id }}" @selected((string) old('specialty_id', $editing ? $doctor->specialty_id : '') === (string) $specialty->id)>{{ $specialty->name }}</option>
+            @endforeach
+        </select>
+        @error('specialty_id')<div class="field-error">{{ $message }}</div>@enderror
+    </div>
+
+    <div class="dr-field">
         <label for="date_of_birth">Ngày sinh</label>
         <input type="date" id="date_of_birth" name="date_of_birth"
                max="{{ now()->toDateString() }}"
@@ -153,7 +164,6 @@
 
 <div class="dr-section dr-gap">
     <h2>Thông tin cá nhân và chuyên môn</h2>
-    <p>Các thông tin này được lưu trong bảng doctor_details.</p>
 </div>
 
 <div class="dr-grid">

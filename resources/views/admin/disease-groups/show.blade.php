@@ -8,14 +8,14 @@
     <span aria-hidden="true">/</span>
     <a href="{{ route('admin.disease-groups.index') }}">Nhóm bệnh</a>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">{{ $diseaseGroup->disease_group_code }}</strong>
+    <strong aria-current="page">@include('admin.layouts.partials.record-code', ['code' => $diseaseGroup->disease_group_code])</strong>
 @endsection
 @section('content')
     @include('admin.layouts.partials.disease-catalog-tabs')
     <div class="admin-page-header">
         <div>
             <h1>{{ $diseaseGroup->name }}</h1>
-            <p class="page-description">Mã nhóm bệnh: {{ $diseaseGroup->disease_group_code }}</p>
+            <p class="page-description">Mã nhóm bệnh: @include('admin.layouts.partials.record-code', ['code' => $diseaseGroup->disease_group_code])</p>
         </div>
         <div class="admin-actions">
             <a class="admin-btn admin-btn-secondary" href="{{ route('admin.disease-groups.index') }}">← Quay lại</a>
@@ -35,7 +35,7 @@
     <section class="admin-card">
         <h2>Thông tin nhóm bệnh</h2>
         <dl class="detail-grid">
-            <div><dt>Mã nhóm</dt><dd>{{ $diseaseGroup->disease_group_code }}</dd></div>
+            <div><dt>Mã nhóm</dt><dd>@include('admin.layouts.partials.record-code', ['code' => $diseaseGroup->disease_group_code])</dd></div>
             <div><dt>Tên nhóm</dt><dd>{{ $diseaseGroup->name }}</dd></div>
             <div><dt>Trạng thái</dt><dd>@include('admin.layouts.partials.status-badge', ['badgeCode' => $diseaseGroup->status])</dd></div>
             <div><dt>Mô tả</dt><dd>{{ $diseaseGroup->description ?: '—' }}</dd></div>
@@ -77,7 +77,7 @@
                     @forelse ($diseases as $disease)
                         <tr>
                             @include('admin.layouts.partials.row-number', ['rows' => $diseases, 'index' => $loop->index])
-                            <td><strong>{{ $disease->disease_code }}</strong></td>
+                            <td><strong>@include('admin.layouts.partials.record-code', ['code' => $disease->disease_code])</strong></td>
                             <td>{{ $disease->name }}</td>
                             <td>{{ $disease->alternative_name ?: '—' }}</td>
                             <td>{{ $disease->common_symptoms ?: '—' }}</td>

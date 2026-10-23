@@ -100,11 +100,11 @@
                     @forelse ($recentAuditLogs as $log)
                         <tr>
                             @include('admin.layouts.partials.row-number', ['rows' => $recentAuditLogs, 'index' => $loop->index])
-                            <td>{{ $log->business_code ?? 'Hệ thống' }}</td>
+                            <td>@include('admin.layouts.partials.record-code', ['code' => $log->business_code ?? 'Hệ thống'])</td>
                             <td>{{ \App\Models\AdminDisplay::label($log->role_name_snapshot) }}</td>
                             <td>@include('admin.layouts.partials.status-badge', ['badgeCode' => $log->action])</td>
                             <td>{{ \App\Models\AdminDisplay::label($log->entity_type) }}</td>
-                            <td>{{ $log->entity_business_code ?? '—' }}</td><td>{{ \App\Models\AdminDisplay::text($log->description) }}</td>
+                            <td>@include('admin.layouts.partials.record-code', ['code' => $log->entity_business_code ?? '—'])</td><td>{{ \App\Models\AdminDisplay::text($log->description) }}</td>
                             <td>{{ \Carbon\Carbon::parse($log->performed_at)->format('d/m/Y H:i:s') }}</td>
                         </tr>
                     @empty

@@ -220,7 +220,7 @@
 
                         <td>
                             <strong>
-                                {{ $specialty->specialty_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $specialty->specialty_code])
                             </strong>
                         </td>
 

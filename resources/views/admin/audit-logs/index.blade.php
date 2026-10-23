@@ -195,8 +195,8 @@
 
                                                         <div>
                                                             <strong>
-                                                                {{ $log->user_business_code
-                                ?? 'Hệ thống' }}
+                                                                @include('admin.layouts.partials.record-code', ['code' => $log->user_business_code
+                                ?? 'Hệ thống'])
                                                             </strong>
                                                         </div>
                                                     </div>
@@ -219,7 +219,7 @@
                                                 <td>
                                                     @if ($log->entity_business_code)
                                                         <span class="audit-code">
-                                                            {{ $log->entity_business_code }}
+                                                            @include('admin.layouts.partials.record-code', ['code' => $log->entity_business_code])
                                                         </span>
                                                     @else
                                                         <span class="audit-muted">

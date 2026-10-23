@@ -11,7 +11,7 @@
 
     <strong>Lịch làm việc:</strong>
 
-    {{ $doctorSchedule->doctor?->doctor_code }}
+    @include('admin.layouts.partials.record-code', ['code' => $doctorSchedule->doctor?->doctor_code])
     -
     {{ $doctorSchedule->doctor?->full_name }}
 

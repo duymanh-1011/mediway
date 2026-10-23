@@ -78,6 +78,10 @@ function enhanceLookup(select, remote) {
     const choose = (choice) => {
         let option = [...select.options].find((option) => option.value === String(choice.value));
         if (!option) { option = new Option(choice.label, String(choice.value)); select.add(option); }
+        if (choice.specialty_id !== undefined) {
+            option.dataset.specialtyId = choice.specialty_id || '';
+            option.dataset.isGeneral = choice.is_general ? '1' : '0';
+        }
         if (select.multiple) { option.selected = !option.selected; input.value = ''; }
         else { select.value = option.value; input.value = option.textContent.trim(); }
         lastValue = undefined; showError(); signal(); sync(); close(); input.focus();
@@ -110,6 +114,9 @@ function enhanceLookup(select, remote) {
             const url = new URL(remote.endpoint, window.location.origin);
             url.searchParams.set('type', remote.type); url.searchParams.set('q', term.slice(0, 100));
             url.searchParams.set('scope', select.dataset.lookupScope || 'all');
+            const dependency = remote.type === 'doctors' ? 'specialty_id' : remote.type === 'specialties' ? 'doctor_id' : '';
+            const related = dependency && select.form?.querySelector(`select[name="${dependency}"]`);
+            if (related?.value) url.searchParams.set(dependency, related.value);
             const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal: aborter.signal });
             if (!response.ok) throw new Error('lookup failed');
             const data = await response.json();
@@ -137,6 +144,7 @@ function enhanceLookup(select, remote) {
     });
     clear.addEventListener('click', () => { ++version; aborter?.abort(); [...select.options].forEach((option) => { option.selected = false; }); select.value = ''; input.value = ''; lastValue = undefined; showError(); signal(); sync(); close(); input.focus(); });
     select.addEventListener('change', () => { if (!editing) { lastValue = undefined; sync(); } });
+    select.addEventListener('admin:options-changed', () => { ++version; aborter?.abort(); close(); lastValue = undefined; sync(); });
     document.addEventListener('pointerdown', (event) => { if (!wrapper.contains(event.target)) { ++version; aborter?.abort(); close(); } });
     select.form?.addEventListener('reset', () => setTimeout(() => { lastValue = undefined; sync(); close(); showError(); }, 0));
     select.form?.addEventListener('submit', (event) => {

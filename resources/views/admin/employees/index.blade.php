@@ -115,7 +115,7 @@
                     @forelse($employees as $employee)
                         <tr>
                             @include('admin.layouts.partials.row-number', ['rows' => $employees, 'index' => $loop->index])
-                            <td><strong>{{ $employee->employee_code }}</strong></td>
+                            <td><strong>@include('admin.layouts.partials.record-code', ['code' => $employee->employee_code])</strong></td>
                             <td>{{ $employee->full_name }}</td>
                             <td>{{ $employee->user?->phone ?? '-' }}</td>
                             <td>{{ $employee->detail?->department ?: 'Chưa cập nhật' }}</td>

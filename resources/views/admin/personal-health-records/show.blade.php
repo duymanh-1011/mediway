@@ -36,7 +36,7 @@
         <div>
             <h1 class="page-title">Chi tiết lần đo sức khỏe</h1>
             <p class="page-description">
-                {{ $record->patient_code }} —
+                @include('admin.layouts.partials.record-code', ['code' => $record->patient_code]) —
                 {{ $record->recorded_at?->format('d/m/Y H:i') }}
             </p>
         </div>
@@ -60,7 +60,7 @@
 
             <div class="hd-row">
                 <span>Mã bệnh nhân</span>
-                <strong>{{ $record->patient_code }}</strong>
+                <strong>@include('admin.layouts.partials.record-code', ['code' => $record->patient_code])</strong>
             </div>
 
             <div class="hd-row">

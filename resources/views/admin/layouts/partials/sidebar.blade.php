@@ -1,6 +1,9 @@
-<aside class="admin-sidebar">
+<aside class="admin-sidebar" id="admin-sidebar" aria-label="Điều hướng quản trị" tabindex="-1">
 
     <div class="sidebar-brand">
+        <button type="button" class="admin-sidebar-close" data-sidebar-close aria-label="Đóng thanh điều hướng" title="Đóng thanh điều hướng">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
 
         <h1 class="sidebar-brand-title">
             Mediway

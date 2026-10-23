@@ -13,7 +13,7 @@
     <span aria-hidden="true">/</span>
     <span>Thuốc</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">{{ $medicine->medicine_code }}</strong>
+    <strong aria-current="page">@include('admin.layouts.partials.record-code', ['code' => $medicine->medicine_code])</strong>
 @endsection
 
 @section('content')
@@ -28,7 +28,7 @@
 
             <p class="page-description">
                 Mã thuốc:
-                {{ $medicine->medicine_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $medicine->medicine_code])
             </p>
 
         </div>
@@ -117,7 +117,7 @@
                 </div>
 
                 <div class="detail-value">
-                    {{ $medicine->medicine_code }}
+                    @include('admin.layouts.partials.record-code', ['code' => $medicine->medicine_code])
                 </div>
 
             </div>

@@ -13,7 +13,7 @@
     <span aria-hidden="true">/</span>
     <span>Dịch vụ y tế</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">{{ $medicalService->service_code }}</strong>
+    <strong aria-current="page">@include('admin.layouts.partials.record-code', ['code' => $medicalService->service_code])</strong>
 @endsection
 
 
@@ -36,7 +36,7 @@
             <p class="page-description">
                 Mã dịch vụ:
                 <strong>
-                    {{ $medicalService->service_code }}
+                    @include('admin.layouts.partials.record-code', ['code' => $medicalService->service_code])
                 </strong>
             </p>
 
@@ -155,7 +155,7 @@
                 </div>
 
                 <div class="detail-value detail-code">
-                    {{ $medicalService->service_code }}
+                    @include('admin.layouts.partials.record-code', ['code' => $medicalService->service_code])
                 </div>
 
             </div>
@@ -454,16 +454,14 @@
                             @include('admin.layouts.partials.row-number', ['rows' => $recentOrderItems, 'index' => $loop->index])
                             <td>
                                 <strong>
-                                    {{
-                                        $item
-                                            ->service_order_code
-                                    }}
+                                    @include('admin.layouts.partials.record-code', ['code' => $item
+                                            ->service_order_code])
                                 </strong>
                             </td>
 
 
                             <td>
-                                {{ $item->visit_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $item->visit_code])
                             </td>
 
 
@@ -474,7 +472,7 @@
                                 </strong>
 
                                 <div class="sub-text">
-                                    {{ $item->patient_code }}
+                                    @include('admin.layouts.partials.record-code', ['code' => $item->patient_code])
                                 </div>
 
                             </td>

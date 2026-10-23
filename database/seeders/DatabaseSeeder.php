@@ -2,13 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
+
     public function run(): void
     {
         $this->call([
@@ -20,12 +20,12 @@ class DatabaseSeeder extends Seeder
             PatientDetailSeeder::class,
             PersonalHealthRecordSeeder::class,
 
+            SpecialtySeeder::class,
             DoctorSeeder::class,
             DoctorDetailSeeder::class,
 
             EmployeeSeeder::class,
             EmployeeDetailSeeder::class,
-            SpecialtySeeder::class,
 
             ExaminationRoomSeeder::class,
             ServiceGroupSeeder::class,

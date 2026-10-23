@@ -10,7 +10,7 @@
     <span aria-hidden="true">/</span>
     <span>Lượt khám</span>
     <span aria-hidden="true">/</span>
-    <span>{{ $visit->visit_code }}</span>
+    <span>@include('admin.layouts.partials.record-code', ['code' => $visit->visit_code])</span>
     <span aria-hidden="true">/</span>
     <strong aria-current="page">Tạo chỉ định dịch vụ</strong>
 @endsection
@@ -26,7 +26,7 @@
 
             <p class="page-description">
                 Lập phiếu chỉ định dịch vụ cho lượt khám
-                {{ $visit->visit_code }}.
+                @include('admin.layouts.partials.record-code', ['code' => $visit->visit_code]).
             </p>
         </div>
 
@@ -71,7 +71,7 @@
                 <span>Mã lượt khám</span>
 
                 <strong>
-                    {{ $visit->visit_code }}
+                    @include('admin.layouts.partials.record-code', ['code' => $visit->visit_code])
                 </strong>
             </div>
 
@@ -79,7 +79,7 @@
                 <span>Bệnh nhân</span>
 
                 <strong>
-                    {{ $visit->patient?->patient_code ?? '—' }}
+                    @include('admin.layouts.partials.record-code', ['code' => $visit->patient?->patient_code ?? '—'])
 
                     -
 
@@ -91,7 +91,7 @@
                 <span>Bác sĩ chỉ định</span>
 
                 <strong>
-                    {{ $visit->doctor?->doctor_code ?? '—' }}
+                    @include('admin.layouts.partials.record-code', ['code' => $visit->doctor?->doctor_code ?? '—'])
 
                     -
 
@@ -111,7 +111,7 @@
                 <span>Phòng khám</span>
 
                 <strong>
-                    {{ $visit->examinationRoom?->room_code ?? '—' }}
+                    @include('admin.layouts.partials.record-code', ['code' => $visit->examinationRoom?->room_code ?? '—'])
 
                     -
 
@@ -274,7 +274,7 @@
                                     </strong>
 
                                     <div class="service-code">
-                                        {{ $service->service_code }}
+                                        @include('admin.layouts.partials.record-code', ['code' => $service->service_code])
 
                                         @if ($service->serviceGroups->isNotEmpty())
                                             •

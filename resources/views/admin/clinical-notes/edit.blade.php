@@ -10,7 +10,7 @@
     <span aria-hidden="true">/</span>
     <span>Nội dung khám</span>
     <span aria-hidden="true">/</span>
-    <span>{{ $clinicalNote->medicalVisit?->visit_code }}</span>
+    <span>@include('admin.layouts.partials.record-code', ['code' => $clinicalNote->medicalVisit?->visit_code])</span>
     <span aria-hidden="true">/</span>
     <strong aria-current="page">Sửa</strong>
 @endsection
@@ -25,7 +25,7 @@
 
         <p class="page-description">
             Lượt khám:
-            {{ $clinicalNote->medicalVisit?->visit_code }}
+            @include('admin.layouts.partials.record-code', ['code' => $clinicalNote->medicalVisit?->visit_code])
         </p>
 
     </div>

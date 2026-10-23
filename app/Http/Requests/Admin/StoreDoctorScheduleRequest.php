@@ -2,12 +2,15 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Http\Requests\Admin\Concerns\ValidatesDoctorSpecialty;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreDoctorScheduleRequest extends FormRequest
 {
+    use ValidatesDoctorSpecialty;
+
     public function authorize(): bool
     {
         return true;

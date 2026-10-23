@@ -51,7 +51,7 @@
         <div>
             <h1 class="page-title">Chi tiết tài khoản</h1>
             <p class="page-description">
-                Mã tài khoản: {{ $user->business_code }}
+                Mã tài khoản: @include('admin.layouts.partials.record-code', ['code' => $user->business_code])
             </p>
         </div>
 
@@ -103,7 +103,7 @@
                 <div>
                     <dt>Mã tài khoản</dt>
                     <dd>
-                        <strong>{{ $user->business_code }}</strong>
+                        <strong>@include('admin.layouts.partials.record-code', ['code' => $user->business_code])</strong>
                     </dd>
                 </div>
 <div>
@@ -162,7 +162,7 @@
                 </div>
 
                 <div class="account-profile-code">
-                    Mã nghiệp vụ: {{ $linkedCode }}
+                    Mã nghiệp vụ: @include('admin.layouts.partials.record-code', ['code' => $linkedCode])
                 </div>
 
                 <p class="account-profile-hint">

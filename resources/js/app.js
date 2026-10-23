@@ -1,4 +1,6 @@
 import { initializeLookups } from './admin-lookups';
+import { validationMessage } from './admin-validation';
+import { initializeAppointmentBooking } from './appointment-booking';
 
 const initializeAdmin = () => {
     initializeLookups();
@@ -17,15 +19,7 @@ const initializeAdmin = () => {
 
         const validate = (control) => {
             const label = control.dataset.lookupLabel || control.labels?.[0]?.textContent.replace(/\s+/g, ' ').replace('*', '').trim() || 'Thông tin';
-            const validity = control.validity;
-            let message = '';
-            if (validity.badInput || validity.typeMismatch) message = `${label} không đúng định dạng.`;
-            else if (validity.valueMissing) message = `Vui lòng nhập hoặc chọn ${label.toLowerCase()}.`;
-            else if (validity.rangeUnderflow) message = `${label} phải lớn hơn hoặc bằng ${control.min}.`;
-            else if (validity.rangeOverflow) message = `${label} không được vượt quá ${control.max}.`;
-            else if (validity.stepMismatch) message = control.name === 'price' ? 'Giá dịch vụ phải là bội số của 1.000 đồng.' : `${label} phải theo bước ${control.step}.`;
-            else if (validity.patternMismatch) message = `${label} không đúng định dạng.`;
-            else if (validity.tooLong) message = `${label} không được vượt quá ${control.maxLength} ký tự.`;
+            const message = validationMessage(control, label);
 
             let error = control.nextElementSibling;
             if (!error?.classList.contains('field-error')) {
@@ -55,6 +49,7 @@ const initializeAdmin = () => {
             }
         });
     });
+    initializeAppointmentBooking();
 };
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializeAdmin);

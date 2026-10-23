@@ -25,9 +25,7 @@
         </div>
 
         <a href="{{ route('admin.administrators.show', $administrator) }}"
-           class="ae-btn ae-light">
-            ← Quay lại chi tiết
-        </a>
+           class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="ae-card">
@@ -143,13 +141,9 @@ value="{{ old('email', $administrator->email) }}"
 
             <div class="ae-actions">
                 <a href="{{ route('admin.administrators.show', $administrator) }}"
-                   class="ae-btn ae-light">
-                    Hủy bỏ
-                </a>
+                   class="admin-btn admin-btn-secondary">Hủy</a>
 
-                <button type="submit" class="ae-btn ae-primary">
-                    Lưu thay đổi
-                </button>
+                <button type="submit" class="admin-btn admin-btn-primary">Cập nhật</button>
             </div>
         </form>
     </div>

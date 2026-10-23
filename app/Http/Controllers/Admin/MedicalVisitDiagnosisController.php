@@ -31,7 +31,7 @@ class MedicalVisitDiagnosisController extends Controller
                 ->route('admin.visits.show', $visit)
                 ->with(
                     'error',
-                    'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
+                    'Chưa thể ghi hồ sơ ở bước này. Chỉ được ghi khi đang khám hoặc bệnh nhân đã quay lại bác sĩ sau dịch vụ.'
                 );
         }
 
@@ -73,7 +73,7 @@ class MedicalVisitDiagnosisController extends Controller
                 ->route('admin.visits.show', $visit)
                 ->with(
                     'error',
-                    'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
+                    'Chưa thể ghi hồ sơ ở bước này. Chỉ được ghi khi đang khám hoặc bệnh nhân đã quay lại bác sĩ sau dịch vụ.'
                 );
         }
 
@@ -90,7 +90,7 @@ class MedicalVisitDiagnosisController extends Controller
                 ->withInput()
                 ->with(
                     'error',
-                    'Lượt khám đã có chẩn đoán cùng bệnh và cùng loại chẩn đoán.'
+                    'Bệnh này đã có chẩn đoán cùng loại trong lượt khám. Vui lòng sửa chẩn đoán hiện có hoặc chọn loại khác.'
                 );
         }
 
@@ -101,7 +101,7 @@ class MedicalVisitDiagnosisController extends Controller
             ) {
                 $visit = $visit->lockForClinicalWrite();
                 if ($visit->diagnoses()->where('disease_id', $data['disease_id'])->where('diagnosis_type', $data['diagnosis_type'])->exists()) {
-                    throw ValidationException::withMessages(['disease_id' => 'Lượt khám đã có chẩn đoán cùng bệnh và cùng loại.']);
+                    throw ValidationException::withMessages(['disease_id' => 'Bệnh này đã có chẩn đoán cùng loại trong lượt khám. Vui lòng sửa chẩn đoán hiện có hoặc chọn loại khác.']);
                 }
 
                 return VisitDiagnosis::create([

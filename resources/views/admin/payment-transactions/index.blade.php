@@ -159,9 +159,7 @@
             <div class="transaction-table-header">
 
                 <div>
-                    <h2>
-                        Danh sách giao dịch
-                    </h2>
+                    <h2 class="admin-list-title">Danh sách giao dịch thanh toán</h2>
 
                     <p>
                         Tổng cộng {{ $transactions->total() }} bản ghi
@@ -196,17 +194,7 @@
 
                         @forelse ($transactions as $transaction)
 
-                                            @php
-                                                $resultClass = match (
-                                                strtoupper(
-                                                    $transaction->transaction_result ?? ''
-                                                )
-                                                ) {
-                                                    'SUCCESS' => 'success',
-                                                    'FAILED' => 'failed',
-                                                    default => 'default',
-                                                };
-                                            @endphp
+
 
                                             <tr>
 
@@ -240,12 +228,7 @@
 
 
                                                 <td>
-                                                    <span class="
-                                                                transaction-result
-                                                                {{ $resultClass }}
-                                                            ">
-                                                        {{ \App\Models\AdminDisplay::label($transaction->transaction_result) }}
-                                                    </span>
+                                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $transaction->transaction_result])
                                                 </td>
 
 
@@ -313,14 +296,14 @@
                                                 </td>
 
 
-                                                <td class="text-right">
+                                                <td class="text-right"><div class="admin-actions admin-table-actions">
 
                                                     <a href="{{ route(
                                 'admin.payment-transactions.show',
                                 $transaction->id
-                            ) }}" class="admin-btn admin-btn-detail transaction-detail-link">Chi tiết</a>
+                            ) }}" class="admin-btn admin-btn-detail">Chi tiết</a>
 
-                                                </td>
+                                                </div></td>
 
                                             </tr>
 
@@ -366,13 +349,9 @@
                     <div class="transaction-pagination-actions">
 
                         @if ($transactions->onFirstPage())
-                            <span class="transaction-page-btn disabled">
-                                ← Trước
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
                         @else
-                            <a href="{{ $transactions->previousPageUrl() }}" class="transaction-page-btn">
-                                ← Trước
-                            </a>
+                            <a href="{{ $transactions->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
                         @endif
 
 
@@ -385,13 +364,9 @@
 
 
                         @if ($transactions->hasMorePages())
-                            <a href="{{ $transactions->nextPageUrl() }}" class="transaction-page-btn">
-                                Sau →
-                            </a>
+                            <a href="{{ $transactions->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
                         @else
-                            <span class="transaction-page-btn disabled">
-                                Sau →
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
                         @endif
 
                     </div>

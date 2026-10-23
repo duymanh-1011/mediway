@@ -294,7 +294,7 @@ class ServiceResultController extends Controller
                 ]);
 
                 if (! $result->hasContent()) {
-                    throw ValidationException::withMessages(['result_summary' => 'Kết quả phải có nội dung hoặc tệp hợp lệ còn tồn tại.']);
+                    throw ValidationException::withMessages(['result_summary' => 'Vui lòng nhập nội dung kết quả hoặc tải lên tệp PDF/ảnh kết quả hợp lệ trước khi lưu.']);
                 }
 
                 $roleNameSnapshot = null;
@@ -409,7 +409,7 @@ class ServiceResultController extends Controller
                 )
                 ->with(
                     'error',
-                    'Không thể tạo kết quả vì dịch vụ không còn ở trạng thái PROCESSING.'
+                    'Chưa thể nhập kết quả vì dịch vụ không còn ở trạng thái đang thực hiện. Vui lòng tải lại phiếu chỉ định.'
                 );
         }
 
@@ -560,7 +560,7 @@ class ServiceResultController extends Controller
                 $oldValues['resulted_at'] = $result->resulted_at?->format('Y-m-d H:i:s');
                 $updateData = array_merge($updateData, $documents->store($request, 'service-results/'.$result->service_order_item_id, ClinicalDocument::RESULT_FILES));
                 if (! ServiceResult::hasContentValues(array_merge($result->getAttributes(), $updateData), $result->service_order_item_id)) {
-                    throw ValidationException::withMessages(['result_summary' => 'Kết quả phải có nội dung hoặc tệp hợp lệ còn tồn tại.']);
+                    throw ValidationException::withMessages(['result_summary' => 'Vui lòng nhập nội dung kết quả hoặc tải lên tệp PDF/ảnh kết quả hợp lệ trước khi lưu.']);
                 }
                 $result->update(
                     $updateData

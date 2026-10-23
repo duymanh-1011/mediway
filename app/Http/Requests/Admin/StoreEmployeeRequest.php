@@ -257,7 +257,7 @@ class StoreEmployeeRequest extends FormRequest
 
             'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
 
-            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
+            'password.confirmed' => 'Mật khẩu nhập lại chưa khớp. Vui lòng kiểm tra cả hai ô mật khẩu.',
 
             'full_name.required' => 'Vui lòng nhập họ và tên nhân viên.',
 
@@ -265,11 +265,11 @@ class StoreEmployeeRequest extends FormRequest
 
             'date_of_birth.before_or_equal' => 'Ngày sinh không được ở tương lai.',
 
-            'gender.in' => 'Giới tính không hợp lệ.',
+            'gender.in' => 'Vui lòng chọn giới tính từ các lựa chọn có sẵn.',
 
             'status.required' => 'Vui lòng chọn trạng thái nhân viên.',
 
-            'status.in' => 'Trạng thái nhân viên không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái nhân viên từ các lựa chọn có sẵn.',
 
             'citizen_id_number.regex' => 'Số CCCD phải có đúng 12 chữ số.',
 

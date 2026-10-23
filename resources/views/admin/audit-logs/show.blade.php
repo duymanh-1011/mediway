@@ -5,34 +5,7 @@
 
 @section('content')
 
-    @php
-        $badgeClass = match ($log->action) {
-            'CREATE' => 'badge-create',
-            'UPDATE' => 'badge-update',
-            'STATUS_CHANGE' => 'badge-status',
-            'LOGIN' => 'badge-login',
-            'DELETE' => 'badge-delete',
-            'PRINT' => 'badge-print',
-            default => 'badge-default',
-        };
-
-        $oldValues = null;
-        $newValues = null;
-
-        if (!empty($log->old_values)) {
-            $oldValues = is_string($log->old_values)
-                ? json_decode($log->old_values, true)
-                : $log->old_values;
-        }
-
-        if (!empty($log->new_values)) {
-            $newValues = is_string($log->new_values)
-                ? json_decode($log->new_values, true)
-                : $log->new_values;
-        }
-    @endphp
-
-    <div class="audit-show-page">
+<div class="audit-show-page">
 
         {{-- =========================
         BREADCRUMB
@@ -79,10 +52,7 @@
         BACK
         ========================== --}}
         <div class="audit-back-wrapper">
-            <a href="{{ route('admin.audit-logs.index') }}" class="audit-back-btn">
-                <span>←</span>
-                Quay lại danh sách
-            </a>
+            <a href="{{ route('admin.audit-logs.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
         </div>
 
 
@@ -110,9 +80,7 @@
                             </p>
                         </div>
 
-                        <span class="audit-badge {{ $badgeClass }}">
-                            {{ \App\Models\AdminDisplay::label($log->action) }}
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => $log->action])
 
                     </div>
 
@@ -157,9 +125,7 @@
                             </div>
 
                             <div class="audit-info-value">
-                                <span class="audit-badge {{ $badgeClass }}">
-                                    {{ \App\Models\AdminDisplay::label($log->action) }}
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => $log->action])
                             </div>
 
                         </div>
@@ -263,35 +229,7 @@
 
                     </div>
 
-                    @if (!empty($log->old_values))
-
-                                    <pre class="audit-json-content">{{ json_encode(
-                            \App\Models\AdminDisplay::values($oldValues),
-                            JSON_PRETTY_PRINT
-                            | JSON_UNESCAPED_UNICODE
-                            | JSON_UNESCAPED_SLASHES
-                        ) }}</pre>
-
-                    @else
-
-                        <div class="audit-json-empty">
-
-                            <div class="audit-json-empty-icon">
-                                { }
-                            </div>
-
-                            <strong>
-                                Không có dữ liệu trước thay đổi
-                            </strong>
-
-                            <p>
-                                Thao tác này không ghi nhận
-                                giá trị trước đó.
-                            </p>
-
-                        </div>
-
-                    @endif
+                    @include('admin.layouts.partials.value-list', ['valueRows' => $oldRows])
 
                 </div>
 
@@ -318,35 +256,7 @@
 
                     </div>
 
-                    @if (!empty($log->new_values))
-
-                                    <pre class="audit-json-content">{{ json_encode(
-                            \App\Models\AdminDisplay::values($newValues),
-                            JSON_PRETTY_PRINT
-                            | JSON_UNESCAPED_UNICODE
-                            | JSON_UNESCAPED_SLASHES
-                        ) }}</pre>
-
-                    @else
-
-                        <div class="audit-json-empty">
-
-                            <div class="audit-json-empty-icon">
-                                { }
-                            </div>
-
-                            <strong>
-                                Không có dữ liệu sau thay đổi
-                            </strong>
-
-                            <p>
-                                Thao tác này không ghi nhận
-                                giá trị sau thay đổi.
-                            </p>
-
-                        </div>
-
-                    @endif
+                    @include('admin.layouts.partials.value-list', ['valueRows' => $newRows])
 
                 </div>
 
@@ -495,7 +405,7 @@
                         </strong>
 
                         <p>
-                            Dữ liệu Audit Log chỉ được sử dụng
+                            Nhật ký hoạt động chỉ được sử dụng
                             để tra cứu và truy vết hoạt động.
                         </p>
                     </div>

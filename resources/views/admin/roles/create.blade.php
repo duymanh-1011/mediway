@@ -24,9 +24,7 @@
             </p>
         </div>
 
-        <a href="{{ route('admin.roles.index') }}" class="btn btn-secondary">
-            ← Quay lại danh sách
-        </a>
+        <a href="{{ route('admin.roles.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <form novalidate action="{{ route('admin.roles.store') }}" method="POST">
@@ -92,9 +90,7 @@
                     class="{{ $errors->has('status') ? 'input-invalid' : '' }}"
                     required
                 >
-<option value="ACTIVE" {{ old('status', 'ACTIVE') === 'ACTIVE' ? 'selected' : '' }}>
-                        Hoạt động
-                    </option>
+<option value="ACTIVE" {{ old('status', 'ACTIVE') === 'ACTIVE' ? 'selected' : '' }}>Đang hoạt động</option>
 
                     <option value="INACTIVE" {{ old('status') === 'INACTIVE' ? 'selected' : '' }}>
                         Ngừng hoạt động
@@ -116,13 +112,9 @@
             </div>
 
             <div class="role-form-actions">
-                <a href="{{ route('admin.roles.index') }}" class="btn btn-secondary">
-                    Hủy bỏ
-                </a>
+                <a href="{{ route('admin.roles.index') }}" class="admin-btn admin-btn-secondary">Hủy</a>
 
-                <button type="submit" class="btn btn-primary">
-                    Lưu vai trò
-                </button>
+                <button type="submit" class="admin-btn admin-btn-primary">Lưu</button>
             </div>
         </div>
     </form>

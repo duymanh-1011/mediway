@@ -219,7 +219,7 @@ class ServiceOrderController extends Controller
 
         if (! $pendingServiceStatus) {
             throw ValidationException::withMessages([
-                'medical_service_ids' => 'Không tìm thấy trạng thái dịch vụ PENDING đang hoạt động.',
+                'medical_service_ids' => 'Chưa có trạng thái “Chờ thực hiện” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái dịch vụ.',
             ]);
         }
 
@@ -236,7 +236,7 @@ class ServiceOrderController extends Controller
 
         if (! $unpaidPaymentStatus) {
             throw ValidationException::withMessages([
-                'medical_service_ids' => 'Không tìm thấy trạng thái thanh toán UNPAID đang hoạt động.',
+                'medical_service_ids' => 'Chưa có trạng thái “Chưa thanh toán” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái thanh toán.',
             ]);
         }
 
@@ -285,7 +285,7 @@ class ServiceOrderController extends Controller
                     throw ValidationException::withMessages(['medical_service_ids' => 'Lượt khám không còn ở giai đoạn cho phép chỉ định dịch vụ.']);
                 }
                 if (! VisitStatus::where('name', 'WAITING_FOR_SERVICE')->where('is_active', true)->exists()) {
-                    throw ValidationException::withMessages(['medical_service_ids' => 'Chưa cấu hình trạng thái chờ thực hiện dịch vụ đang hoạt động.']);
+                    throw ValidationException::withMessages(['medical_service_ids' => 'Chưa có trạng thái “Chờ thực hiện dịch vụ” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái lượt khám.']);
                 }
                 $services = MedicalService::whereIn('id', $selectedServiceIds)->where('status', 'ACTIVE')->lockForUpdate()->get()->keyBy('id');
                 if ($services->count() !== $selectedServiceIds->count()) {
@@ -537,7 +537,7 @@ class ServiceOrderController extends Controller
 
                 'items.medicalService:id,service_code,name',
 
-                'items.serviceStatus:id,name,description',
+                'items.serviceStatus:id,name,description,allows_transition',
 
                 'items.performer:id,employee_code,full_name',
 

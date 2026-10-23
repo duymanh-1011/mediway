@@ -21,9 +21,7 @@
             </p>
         </div>
 
-        <a href="{{ route('admin.patients.create') }}" class="admin-btn pt-btn pt-primary admin-btn-primary">
-            + Thêm bệnh nhân
-        </a>
+        <a href="{{ route('admin.patients.create') }}" class="admin-btn admin-btn-primary">Thêm bệnh nhân</a>
     </div>
 
     @if(session('success'))
@@ -56,9 +54,7 @@
                 <label for="status">Trạng thái hồ sơ</label>
                 <select id="status" name="status">
                     <option value="">Tất cả</option>
-                    <option value="ACTIVE" @selected($status === 'ACTIVE')>
-                        Hoạt động
-                    </option>
+                    <option value="ACTIVE" @selected($status === 'ACTIVE')>Đang hoạt động</option>
                 </select>
 @error('status')<div class="field-error">{{ $message }}</div>@enderror
             </div>
@@ -72,6 +68,8 @@
     @endcomponent
 
     <div class="pt-card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách bệnh nhân'])
+
 
         <div class="pt-table-wrap">
             <table class="pt-table">
@@ -109,37 +107,29 @@
 
                             <td>
                                 @if($patient->user)
-                                    <span class="pt-badge pt-blue">
-                                        Đã liên kết
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'LINKED'])
                                 @else
-                                    <span class="pt-badge pt-neutral">
-                                        Chưa liên kết
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'UNLINKED'])
                                 @endif
                             </td>
 
                             <td>
                                 @if($patient->status === 'ACTIVE')
-                                    <span class="pt-badge pt-green">
-                                        Hoạt động
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
                                 @else
-                                    <span class="pt-badge pt-neutral">
-                                        {{ \App\Models\AdminDisplay::label($patient->status) }}
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $patient->status])
                                 @endif
                             </td>
 
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
                                 <div class="pt-actions">
                                     <a href="{{ route('admin.patients.show', $patient) }}"
-                                       class="admin-btn admin-btn-detail pt-action pt-view">Chi tiết</a>
+                                       class="admin-btn admin-btn-detail">Chi tiết</a>
 
                                     <a href="{{ route('admin.patients.edit', $patient) }}"
-                                       class="admin-btn admin-btn-secondary pt-action pt-edit">Sửa</a>
+                                       class="admin-btn admin-btn-secondary">Sửa</a>
                                 </div>
-                            </td>
+                            </div></td>
                         </tr>
                     @empty
                         <tr>
@@ -160,9 +150,9 @@
 
             <div class="pt-pagination">
                 @if($patients->onFirstPage())
-                    <span class="pt-btn pt-light pt-disabled">Trước</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
                 @else
-                    <a class="pt-btn pt-light"
+                    <a class="admin-btn admin-btn-secondary"
                        href="{{ $patients->previousPageUrl() }}">
                         Trước
                     </a>
@@ -174,12 +164,12 @@
                 </span>
 
                 @if($patients->hasMorePages())
-                    <a class="pt-btn pt-light"
+                    <a class="admin-btn admin-btn-secondary"
                        href="{{ $patients->nextPageUrl() }}">
                         Sau
                     </a>
                 @else
-                    <span class="pt-btn pt-light pt-disabled">Sau</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
                 @endif
             </div>
         </div>

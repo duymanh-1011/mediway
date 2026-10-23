@@ -65,17 +65,11 @@
 
             @if ($result->verified_by_user_id)
 
-                <span class="result-header-badge verified">
-                    <span></span>
-                    Đã xác nhận
-                </span>
+                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'VERIFIED'])
 
             @else
 
-                <span class="result-header-badge pending">
-                    <span></span>
-                    Chưa xác nhận
-                </span>
+                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'UNVERIFIED'])
 
             @endif
 
@@ -85,18 +79,18 @@
         {{-- Back --}}
         <div class="result-top-actions">
 
-            <a href="{{ route('admin.service-results.index') }}" class="result-back-btn">
-                ← Quay lại danh sách
+            <a href="{{ route('admin.service-results.index') }}" class="admin-btn admin-btn-secondary">
+                ← Quay lại
             </a>
 
-            <div class="result-top-action-group">
+            <div class="admin-actions">
 
                 @if ($order)
 
                             <a href="{{ route(
                         'admin.service-orders.show',
                         $order->id
-                    ) }}" class="result-order-btn">
+                    ) }}" class="admin-btn admin-btn-detail">
                                 Xem phiếu chỉ định
                             </a>
 
@@ -105,8 +99,8 @@
                 <a href="{{ route(
         'admin.service-results.edit',
         $result->id
-    ) }}" class="result-edit-btn">
-                    Sửa kết quả
+    ) }}" class="admin-btn admin-btn-secondary">
+                    Sửa
                 </a>
 
             </div>
@@ -125,7 +119,7 @@
                     </h2>
 
                     <p>
-                        Ngữ cảnh của kết quả trong phiếu chỉ định.
+                        Thông tin dịch vụ và phiếu chỉ định liên quan.
                     </p>
 
                 </div>
@@ -224,19 +218,9 @@
 
                     @if ($serviceStatus)
 
-                        @php
-                            $serviceStatusClass = match ($serviceStatus->name) {
-                                'PENDING' => 'status-pending',
-                                'PROCESSING' => 'status-processing',
-                                'COMPLETED' => 'status-completed',
-                                'CANCELLED' => 'status-cancelled',
-                                default => 'status-default',
-                            };
-                        @endphp
 
-                        <span class="result-status-badge {{ $serviceStatusClass }}">
-                            {{ \App\Models\AdminDisplay::label($serviceStatus->name) }}
-                        </span>
+
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => $serviceStatus->name, 'badgeContext' => 'service'])
 
                     @else
 
@@ -358,9 +342,7 @@
 
                     @else
 
-                        <span class="result-not-verified">
-                            Chưa xác nhận
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'UNVERIFIED'])
 
                     @endif
 
@@ -455,7 +437,7 @@
                             </h2>
 
                             <p>
-                                Dữ liệu thông số được lưu dưới dạng JSON.
+                                Các chỉ số được ghi nhận trong kết quả dịch vụ.
                             </p>
 
                         </div>
@@ -470,17 +452,8 @@
                                     )
 
                                     <div class="result-parameters">
-
-                                        <pre>{{ json_encode(
-                            $result->result_parameters,
-                            JSON_PRETTY_PRINT
-                            |
-                            JSON_UNESCAPED_UNICODE
-                            |
-                            JSON_UNESCAPED_SLASHES
-                        ) }}</pre>
-
-                                    </div>
+ @include('admin.layouts.partials.value-list', ['valueRows' => app(\App\Models\AuditValuePresenter::class)->rows($result->result_parameters, '', true)])
+ </div>
 
                     @else
 
@@ -495,8 +468,7 @@
                             </strong>
 
                             <p>
-                                Kết quả này không có dữ liệu JSON
-                                hoặc chưa được nhập thông số.
+                                Chưa có chỉ số được ghi nhận cho kết quả này.
                             </p>
 
                         </div>
@@ -834,7 +806,7 @@
 
                 <p>
                     Kết quả dịch vụ đã được xác nhận không được
-                    hard-delete. Mọi chỉnh sửa phải được thực hiện
+                    xóa vĩnh viễn. Mọi chỉnh sửa phải được thực hiện
                     có kiểm soát để bảo toàn lịch sử y tế.
                 </p>
 

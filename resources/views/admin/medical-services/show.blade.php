@@ -50,7 +50,7 @@
                 href="{{ route(
                     'admin.medical-services.index'
                 ) }}"
-                class="btn btn-secondary"
+                class="admin-btn admin-btn-secondary"
             >
                 ← Quay lại
             </a>
@@ -60,10 +60,8 @@
                     'admin.medical-services.edit',
                     $medicalService
                 ) }}"
-                class="btn btn-primary"
-            >
-                Sửa dịch vụ
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >Sửa</a>
 
         </div>
 
@@ -319,19 +317,11 @@
                         'ACTIVE'
                     )
 
-                        <span
-                            class="badge badge-success"
-                        >
-                            Đang hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                     @else
 
-                        <span
-                            class="badge badge-danger"
-                        >
-                            Ngừng hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                     @endif
 
@@ -454,8 +444,8 @@
                                 $item->service_status
                                 ?? null;
 
-                            $itemStatusLabel = \App\Models\AdminDisplay::label($itemStatus, 'service');
-                            $itemStatusClass = 'badge-'.\App\Models\AdminDisplay::badge($itemStatus);
+
+
                         @endphp
 
 
@@ -508,12 +498,7 @@
 
                             <td>
 
-                                <span
-                                    class="badge
-                                        {{ $itemStatusClass }}"
-                                >
-                                    {{ $itemStatusLabel }}
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => $itemStatus, 'badgeContext' => 'service'])
 
                             </td>
 

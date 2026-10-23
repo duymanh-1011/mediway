@@ -101,13 +101,13 @@ class UpdateServiceResultRequest extends FormRequest
         return [
             'result_parameters.json' => 'Thông số kết quả phải là JSON hợp lệ.',
 
-            'verified_by_user_id.integer' => 'Người xác nhận không hợp lệ.',
+            'verified_by_user_id.integer' => 'Vui lòng chọn người xác nhận từ danh sách bác sĩ.',
 
             'verified_by_user_id.exists' => 'Người xác nhận phải là bác sĩ hợp lệ.',
 
-            'resulted_at.date' => 'Thời gian trả kết quả không hợp lệ.',
+            'resulted_at.date' => 'Thời điểm trả kết quả chưa hợp lệ. Vui lòng chọn đủ ngày và giờ.',
 
-            'confirm_update.accepted' => 'Bạn phải xác nhận trước khi cập nhật kết quả y tế.',
+            'confirm_update.accepted' => 'Vui lòng đánh dấu ô xác nhận nội dung kết quả trước khi cập nhật.',
         ];
     }
 }

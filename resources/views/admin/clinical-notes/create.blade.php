@@ -31,10 +31,8 @@
 
         <a
             href="{{ route('admin.visits.show', $visit) }}"
-            class="admin-btn admin-btn-secondary btn btn-secondary"
-        >
-            ← Quay lại lượt khám
-        </a>
+            class="admin-btn admin-btn-secondary"
+        >← Quay lại</a>
     </div>
 
 
@@ -252,15 +250,13 @@
         <div class="form-actions">
             <a
                 href="{{ route('admin.visits.show', $visit) }}"
-                class="btn btn-secondary"
+                class="admin-btn admin-btn-secondary"
             >Hủy</a>
 
             <button
                 type="submit"
-                class="btn btn-primary"
-            >
-                Lưu nội dung khám
-            </button>
+                class="admin-btn admin-btn-primary"
+            >Lưu</button>
         </div>
     </form>
 

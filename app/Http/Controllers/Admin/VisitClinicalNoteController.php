@@ -192,7 +192,7 @@ class VisitClinicalNoteController extends Controller
             'medicalVisit.status',
         ]);
 
-        abort_unless($clinicalNote->medicalVisit->canRecordClinicalData(), 403, 'Chỉ được sửa hồ sơ khi đang khám hoặc đã quay lại bác sĩ.');
+        abort_unless($clinicalNote->medicalVisit->canRecordClinicalData(), 403, 'Chưa thể sửa hồ sơ ở bước này. Chỉ được sửa khi đang khám hoặc đang khám lại sau dịch vụ.');
 
         return view(
             'admin.clinical-notes.edit',
@@ -217,7 +217,7 @@ class VisitClinicalNoteController extends Controller
         if (! $clinicalNote->medicalVisit->canRecordClinicalData()) {
             return back()->with(
                 'error',
-                'Chỉ được sửa hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
+                'Chưa thể sửa hồ sơ ở bước này. Chỉ được sửa khi đang khám hoặc đang khám lại sau dịch vụ.'
             );
         }
 

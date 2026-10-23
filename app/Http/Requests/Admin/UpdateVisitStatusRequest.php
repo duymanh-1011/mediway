@@ -41,32 +41,23 @@ class UpdateVisitStatusRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'description.string' =>
-                'Mô tả trạng thái không hợp lệ.',
+            'description.string' => 'Mô tả trạng thái không hợp lệ.',
 
-            'description.max' =>
-                'Mô tả trạng thái không được vượt quá 1000 ký tự.',
+            'description.max' => 'Mô tả trạng thái không được vượt quá 1000 ký tự.',
 
-            'process_order.required' =>
-                'Vui lòng nhập thứ tự xử lý.',
+            'process_order.required' => 'Vui lòng nhập thứ tự xử lý.',
 
-            'process_order.integer' =>
-                'Thứ tự xử lý phải là số nguyên.',
+            'process_order.integer' => 'Thứ tự xử lý phải là số nguyên.',
 
-            'process_order.min' =>
-                'Thứ tự xử lý không được nhỏ hơn 0.',
+            'process_order.min' => 'Thứ tự xử lý không được nhỏ hơn 0.',
 
-            'allows_transition.required' =>
-                'Vui lòng chọn quyền chuyển trạng thái.',
+            'allows_transition.required' => 'Vui lòng chọn quyền chuyển trạng thái.',
 
-            'allows_transition.boolean' =>
-                'Giá trị quyền chuyển trạng thái không hợp lệ.',
+            'allows_transition.boolean' => 'Vui lòng chọn lại mục Cho phép chuyển trạng thái.',
 
-            'is_active.required' =>
-                'Vui lòng chọn trạng thái hoạt động.',
+            'is_active.required' => 'Vui lòng chọn trạng thái hoạt động.',
 
-            'is_active.boolean' =>
-                'Giá trị trạng thái hoạt động không hợp lệ.',
+            'is_active.boolean' => 'Vui lòng chọn lại trạng thái sử dụng.',
         ];
     }
 }

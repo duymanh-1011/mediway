@@ -27,9 +27,7 @@
         </div>
 
         <a href="{{ route('admin.personal-health-records.show', $record) }}"
-           class="hr-btn hr-light">
-            ← Chi tiết lần đo
-        </a>
+           class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="hr-card">
@@ -60,15 +58,11 @@
 
             <div class="hr-actions">
                 <a href="{{ route('admin.personal-health-records.show', $record) }}"
-                   class="hr-btn hr-light">
-                    Hủy bỏ
-                </a>
+                   class="admin-btn admin-btn-secondary">Hủy</a>
 
                 <button type="submit"
-                        class="hr-btn hr-primary"
-                        onclick="return confirm('Xác nhận cập nhật các chỉ số của lần đo này?');">
-                    Lưu thay đổi
-                </button>
+                        class="admin-btn admin-btn-primary"
+                        onclick="return confirm('Xác nhận cập nhật các chỉ số của lần đo này?');">Cập nhật</button>
             </div>
         </form>
     </div>

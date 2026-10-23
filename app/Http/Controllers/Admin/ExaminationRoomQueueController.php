@@ -249,7 +249,7 @@ class ExaminationRoomQueueController extends Controller
         ) {
             return back()->with(
                 'error',
-                'Trạng thái hiện tại không thể gọi bệnh nhân.'
+                'Chưa thể gọi bệnh nhân ở bước này. Vui lòng tải lại danh sách và kiểm tra trạng thái hàng đợi.'
             );
         }
 
@@ -268,7 +268,7 @@ class ExaminationRoomQueueController extends Controller
         if (! $calledStatus) {
             return back()->with(
                 'error',
-                'Không tìm thấy trạng thái CALLED đang hoạt động.'
+                'Chưa có trạng thái “Đã gọi” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái hàng đợi.'
             );
         }
 
@@ -307,7 +307,7 @@ class ExaminationRoomQueueController extends Controller
         ) {
             return back()->with(
                 'error',
-                'Chỉ hàng đợi CALLED mới được bắt đầu phục vụ.'
+                'Vui lòng gọi bệnh nhân trước khi bắt đầu phục vụ.'
             );
         }
 
@@ -326,7 +326,7 @@ class ExaminationRoomQueueController extends Controller
         if (! $inServiceStatus) {
             return back()->with(
                 'error',
-                'Không tìm thấy trạng thái IN_SERVICE đang hoạt động.'
+                'Chưa có trạng thái “Đang phục vụ” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái hàng đợi.'
             );
         }
 
@@ -335,6 +335,7 @@ class ExaminationRoomQueueController extends Controller
             $inServiceStatus
         ) {
             $queue = $this->lockQueue($queue, ['CALLED']);
+            $queue->medicalVisit->assertCanBeginExamination();
             $expectedVisitStatuses = $queue->queue_type === 'RETURN_AFTER_SERVICE'
                 ? ['WAITING_FOR_SERVICE']
                 : ['WAITING', 'IN_EXAMINATION'];
@@ -342,7 +343,7 @@ class ExaminationRoomQueueController extends Controller
             if (! in_array($queue->queue_type, ['INITIAL_EXAM', 'RETURN_AFTER_SERVICE'], true)
                 || ! in_array($queue->medicalVisit->status?->name, $expectedVisitStatuses, true)
                 || ! VisitStatus::where('name', $nextVisitStatus)->where('is_active', true)->exists()) {
-                throw ValidationException::withMessages(['queue' => 'Trạng thái lượt khám không cho phép bắt đầu phục vụ.']);
+                throw ValidationException::withMessages(['queue' => 'Chưa thể bắt đầu phục vụ ở bước hiện tại. Vui lòng kiểm tra trạng thái lượt khám.']);
             }
             if ($queue->queue_type === 'RETURN_AFTER_SERVICE') {
                 $items = ServiceOrderItem::whereHas('serviceOrder', fn ($q) => $q->where('medical_visit_id', $queue->medical_visit_id));
@@ -471,7 +472,7 @@ class ExaminationRoomQueueController extends Controller
         if (! $completedStatus) {
             return back()->with(
                 'error',
-                'Không tìm thấy trạng thái COMPLETED đang hoạt động.'
+                'Chưa có trạng thái “Đã hoàn thành” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái hàng đợi.'
             );
         }
 
@@ -490,7 +491,7 @@ class ExaminationRoomQueueController extends Controller
 
         return back()->with(
             'success',
-            'Đã hoàn tất lượt chờ.'
+            'Đã kết thúc lượt phục vụ trong hàng đợi. Trạng thái lượt khám không thay đổi.'
         );
     }
 
@@ -511,7 +512,7 @@ class ExaminationRoomQueueController extends Controller
         ) {
             return back()->with(
                 'error',
-                'Trạng thái hiện tại không thể bỏ qua.'
+                'Chỉ có thể bỏ qua bệnh nhân đang chờ hoặc đã được gọi. Vui lòng kiểm tra lại hàng đợi.'
             );
         }
 
@@ -530,7 +531,7 @@ class ExaminationRoomQueueController extends Controller
         if (! $skippedStatus) {
             return back()->with(
                 'error',
-                'Không tìm thấy trạng thái SKIPPED đang hoạt động.'
+                'Chưa có trạng thái “Đã bỏ qua” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái hàng đợi.'
             );
         }
 
@@ -546,7 +547,7 @@ class ExaminationRoomQueueController extends Controller
 
         return back()->with(
             'success',
-            'Đã bỏ qua bệnh nhân.'
+            'Đã tạm bỏ qua bệnh nhân trong hàng đợi. Bạn có thể gọi lại khi bệnh nhân sẵn sàng.'
         );
     }
 

@@ -40,18 +40,35 @@ class MedicalVisit extends Model
 
     public function canRecordClinicalData(): bool
     {
-        return in_array($this->status?->name, ['IN_EXAMINATION', 'RETURNING'], true);
+        return in_array($this->status?->name, ['IN_EXAMINATION', 'RETURNING'], true)
+            && ! $this->appointment?->isScheduledInFuture();
+    }
+
+    public function assertCanBeginExamination(): void
+    {
+        if ($this->appointment && ($this->appointment->isScheduledInFuture()
+            || (! $this->examination_started_at && ! $this->appointment->isScheduledForToday()))) {
+            throw ValidationException::withMessages(['visit' => 'Chỉ được bắt đầu khám vào đúng ngày hẹn của bệnh nhân.']);
+        }
     }
 
     /** Acquire inside a transaction, before writing clinical child records. */
     public function lockForClinicalWrite(): self
     {
         $visit = self::with('status')->whereKey($this->id)->lockForUpdate()->firstOrFail();
+        $visit->assertNotBeforeAppointmentDay();
         if (! $visit->canRecordClinicalData()) {
-            throw ValidationException::withMessages(['visit' => 'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.']);
+            throw ValidationException::withMessages(['visit' => 'Chưa thể ghi hồ sơ ở bước này. Chỉ được ghi khi đang khám hoặc bệnh nhân đã quay lại bác sĩ sau dịch vụ.']);
         }
 
         return $visit;
+    }
+
+    public function assertNotBeforeAppointmentDay(): void
+    {
+        if ($this->appointment?->isScheduledInFuture()) {
+            throw ValidationException::withMessages(['visit' => 'Chưa đến ngày hẹn khám của bệnh nhân. Không thể thực hiện khám trước ngày hẹn.']);
+        }
     }
 
     /** The caller must hold the visit lock before closing its queues. */
@@ -64,7 +81,7 @@ class MedicalVisit extends Model
         }
         $completedStatus = QueueStatus::where('name', 'COMPLETED')->where('is_active', true)->first();
         if (! $completedStatus) {
-            throw ValidationException::withMessages(['visit_status_id' => 'Thiếu trạng thái hoàn tất hàng đợi đang hoạt động.']);
+            throw ValidationException::withMessages(['visit_status_id' => 'Chưa có trạng thái “Đã hoàn thành” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái hàng đợi.']);
         }
         foreach ($queues as $queue) {
             $queue->update(['queue_status_id' => $completedStatus->id, 'completed_at' => $queue->completed_at ?? $completedAt]);

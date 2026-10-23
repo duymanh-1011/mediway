@@ -5,9 +5,9 @@
         @endif
         <div class="admin-actions">
             @if ($paginator->onFirstPage())
-                <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trang trước</span>
+                <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
             @else
-                <a class="admin-btn admin-btn-secondary" href="{{ $paginator->previousPageUrl() }}" rel="prev">Trang trước</a>
+                <a class="admin-btn admin-btn-secondary" href="{{ $paginator->previousPageUrl() }}" rel="prev">Trước</a>
             @endif
             @foreach ($elements ?? [] as $element)
                 @if (is_string($element))
@@ -23,9 +23,9 @@
                 @endif
             @endforeach
             @if ($paginator->hasMorePages())
-                <a class="admin-btn admin-btn-secondary" href="{{ $paginator->nextPageUrl() }}" rel="next">Trang sau</a>
+                <a class="admin-btn admin-btn-secondary" href="{{ $paginator->nextPageUrl() }}" rel="next">Sau</a>
             @else
-                <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trang sau</span>
+                <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
             @endif
         </div>
     </nav>

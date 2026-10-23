@@ -44,38 +44,27 @@ class StoreServiceOrderRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'medical_service_ids.required' =>
-                'Vui lòng chọn ít nhất một dịch vụ.',
+            'medical_service_ids.required' => 'Vui lòng chọn ít nhất một dịch vụ.',
 
-            'medical_service_ids.array' =>
-                'Danh sách dịch vụ không hợp lệ.',
+            'medical_service_ids.array' => 'Vui lòng chọn dịch vụ từ danh sách gợi ý.',
 
-            'medical_service_ids.min' =>
-                'Vui lòng chọn ít nhất một dịch vụ.',
+            'medical_service_ids.min' => 'Vui lòng chọn ít nhất một dịch vụ.',
 
-            'medical_service_ids.*.required' =>
-                'Dịch vụ không hợp lệ.',
+            'medical_service_ids.*.required' => 'Vui lòng chọn lại dịch vụ từ danh sách gợi ý.',
 
-            'medical_service_ids.*.integer' =>
-                'Dịch vụ không hợp lệ.',
+            'medical_service_ids.*.integer' => 'Vui lòng chọn lại dịch vụ từ danh sách gợi ý.',
 
-            'medical_service_ids.*.distinct' =>
-                'Không được chọn trùng dịch vụ.',
+            'medical_service_ids.*.distinct' => 'Không được chọn trùng dịch vụ.',
 
-            'medical_service_ids.*.exists' =>
-                'Có dịch vụ không tồn tại trong hệ thống.',
+            'medical_service_ids.*.exists' => 'Có dịch vụ không tồn tại trong hệ thống.',
 
-            'reason.string' =>
-                'Lý do chỉ định không hợp lệ.',
+            'reason.string' => 'Vui lòng nhập lý do chỉ định bằng văn bản.',
 
-            'reason.max' =>
-                'Lý do chỉ định không được vượt quá 5000 ký tự.',
+            'reason.max' => 'Lý do chỉ định không được vượt quá 5000 ký tự.',
 
-            'instructions.string' =>
-                'Hướng dẫn thực hiện không hợp lệ.',
+            'instructions.string' => 'Vui lòng nhập hướng dẫn thực hiện bằng văn bản.',
 
-            'instructions.max' =>
-                'Hướng dẫn thực hiện không được vượt quá 5000 ký tự.',
+            'instructions.max' => 'Hướng dẫn thực hiện không được vượt quá 5000 ký tự.',
         ];
     }
 

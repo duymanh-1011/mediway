@@ -10,7 +10,7 @@
     <span aria-hidden="true">/</span>
     <span>Trạng thái hàng đợi</span>
     <span aria-hidden="true">/</span>
-    <span>{{ \App\Models\AdminDisplay::label($queueStatus->name) }}</span>
+    @include('admin.layouts.partials.status-badge', ['badgeCode' => $queueStatus->name])
     <span aria-hidden="true">/</span>
     <strong aria-current="page">Sửa</strong>
 @endsection
@@ -224,17 +224,15 @@
 
                     <button
                         type="submit"
-                        class="btn btn-primary"
-                    >
-                        Lưu thay đổi
-                    </button>
+                        class="admin-btn admin-btn-primary"
+                    >Cập nhật</button>
 
                     <a
                         href="{{ route(
                             'admin.queue-statuses.show',
                             $queueStatus
                         ) }}"
-                        class="admin-btn admin-btn-secondary btn btn-secondary"
+                        class="admin-btn admin-btn-secondary"
                     >Hủy</a>
 
                 </div>

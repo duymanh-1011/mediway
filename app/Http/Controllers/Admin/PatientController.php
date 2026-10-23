@@ -125,7 +125,7 @@ class PatientController extends Controller
 
                 if (! $patientRole) {
                     throw ValidationException::withMessages([
-                        'user_id' => 'Hệ thống chưa có vai trò bệnh nhân.',
+                        'user_id' => 'Chưa có vai trò bệnh nhân trong hệ thống. Vui lòng báo người phụ trách hệ thống.',
                     ]);
                 }
 
@@ -232,7 +232,7 @@ class PatientController extends Controller
 
                 if (! $patientRole) {
                     throw ValidationException::withMessages([
-                        'user_id' => 'Hệ thống chưa có vai trò bệnh nhân.',
+                        'user_id' => 'Chưa có vai trò bệnh nhân trong hệ thống. Vui lòng báo người phụ trách hệ thống.',
                     ]);
                 }
 

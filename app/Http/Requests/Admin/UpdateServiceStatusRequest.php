@@ -35,23 +35,17 @@ class UpdateServiceStatusRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'description.string' =>
-            'Mô tả không hợp lệ.',
+            'description.string' => 'Mô tả không hợp lệ.',
 
-            'description.max' =>
-            'Mô tả không được vượt quá 255 ký tự.',
+            'description.max' => 'Mô tả không được vượt quá 255 ký tự.',
 
-            'allows_transition.required' =>
-            'Vui lòng chọn cấu hình cho phép chuyển trạng thái.',
+            'allows_transition.required' => 'Vui lòng chọn cấu hình cho phép chuyển trạng thái.',
 
-            'allows_transition.boolean' =>
-            'Giá trị cho phép chuyển trạng thái không hợp lệ.',
+            'allows_transition.boolean' => 'Vui lòng chọn lại mục Cho phép chuyển trạng thái.',
 
-            'is_active.required' =>
-            'Vui lòng chọn trạng thái sử dụng.',
+            'is_active.required' => 'Vui lòng chọn trạng thái sử dụng.',
 
-            'is_active.boolean' =>
-            'Trạng thái sử dụng không hợp lệ.',
+            'is_active.boolean' => 'Trạng thái sử dụng không hợp lệ.',
         ];
     }
 }

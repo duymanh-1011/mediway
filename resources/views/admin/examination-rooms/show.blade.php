@@ -45,20 +45,16 @@
                 href="{{ route(
                     'admin.examination-rooms.index'
                 ) }}"
-                class="btn btn-secondary"
-            >
-                ← Danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             <a
                 href="{{ route(
                     'admin.examination-rooms.edit',
                     $examinationRoom
                 ) }}"
-                class="btn btn-primary"
-            >
-                Sửa phòng khám
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >Sửa</a>
 
         </div>
 
@@ -197,15 +193,11 @@
                         === 'ACTIVE'
                     )
 
-                        <span class="badge badge-success">
-                            Đang hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                     @else
 
-                        <span class="badge badge-danger">
-                            Ngừng hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                     @endif
 
@@ -340,9 +332,7 @@
 
                             </td>
 
-                            <td>
-                                {{ \App\Models\AdminDisplay::label($schedule->status) }}
-                            </td>
+                            <td>@include('admin.layouts.partials.status-badge', ['badgeCode' => $schedule->status])</td>
 
                         </tr>
 

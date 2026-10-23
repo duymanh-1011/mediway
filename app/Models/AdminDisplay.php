@@ -11,6 +11,10 @@ final class AdminDisplay
 
     public const LABELS = [
         'ACTIVE' => 'Đang hoạt động', 'INACTIVE' => 'Ngừng hoạt động', 'LOCKED' => 'Đã khóa',
+        'ALLOWED' => 'Cho phép', 'DENIED' => 'Không cho phép', 'YES' => 'Có', 'NO' => 'Không',
+        'VERIFIED' => 'Đã xác nhận', 'UNVERIFIED' => 'Chưa xác nhận',
+        'LINKED' => 'Đã liên kết', 'UNLINKED' => 'Chưa liên kết',
+        'SYSTEM' => 'Hệ thống', 'CUSTOM' => 'Tùy chỉnh', 'DRAFT' => 'Bản nháp',
         'PENDING' => 'Chờ xử lý', 'PROCESSING' => 'Đang thực hiện', 'COMPLETED' => 'Đã hoàn thành',
         'CANCELLED' => 'Đã hủy', 'PAID' => 'Đã thanh toán', 'UNPAID' => 'Chưa thanh toán',
         'WAITING' => 'Đang chờ', 'CALLED' => 'Đã gọi', 'IN_SERVICE' => 'Đang phục vụ', 'SKIPPED' => 'Đã bỏ qua',
@@ -40,6 +44,8 @@ final class AdminDisplay
         'prescriptions' => 'Đơn thuốc', 'prescription_items' => 'Chi tiết đơn thuốc',
         'patients' => 'Bệnh nhân', 'doctors' => 'Bác sĩ', 'employees' => 'Nhân viên',
         'medical_services' => 'Dịch vụ y tế', 'MedicalService' => 'Dịch vụ y tế',
+        'specialties' => 'Chuyên khoa', 'examination_rooms' => 'Phòng khám', 'service_groups' => 'Nhóm dịch vụ',
+        'disease_groups' => 'Nhóm bệnh', 'diseases' => 'Bệnh', 'medicines' => 'Thuốc',
     ];
 
     public static function label(?string $code, ?string $context = null): string
@@ -69,10 +75,11 @@ final class AdminDisplay
     public static function badge(?string $code): string
     {
         return match ($code) {
-            'ACTIVE', 'PAID', 'SUCCESS', 'COMPLETED' => 'success',
-            'INACTIVE', 'LOCKED', 'FAILED', 'CANCELLED' => 'danger',
-            'PROCESSING', 'IN_SERVICE', 'IN_EXAMINATION', 'RETURNING', 'CALLED' => 'info',
-            default => 'warning',
+            'ACTIVE', 'PAID', 'SUCCESS', 'COMPLETED', 'ALLOWED', 'YES', 'VERIFIED', 'LINKED', 'CREATE' => 'success',
+            'INACTIVE', 'LOCKED', 'FAILED', 'CANCELLED', 'DELETE', 'CANCEL' => 'danger',
+            'PROCESSING', 'IN_SERVICE', 'IN_EXAMINATION', 'RETURNING', 'CALLED', 'CHECKED_IN', 'UPDATE', 'STATUS_CHANGE' => 'info',
+            'PENDING', 'WAITING', 'UNPAID', 'WAITING_FOR_SERVICE', 'BOOKED', 'SKIPPED', 'UNVERIFIED' => 'warning',
+            default => 'neutral',
         };
     }
 

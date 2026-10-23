@@ -36,10 +36,8 @@
             href="{{ route(
                 'admin.service-groups.create'
             ) }}"
-            class="admin-btn btn btn-primary admin-btn-primary"
-        >
-            + Thêm nhóm dịch vụ
-        </a>
+            class="admin-btn admin-btn-primary"
+        >Thêm nhóm dịch vụ</a>
 
     </div>
 
@@ -166,6 +164,8 @@
     @endcomponent
 
     <div class="card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách nhóm dịch vụ'])
+
 
         <div class="table-wrapper">
 
@@ -224,25 +224,17 @@
                                 === 'ACTIVE'
                             )
 
-                                <span
-                                    class="badge badge-success"
-                                >
-                                    Đang hoạt động
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                             @else
 
-                                <span
-                                    class="badge badge-danger"
-                                >
-                                    Ngừng hoạt động
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                             @endif
 
                         </td>
 
-                        <td>
+                        <td><div class="admin-actions admin-table-actions">
 
                             <div class="action-group">
 
@@ -251,7 +243,7 @@
                                         'admin.service-groups.show',
                                         $serviceGroup
                                     ) }}"
-                                    class="admin-btn admin-btn-detail action-link view"
+                                    class="admin-btn admin-btn-detail"
                                 >Chi tiết</a>
 
                                 <a
@@ -259,14 +251,14 @@
                                         'admin.service-groups.edit',
                                         $serviceGroup
                                     ) }}"
-                                    class="admin-btn admin-btn-secondary action-link edit"
+                                    class="admin-btn admin-btn-secondary"
                                 >Sửa</a>
 
                                 @include('admin.layouts.partials.catalog-status', ['record' => $serviceGroup, 'catalog' => 'service-groups'])
 
                             </div>
 
-                        </td>
+                        </div></td>
 
                     </tr>
 

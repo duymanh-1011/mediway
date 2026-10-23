@@ -218,6 +218,8 @@
 
 
     <div class="card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách kết luận lượt khám'])
+
 
         @if ($conclusions->count())
 
@@ -235,7 +237,7 @@
                         <th>Xử trí</th>
                         <th>Tái khám</th>
                         <th>Thời gian</th>
-                        <th>Hành động</th>
+                        <th>Thao tác</th>
                     </tr>
                     </thead>
 
@@ -276,9 +278,7 @@
 
                                 @if ($conclusion->has_follow_up)
 
-                                    <span class="badge badge-warning">
-                                        Có
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'YES'])
 
                                     @if ($conclusion->follow_up_date)
                                         <div class="admin-u-536f3c69">
@@ -290,9 +290,7 @@
 
                                 @else
 
-                                    <span class="badge">
-                                        Không
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'NO'])
 
                                 @endif
 
@@ -304,7 +302,7 @@
                                 ) ?: '—' }}
                             </td>
 
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
 
                                 <div class="admin-u-c9035c8e">
 
@@ -313,7 +311,7 @@
                                             'admin.conclusions.show',
                                             $conclusion
                                         ) }}"
-                                        class="admin-btn admin-btn-detail btn btn-secondary"
+                                        class="admin-btn admin-btn-detail"
                                     >Chi tiết</a>
 
 
@@ -324,14 +322,14 @@
                                                 'admin.conclusions.edit',
                                                 $conclusion
                                             ) }}"
-                                            class="admin-btn btn btn-primary admin-btn-primary"
+                                            class="admin-btn admin-btn-secondary"
                                         >Sửa</a>
 
                                     @endif
 
                                 </div>
 
-                            </td>
+                            </div></td>
 
                         </tr>
 

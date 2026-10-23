@@ -43,14 +43,10 @@
 
         <div class="hd-actions">
             <a href="{{ route('admin.personal-health-records.index', ['patient_id' => $record->patient_id]) }}"
-               class="hd-btn hd-light">
-                ← Lịch sử sức khỏe
-            </a>
+               class="admin-btn admin-btn-secondary">← Quay lại</a>
 
             <a href="{{ route('admin.personal-health-records.edit', $record) }}"
-               class="hd-btn hd-primary">
-                Chỉnh sửa
-            </a>
+               class="admin-btn admin-btn-secondary">Sửa</a>
         </div>
     </div>
 
@@ -79,7 +75,7 @@
 
             @if($record->patient)
                 <a href="{{ route('admin.patients.show', $record->patient) }}"
-                   class="hd-btn hd-light hd-patient-link">
+                   class="admin-btn admin-btn-detail">
                     Xem hồ sơ bệnh nhân
                 </a>
             @endif

@@ -32,14 +32,11 @@ class UpdateMedicalVisitStatusRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'visit_status_id.required' =>
-                'Vui lòng chọn trạng thái lượt khám.',
+            'visit_status_id.required' => 'Vui lòng chọn trạng thái lượt khám.',
 
-            'visit_status_id.integer' =>
-                'Trạng thái lượt khám không hợp lệ.',
+            'visit_status_id.integer' => 'Vui lòng chọn lại trạng thái lượt khám từ các lựa chọn có sẵn.',
 
-            'visit_status_id.exists' =>
-                'Trạng thái lượt khám không tồn tại hoặc đã ngừng hoạt động.',
+            'visit_status_id.exists' => 'Trạng thái lượt khám không tồn tại hoặc đã ngừng hoạt động.',
         ];
     }
 }

@@ -148,7 +148,7 @@ class DoctorController extends Controller
 
                 if (! $role) {
                     throw ValidationException::withMessages([
-                        'user_id' => 'Vai trò bác sĩ chưa tồn tại.',
+                        'user_id' => 'Chưa có vai trò bác sĩ trong hệ thống. Vui lòng báo người phụ trách hệ thống.',
                     ]);
                 }
 
@@ -535,7 +535,7 @@ class DoctorController extends Controller
 
             if (! $path) {
                 throw ValidationException::withMessages([
-                    $input => 'Không thể lưu tài liệu.',
+                    $input => 'Không thể lưu tệp. Vui lòng thử lại hoặc báo người phụ trách hệ thống.',
                 ]);
             }
 

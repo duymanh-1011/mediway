@@ -77,7 +77,7 @@ class StoreSpecialtyRequest extends FormRequest
 
             'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' => 'Trạng thái chuyên khoa không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái chuyên khoa từ các lựa chọn có sẵn.',
         ];
     }
 }

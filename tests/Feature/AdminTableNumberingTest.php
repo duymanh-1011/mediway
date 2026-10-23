@@ -54,11 +54,12 @@ class AdminTableNumberingTest extends TestCase
             'visits' => 'medical_visits', 'doctor-schedules' => 'doctor_schedules',
             'specialties' => 'specialties', 'disease-groups' => 'disease_groups', 'service-groups' => 'service_groups',
             'roles' => 'roles', 'patients' => 'patients', 'medicines' => 'medicines', 'payables' => 'payables',
-            'medical-services' => 'medical_services', 'examination-rooms' => 'examination_rooms',
+            'medical-services' => 'medical_services', 'examination-rooms' => 'examination_rooms', 'prescriptions' => 'prescriptions',
         ];
         $checked = 0;
         foreach (glob(resource_path('views/admin/*/*.blade.php')) as $file) {
-            if (! str_contains(file_get_contents($file), '<table')) {
+            $tableCount = substr_count(file_get_contents($file), '<table') + substr_count(file_get_contents($file), "partials.status-list'");
+            if (! $tableCount) {
                 continue;
             }
             $module = basename(dirname($file));
@@ -70,7 +71,7 @@ class AdminTableNumberingTest extends TestCase
             $parameters = $action === 'show' ? [DB::table($detailTables[$module])->value('id')] : [];
             $html = $this->get(route($name, $parameters))->assertOk()->getContent();
             $xpath = $this->xpath($html);
-            $this->assertCount(substr_count(file_get_contents($file), '<table'), $xpath->query('//main//table'), $name.': cần fixture hiển thị đủ các bảng');
+            $this->assertCount($tableCount, $xpath->query('//main//table'), $name.': cần fixture hiển thị đủ các bảng');
             foreach ($xpath->query('//main//table') as $table) {
                 $headers = $xpath->query('./thead/tr/th', $table);
                 $this->assertGreaterThan(0, $headers->length, $name);
@@ -92,7 +93,7 @@ class AdminTableNumberingTest extends TestCase
                 $checked++;
             }
         }
-        $this->assertSame(48, $checked);
+        $this->assertSame(50, $checked);
     }
 
     public function test_row_numbers_continue_on_the_second_page_and_restart_for_filtered_results(): void
@@ -113,7 +114,7 @@ class AdminTableNumberingTest extends TestCase
         $this->assertSame([1], $this->rowNumbers($response->getContent()));
         $xpath = $this->xpath($response->getContent());
         $this->assertCount(1, $xpath->query('//table/thead/tr/th[normalize-space(.)="Thứ tự xử lý"]'));
-        $this->assertSame('80', trim($xpath->query('//table/tbody/tr/td[2]')->item(0)->textContent));
+        $this->assertSame('80', trim($xpath->query('//table/tbody/tr/td[4]')->item(0)->textContent));
         $this->assertSame(80, $status->fresh()->process_order);
     }
 

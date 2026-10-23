@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Validation\ValidationException;
 
 class Appointment extends Model
 {
+    public const BOOKING_ADVANCE_DAYS = 3;
+
     protected $fillable = [
         'appointment_code',
         'patient_id',
@@ -29,6 +32,25 @@ class Appointment extends Model
         'booked_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
+
+    public function isScheduledForToday(): bool
+    {
+        return $this->appointment_date?->isToday()
+            && $this->appointmentTimeSlot?->doctorSchedule?->work_date?->isToday();
+    }
+
+    public function isScheduledInFuture(): bool
+    {
+        return $this->appointment_date?->isAfter(today())
+            || $this->appointmentTimeSlot?->doctorSchedule?->work_date?->isAfter(today());
+    }
+
+    public function assertReceptionDate(): void
+    {
+        if (! $this->isScheduledForToday()) {
+            throw ValidationException::withMessages(['appointment' => 'Chỉ được tiếp nhận vào đúng ngày hẹn khám. Lịch hẹn này có ngày khám là '.$this->appointment_date?->format('d/m/Y').'.']);
+        }
+    }
 
     public function patient()
     {

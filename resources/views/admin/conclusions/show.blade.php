@@ -34,8 +34,8 @@
 
             <a
                 href="{{ route('admin.conclusions.index') }}"
-                class="admin-btn admin-btn-secondary btn btn-secondary"
-            >Quay lại</a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
 
             @if ($conclusion->medicalVisit?->canRecordClinicalData())
@@ -45,7 +45,7 @@
                         'admin.conclusions.edit',
                         $conclusion
                     ) }}"
-                    class="admin-btn btn btn-primary admin-btn-primary"
+                    class="admin-btn admin-btn-secondary"
                 >Sửa</a>
 
             @endif
@@ -110,9 +110,7 @@
 
             <div>
                 <strong>Trạng thái</strong>
-                <div>
-                    {{ \App\Models\AdminDisplay::label($conclusion->medicalVisit?->status?->name ?: '—') }}
-                </div>
+                <div>@include('admin.layouts.partials.status-badge', ['badgeCode' => $conclusion->medicalVisit?->status?->name ?: '—'])</div>
             </div>
 
             <div>
@@ -136,7 +134,7 @@
                         'admin.visits.show',
                         $conclusion->medicalVisit
                     ) }}"
-                    class="btn btn-secondary"
+                    class="admin-btn admin-btn-detail"
                 >
                     Xem toàn bộ lượt khám
                 </a>

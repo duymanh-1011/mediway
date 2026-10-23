@@ -62,7 +62,7 @@ class ServiceGroupController extends Controller
     {
         DB::transaction(function () use ($request, $serviceGroup) {
             $group = ServiceGroup::whereKey($serviceGroup->id)->lockForUpdate()->firstOrFail();
-            abort_unless($group->status === 'ACTIVE', 422, 'Nhóm dịch vụ đã ngừng hoạt động.');
+            abort_unless($group->status === 'ACTIVE', 422, 'Nhóm dịch vụ đã ngừng hoạt động nên không thể gán thêm dịch vụ. Vui lòng chọn nhóm khác hoặc kích hoạt lại nhóm.');
             $group->medicalServices()->syncWithoutDetaching($request->validated('medical_service_ids'));
         });
 

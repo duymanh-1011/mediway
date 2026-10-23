@@ -194,7 +194,7 @@
 
                 <button
                     type="submit"
-                    class="login-button"
+                    class="admin-btn admin-btn-primary"
                 >
                     Đăng nhập
                 </button>

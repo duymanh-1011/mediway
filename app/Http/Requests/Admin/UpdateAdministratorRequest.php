@@ -74,10 +74,10 @@ class UpdateAdministratorRequest extends FormRequest
             'email.unique' => 'Email đã được sử dụng.',
             'email.max' => 'Email không được quá 150 ký tự.',
 
-            'date_of_birth.date' => 'Ngày sinh không hợp lệ.',
+            'date_of_birth.date' => 'Ngày sinh chưa hợp lệ. Vui lòng chọn lại ngày bằng ô lịch.',
             'date_of_birth.before' => 'Ngày sinh phải trước ngày hiện tại.',
 
-            'gender.in' => 'Giới tính không hợp lệ.',
+            'gender.in' => 'Vui lòng chọn giới tính từ các lựa chọn có sẵn.',
             'address.max' => 'Địa chỉ không được quá 255 ký tự.',
         ];
     }

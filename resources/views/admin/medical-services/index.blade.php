@@ -36,10 +36,8 @@
             href="{{ route(
                 'admin.medical-services.create'
             ) }}"
-            class="admin-btn btn btn-primary admin-btn-primary"
-        >
-            + Thêm dịch vụ
-        </a>
+            class="admin-btn admin-btn-primary"
+        >Thêm dịch vụ</a>
 
     </div>
 
@@ -270,6 +268,8 @@
     @endcomponent
 
     <div class="card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách dịch vụ y tế'])
+
 
 
         {{-- =====================================================
@@ -399,26 +399,18 @@
                                 'ACTIVE'
                             )
 
-                                <span
-                                    class="badge badge-success"
-                                >
-                                    Đang hoạt động
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                             @else
 
-                                <span
-                                    class="badge badge-danger"
-                                >
-                                    Ngừng hoạt động
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                             @endif
 
                         </td>
 
 
-                        <td>
+                        <td><div class="admin-actions admin-table-actions">
 
                             <div class="action-group">
                                 @include('admin.layouts.partials.catalog-status', ['record' => $service, 'catalog' => 'medical-services'])
@@ -428,7 +420,7 @@
                                         'admin.medical-services.show',
                                         $service
                                     ) }}"
-                                    class="admin-btn admin-btn-detail action-link action-link-view"
+                                    class="admin-btn admin-btn-detail"
                                 >Chi tiết</a>
 
                                 <a
@@ -436,12 +428,12 @@
                                         'admin.medical-services.edit',
                                         $service
                                     ) }}"
-                                    class="admin-btn admin-btn-secondary action-link action-link-edit"
+                                    class="admin-btn admin-btn-secondary"
                                 >Sửa</a>
 
                             </div>
 
-                        </td>
+                        </div></td>
 
                     </tr>
 

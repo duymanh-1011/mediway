@@ -229,6 +229,8 @@
 
 
     <div class="card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách hàng đợi phòng khám'])
+
 
         @if ($queues->count())
 
@@ -248,7 +250,7 @@
                         <th>Trạng thái</th>
                         <th>Vào hàng</th>
                         <th>Số lần gọi</th>
-                        <th>Hành động</th>
+                        <th>Thao tác</th>
                     </tr>
                     </thead>
 
@@ -292,9 +294,7 @@
                             </td>
 
                             <td>
-                                <span class="badge">
-                                    {{ \App\Models\AdminDisplay::label($queue->status?->name ?: '—') }}
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => $queue->status?->name ?: '—'])
                             </td>
 
                             <td>
@@ -307,15 +307,15 @@
                                 {{ $queue->call_count }}
                             </td>
 
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
                                 <a
                                     href="{{ route(
                                         'admin.queues.show',
                                         $queue
                                     ) }}"
-                                    class="admin-btn admin-btn-detail btn btn-secondary"
+                                    class="admin-btn admin-btn-detail"
                                 >Chi tiết</a>
-                            </td>
+                            </div></td>
 
                         </tr>
 

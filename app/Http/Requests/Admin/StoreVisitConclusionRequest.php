@@ -74,29 +74,21 @@ class StoreVisitConclusionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'professional_conclusion.required' =>
-                'Vui lòng nhập kết luận chuyên môn.',
+            'professional_conclusion.required' => 'Vui lòng nhập kết luận chuyên môn.',
 
-            'professional_conclusion.string' =>
-                'Kết luận chuyên môn không hợp lệ.',
+            'professional_conclusion.string' => 'Vui lòng nhập kết luận chuyên môn bằng văn bản.',
 
-            'disposition.max' =>
-                'Hướng xử trí không được vượt quá 120 ký tự.',
+            'disposition.max' => 'Hướng xử trí không được vượt quá 120 ký tự.',
 
-            'follow_up_date.required_if' =>
-                'Vui lòng chọn ngày tái khám.',
+            'follow_up_date.required_if' => 'Vui lòng chọn ngày tái khám.',
 
-            'follow_up_date.date' =>
-                'Ngày tái khám không hợp lệ.',
+            'follow_up_date.date' => 'Ngày tái khám chưa hợp lệ. Vui lòng chọn lại ngày bằng ô lịch.',
 
-            'follow_up_reason.required_if' =>
-                'Vui lòng nhập lý do tái khám.',
+            'follow_up_reason.required_if' => 'Vui lòng nhập lý do tái khám.',
 
-            'follow_up_reason.max' =>
-                'Lý do tái khám quá dài.',
+            'follow_up_reason.max' => 'Lý do tái khám không được vượt quá :max ký tự.',
 
-            'notes.max' =>
-                'Ghi chú quá dài.',
+            'notes.max' => 'Ghi chú không được vượt quá :max ký tự.',
         ];
     }
 }

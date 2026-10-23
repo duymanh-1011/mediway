@@ -69,7 +69,7 @@ class StoreDiseaseRequest extends FormRequest
 
             'disease_group_id.required' => 'Vui lòng chọn nhóm bệnh.',
 
-            'disease_group_id.exists' => 'Nhóm bệnh không hợp lệ.',
+            'disease_group_id.exists' => 'Không tìm thấy nhóm bệnh đã chọn. Vui lòng tải lại trang và chọn lại.',
 
             'name.required' => 'Vui lòng nhập tên bệnh.',
 
@@ -79,7 +79,7 @@ class StoreDiseaseRequest extends FormRequest
 
             'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' => 'Trạng thái bệnh không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái bệnh từ các lựa chọn có sẵn.',
         ];
     }
 }

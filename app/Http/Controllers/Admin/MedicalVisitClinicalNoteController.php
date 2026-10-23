@@ -44,7 +44,7 @@ class MedicalVisitClinicalNoteController extends Controller
                 )
                 ->with(
                     'error',
-                    'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
+                    'Chưa thể ghi hồ sơ ở bước này. Chỉ được ghi khi đang khám hoặc bệnh nhân đã quay lại bác sĩ sau dịch vụ.'
                 );
         }
 
@@ -83,7 +83,7 @@ class MedicalVisitClinicalNoteController extends Controller
                 )
                 ->with(
                     'error',
-                    'Chỉ được ghi hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
+                    'Chưa thể ghi hồ sơ ở bước này. Chỉ được ghi khi đang khám hoặc bệnh nhân đã quay lại bác sĩ sau dịch vụ.'
                 );
         }
 

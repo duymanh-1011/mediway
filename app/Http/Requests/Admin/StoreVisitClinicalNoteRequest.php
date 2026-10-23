@@ -61,26 +61,19 @@ class StoreVisitClinicalNoteRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'reason_for_visit.string' =>
-                'Lý do khám không hợp lệ.',
+            'reason_for_visit.string' => 'Vui lòng nhập lý do khám bằng văn bản.',
 
-            'current_symptoms.string' =>
-                'Triệu chứng hiện tại không hợp lệ.',
+            'current_symptoms.string' => 'Vui lòng nhập triệu chứng hiện tại bằng văn bản.',
 
-            'present_illness_history.string' =>
-                'Bệnh sử hiện tại không hợp lệ.',
+            'present_illness_history.string' => 'Vui lòng nhập bệnh sử hiện tại bằng văn bản.',
 
-            'relevant_medical_history.string' =>
-                'Tiền sử liên quan không hợp lệ.',
+            'relevant_medical_history.string' => 'Vui lòng nhập tiền sử liên quan bằng văn bản.',
 
-            'physical_examination.string' =>
-                'Khám thực thể không hợp lệ.',
+            'physical_examination.string' => 'Vui lòng nhập nội dung khám thực thể bằng văn bản.',
 
-            'initial_assessment.string' =>
-                'Nhận định ban đầu không hợp lệ.',
+            'initial_assessment.string' => 'Vui lòng nhập nhận định ban đầu bằng văn bản.',
 
-            'notes.string' =>
-                'Ghi chú không hợp lệ.',
+            'notes.string' => 'Vui lòng nhập ghi chú bằng văn bản.',
         ];
     }
 }

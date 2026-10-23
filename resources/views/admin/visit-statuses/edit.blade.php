@@ -10,7 +10,7 @@
     <span aria-hidden="true">/</span>
     <span>Trạng thái lượt khám</span>
     <span aria-hidden="true">/</span>
-    <span>{{ \App\Models\AdminDisplay::label($visitStatus->name) }}</span>
+    @include('admin.layouts.partials.status-badge', ['badgeCode' => $visitStatus->name])
     <span aria-hidden="true">/</span>
     <strong aria-current="page">Sửa</strong>
 @endsection
@@ -225,17 +225,15 @@
 
                     <button
                         type="submit"
-                        class="btn btn-primary"
-                    >
-                        Lưu thay đổi
-                    </button>
+                        class="admin-btn admin-btn-primary"
+                    >Cập nhật</button>
 
                     <a
                         href="{{ route(
                             'admin.visit-statuses.show',
                             $visitStatus
                         ) }}"
-                        class="admin-btn admin-btn-secondary btn btn-secondary"
+                        class="admin-btn admin-btn-secondary"
                     >Hủy</a>
 
                 </div>

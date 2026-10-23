@@ -170,9 +170,7 @@
 
                 <div>
 
-                    <h2>
-                        Danh sách kết quả dịch vụ
-                    </h2>
+                    <h2 class="admin-list-title">Danh sách kết quả dịch vụ</h2>
 
                     <p>
                         Kết quả được sắp xếp theo thời gian trả kết quả mới nhất.
@@ -365,9 +363,7 @@
 
                                                     @else
 
-                                                        <span class="result-not-verified">
-                                                            Chưa xác nhận
-                                                        </span>
+                                                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'UNVERIFIED'])
 
                                                     @endif
 
@@ -397,18 +393,18 @@
 
 
                                                 {{-- Action --}}
-                                                <td>
+                                                <td><div class="admin-actions admin-table-actions">
 
                                                     <div class="result-actions">
 
                                                         <a href="{{ route(
                                 'admin.service-results.show',
                                 $result->id
-                            ) }}" class="admin-btn admin-btn-detail result-action-btn">Chi tiết</a>
+                            ) }}" class="admin-btn admin-btn-detail">Chi tiết</a>
 
                                                     </div>
 
-                                                </td>
+                                                </div></td>
 
                                             </tr>
 
@@ -468,30 +464,22 @@
 
                         @if ($results->onFirstPage())
 
-                            <span class="result-page-btn disabled">
-                                ← Trước
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
 
                         @else
 
-                            <a href="{{ $results->previousPageUrl() }}" class="result-page-btn">
-                                ← Trước
-                            </a>
+                            <a href="{{ $results->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
 
                         @endif
 
 
                         @if ($results->hasMorePages())
 
-                            <a href="{{ $results->nextPageUrl() }}" class="result-page-btn">
-                                Sau →
-                            </a>
+                            <a href="{{ $results->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
 
                         @else
 
-                            <span class="result-page-btn disabled">
-                                Sau →
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
 
                         @endif
 
@@ -518,7 +506,7 @@
                 </strong>
 
                 <p>
-                    Kết quả dịch vụ đã được xác nhận không được hard-delete.
+                    Kết quả dịch vụ đã được xác nhận không được xóa vĩnh viễn.
                     Các chỉnh sửa nghiệp vụ phải được thực hiện có kiểm soát.
                 </p>
 

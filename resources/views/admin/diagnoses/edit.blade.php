@@ -281,17 +281,15 @@
 
                     <button
                         type="submit"
-                        class="btn btn-primary"
-                    >
-                        Lưu thay đổi
-                    </button>
+                        class="admin-btn admin-btn-primary"
+                    >Cập nhật</button>
 
                     <a
                         href="{{ route(
                             'admin.diagnoses.show',
                             $diagnosis
                         ) }}"
-                        class="admin-btn admin-btn-secondary btn btn-secondary"
+                        class="admin-btn admin-btn-secondary"
                     >Hủy</a>
 
                 </div>

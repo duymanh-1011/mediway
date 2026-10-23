@@ -80,22 +80,16 @@
                 Hồ sơ bệnh nhân
                 <strong>{{ $patient->patient_code }}</strong>
 
-                <span class="pd-badge {{ $patient->status === 'ACTIVE' ? 'pd-green' : 'pd-neutral' }}">
-                    {{ $patient->status === 'ACTIVE' ? 'Hoạt động' : $patient->status }}
-                </span>
+                @include('admin.layouts.partials.status-badge', ['badgeCode' => $patient->status])
             </p>
         </div>
 
         <div class="pd-actions">
             <a href="{{ route('admin.patients.index') }}"
-               class="admin-btn admin-btn-detail pd-btn pd-light">
-                ← Danh sách
-            </a>
+               class="admin-btn admin-btn-secondary">← Quay lại</a>
 
             <a href="{{ route('admin.patients.edit', $patient) }}"
-               class="pd-btn pd-primary">
-                Chỉnh sửa hồ sơ
-            </a>
+               class="admin-btn admin-btn-secondary">Sửa</a>
         </div>
     </div>
 
@@ -192,9 +186,7 @@
                     <div>
                         <dt>Trạng thái hồ sơ</dt>
                         <dd>
-                            <span class="pd-badge {{ $patient->status === 'ACTIVE' ? 'pd-green' : 'pd-neutral' }}">
-                                {{ $patient->status === 'ACTIVE' ? 'Hoạt động' : $patient->status }}
-                            </span>
+                            @include('admin.layouts.partials.status-badge', ['badgeCode' => $patient->status])
                         </dd>
                     </div>
 
@@ -232,15 +224,13 @@
                         <div>
                             <dt>Trạng thái</dt>
                             <dd>
-                                <span class="pd-badge {{ $user->status === 'ACTIVE' ? 'pd-green' : 'pd-neutral' }}">
-                                    {{ $user->status === 'ACTIVE' ? 'Hoạt động' : $user->status }}
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => $user->status])
                             </dd>
                         </div>
                     </dl>
 
                     <a href="{{ route('admin.users.show', $user) }}"
-                       class="pd-btn pd-light pd-account-link">
+                       class="admin-btn admin-btn-detail">
                         Xem tài khoản
                     </a>
                 @else
@@ -267,7 +257,7 @@
                 </div>
 
                 <button type="button"
-                        class="pd-btn pd-light"
+                        class="admin-btn admin-btn-detail"
                         data-open-tab="health">
                     Xem lịch sử sức khỏe →
                 </button>
@@ -393,15 +383,13 @@
 
                 <div class="pd-actions">
                     <a href="{{ route('admin.personal-health-records.index', ['patient_id' => $patient->id]) }}"
-                       class="pd-btn pd-light">
+                       class="admin-btn admin-btn-detail">
                         Xem toàn bộ
                     </a>
 
                     @if($patient->status === 'ACTIVE')
                         <a href="{{ route('admin.personal-health-records.create', ['patient_id' => $patient->id]) }}"
-                           class="pd-btn pd-primary">
-                            + Thêm lần đo
-                        </a>
+                           class="admin-btn admin-btn-primary">Thêm lần đo</a>
                     @endif
                 </div>
             </div>
@@ -456,15 +444,15 @@
                                         {{ $record->heart_rate ?? '-' }}
                                     </td>
 
-                                    <td>
+                                    <td><div class="admin-actions admin-table-actions">
                                         <div class="pd-row-actions">
                                             <a href="{{ route('admin.personal-health-records.show', $record) }}"
-                                               class="pd-action-link pd-view">Chi tiết</a>
+                                               class="admin-btn admin-btn-detail">Chi tiết</a>
 
                                             <a href="{{ route('admin.personal-health-records.edit', $record) }}"
-                                               class="admin-btn admin-btn-secondary pd-action-link pd-edit">Sửa</a>
+                                               class="admin-btn admin-btn-secondary">Sửa</a>
                                         </div>
-                                    </td>
+                                    </div></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -492,8 +480,8 @@
 
                     @if($patient->status === 'ACTIVE')
                         <a href="{{ route('admin.personal-health-records.create', ['patient_id' => $patient->id]) }}"
-                           class="pd-btn pd-primary">
-                            Ghi nhận chỉ số đầu tiên
+                           class="admin-btn admin-btn-primary">
+                            Thêm lần đo
                         </a>
                     @endif
                 </div>
@@ -519,9 +507,7 @@
                 </div>
 
                 <a href="{{ route('admin.patients.edit', $patient) }}"
-                   class="pd-btn pd-light">
-                    Cập nhật tài liệu
-                </a>
+                   class="admin-btn admin-btn-secondary">Sửa</a>
             </div>
 
             <div class="pd-documents">

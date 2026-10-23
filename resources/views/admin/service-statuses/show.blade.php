@@ -24,9 +24,7 @@
 
             <span aria-hidden="true">/</span>
 
-            <strong aria-current="page">
-                {{ \App\Models\AdminDisplay::label($status->name) }}
-            </strong>
+            <strong aria-current="page">@include('admin.layouts.partials.status-badge', ['badgeCode' => $status->name, 'badgeContext' => 'service'])</strong>
 
         </nav>
 
@@ -49,20 +47,14 @@
             </div>
 
 
-            {{-- Trạng thái sử dụng tự động --}}
-            @if ($status->is_in_use)
+            {{-- Trạng thái tự động --}}
+            @if ($status->is_active)
 
-                <span class="status-active-badge active">
-                    <span></span>
-                    Đang sử dụng
-                </span>
+                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
             @else
 
-                <span class="status-active-badge inactive">
-                    <span></span>
-                    Ngừng sử dụng
-                </span>
+                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
             @endif
 
@@ -72,16 +64,12 @@
         {{-- Actions --}}
         <div class="status-top-actions">
 
-            <a href="{{ route('admin.service-statuses.index') }}" class="status-back-btn">
-                ← Quay lại danh sách
-            </a>
+            <a href="{{ route('admin.service-statuses.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
 
             <a href="{{ route(
         'admin.service-statuses.edit',
         $status->id
-    ) }}" class="status-edit-btn">
-                Sửa cấu hình
-            </a>
+    ) }}" class="admin-btn admin-btn-secondary">Sửa</a>
 
         </div>
 
@@ -118,9 +106,7 @@
                                 Tên trạng thái
                             </div>
 
-                            <div class="status-name">
-                                {{ \App\Models\AdminDisplay::label($status->name) }}
-                            </div>
+                            <div class="status-name">@include('admin.layouts.partials.status-badge', ['badgeCode' => $status->name, 'badgeContext' => 'service'])</div>
 
                         </div>
 
@@ -143,20 +129,16 @@
                         <div class="status-info-item">
 
                             <div class="status-info-label">
-                                Cho phép chuyển tiếp
+                                Cho phép chuyển trạng thái
                             </div>
 
                             @if ($status->allows_transition)
 
-                                <span class="status-badge badge-yes">
-                                    Cho phép
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ALLOWED'])
 
                             @else
 
-                                <span class="status-badge badge-no">
-                                    Không cho phép
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'DENIED'])
 
                             @endif
 
@@ -167,20 +149,16 @@
                         <div class="status-info-item">
 
                             <div class="status-info-label">
-                                Trạng thái sử dụng
+                                Trạng thái
                             </div>
 
-                            @if ($status->is_in_use)
+                            @if ($status->is_active)
 
-                                <span class="status-badge badge-active">
-                                    Đang sử dụng
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                             @else
 
-                                <span class="status-badge badge-inactive">
-                                    Ngừng sử dụng
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                             @endif
 
@@ -201,15 +179,11 @@
 
                             @if ($status->is_active)
 
-                                <span class="status-badge badge-config-active">
-                                    Đang kích hoạt
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                             @else
 
-                                <span class="status-badge badge-config-inactive">
-                                    Ngừng kích hoạt
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                             @endif
 
@@ -340,7 +314,7 @@
 
                         <p>
                             Tên trạng thái không được thay đổi tùy tiện.
-                            Không hard-delete trạng thái đã được sử dụng.
+                            Không xóa vĩnh viễn trạng thái đã được sử dụng.
                             Khi không muốn trạng thái tiếp tục được lựa chọn
                             cho nghiệp vụ mới, hãy ngừng kích hoạt cấu hình.
                         </p>

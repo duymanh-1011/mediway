@@ -24,9 +24,7 @@
         </div>
 
         <a href="{{ route('admin.patients.show', $patient) }}"
-           class="pf-btn pf-light">
-            ← Chi tiết bệnh nhân
-        </a>
+           class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="pf-card">
@@ -61,13 +59,9 @@
 
             <div class="pf-actions">
                 <a href="{{ route('admin.patients.show', $patient) }}"
-                   class="pf-btn pf-light">
-                    Hủy bỏ
-                </a>
+                   class="admin-btn admin-btn-secondary">Hủy</a>
 
-                <button type="submit" class="pf-btn pf-primary">
-                    Lưu thay đổi
-                </button>
+                <button type="submit" class="admin-btn admin-btn-primary">Cập nhật</button>
             </div>
         </form>
     </div>

@@ -18,10 +18,10 @@
             <p class="page-description">Mã nhóm bệnh: {{ $diseaseGroup->disease_group_code }}</p>
         </div>
         <div class="admin-actions">
-            <a class="admin-btn admin-btn-secondary" href="{{ route('admin.disease-groups.index') }}">Quay lại</a>
-            <a class="admin-btn admin-btn-primary" href="{{ route('admin.disease-groups.edit', $diseaseGroup) }}">Sửa nhóm bệnh</a>
+            <a class="admin-btn admin-btn-secondary" href="{{ route('admin.disease-groups.index') }}">← Quay lại</a>
+            <a class="admin-btn admin-btn-secondary" href="{{ route('admin.disease-groups.edit', $diseaseGroup) }}">Sửa</a>
             @if ($diseaseGroup->status === 'ACTIVE')
-                <a class="admin-btn admin-btn-success" href="{{ route('admin.diseases.create', ['disease_group_id' => $diseaseGroup->id]) }}">Thêm bệnh</a>
+                <a class="admin-btn admin-btn-primary" href="{{ route('admin.diseases.create', ['disease_group_id' => $diseaseGroup->id]) }}">Thêm bệnh</a>
             @endif
         </div>
     </div>
@@ -37,7 +37,7 @@
         <dl class="detail-grid">
             <div><dt>Mã nhóm</dt><dd>{{ $diseaseGroup->disease_group_code }}</dd></div>
             <div><dt>Tên nhóm</dt><dd>{{ $diseaseGroup->name }}</dd></div>
-            <div><dt>Trạng thái</dt><dd><span class="admin-badge admin-badge-{{ $diseaseGroup->status === 'ACTIVE' ? 'success' : 'danger' }}">{{ \App\Models\AdminDisplay::label($diseaseGroup->status) }}</span></dd></div>
+            <div><dt>Trạng thái</dt><dd>@include('admin.layouts.partials.status-badge', ['badgeCode' => $diseaseGroup->status])</dd></div>
             <div><dt>Mô tả</dt><dd>{{ $diseaseGroup->description ?: '—' }}</dd></div>
             <div><dt>Ghi chú</dt><dd>{{ $diseaseGroup->notes ?: '—' }}</dd></div>
             <div><dt>Ngày tạo</dt><dd>{{ $diseaseGroup->created_at?->format('d/m/Y H:i') }}</dd></div>
@@ -81,11 +81,11 @@
                             <td>{{ $disease->name }}</td>
                             <td>{{ $disease->alternative_name ?: '—' }}</td>
                             <td>{{ $disease->common_symptoms ?: '—' }}</td>
-                            <td><span class="admin-badge admin-badge-{{ $disease->status === 'ACTIVE' ? 'success' : 'danger' }}">{{ \App\Models\AdminDisplay::label($disease->status) }}</span></td>
-                            <td><div class="admin-actions">
+                            <td>@include('admin.layouts.partials.status-badge', ['badgeCode' => $disease->status])</td>
+                            <td><div class="admin-actions admin-table-actions"><div class="admin-actions">
                                 <a class="admin-btn admin-btn-detail" href="{{ route('admin.diseases.show', $disease->id) }}">Chi tiết</a>
                                 <a class="admin-btn admin-btn-secondary" href="{{ route('admin.diseases.edit', $disease->id) }}">Sửa</a>
-                            </div></td>
+                            </div></div></td>
                         </tr>
                     @empty
                         <tr><td colspan="7" class="empty-state">Không có bệnh phù hợp trong nhóm.</td></tr>

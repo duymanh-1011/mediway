@@ -8,14 +8,7 @@
     @php
         $pdfUrl = $prescription->hasPdf() ? route('admin.prescriptions.document', $prescription->id) : null;
 
-        $statusClass = match (
-        strtoupper($prescription->status ?? '')
-        ) {
-            'ACTIVE' => 'active',
-            'COMPLETED' => 'completed',
-            'CANCELLED' => 'cancelled',
-            default => 'default',
-        };
+
     @endphp
 
 
@@ -61,12 +54,7 @@
 
             </div>
 
-            <span class="
-                    prescription-status
-                    {{ $statusClass }}
-                ">
-                {{ \App\Models\AdminDisplay::label($prescription->status) }}
-            </span>
+            @include('admin.layouts.partials.status-badge', ['badgeCode' => $prescription->status])
 
         </div>
 
@@ -93,18 +81,14 @@
         {{-- Actions --}}
         <div class="prescription-actions">
 
-            <a href="{{ route('admin.prescriptions.index') }}" class="prescription-btn prescription-btn-secondary">
-                ← Quay lại danh sách
-            </a>
+            <a href="{{ route('admin.prescriptions.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
 
 
             @if ($prescription->medicalVisit->status?->name !== 'COMPLETED')
             <a href="{{ route(
         'admin.prescriptions.edit',
         $prescription->id
-    ) }}" class="prescription-btn prescription-btn-primary">
-                Sửa đơn thuốc
-            </a>
+    ) }}" class="admin-btn admin-btn-secondary">Sửa</a>
             @else
                 <p class="form-help">Lượt khám đã hoàn tất. Đơn thuốc được khóa chỉnh sửa.</p>
             @endif
@@ -206,9 +190,7 @@
                         Trạng thái
                     </span>
 
-                    <strong>
-                        {{ \App\Models\AdminDisplay::label($prescription->status ?? '—') }}
-                    </strong>
+                    <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $prescription->status ?? '—'])</strong>
 
                 </div>
 
@@ -312,279 +294,40 @@
             </div>
 
 
-            <div class="prescription-items">
-
-                @forelse ($prescription->items as $index => $item)
-
-                        @php
-                            $medicine = $medicinesById->get(
-                                $item->medicine_id
-                            );
-                        @endphp
-
-                        <div class="prescription-item-card">
-
-                            <div class="prescription-item-number">
-                                {{ $index + 1 }}
-                            </div>
-
-
-                            <div class="prescription-item-main">
-
-                                <div class="prescription-item-header">
-
-                                    <div>
-
-                                        <h3>
-                                            {{ $medicine?->name ?? 'Thuốc không xác định' }}
-                                        </h3>
-
-                                        <div class="prescription-item-code">
-                                            {{ $medicine?->medicine_code ?? '—' }}
-                                        </div>
-
-                                    </div>
-
-
-                                    <div class="prescription-item-quantity">
-
-                                        <span>
-                                            Số lượng
-                                        </span>
-
-                                        <strong>
-                                            {{
-                    rtrim(
-                        rtrim(
-                            number_format(
-                                (float) $item->quantity,
-                                2,
-                                '.',
-                                ''
-                            ),
-                            '0'
-                        ),
-                        '.'
-                    )
-                                                }}
-
-                                            {{ $item->usage_unit ?? '' }}
-                                        </strong>
-
-                                    </div>
-
-                                </div>
-
-
-                                <div class="medicine-summary-grid">
-
-                                    <div>
-
-                                        <span>
-                                            Hoạt chất
-                                        </span>
-
-                                        <strong>
-                                            {{ $medicine?->active_ingredient ?? '—' }}
-                                        </strong>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <span>
-                                            Hàm lượng
-                                        </span>
-
-                                        <strong>
-                                            {{ $medicine?->strength ?? '—' }}
-                                        </strong>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <span>
-                                            Dạng bào chế
-                                        </span>
-
-                                        <strong>
-                                            {{ $medicine?->dosage_form ?? '—' }}
-                                        </strong>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <span>
-                                            Đường dùng
-                                        </span>
-
-                                        <strong>
-                                            {{
-                    $medicine?->route_of_administration
-                    ?? '—'
-                                                }}
-                                        </strong>
-
-                                    </div>
-
-                                </div>
-
-
-                                <div class="usage-grid">
-
-                                    <div>
-
-                                        <span>
-                                            Liều mỗi lần
-                                        </span>
-
-                                        <strong>
-                                            {{ $item->dose_per_use ?? '—' }}
-                                        </strong>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <span>
-                                            Số lần / ngày
-                                        </span>
-
-                                        <strong>
-                                            {{
-                    $item->times_per_day !== null
-                    ? rtrim(
-                        rtrim(
-                            number_format(
-                                (float) $item->times_per_day,
-                                2,
-                                '.',
-                                ''
-                            ),
-                            '0'
-                        ),
-                        '.'
-                    )
-                    : '—'
-                                                }}
-                                        </strong>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <span>
-                                            Số ngày
-                                        </span>
-
-                                        <strong>
-                                            {{
-                    $item->duration_days !== null
-                    ? $item->duration_days . ' ngày'
-                    : '—'
-                                                }}
-                                        </strong>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <span>
-                                            Thời điểm dùng
-                                        </span>
-
-                                        <strong>
-                                            {{
-                    $item->administration_time
-                    ?: '—'
-                                                }}
-                                        </strong>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <span>
-                                            Cách dùng
-                                        </span>
-
-                                        <strong>
-                                            {{ $item->usage_method ?? '—' }}
-                                        </strong>
-
-                                    </div>
-
-                                </div>
-
-
-                                <div class="prescription-item-text">
-
-                                    <div>
-
-                                        <span>
-                                            Hướng dẫn sử dụng
-                                        </span>
-
-                                        <p>
-                                            {{
-                    $item->usage_instructions
-                    ?: 'Không có.'
-                                                }}
-                                        </p>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <span>
-                                            Ghi chú
-                                        </span>
-
-                                        <p>
-                                            {{
-                    $item->notes
-                    ?: 'Không có.'
-                                                }}
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                @empty
-
-                    <div class="prescription-empty-state">
-
-                        <strong>
-                            Chưa có thuốc trong đơn
-                        </strong>
-
-                        <p>
-                            Đơn thuốc chưa có prescription_items.
-                        </p>
-
-                    </div>
-
-                @endforelse
-
+            <div class="admin-table-scroll">
+                <table class="admin-table admin-prescription-table">
+                    <thead>
+                        <tr><th scope="col" class="admin-row-number">STT</th><th>Thuốc</th><th>Liều mỗi lần</th><th>Số lần/ngày</th><th>Số ngày</th><th>Thời điểm dùng</th><th>Cách dùng</th><th>Số lượng</th><th>Hướng dẫn và ghi chú</th></tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($prescription->items as $item)
+                            @php($medicine = $medicinesById->get($item->medicine_id))
+                            <tr>
+                                @include('admin.layouts.partials.row-number', ['rows' => $prescription->items, 'index' => $loop->index])
+                                <td class="admin-medicine-info">
+                                    <strong>{{ $medicine?->name ?? 'Thuốc không xác định' }}</strong>
+                                    <p>{{ $medicine?->medicine_code ?? '—' }}</p>
+                                    <p>Hoạt chất: {{ $medicine?->active_ingredient ?? '—' }}</p>
+                                    <p>Hàm lượng: {{ $medicine?->strength ?? '—' }}</p>
+                                    <p>Dạng bào chế: {{ $medicine?->dosage_form ?? '—' }}</p>
+                                    <p>Đường dùng: {{ $medicine?->route_of_administration ?? '—' }}</p>
+                                </td>
+                                <td>{{ $item->dose_per_use ?? '—' }}</td>
+                                <td>{{ $item->times_per_day === null ? '—' : rtrim(rtrim(number_format((float) $item->times_per_day, 2, '.', ''), '0'), '.') }}</td>
+                                <td>{{ $item->duration_days === null ? '—' : $item->duration_days.' ngày' }}</td>
+                                <td>{{ $item->administration_time ?: '—' }}</td>
+                                <td>{{ $item->usage_method ?? '—' }}</td>
+                                <td>{{ rtrim(rtrim(number_format((float) $item->quantity, 2, '.', ''), '0'), '.') }} {{ $item->usage_unit }}</td>
+                                <td><p>Hướng dẫn: {{ $item->usage_instructions ?: 'Chưa có.' }}</p><p>Ghi chú: {{ $item->notes ?: 'Chưa có.' }}</p></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="9" class="empty-state">Chưa có thuốc trong đơn.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
 
         </div>
-
 
         {{-- PDF --}}
         <div class="prescription-card">
@@ -598,7 +341,7 @@
                     </h2>
 
                     <p>
-                        Đường dẫn PDF lưu trong dữ liệu.
+                        Tệp đơn thuốc đã lưu, chỉ người có quyền mới được xem.
                     </p>
 
                 </div>
@@ -628,7 +371,7 @@
                         @if ($pdfUrl)
 
                             <a href="{{ $pdfUrl }}" target="_blank" rel="noopener"
-                                class="prescription-btn prescription-btn-secondary">
+                                class="admin-btn admin-btn-detail">
                                 Mở PDF
                             </a>
 
@@ -713,7 +456,7 @@
 
             <p>
                 Đơn thuốc là dữ liệu y tế.
-                Không hard-delete sau khi lượt khám hoàn tất.
+                Không xóa vĩnh viễn sau khi lượt khám hoàn tất.
             </p>
 
         </div>

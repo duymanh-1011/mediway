@@ -42,7 +42,8 @@
         $canCheckIn =
             !$medicalVisit
             &&
-            $statusName === 'BOOKED';
+            $statusName === 'BOOKED'
+            && $appointment->isScheduledForToday();
 
     @endphp
 
@@ -68,10 +69,8 @@
                 href="{{ route(
                     'admin.appointments.index'
                 ) }}"
-                class="btn btn-secondary"
-            >
-                ← Danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
 
             @if ($canEdit)
@@ -81,10 +80,8 @@
                         'admin.appointments.edit',
                         $appointment
                     ) }}"
-                    class="btn btn-primary"
-                >
-                    Sửa lịch
-                </a>
+                    class="admin-btn admin-btn-secondary"
+                >Sửa</a>
 
             @endif
 
@@ -115,7 +112,7 @@
                         'admin.visits.show',
                         $medicalVisit->id
                     ) }}"
-                    class="btn btn-primary"
+                    class="admin-btn admin-btn-detail"
                 >
                     Xem lượt khám
                 </a>
@@ -163,7 +160,7 @@
 
                 <button
                     type="submit"
-                    class="btn-checkin"
+                    class="admin-btn admin-btn-primary"
                 >
                     Tiếp nhận bệnh nhân
                 </button>
@@ -379,9 +376,7 @@
                     Trạng thái
                 </span>
 
-                <strong>
-                    {{ \App\Models\AdminDisplay::label($statusName ?? '—') }}
-                </strong>
+                <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $statusName ?? '—'])</strong>
 
             </div>
 
@@ -542,7 +537,7 @@
 
                 <button
                     type="submit"
-                    class="btn-danger"
+                    class="admin-btn admin-btn-danger"
                 >
                     Hủy lịch hẹn
                 </button>

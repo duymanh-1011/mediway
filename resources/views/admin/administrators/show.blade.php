@@ -36,13 +36,9 @@
         </div>
 
         <div class="ad-heading-actions">
-            <a href="{{ route('admin.administrators.index') }}" class="ad-btn ad-light">
-                ← Danh sách
-            </a>
+            <a href="{{ route('admin.administrators.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
             <a href="{{ route('admin.administrators.edit', $administrator) }}"
-               class="ad-btn ad-primary">
-                Chỉnh sửa
-            </a>
+               class="admin-btn admin-btn-secondary">Sửa</a>
         </div>
     </div>
 
@@ -82,9 +78,7 @@
                 <div>
                     <dt>Trạng thái hồ sơ</dt>
                     <dd>
-                        <span class="ad-badge {{ $administrator->status === 'ACTIVE' ? 'ad-green' : 'ad-red' }}">
-                            {{ $administrator->status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động' }}
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => $administrator->status])
                     </dd>
                 </div>
                 <div>
@@ -104,16 +98,14 @@
                 <div>
                     <dt>Trạng thái</dt>
                     <dd>
-                        <span class="ad-badge {{ $isActive ? 'ad-green' : 'ad-red' }}">
-                            {{ $isActive ? 'Hoạt động' : 'Đã khóa / Ngừng hoạt động' }}
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => $user?->status])
                     </dd>
                 </div>
             </dl>
 
             @if($user)
                 <a href="{{ route('admin.users.show', $user) }}"
-                   class="ad-btn ad-light ad-account-link">
+                   class="admin-btn admin-btn-detail">
                     Xem chi tiết tài khoản
                 </a>
             @endif
@@ -139,7 +131,7 @@
                 @method('PATCH')
                 <input type="hidden" name="status" value="LOCKED">
 
-                <button type="submit" class="ad-btn ad-danger">
+                <button type="submit" class="admin-btn admin-btn-danger">
                     Khóa quản trị viên
                 </button>
             </form>
@@ -151,7 +143,7 @@
                 @method('PATCH')
                 <input type="hidden" name="status" value="ACTIVE">
 
-                <button type="submit" class="ad-btn ad-primary">
+                <button type="submit" class="admin-btn admin-btn-success">
                     Mở khóa quản trị viên
                 </button>
             </form>

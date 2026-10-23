@@ -282,7 +282,7 @@ class PaymentTransactionController extends Controller
 
         if (! $paidStatus) {
             throw ValidationException::withMessages([
-                'payment_method' => 'Không tìm thấy trạng thái PAID hợp lệ cho phép thực hiện dịch vụ.',
+                'payment_method' => 'Chưa cấu hình trạng thái “Đã thanh toán” cho phép thực hiện dịch vụ. Vui lòng kiểm tra mục Trạng thái thanh toán.',
             ]);
         }
 
@@ -468,7 +468,7 @@ class PaymentTransactionController extends Controller
             )
             ->with(
                 'success',
-                'Thanh toán thành công. Khoản phải thanh toán đã chuyển sang PAID.'
+                'Đã ghi nhận thanh toán thành công cho khoản thu này.'
             );
     }
 

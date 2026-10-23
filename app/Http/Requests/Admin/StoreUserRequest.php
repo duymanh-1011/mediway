@@ -51,13 +51,13 @@ class StoreUserRequest extends FormRequest
             'password.required' => 'Vui lòng nhập mật khẩu.',
             'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
             'password.max' => 'Mật khẩu không được quá 72 ký tự.',
-            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
+            'password.confirmed' => 'Mật khẩu nhập lại chưa khớp. Vui lòng kiểm tra cả hai ô mật khẩu.',
 
             'role_id.required' => 'Vui lòng chọn vai trò.',
             'role_id.exists' => 'Vai trò không tồn tại hoặc đã ngừng hoạt động.',
 
             'status.required' => 'Vui lòng chọn trạng thái.',
-            'status.in' => 'Trạng thái không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái từ các lựa chọn có sẵn.',
         ];
     }
 }

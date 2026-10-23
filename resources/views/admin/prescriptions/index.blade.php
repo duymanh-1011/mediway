@@ -180,9 +180,7 @@
 
                 <div>
 
-                    <h2>
-                        Đơn thuốc
-                    </h2>
+                    <h2 class="admin-list-title">Danh sách đơn thuốc</h2>
 
                     <p>
                         Tổng cộng {{ $prescriptions->total() }} bản ghi
@@ -378,45 +376,22 @@
                                                 {{-- Status --}}
                                                 <td>
 
-                                                    @php
-                                                        $statusClass = match (
-                                                        strtoupper(
-                                                            $prescription->status ?? ''
-                                                        )
-                                                        ) {
-                                                            'ACTIVE'
-                                                            => 'active',
 
-                                                            'COMPLETED'
-                                                            => 'completed',
 
-                                                            'CANCELLED'
-                                                            => 'cancelled',
-
-                                                            default
-                                                            => 'default',
-                                                        };
-                                                    @endphp
-
-                                                    <span class="
-                                                                prescription-status
-                                                                {{ $statusClass }}
-                                                            ">
-                                                        {{ \App\Models\AdminDisplay::label($prescription->status ?? '—') }}
-                                                    </span>
+                                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $prescription->status ?? '—'])
 
                                                 </td>
 
 
                                                 {{-- Action --}}
-                                                <td class="text-right">
+                                                <td class="text-right"><div class="admin-actions admin-table-actions">
 
                                                     <a href="{{ route(
                                 'admin.prescriptions.show',
                                 $prescription->id
-                            ) }}" class="admin-btn admin-btn-detail prescription-detail-link">Chi tiết</a>
+                            ) }}" class="admin-btn admin-btn-detail">Chi tiết</a>
 
-                                                </td>
+                                                </div></td>
 
                                             </tr>
 
@@ -489,18 +464,11 @@
 
                         @if ($prescriptions->onFirstPage())
 
-                            <span class="
-                                            prescription-page-btn
-                                            disabled
-                                        ">
-                                ← Trước
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
 
                         @else
 
-                            <a href="{{ $prescriptions->previousPageUrl() }}" class="prescription-page-btn">
-                                ← Trước
-                            </a>
+                            <a href="{{ $prescriptions->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
 
                         @endif
 
@@ -517,18 +485,11 @@
 
                         @if ($prescriptions->hasMorePages())
 
-                            <a href="{{ $prescriptions->nextPageUrl() }}" class="prescription-page-btn">
-                                Sau →
-                            </a>
+                            <a href="{{ $prescriptions->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
 
                         @else
 
-                            <span class="
-                                            prescription-page-btn
-                                            disabled
-                                        ">
-                                Sau →
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
 
                         @endif
 

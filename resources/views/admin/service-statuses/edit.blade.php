@@ -28,7 +28,7 @@
         'admin.service-statuses.show',
         $status->id
     ) }}">
-                {{ \App\Models\AdminDisplay::label($status->name) }}
+                {{ \App\Models\AdminDisplay::label($status->name, 'service') }}
             </a>
 
             <span aria-hidden="true">/</span>
@@ -67,9 +67,7 @@
             <a href="{{ route(
         'admin.service-statuses.show',
         $status->id
-    ) }}" class="status-back-btn">
-                ← Quay lại chi tiết
-            </a>
+    ) }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
 
         </div>
 
@@ -159,7 +157,7 @@
                         <div class="status-form-group">
 
                             <label for="allows_transition">
-                                Cho phép chuyển tiếp
+                                Cho phép chuyển trạng thái
                                 <span class="required">*</span>
                             </label>
 
@@ -217,7 +215,7 @@
                         <div class="status-form-group">
 
                             <label>
-                                Trạng thái sử dụng
+                                Trạng thái
                             </label>
 
                             <select name="is_active" class="status-control">
@@ -226,13 +224,9 @@
                                     Tất cả
                                 </option>
 
-                                <option value="1" @selected(request('is_active') === '1')>
-                                    Đang sử dụng
-                                </option>
+                                <option value="1" @selected(request('is_active') === '1')>Đang hoạt động</option>
 
-                                <option value="0" @selected(request('is_active') === '0')>
-                                    Ngừng sử dụng
-                                </option>
+                                <option value="0" @selected(request('is_active') === '0')>Ngừng hoạt động</option>
 
                             </select>
 
@@ -245,11 +239,9 @@
                             <a href="{{ route(
         'admin.service-statuses.show',
         $status->id
-    ) }}" class="status-btn status-btn-secondary">Hủy</a>
+    ) }}" class="admin-btn admin-btn-secondary">Hủy</a>
 
-                            <button type="submit" class="status-btn status-btn-primary">
-                                Lưu thay đổi
-                            </button>
+                            <button type="submit" class="admin-btn admin-btn-primary">Cập nhật</button>
 
                         </div>
 
@@ -277,7 +269,7 @@
                         <p>
                             Không đổi tên trạng thái tùy tiện.
                             Không thay đổi thứ tự xử lý tại màn hình này.
-                            Không hard-delete trạng thái đã được sử dụng.
+                            Không xóa vĩnh viễn trạng thái đã được sử dụng.
                         </p>
 
                     </div>
@@ -299,9 +291,7 @@
                             Tên
                         </span>
 
-                        <strong class="status-current-name">
-                            {{ \App\Models\AdminDisplay::label($status->name) }}
-                        </strong>
+                        <strong class="status-current-name">@include('admin.layouts.partials.status-badge', ['badgeCode' => $status->name, 'badgeContext' => 'service'])</strong>
 
                     </div>
 
@@ -333,7 +323,7 @@
 <div class="status-form-group">
 
     <label for="is_active">
-        Trạng thái sử dụng
+        Trạng thái
         <span class="required">*</span>
     </label>
 

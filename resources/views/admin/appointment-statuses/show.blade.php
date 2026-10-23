@@ -13,7 +13,7 @@
     <span aria-hidden="true">/</span>
     <span>Trạng thái lịch hẹn</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">{{ \App\Models\AdminDisplay::label($appointmentStatus->name) }}</strong>
+    <strong aria-current="page">@include('admin.layouts.partials.status-badge', ['badgeCode' => $appointmentStatus->name])</strong>
 @endsection
 
 @section('content')
@@ -38,20 +38,16 @@
                 href="{{ route(
                     'admin.appointment-statuses.index'
                 ) }}"
-                class="btn btn-secondary"
-            >
-                ← Danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             <a
                 href="{{ route(
                     'admin.appointment-statuses.edit',
                     $appointmentStatus
                 ) }}"
-                class="btn btn-primary"
-            >
-                Sửa cấu hình
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >Sửa</a>
 
         </div>
 
@@ -74,7 +70,7 @@
         <div class="stat-card">
 
             <div class="stat-label">
-                Cho phép chuyển tiếp
+                Cho phép chuyển trạng thái
             </div>
 
             <div class="stat-text">
@@ -84,15 +80,11 @@
                         ->allows_transition
                 )
 
-                    <span class="badge badge-success">
-                        Có
-                    </span>
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ALLOWED'])
 
                 @else
 
-                    <span class="badge badge-secondary">
-                        Không
-                    </span>
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'DENIED'])
 
                 @endif
 
@@ -102,9 +94,7 @@
 
         <div class="stat-card">
 
-            <div class="stat-label">
-                Hoạt động
-            </div>
+            <div class="stat-label">Trạng thái</div>
 
             <div class="stat-text">
 
@@ -113,15 +103,11 @@
                         ->is_active
                 )
 
-                    <span class="badge badge-success">
-                        Đang hoạt động
-                    </span>
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                 @else
 
-                    <span class="badge badge-danger">
-                        Ngừng hoạt động
-                    </span>
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                 @endif
 
@@ -156,9 +142,7 @@
             </div>
 
             <div class="detail-value">
-                <strong>
-                    {{ \App\Models\AdminDisplay::label($appointmentStatus->name) }}
-                </strong>
+                <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $appointmentStatus->name])</strong>
             </div>
 
         </div>

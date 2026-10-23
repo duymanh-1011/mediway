@@ -80,19 +80,13 @@
             <h1 class="page-title">{{ $employee->full_name }}</h1>
             <p class="es-description">
                 {{ $employee->employee_code }}
-                <span class="es-status {{ $employee->status === 'ACTIVE' ? 'es-active' : 'es-inactive' }}">
-                    {{ $employee->status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động' }}
-                </span>
+                @include('admin.layouts.partials.status-badge', ['badgeCode' => $employee->status])
             </p>
         </div>
 
         <div class="es-actions">
-            <a href="{{ route('admin.employees.index') }}" class="es-btn es-light">
-                ← Danh sách
-            </a>
-            <a href="{{ route('admin.employees.edit', $employee) }}" class="es-btn es-primary">
-                Chỉnh sửa hồ sơ
-            </a>
+            <a href="{{ route('admin.employees.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
+            <a href="{{ route('admin.employees.edit', $employee) }}" class="admin-btn admin-btn-secondary">Sửa</a>
         </div>
     </div>
 
@@ -133,7 +127,7 @@
                     <div><dt>Họ và tên</dt><dd>{{ $employee->full_name }}</dd></div>
                     <div><dt>Ngày sinh</dt><dd>{{ $employee->date_of_birth?->format('d/m/Y') ?? '-' }}</dd></div>
                     <div><dt>Giới tính</dt><dd>{{ $employee->gender ?? '-' }}</dd></div>
-                    <div><dt>Trạng thái</dt><dd>{{ \App\Models\AdminDisplay::label($employee->status) }}</dd></div>
+                    <div><dt>Trạng thái</dt><dd>@include('admin.layouts.partials.status-badge', ['badgeCode' => $employee->status])</dd></div>
                     <div><dt>Ngày tạo</dt><dd>{{ $employee->created_at?->format('d/m/Y H:i') ?? '-' }}</dd></div>
                 </dl>
             </section>
@@ -144,12 +138,12 @@
                     <div><dt>Mã tài khoản</dt><dd>{{ $user?->business_code ?? '-' }}</dd></div>
                     <div><dt>Số điện thoại</dt><dd>{{ $user?->phone ?? '-' }}</dd></div>
                     <div><dt>Vai trò</dt><dd>{{ \App\Models\AdminDisplay::label($user?->role?->name ?? '-') }}</dd></div>
-                    <div><dt>Trạng thái tài khoản</dt><dd>{{ \App\Models\AdminDisplay::label($user?->status ?? '-') }}</dd></div>
+                    <div><dt>Trạng thái tài khoản</dt><dd>@include('admin.layouts.partials.status-badge', ['badgeCode' => $user?->status ?? '-'])</dd></div>
                 </dl>
 
                 @if($user)
                     <a href="{{ route('admin.users.show', $user) }}"
-                       class="es-btn es-light es-account-link">
+                       class="admin-btn admin-btn-detail">
                         Xem tài khoản
                     </a>
                 @endif
@@ -211,7 +205,7 @@
             <div class="es-section-heading">
                 <h2>Tài liệu đính kèm</h2>
                 <a href="{{ route('admin.employees.edit', $employee) }}"
-                   class="es-btn es-light">Cập nhật tài liệu</a>
+                   class="admin-btn admin-btn-secondary">Sửa</a>
             </div>
 
             <div class="es-documents">

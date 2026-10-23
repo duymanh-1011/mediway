@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreMedicineRequest;
 use App\Http\Requests\Admin\UpdateMedicineRequest;
 use App\Models\Medicine;
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -45,21 +44,21 @@ class MedicineController extends Controller
                         'like',
                         "%{$keyword}%"
                     )
-                    ->orWhere(
-                        'name',
-                        'like',
-                        "%{$keyword}%"
-                    )
-                    ->orWhere(
-                        'active_ingredient',
-                        'like',
-                        "%{$keyword}%"
-                    )
-                    ->orWhere(
-                        'manufacturer',
-                        'like',
-                        "%{$keyword}%"
-                    );
+                        ->orWhere(
+                            'name',
+                            'like',
+                            "%{$keyword}%"
+                        )
+                        ->orWhere(
+                            'active_ingredient',
+                            'like',
+                            "%{$keyword}%"
+                        )
+                        ->orWhere(
+                            'manufacturer',
+                            'like',
+                            "%{$keyword}%"
+                        );
                 }
             );
         }
@@ -322,7 +321,7 @@ class MedicineController extends Controller
                 )
                 ->with(
                     'success',
-                    'Thuốc đã được sử dụng trong đơn thuốc nên không thể xóa. Hệ thống đã chuyển thuốc sang trạng thái INACTIVE.'
+                    'Thuốc đã được kê trong đơn nên không thể xóa. Đã ngừng hoạt động thuốc và giữ nguyên lịch sử kê đơn.'
                 );
         }
 

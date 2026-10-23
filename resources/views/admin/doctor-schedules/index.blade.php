@@ -37,7 +37,7 @@
             href="{{ route(
                 'admin.doctor-schedules.calendar'
             ) }}"
-            class="admin-btn admin-btn-secondary btn btn-secondary"
+            class="admin-btn admin-btn-secondary"
         >
             Lịch tháng
         </a>
@@ -46,10 +46,8 @@
             href="{{ route(
                 'admin.doctor-schedules.create'
             ) }}"
-            class="btn btn-primary"
-        >
-            + Thêm lịch làm việc
-        </a>
+            class="admin-btn admin-btn-primary"
+        >Thêm lịch làm việc</a>
 
     </div>
 
@@ -313,6 +311,8 @@
     @endcomponent
 
     <div class="card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách lịch làm việc bác sĩ'])
+
 
 
         <div class="table-wrapper">
@@ -412,25 +412,17 @@
                                 === 'ACTIVE'
                             )
 
-                                <span
-                                    class="badge badge-success"
-                                >
-                                    Đang hoạt động
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                             @else
 
-                                <span
-                                    class="badge badge-danger"
-                                >
-                                    Ngừng hoạt động
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                             @endif
 
                         </td>
 
-                        <td>
+                        <td><div class="admin-actions admin-table-actions">
 
                             <div class="action-group">
 
@@ -439,7 +431,7 @@
                                         'admin.doctor-schedules.show',
                                         $schedule
                                     ) }}"
-                                    class="admin-btn admin-btn-detail action-link view"
+                                    class="admin-btn admin-btn-detail"
                                 >Chi tiết</a>
 
                                 <a
@@ -447,7 +439,7 @@
                                         'admin.doctor-schedules.edit',
                                         $schedule
                                     ) }}"
-                                    class="admin-btn admin-btn-secondary action-link edit"
+                                    class="admin-btn admin-btn-secondary"
                                 >Sửa</a>
 
                                 <form novalidate
@@ -468,7 +460,7 @@
 
                                     <button
                                         type="submit"
-                                        class="action-link delete"
+                                        class="admin-btn admin-btn-danger"
                                     >
                                         Xóa
                                     </button>
@@ -477,7 +469,7 @@
 
                             </div>
 
-                        </td>
+                        </div></td>
 
                     </tr>
 

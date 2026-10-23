@@ -22,9 +22,7 @@
             </p>
         </div>
 
-        <a href="{{ route('admin.doctors.create') }}" class="admin-btn dx-btn dx-primary admin-btn-primary">
-            + Thêm bác sĩ
-        </a>
+        <a href="{{ route('admin.doctors.create') }}" class="admin-btn admin-btn-primary">Thêm bác sĩ</a>
     </div>
 
     @if(session('success'))
@@ -49,12 +47,8 @@
                 <label for="status">Trạng thái</label>
                 <select id="status" name="status">
                     <option value="">Tất cả</option>
-                    <option value="ACTIVE" @selected($status === 'ACTIVE')>
-                        Hoạt động
-                    </option>
-                    <option value="INACTIVE" @selected($status === 'INACTIVE')>
-                        Không hoạt động
-                    </option>
+                    <option value="ACTIVE" @selected($status === 'ACTIVE')>Đang hoạt động</option>
+                    <option value="INACTIVE" @selected($status === 'INACTIVE')>Ngừng hoạt động</option>
                 </select>
 @error('status')<div class="field-error">{{ $message }}</div>@enderror
             </div>
@@ -67,6 +61,8 @@
     @endcomponent
 
     <div class="dx-card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách bác sĩ'])
+
 
         @if($errors->any())
             <div class="dx-alert dx-alert-error">
@@ -104,19 +100,17 @@
                                 {{ $doctor->detail?->practice_license_number ?: '-' }}
                             </td>
                             <td>
-                                <span class="dx-status {{ $doctor->status === 'ACTIVE' ? 'dx-active' : 'dx-inactive' }}">
-                                    {{ $doctor->status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động' }}
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => $doctor->status])
                             </td>
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
                                 <div class="dx-actions">
                                     <a href="{{ route('admin.doctors.show', $doctor) }}"
-                                       class="admin-btn admin-btn-detail dx-action dx-view">Chi tiết</a>
+                                       class="admin-btn admin-btn-detail">Chi tiết</a>
 
                                     <a href="{{ route('admin.doctors.edit', $doctor) }}"
-                                       class="admin-btn admin-btn-secondary dx-action dx-edit">Sửa</a>
+                                       class="admin-btn admin-btn-secondary">Sửa</a>
                                 </div>
-                            </td>
+                            </div></td>
                         </tr>
                     @empty
                         <tr>
@@ -136,10 +130,10 @@
 
             <div class="dx-pagination">
                 @if($doctors->onFirstPage())
-                    <span class="dx-btn dx-light dx-disabled">Trước</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
                 @else
                     <a href="{{ $doctors->previousPageUrl() }}"
-                       class="dx-btn dx-light">Trước</a>
+                       class="admin-btn admin-btn-secondary">Trước</a>
                 @endif
 
                 <span>
@@ -148,9 +142,9 @@
 
                 @if($doctors->hasMorePages())
                     <a href="{{ $doctors->nextPageUrl() }}"
-                       class="dx-btn dx-light">Sau</a>
+                       class="admin-btn admin-btn-secondary">Sau</a>
                 @else
-                    <span class="dx-btn dx-light dx-disabled">Sau</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
                 @endif
             </div>
         </div>

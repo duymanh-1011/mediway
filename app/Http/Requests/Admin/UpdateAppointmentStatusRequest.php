@@ -49,29 +49,21 @@ class UpdateAppointmentStatusRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'process_order.required' =>
-                'Vui lòng nhập thứ tự xử lý.',
+            'process_order.required' => 'Vui lòng nhập thứ tự xử lý.',
 
-            'process_order.integer' =>
-                'Thứ tự xử lý phải là số nguyên.',
+            'process_order.integer' => 'Thứ tự xử lý phải là số nguyên.',
 
-            'process_order.min' =>
-                'Thứ tự xử lý phải lớn hơn hoặc bằng 1.',
+            'process_order.min' => 'Thứ tự xử lý phải lớn hơn hoặc bằng 1.',
 
-            'process_order.unique' =>
-                'Thứ tự xử lý này đang được sử dụng bởi trạng thái khác.',
+            'process_order.unique' => 'Thứ tự xử lý này đang được sử dụng bởi trạng thái khác.',
 
-            'allows_transition.required' =>
-                'Vui lòng chọn khả năng chuyển trạng thái.',
+            'allows_transition.required' => 'Vui lòng chọn khả năng chuyển trạng thái.',
 
-            'allows_transition.boolean' =>
-                'Giá trị chuyển trạng thái không hợp lệ.',
+            'allows_transition.boolean' => 'Vui lòng chọn lại mục Cho phép chuyển trạng thái.',
 
-            'is_active.required' =>
-                'Vui lòng chọn trạng thái hoạt động.',
+            'is_active.required' => 'Vui lòng chọn trạng thái hoạt động.',
 
-            'is_active.boolean' =>
-                'Giá trị trạng thái hoạt động không hợp lệ.',
+            'is_active.boolean' => 'Vui lòng chọn lại trạng thái sử dụng.',
         ];
     }
 }

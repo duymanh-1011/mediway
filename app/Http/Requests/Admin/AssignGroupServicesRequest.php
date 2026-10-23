@@ -24,7 +24,7 @@ class AssignGroupServicesRequest extends FormRequest
     {
         return [
             'medical_service_ids.required' => 'Vui lòng chọn ít nhất một dịch vụ.',
-            'medical_service_ids.array' => 'Danh sách dịch vụ không hợp lệ.',
+            'medical_service_ids.array' => 'Vui lòng chọn dịch vụ từ danh sách gợi ý.',
             'medical_service_ids.*.distinct' => 'Không được chọn trùng dịch vụ.',
             'medical_service_ids.*.exists' => 'Dịch vụ không tồn tại hoặc đã ngừng hoạt động.',
         ];

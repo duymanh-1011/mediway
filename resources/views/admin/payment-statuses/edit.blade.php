@@ -28,7 +28,7 @@
         'admin.payment-statuses.show',
         $status->id
     ) }}">
-                {{ \App\Models\AdminDisplay::label($status->name) }}
+                {{ \App\Models\AdminDisplay::label($status->name, 'payment') }}
             </a>
 
             <span aria-hidden="true">/</span>
@@ -66,9 +66,7 @@
             <a href="{{ route(
         'admin.payment-statuses.show',
         $status->id
-    ) }}" class="status-back-btn">
-                ← Quay lại chi tiết
-            </a>
+    ) }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
 
         </div>
 
@@ -215,7 +213,7 @@
                         <div class="status-form-group">
 
                             <label for="is_active">
-                                Trạng thái sử dụng
+                                Trạng thái
                                 <span class="required">*</span>
                             </label>
 
@@ -275,11 +273,9 @@
                         <a href="{{ route(
         'admin.payment-statuses.show',
         $status->id
-    ) }}" class="status-btn status-btn-secondary">Hủy</a>
+    ) }}" class="admin-btn admin-btn-secondary">Hủy</a>
 
-                        <button type="submit" class="status-btn status-btn-primary">
-                            Lưu thay đổi
-                        </button>
+                        <button type="submit" class="admin-btn admin-btn-primary">Cập nhật</button>
 
                     </div>
 
@@ -306,7 +302,7 @@
                         <p>
                             Không đổi tên trạng thái tùy tiện.
                             Không thay đổi thứ tự xử lý tại màn hình này.
-                            Không hard-delete trạng thái đã được sử dụng.
+                            Không xóa vĩnh viễn trạng thái đã được sử dụng.
                         </p>
 
                     </div>
@@ -327,9 +323,7 @@
                             Tên
                         </span>
 
-                        <strong class="status-current-name">
-                            {{ \App\Models\AdminDisplay::label($status->name) }}
-                        </strong>
+                        <strong class="status-current-name">@include('admin.layouts.partials.status-badge', ['badgeCode' => $status->name, 'badgeContext' => 'payment'])</strong>
 
                     </div>
 
@@ -360,7 +354,7 @@
                     <div class="status-current-item">
 
                         <span>
-                            Trạng thái sử dụng
+                            Trạng thái
                         </span>
 
                         @if ($status->is_active)

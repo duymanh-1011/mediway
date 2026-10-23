@@ -22,7 +22,7 @@
                 Tạo tài khoản và hồ sơ quản trị viên trong cùng một thao tác.
             </p>
         </div>
-        <a href="{{ route('admin.administrators.index') }}" class="asf-btn asf-light">
+        <a href="{{ route('admin.administrators.index') }}" class="admin-btn admin-btn-secondary">
             ← Quay lại
         </a>
     </div>
@@ -56,9 +56,7 @@
                 <div class="asf-field">
                     <label for="status">Trạng thái ban đầu <span>*</span></label>
                     <select id="status" name="status" required>
-                        <option value="ACTIVE" @selected(old('status', 'ACTIVE') === 'ACTIVE')>
-                            Hoạt động
-                        </option>
+                        <option value="ACTIVE" @selected(old('status', 'ACTIVE') === 'ACTIVE')>Đang hoạt động</option>
                         <option value="LOCKED" @selected(old('status') === 'LOCKED')>
                             Khóa tài khoản
                         </option>
@@ -143,10 +141,8 @@
 
             <div class="asf-actions">
                 <a href="{{ route('admin.administrators.index') }}"
-                   class="asf-btn asf-light">Hủy bỏ</a>
-                <button type="submit" class="asf-btn asf-primary">
-                    Tạo quản trị viên
-                </button>
+                   class="admin-btn admin-btn-secondary">Hủy</a>
+                <button type="submit" class="admin-btn admin-btn-primary">Lưu</button>
             </div>
         </div>
     </form>

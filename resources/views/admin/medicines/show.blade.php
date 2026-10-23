@@ -37,20 +37,16 @@
 
             <a
                 href="{{ route('admin.medicines.index') }}"
-                class="btn btn-secondary"
-            >
-                ← Danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             <a
                 href="{{ route(
                     'admin.medicines.edit',
                     $medicine
                 ) }}"
-                class="btn btn-primary"
-            >
-                Sửa thuốc
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >Sửa</a>
 
         </div>
 
@@ -92,15 +88,11 @@
 
                 @if ($medicine->status === 'ACTIVE')
 
-                    <span class="badge badge-success">
-                        Đang hoạt động
-                    </span>
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                 @else
 
-                    <span class="badge badge-danger">
-                        Ngừng hoạt động
-                    </span>
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                 @endif
 

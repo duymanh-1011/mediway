@@ -40,7 +40,7 @@
                 'admin.examination-rooms.show',
                 $examinationRoom
             ) }}"
-            class="admin-btn admin-btn-secondary btn btn-secondary"
+            class="admin-btn admin-btn-secondary"
         >
             ← Quay lại
         </a>
@@ -71,15 +71,13 @@
                         'admin.examination-rooms.show',
                         $examinationRoom
                     ) }}"
-                    class="btn btn-secondary"
+                    class="admin-btn admin-btn-secondary"
                 >Hủy</a>
 
                 <button
                     type="submit"
-                    class="btn btn-primary"
-                >
-                    Lưu thay đổi
-                </button>
+                    class="admin-btn admin-btn-primary"
+                >Cập nhật</button>
 
             </div>
 

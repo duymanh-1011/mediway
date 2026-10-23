@@ -58,15 +58,15 @@ class UpdatePrescriptionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'prescribed_at.required' => 'Thời gian kê đơn là bắt buộc.',
+            'prescribed_at.required' => 'Vui lòng chọn ngày và giờ kê đơn.',
 
-            'prescribed_at.date' => 'Thời gian kê đơn không hợp lệ.',
+            'prescribed_at.date' => 'Thời điểm kê đơn chưa hợp lệ. Vui lòng chọn đủ ngày và giờ.',
 
-            'status.required' => 'Trạng thái đơn thuốc là bắt buộc.',
+            'status.required' => 'Vui lòng chọn trạng thái đơn thuốc.',
 
-            'status.in' => 'Trạng thái đơn thuốc không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái đơn thuốc từ các lựa chọn có sẵn.',
 
-            'confirm_update.accepted' => 'Bạn phải xác nhận trước khi cập nhật đơn thuốc.',
+            'confirm_update.accepted' => 'Vui lòng bấm Xác nhận cập nhật để lưu thay đổi đơn thuốc.',
         ];
     }
 }

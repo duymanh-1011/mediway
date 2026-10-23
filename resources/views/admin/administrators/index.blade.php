@@ -20,9 +20,7 @@
                 Quản lý hồ sơ và quyền truy cập của quản trị viên Mediway.
             </p>
         </div>
-        <a href="{{ route('admin.administrators.create') }}" class="admin-btn as-btn as-primary admin-btn-primary">
-            + Thêm quản trị viên
-        </a>
+        <a href="{{ route('admin.administrators.create') }}" class="admin-btn admin-btn-primary">Thêm quản trị viên</a>
     </div>
 
     @if(session('success'))
@@ -51,9 +49,7 @@
                 <label for="status">Trạng thái tài khoản</label>
                 <select id="status" name="status">
                     <option value="">Tất cả trạng thái</option>
-                    <option value="ACTIVE" @selected($status === 'ACTIVE')>
-                        Hoạt động
-                    </option>
+                    <option value="ACTIVE" @selected($status === 'ACTIVE')>Đang hoạt động</option>
                     <option value="LOCKED" @selected($status === 'LOCKED')>
                         Đã khóa
                     </option>
@@ -69,6 +65,8 @@
     @endcomponent
 
     <div class="as-card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách quản trị viên'])
+
 
         <div class="as-table-wrap">
             <table class="as-table">
@@ -98,23 +96,19 @@
                             <td>
                                 @if($administrator->user?->status === 'ACTIVE'
                                     && $administrator->status === 'ACTIVE')
-                                    <span class="as-badge as-badge-success">
-                                        Hoạt động
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
                                 @else
-                                    <span class="as-badge as-badge-danger">
-                                        Đã khóa / Ngừng hoạt động
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $administrator->status === 'ACTIVE' ? $administrator->user?->status : $administrator->status])
                                 @endif
                             </td>
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
                                 <div class="as-actions">
-                                    <a class="admin-btn admin-btn-detail as-action as-view"
+                                    <a class="admin-btn admin-btn-detail"
                                        href="{{ route('admin.administrators.show', $administrator) }}">Chi tiết</a>
-                                    <a class="admin-btn admin-btn-secondary as-action as-edit"
+                                    <a class="admin-btn admin-btn-secondary"
                                        href="{{ route('admin.administrators.edit', $administrator) }}">Sửa</a>
                                 </div>
-                            </td>
+                            </div></td>
                         </tr>
                     @empty
                         <tr>
@@ -135,9 +129,9 @@
 
             <div class="as-pagination">
                 @if($administrators->onFirstPage())
-                    <span class="as-btn as-light as-disabled">Trước</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
                 @else
-                    <a class="as-btn as-light"
+                    <a class="admin-btn admin-btn-secondary"
                        href="{{ $administrators->previousPageUrl() }}">Trước</a>
                 @endif
 
@@ -147,10 +141,10 @@
                 </span>
 
                 @if($administrators->hasMorePages())
-                    <a class="as-btn as-light"
+                    <a class="admin-btn admin-btn-secondary"
                        href="{{ $administrators->nextPageUrl() }}">Sau</a>
                 @else
-                    <span class="as-btn as-light as-disabled">Sau</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
                 @endif
             </div>
         </div>

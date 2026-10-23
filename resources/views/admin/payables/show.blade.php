@@ -10,13 +10,7 @@
             $payable->paymentStatus?->name ?? ''
         );
 
-        $statusClass = match ($statusName) {
-            'PAID' => 'paid',
-            'UNPAID' => 'unpaid',
-            'PENDING' => 'pending',
-            'CANCELLED' => 'cancelled',
-            default => 'default',
-        };
+
 
         $typeLabel = match ($payable->payment_type) {
             'EXAMINATION_FEE' => 'Phí khám',
@@ -68,12 +62,7 @@
                 </p>
             </div>
 
-            <span class="
-                    payable-status
-                    {{ $statusClass }}
-                ">
-                {{ \App\Models\AdminDisplay::label($payable->paymentStatus?->name ?? '—') }}
-            </span>
+            @include('admin.layouts.partials.status-badge', ['badgeCode' => $payable->paymentStatus?->name ?? '—', 'badgeContext' => 'payment'])
 
         </div>
 
@@ -93,9 +82,7 @@
 
         <div class="payable-actions">
 
-            <a href="{{ route('admin.payables.index') }}" class="payable-btn payable-btn-secondary">
-                ← Quay lại danh sách
-            </a>
+            <a href="{{ route('admin.payables.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
 
 
             @if (
@@ -105,13 +92,13 @@
                     )
                 )
 
-                <label for="status-modal" class="payable-btn payable-btn-primary">
+                <label for="status-modal" class="admin-btn admin-btn-primary">
                     Đổi trạng thái
                 </label>
 
                 @if ($canCancel)
-                <label for="cancel-modal" class="payable-btn payable-btn-danger-outline">
-                    Hủy nghiệp vụ
+                <label for="cancel-modal" class="admin-btn admin-btn-danger">
+                    Hủy khoản thu
                 </label>
                 @endif
 
@@ -182,9 +169,7 @@
                 <div>
                     <span>Trạng thái</span>
 
-                    <strong>
-                        {{ \App\Models\AdminDisplay::label($payable->paymentStatus?->name ?? '—') }}
-                    </strong>
+                    <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $payable->paymentStatus?->name ?? '—', 'badgeContext' => 'payment'])</strong>
                 </div>
 
 
@@ -444,17 +429,7 @@
 
                         @forelse ($payable->transactions as $transaction)
 
-                                            @php
-                                                $resultClass = match (
-                                                strtoupper(
-                                                    $transaction->transaction_result
-                                                )
-                                                ) {
-                                                    'SUCCESS' => 'success',
-                                                    'FAILED' => 'failed',
-                                                    default => 'default',
-                                                };
-                                            @endphp
+
 
                                             <tr>
 
@@ -472,12 +447,7 @@
 
 
                                                 <td>
-                                                    <span class="
-                                                                transaction-result
-                                                                {{ $resultClass }}
-                                                            ">
-                                                        {{ \App\Models\AdminDisplay::label($transaction->transaction_result) }}
-                                                    </span>
+                                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $transaction->transaction_result, 'badgeContext' => 'payment'])
                                                 </td>
 
 
@@ -516,14 +486,14 @@
                                                 </td>
 
 
-                                                <td class="text-right">
+                                                <td class="text-right"><div class="admin-actions admin-table-actions">
 
                                                     <a href="{{ route(
                                 'admin.payment-transactions.show',
                                 $transaction->id
-                            ) }}" class="payable-detail-link">Chi tiết</a>
+                            ) }}" class="admin-btn admin-btn-detail">Chi tiết</a>
 
-                                                </td>
+                                                </div></td>
 
                                             </tr>
 
@@ -666,7 +636,7 @@
                     ) === (string) $status->id
                 )
             >
-                {{ \App\Models\AdminDisplay::label($status->name) }}
+                {{ \App\Models\AdminDisplay::label($status->name, 'payment') }}
             </option>
 
         @endif
@@ -686,11 +656,9 @@
 
                         <div class="payable-modal-actions">
 
-                            <label for="status-modal" class="payable-btn payable-btn-secondary">
-                                Quay lại
-                            </label>
+                            <label for="status-modal" class="admin-btn admin-btn-secondary">← Quay lại</label>
 
-                            <button type="submit" name="confirm_update" value="1" class="payable-btn payable-btn-primary">
+                            <button type="submit" name="confirm_update" value="1" class="admin-btn admin-btn-primary">
                                 Xác nhận
                             </button>
 
@@ -775,11 +743,9 @@
 
                         <div class="payable-modal-actions">
 
-                            <label for="cancel-modal" class="payable-btn payable-btn-secondary">
-                                Quay lại
-                            </label>
+                            <label for="cancel-modal" class="admin-btn admin-btn-secondary">← Quay lại</label>
 
-                            <button type="submit" name="confirm_cancel" value="1" class="payable-btn payable-btn-danger">
+                            <button type="submit" name="confirm_cancel" value="1" class="admin-btn admin-btn-danger">
                                 Xác nhận hủy
                             </button>
 

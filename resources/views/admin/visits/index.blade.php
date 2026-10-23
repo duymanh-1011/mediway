@@ -292,6 +292,8 @@
 
 
     <div class="card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách lượt khám'])
+
 
         @if ($medicalVisits->count())
 
@@ -309,7 +311,7 @@
                         <th>Phòng</th>
                         <th>Tiếp nhận</th>
                         <th>Trạng thái</th>
-                        <th>Hành động</th>
+                        <th>Thao tác</th>
                     </tr>
                     </thead>
 
@@ -365,9 +367,7 @@
 
                                 @if ($visit->status)
 
-                                    <span class="badge">
-                                        {{ \App\Models\AdminDisplay::label($visit->status->name) }}
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $visit->status->name])
 
                                 @else
 
@@ -379,17 +379,17 @@
 
                             </td>
 
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
 
                                 <a
                                     href="{{ route(
                                         'admin.visits.show',
                                         $visit
                                     ) }}"
-                                    class="admin-btn admin-btn-detail btn btn-secondary"
+                                    class="admin-btn admin-btn-detail"
                                 >Chi tiết</a>
 
-                            </td>
+                            </div></td>
 
                         </tr>
 

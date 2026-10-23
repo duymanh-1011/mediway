@@ -49,12 +49,13 @@ class ValidateAdminFilters
         }
 
         $validator = Validator::make($filters, $rules, [
-            '*.string' => 'Giá trị bộ lọc phải là văn bản, không được gửi danh sách hoặc cấu trúc lồng nhau.',
-            '*.integer' => 'Mã hoặc số trang trong bộ lọc phải là số nguyên hợp lệ.',
+            'page.integer' => 'Số trang chưa hợp lệ. Vui lòng dùng các nút phân trang bên dưới danh sách.',
+            '*.string' => 'Vui lòng chỉ nhập một giá trị vào ô “:attribute”.',
+            '*.integer' => 'Giá trị ở mục “:attribute” chưa hợp lệ. Vui lòng chọn lại hoặc nhập số nguyên.',
         ]);
         if ($validator->fails()) {
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'Bộ lọc không hợp lệ.', 'errors' => $validator->errors()], 422);
+                return response()->json(['message' => 'Chưa thể lọc dữ liệu. Vui lòng kiểm tra các mục được báo lỗi.', 'errors' => $validator->errors()], 422);
             }
 
             return redirect()->to($request->url())->withErrors($validator);

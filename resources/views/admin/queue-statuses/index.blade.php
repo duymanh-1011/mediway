@@ -30,7 +30,7 @@
 
     @component('admin.layouts.partials.filter-panel', [
         'title' => 'Bộ lọc trạng thái hàng đợi',
-        'description' => 'Lọc theo từ khóa và hoạt động.',
+        'description' => 'Lọc theo từ khóa và trạng thái.',
     ])
         <form
             method="GET"
@@ -59,9 +59,7 @@
 
                 <div class="admin-filter-field">
 
-                    <label class="admin-u-63101fce">
-                        Hoạt động
-                    </label>
+                    <label class="admin-u-63101fce">Trạng thái</label>
 
                     <select class="admin-u-181f32ca"
                         name="is_active"
@@ -107,133 +105,5 @@
         </form>
     @endcomponent
 
-
-    <div class="card">
-
-        @if ($queueStatuses->count())
-
-            <div class="table-wrapper">
-
-                <table class="admin-table">
-
-                    <thead>
-                        <tr>
-                            <th scope="col" class="admin-row-number">STT</th>
-                            <th>Tên trạng thái</th>
-                            <th>Mô tả</th>
-                            <th>Thứ tự xử lý</th>
-                            <th>Cho phép chuyển</th>
-                            <th>Hoạt động</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-
-
-                    <tbody>
-
-                    @foreach ($queueStatuses as $status)
-
-                        <tr>
-
-                            @include('admin.layouts.partials.row-number', ['rows' => $queueStatuses, 'index' => $loop->index])
-
-                            <td>
-                                <strong>
-                                    {{ \App\Models\AdminDisplay::label($status->name) }}
-                                </strong>
-                            </td>
-
-                            <td>
-                                {{ $status->description ?: '—' }}
-                            </td>
-
-                            <td>
-                                {{ $status->process_order }}
-                            </td>
-
-                            <td>
-
-                                @if ($status->allows_transition)
-
-                                    <span class="badge badge-success">
-                                        Có
-                                    </span>
-
-                                @else
-
-                                    <span class="badge badge-warning">
-                                        Không
-                                    </span>
-
-                                @endif
-
-                            </td>
-
-                            <td>
-
-                                @if ($status->is_active)
-
-                                    <span class="badge badge-success">
-                                        Đang hoạt động
-                                    </span>
-
-                                @else
-
-                                    <span class="badge badge-danger">
-                                        Ngừng hoạt động
-                                    </span>
-
-                                @endif
-
-                            </td>
-
-                            <td>
-
-                                <div class="admin-u-c9035c8e">
-
-                                    <a
-                                        href="{{ route(
-                                            'admin.queue-statuses.show',
-                                            $status
-                                        ) }}"
-                                        class="admin-btn admin-btn-detail btn btn-secondary"
-                                    >Chi tiết</a>
-
-                                    <a
-                                        href="{{ route(
-                                            'admin.queue-statuses.edit',
-                                            $status
-                                        ) }}"
-                                        class="admin-btn btn btn-primary admin-btn-primary"
-                                    >Sửa</a>
-
-                                </div>
-
-                            </td>
-
-                        </tr>
-
-                    @endforeach
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-
-            <div class="admin-u-6840f0a6">
-                {{ $queueStatuses->links() }}
-            </div>
-
-        @else
-
-            <div class="admin-u-caa0d3af">
-                Không tìm thấy trạng thái hàng đợi phù hợp.
-            </div>
-
-        @endif
-
-    </div>
-
+    @include('admin.layouts.partials.status-list', ['listTitle' => 'Danh sách trạng thái hàng đợi', 'statusRows' => $queueStatuses, 'statusRoute' => 'admin.queue-statuses', 'permissionField' => 'allows_transition', 'statusContext' => null])
 @endsection

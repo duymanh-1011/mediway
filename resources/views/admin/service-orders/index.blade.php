@@ -168,9 +168,7 @@
 
                 <div>
 
-                    <h2>
-                        Danh sách phiếu chỉ định
-                    </h2>
+                    <h2 class="admin-list-title">Danh sách phiếu chỉ định</h2>
 
                     <p>
                         Các phiếu được sắp xếp theo
@@ -337,35 +335,26 @@
                                                 {{-- Status --}}
                                                 <td>
 
-                                                    @php
-                                                        $statusClass = match ($order->status) {
-                                                            'COMPLETED' => 'status-completed',
-                                                            'ACTIVE' => 'status-active',
-                                                            'CANCELLED' => 'status-cancelled',
-                                                            default => 'status-default',
-                                                        };
-                                                    @endphp
 
-                                                    <span class="order-status-badge {{ $statusClass }}">
-                                                        {{ \App\Models\AdminDisplay::label($order->status) }}
-                                                    </span>
+
+                                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $order->status])
 
                                                 </td>
 
 
                                                 {{-- Action --}}
-                                                <td>
+                                                <td><div class="admin-actions admin-table-actions">
 
                                                     <div class="order-actions">
 
                                                         <a href="{{ route(
                                 'admin.service-orders.show',
                                 $order->id
-                            ) }}" class="admin-btn admin-btn-detail order-action-btn">Chi tiết</a>
+                            ) }}" class="admin-btn admin-btn-detail">Chi tiết</a>
 
                                                     </div>
 
-                                                </td>
+                                                </div></td>
 
                                             </tr>
 
@@ -425,30 +414,22 @@
 
                         @if ($orders->onFirstPage())
 
-                            <span class="order-page-btn disabled">
-                                ← Trước
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
 
                         @else
 
-                            <a href="{{ $orders->previousPageUrl() }}" class="order-page-btn">
-                                ← Trước
-                            </a>
+                            <a href="{{ $orders->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
 
                         @endif
 
 
                         @if ($orders->hasMorePages())
 
-                            <a href="{{ $orders->nextPageUrl() }}" class="order-page-btn">
-                                Sau →
-                            </a>
+                            <a href="{{ $orders->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
 
                         @else
 
-                            <span class="order-page-btn disabled">
-                                Sau →
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
 
                         @endif
 

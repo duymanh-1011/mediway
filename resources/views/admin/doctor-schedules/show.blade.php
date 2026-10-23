@@ -44,20 +44,16 @@
                 href="{{ route(
                     'admin.doctor-schedules.index'
                 ) }}"
-                class="admin-btn admin-btn-secondary btn btn-secondary"
-            >
-                ← Danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             <a
                 href="{{ route(
                     'admin.doctor-schedules.edit',
                     $doctorSchedule
                 ) }}"
-                class="btn btn-primary"
-            >
-                Sửa lịch
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >Sửa</a>
 
         </div>
 
@@ -223,15 +219,11 @@
 
                     @if ($doctorSchedule->status === 'ACTIVE')
 
-                        <span class="badge badge-success">
-                            Đang hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                     @else
 
-                        <span class="badge badge-danger">
-                            Ngừng hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                     @endif
 
@@ -276,10 +268,8 @@
                         'admin.doctor-schedules.time-slots.create',
                         $doctorSchedule
                     ) }}"
-                    class="btn btn-primary"
-                >
-                    + Thêm khung giờ
-                </a>
+                    class="admin-btn admin-btn-primary"
+                >Thêm khung giờ</a>
 
             </div>
 
@@ -355,21 +345,17 @@
 
                                 @if ($slot->status === 'ACTIVE')
 
-                                    <span class="badge badge-success">
-                                        Đang hoạt động
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                                 @else
 
-                                    <span class="badge badge-danger">
-                                        Ngừng hoạt động
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                                 @endif
 
                             </td>
 
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
 
                                 <div class="action-group">
 
@@ -378,7 +364,7 @@
                                             'admin.appointment-time-slots.edit',
                                             $slot->id
                                         ) }}"
-                                        class="action-link edit"
+                                        class="admin-btn admin-btn-secondary"
                                     >Sửa</a>
 
                                     <form novalidate
@@ -399,7 +385,7 @@
 
                                         <button
                                             type="submit"
-                                            class="action-link delete"
+                                            class="admin-btn admin-btn-danger"
                                         >
                                             Xóa
                                         </button>
@@ -408,7 +394,7 @@
 
                                 </div>
 
-                            </td>
+                            </div></td>
 
                         </tr>
 

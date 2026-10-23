@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreRoleRequest;
 use App\Http\Requests\Admin\UpdateRoleRequest;
 use App\Models\Role;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -24,8 +25,8 @@ class RoleController extends Controller
             ->withCount('users')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                        ->orWhere('description', 'like', '%' . $search . '%');
+                    $q->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('description', 'like', '%'.$search.'%');
                 });
             })
             ->when(
@@ -113,7 +114,7 @@ class RoleController extends Controller
 
             return redirect()
                 ->route('admin.roles.show', $role)
-->with('success', 'Cập nhật mô tả vai trò hệ thống thành công.');
+                ->with('success', 'Cập nhật mô tả vai trò hệ thống thành công.');
         }
 
         $name = trim($data['name']);
@@ -145,7 +146,7 @@ class RoleController extends Controller
 
             if ($usersCount > 0 && $status !== 'ACTIVE') {
                 throw ValidationException::withMessages([
-                    'status' => 'Không thể vô hiệu hóa vai trò đang có tài khoản liên kết.',
+                    'status' => 'Vai trò đang có tài khoản sử dụng nên không thể ngừng hoạt động.',
                 ]);
             }
 
@@ -192,12 +193,12 @@ class RoleController extends Controller
             });
         } catch (ValidationException $exception) {
             throw $exception;
-        } catch (\Illuminate\Database\QueryException $exception) {
+        } catch (QueryException $exception) {
             return redirect()
                 ->route('admin.roles.index')
                 ->with(
                     'error',
-                    'Không thể xóa vai trò vì dữ liệu đang được tham chiếu.'
+                    'Vai trò đang được dùng trong dữ liệu khác nên không thể xóa.'
                 );
         }
 

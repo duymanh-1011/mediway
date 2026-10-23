@@ -10,7 +10,7 @@
     <span aria-hidden="true">/</span>
     <span>Trạng thái lượt khám</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">{{ \App\Models\AdminDisplay::label($visitStatus->name) }}</strong>
+    <strong aria-current="page">@include('admin.layouts.partials.status-badge', ['badgeCode' => $visitStatus->name])</strong>
 @endsection
 
 @section('content')
@@ -34,15 +34,15 @@
 
             <a
                 href="{{ route('admin.visit-statuses.index') }}"
-                class="admin-btn admin-btn-secondary btn btn-secondary"
-            >Quay lại</a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             <a
                 href="{{ route(
                     'admin.visit-statuses.edit',
                     $visitStatus
                 ) }}"
-                class="admin-btn btn btn-primary admin-btn-primary"
+                class="admin-btn admin-btn-secondary"
             >Sửa</a>
 
         </div>
@@ -59,9 +59,7 @@
                     Tên trạng thái
                 </strong>
 
-                <div class="admin-u-a5595d11">
-                    {{ \App\Models\AdminDisplay::label($visitStatus->name) }}
-                </div>
+                <div class="admin-u-a5595d11">@include('admin.layouts.partials.status-badge', ['badgeCode' => $visitStatus->name])</div>
             </div>
 
 
@@ -85,15 +83,11 @@
 
                     @if ($visitStatus->allows_transition)
 
-                        <span class="badge badge-success">
-                            Có
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ALLOWED'])
 
                     @else
 
-                        <span class="badge badge-warning">
-                            Không
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'DENIED'])
 
                     @endif
 
@@ -102,23 +96,17 @@
 
 
             <div>
-                <strong>
-                    Hoạt động
-                </strong>
+                <strong>Trạng thái</strong>
 
                 <div class="admin-u-a5595d11">
 
                     @if ($visitStatus->is_active)
 
-                        <span class="badge badge-success">
-                            Đang hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                     @else
 
-                        <span class="badge badge-danger">
-                            Ngừng hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                     @endif
 

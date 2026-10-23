@@ -48,18 +48,9 @@
             </div>
 
 
-            @php
-                $orderStatusClass = match ($order->status) {
-                    'COMPLETED' => 'order-status-completed',
-                    'ACTIVE' => 'order-status-active',
-                    'CANCELLED' => 'order-status-cancelled',
-                    default => 'order-status-default',
-                };
-            @endphp
 
-            <span class="order-header-status {{ $orderStatusClass }}">
-                {{ \App\Models\AdminDisplay::label($order->status) }}
-            </span>
+
+            @include('admin.layouts.partials.status-badge', ['badgeCode' => $order->status])
 
         </div>
 
@@ -87,10 +78,8 @@
 
             <a
                 href="{{ route('admin.service-orders.index') }}"
-                class="order-back-btn"
-            >
-                ← Quay lại danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
         </div>
 
@@ -213,9 +202,7 @@
                         Trạng thái phiếu
                     </div>
 
-                    <span class="order-status-badge {{ $orderStatusClass }}">
-                        {{ \App\Models\AdminDisplay::label($order->status) }}
-                    </span>
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $order->status])
 
                 </div>
 
@@ -303,13 +290,7 @@
                     $serviceStatusName =
                         $item->serviceStatus?->name ?? 'UNKNOWN';
 
-                    $serviceStatusClass = match ($serviceStatusName) {
-                        'PENDING' => 'service-status-pending',
-                        'PROCESSING' => 'service-status-processing',
-                        'COMPLETED' => 'service-status-completed',
-                        'CANCELLED' => 'service-status-cancelled',
-                        default => 'service-status-default',
-                    };
+
 
                     $payable =
                         $payablesByItem->get($item->id);
@@ -390,9 +371,7 @@
                         </div>
 
 
-                        <span class="service-status-badge {{ $serviceStatusClass }}">
-                            {{ \App\Models\AdminDisplay::label($serviceStatusName) }}
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => $serviceStatusName, 'badgeContext' => 'service'])
 
                     </div>
 
@@ -465,7 +444,7 @@
                                         'admin.payables.payment-transactions.create',
                                         $payable->id
                                     ) }}"
-                                    class="service-action-btn service-action-pay"
+                                    class="admin-btn admin-btn-primary"
                                 >
                                     Thanh toán
                                 </a>
@@ -495,7 +474,7 @@
 
                                     <button
                                         type="submit"
-                                        class="service-action-btn service-action-start"
+                                        class="admin-btn admin-btn-primary"
                                         onclick="return confirm(
                                             'Xác nhận bắt đầu thực hiện dịch vụ này?'
                                         )"
@@ -522,7 +501,7 @@
                                         'admin.service-order-items.service-results.create',
                                         $item
                                     ) }}"
-                                    class="service-action-btn service-action-result"
+                                    class="admin-btn admin-btn-primary"
                                 >
                                     Nhập kết quả
                                 </a>
@@ -544,7 +523,7 @@
                                         'admin.service-results.show',
                                         $item->result->id
                                     ) }}"
-                                    class="service-action-btn service-action-view"
+                                    class="admin-btn admin-btn-detail"
                                 >
                                     Xem kết quả
                                 </a>
@@ -574,9 +553,9 @@
 
                                     <button
                                         type="submit"
-                                        class="service-action-btn service-action-complete"
+                                        class="admin-btn admin-btn-success"
                                         onclick="return confirm(
-                                            'Xác nhận hoàn tất dịch vụ này? Sau khi hoàn tất, trạng thái dịch vụ sẽ chuyển sang COMPLETED.'
+                                            'Xác nhận hoàn tất dịch vụ này? Hệ thống sẽ kiểm tra kết quả trước khi hoàn tất.'
                                         )"
                                     >
                                         Hoàn tất dịch vụ
@@ -950,9 +929,7 @@
                                             Trạng thái thanh toán
                                         </span>
 
-                                        <strong>
-                                            {{ \App\Models\AdminDisplay::label($paymentStatusName ?? '—') }}
-                                        </strong>
+                                        <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $paymentStatusName ?? '—', 'badgeContext' => 'payment'])</strong>
 
                                     </div>
 

@@ -260,7 +260,7 @@
                                                     @if ($order)
 
                                                         <div class="result-code">
-                                                            {{ $order->service_order_code }}
+                                                            @include('admin.layouts.partials.record-code', ['code' => $order->service_order_code])
                                                         </div>
 
                                                     @else
@@ -280,7 +280,7 @@
                                                     @if ($visit)
 
                                                         <div class="result-visit-code">
-                                                            {{ $visit->visit_code }}
+                                                            @include('admin.layouts.partials.record-code', ['code' => $visit->visit_code])
                                                         </div>
 
                                                     @else
@@ -306,7 +306,7 @@
                                                             </strong>
 
                                                             <span>
-                                                                {{ $service->service_code }}
+                                                                @include('admin.layouts.partials.record-code', ['code' => $service->service_code])
                                                             </span>
 
                                                         </div>
@@ -358,7 +358,7 @@
                                                     @if ($result->verifier)
 
                                                         <span class="result-verifier">
-                                                            {{ $result->verifier->business_code }}
+                                                            @include('admin.layouts.partials.record-code', ['code' => $result->verifier->business_code])
                                                         </span>
 
                                                     @else

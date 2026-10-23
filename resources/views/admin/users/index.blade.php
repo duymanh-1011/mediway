@@ -102,7 +102,7 @@
                     @forelse($users as $user)
                         <tr>
                             @include('admin.layouts.partials.row-number', ['rows' => $users, 'index' => $loop->index])
-                            <td><strong>{{ $user->business_code }}</strong></td>
+                            <td><strong>@include('admin.layouts.partials.record-code', ['code' => $user->business_code])</strong></td>
                             <td>{{ $user->phone }}</td>
                             <td>{{ \App\Models\AdminDisplay::label($user->role?->name ?? 'Chưa xác định') }}</td>
                             <td>

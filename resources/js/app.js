@@ -1,8 +1,11 @@
 import { initializeLookups } from './admin-lookups';
 import { validationMessage } from './admin-validation';
 import { initializeAppointmentBooking } from './appointment-booking';
+import { initializeDoctorSpecialtyPairs } from './doctor-specialty';
+import { initializeAdminSidebar } from './admin-sidebar';
 
 const initializeAdmin = () => {
+    initializeAdminSidebar();
     initializeLookups();
     new MutationObserver(() => initializeLookups()).observe(document.body, { childList: true, subtree: true });
     document.querySelectorAll('form[data-confirm]').forEach((form) => {
@@ -50,6 +53,7 @@ const initializeAdmin = () => {
         });
     });
     initializeAppointmentBooking();
+    initializeDoctorSpecialtyPairs();
 };
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializeAdmin);

@@ -150,7 +150,7 @@ class MedicalVisitController extends Controller
             ->orderBy('process_order')
             ->get();
 
-        $doctors = AdminLookup::initial(Doctor::query()->orderBy('full_name'), $request->input('doctor_id'));
+        $doctors = AdminLookup::initial(Doctor::query()->with('specialty')->orderBy('full_name'), $request->input('doctor_id'));
 
         $specialties = AdminLookup::initial(Specialty::query()->orderBy('name'), $request->input('specialty_id'));
 

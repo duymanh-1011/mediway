@@ -43,7 +43,7 @@
             <span aria-hidden="true">/</span>
 
             <strong aria-current="page">
-                {{ $payable->payable_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $payable->payable_code])
             </strong>
 
         </nav>
@@ -128,7 +128,7 @@
                     <span>Mã khoản thu</span>
 
                     <strong class="payable-code">
-                        {{ $payable->payable_code }}
+                        @include('admin.layouts.partials.record-code', ['code' => $payable->payable_code])
                     </strong>
                 </div>
 
@@ -137,7 +137,7 @@
                     <span>Lượt khám</span>
 
                     <strong>
-                        {{ $visit?->visit_code ?? '—' }}
+                        @include('admin.layouts.partials.record-code', ['code' => $visit?->visit_code ?? '—'])
                     </strong>
                 </div>
 
@@ -336,7 +336,7 @@
                         <span>Phiếu chỉ định</span>
 
                         <strong>
-                            {{ $serviceContext?->service_order_code ?? '—' }}
+                            @include('admin.layouts.partials.record-code', ['code' => $serviceContext?->service_order_code ?? '—'])
                         </strong>
                     </div>
 
@@ -345,7 +345,7 @@
                         <span>Mã dịch vụ</span>
 
                         <strong>
-                            {{ $serviceContext?->service_code ?? '—' }}
+                            @include('admin.layouts.partials.record-code', ['code' => $serviceContext?->service_code ?? '—'])
                         </strong>
                     </div>
 
@@ -436,7 +436,7 @@
                                                 @include('admin.layouts.partials.row-number', ['rows' => $payable->transactions, 'index' => $loop->index])
                                                 <td>
                                                     <strong class="payable-code">
-                                                        {{ $transaction->transaction_code }}
+                                                        @include('admin.layouts.partials.record-code', ['code' => $transaction->transaction_code])
                                                     </strong>
                                                 </td>
 
@@ -603,7 +603,7 @@
                         <p>
                             Khoản phải thanh toán
                             <strong>
-                                {{ $payable->payable_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $payable->payable_code])
                             </strong>
                         </p>
 

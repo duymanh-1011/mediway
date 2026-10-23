@@ -11,7 +11,7 @@
     <span aria-hidden="true">/</span>
     <span>Lịch và đặt khám</span>
     <span aria-hidden="true">/</span>
-    <span>{{ $appointment->appointment_code }}</span>
+    <span>@include('admin.layouts.partials.record-code', ['code' => $appointment->appointment_code])</span>
     <span aria-hidden="true">/</span>
     <strong aria-current="page">Sửa</strong>
 @endsection
@@ -27,7 +27,7 @@
             </h1>
 
             <p class="page-description">
-                {{ $appointment->appointment_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $appointment->appointment_code])
             </p>
 
         </div>

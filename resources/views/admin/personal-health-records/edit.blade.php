@@ -22,7 +22,7 @@
             <h1 class="page-title">Chỉnh sửa chỉ số sức khỏe</h1>
             <p class="page-description">
                 Bản ghi #{{ $record->id }} —
-                {{ $record->patient?->patient_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $record->patient?->patient_code])
             </p>
         </div>
 

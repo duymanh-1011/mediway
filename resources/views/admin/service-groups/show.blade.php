@@ -13,7 +13,7 @@
     <div class="admin-page-header">
         <div>
             <h1>{{ $serviceGroup->name }}</h1>
-            <p class="form-help">Mã nhóm: {{ $serviceGroup->service_group_code }}</p>
+            <p class="form-help">Mã nhóm: @include('admin.layouts.partials.record-code', ['code' => $serviceGroup->service_group_code])</p>
         </div>
         <div class="admin-actions">
             <a class="admin-btn admin-btn-secondary" href="{{ route('admin.service-groups.index') }}">← Quay lại</a>
@@ -65,7 +65,7 @@
                     @forelse ($medicalServices as $service)
                         <tr>
                             @include('admin.layouts.partials.row-number', ['rows' => $medicalServices, 'index' => $loop->index])
-                            <td>{{ $service->service_code }}</td><td>{{ $service->name }}</td><td>{{ number_format($service->price, 0, ',', '.') }} đ</td><td>{{ $service->unit ?: '—' }}</td><td>{{ $service->estimated_duration_minutes ? $service->estimated_duration_minutes.' phút' : '—' }}</td>
+                            <td>@include('admin.layouts.partials.record-code', ['code' => $service->service_code])</td><td>{{ $service->name }}</td><td>{{ number_format($service->price, 0, ',', '.') }} đ</td><td>{{ $service->unit ?: '—' }}</td><td>{{ $service->estimated_duration_minutes ? $service->estimated_duration_minutes.' phút' : '—' }}</td>
                             <td>@include('admin.layouts.partials.status-badge', ['badgeCode' => $service->status])</td>
                             <td><div class="admin-actions admin-table-actions"><div class="admin-actions"><a class="admin-btn admin-btn-detail" href="{{ route('admin.medical-services.show', $service) }}">Chi tiết</a><a class="admin-btn admin-btn-secondary" href="{{ route('admin.medical-services.edit', $service) }}">Sửa</a></div></div></td>
                         </tr>

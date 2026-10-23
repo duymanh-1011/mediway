@@ -19,7 +19,7 @@
         <div>
             <h1 class="page-title">Chỉnh sửa tài khoản</h1>
             <p class="page-description">
-                Cập nhật thông tin đăng nhập của {{ $user->business_code }}.
+                Cập nhật thông tin đăng nhập của @include('admin.layouts.partials.record-code', ['code' => $user->business_code]).
             </p>
         </div>
         <a href="{{ route('admin.users.show', $user) }}"
@@ -44,7 +44,7 @@
 
             <div class="account-edit-field">
                 <label for="business_code">Mã tài khoản</label>
-                <input
+                <input class="admin-record-code"
                     id="business_code"
                     type="text"
                     value="{{ $user->business_code }}"

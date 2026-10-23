@@ -9,6 +9,7 @@ use App\Models\VisitConclusion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class VisitConclusionController extends Controller
@@ -218,6 +219,7 @@ class VisitConclusionController extends Controller
 
         $doctors = Doctor::query()
             ->where('status', 'ACTIVE')
+            ->where(fn ($query) => $query->forSpecialty((int) $conclusion->medicalVisit->specialty_id)->orWhere('doctors.id', $conclusion->doctor_id))
             ->orderBy('full_name')
             ->get();
 
@@ -265,6 +267,12 @@ class VisitConclusionController extends Controller
 
         DB::transaction(function () use ($conclusion, $data, $hasFollowUp): void {
             $conclusion->medicalVisit->lockForClinicalWrite();
+            if ((int) $data['doctor_id'] !== (int) $conclusion->doctor_id) {
+                $doctor = Doctor::whereKey($data['doctor_id'])->lockForUpdate()->firstOrFail();
+                if ($doctor->status !== 'ACTIVE' || ! $doctor->canPracticeSpecialty((int) $conclusion->medicalVisit->specialty_id)) {
+                    throw ValidationException::withMessages(['doctor_id' => 'Bác sĩ không thuộc chuyên khoa của lượt khám. Vui lòng chọn lại bác sĩ.']);
+                }
+            }
             $conclusion->update([
                 'doctor_id' => $data['doctor_id'],
 

@@ -198,8 +198,8 @@
 
                         <td>
                             <strong>
-                                {{ $serviceGroup
-                                    ->service_group_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $serviceGroup
+                                    ->service_group_code])
                             </strong>
                         </td>
 

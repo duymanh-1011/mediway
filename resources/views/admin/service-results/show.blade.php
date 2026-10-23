@@ -39,7 +39,7 @@
             <span aria-hidden="true">/</span>
 
             <strong aria-current="page">
-                {{ $service?->service_code ?? 'Chi tiết' }}
+                @include('admin.layouts.partials.record-code', ['code' => $service?->service_code ?? 'Chi tiết'])
             </strong>
 
         </nav>
@@ -139,7 +139,7 @@
                     @if ($order)
 
                         <div class="result-code">
-                            {{ $order->service_order_code }}
+                            @include('admin.layouts.partials.record-code', ['code' => $order->service_order_code])
                         </div>
 
                     @else
@@ -163,7 +163,7 @@
                     @if ($visit)
 
                         <div class="result-secondary-code">
-                            {{ $visit->visit_code }}
+                            @include('admin.layouts.partials.record-code', ['code' => $visit->visit_code])
                         </div>
 
                     @else
@@ -193,7 +193,7 @@
                             </strong>
 
                             <span>
-                                {{ $service->service_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $service->service_code])
                             </span>
 
                         </div>
@@ -279,7 +279,7 @@
                             </strong>
 
                             <span>
-                                {{ $doctor->doctor_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $doctor->doctor_code])
                             </span>
 
                         </div>
@@ -311,7 +311,7 @@
                             </strong>
 
                             <span>
-                                {{ $performer->employee_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $performer->employee_code])
                             </span>
 
                         </div>
@@ -337,7 +337,7 @@
                     @if ($result->verifier)
 
                         <span class="result-verifier">
-                            {{ $result->verifier->business_code }}
+                            @include('admin.layouts.partials.record-code', ['code' => $result->verifier->business_code])
                         </span>
 
                     @else

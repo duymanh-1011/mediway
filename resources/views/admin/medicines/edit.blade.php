@@ -13,7 +13,7 @@
     <span aria-hidden="true">/</span>
     <span>Thuốc</span>
     <span aria-hidden="true">/</span>
-    <span>{{ $medicine->medicine_code }}</span>
+    <span>@include('admin.layouts.partials.record-code', ['code' => $medicine->medicine_code])</span>
     <span aria-hidden="true">/</span>
     <strong aria-current="page">Sửa</strong>
 @endsection

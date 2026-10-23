@@ -111,7 +111,9 @@
                         @foreach ($doctors as $doctor)
 
                             <option
-                                value="{{ $doctor->id }}"
+                    value="{{ $doctor->id }}"
+                    data-specialty-id="{{ $doctor->specialty_id }}"
+                    data-is-general="{{ $doctor->specialty?->is_general ? '1' : '0' }}"
                                 @selected(
                                     (string) request('doctor_id')
                                     ===
@@ -325,7 +327,7 @@
                             @include('admin.layouts.partials.row-number', ['rows' => $medicalVisits, 'index' => $loop->index])
                             <td>
                                 <strong>
-                                    {{ $visit->visit_code }}
+                                    @include('admin.layouts.partials.record-code', ['code' => $visit->visit_code])
                                 </strong>
                             </td>
 
@@ -337,7 +339,7 @@
                                     </strong>
 
                                     <div class="admin-u-ade7448d">
-                                        {{ $visit->patient->patient_code }}
+                                        @include('admin.layouts.partials.record-code', ['code' => $visit->patient->patient_code])
                                     </div>
 
                                 @else

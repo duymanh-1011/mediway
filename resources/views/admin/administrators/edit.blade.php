@@ -20,7 +20,7 @@
             <h1 class="page-title">Chỉnh sửa quản trị viên</h1>
             <p class="page-description">
                 {{ $administrator->full_name }} —
-                {{ $administrator->user?->business_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $administrator->user?->business_code])
             </p>
         </div>
 
@@ -51,7 +51,7 @@
             <div class="ae-grid">
                 <div class="ae-field">
                     <label for="business_code">Mã tài khoản</label>
-                    <input id="business_code" type="text"
+                    <input class="admin-record-code" id="business_code" type="text"
                            value="{{ $administrator->user?->business_code }}"
                            disabled>
                 </div>

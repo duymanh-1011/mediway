@@ -328,7 +328,7 @@
                     <span class="admin-u-fe84f0ba"
 
                     >
-                        {{ $serviceGroup->service_group_code }}
+                        @include('admin.layouts.partials.record-code', ['code' => $serviceGroup->service_group_code])
 
                         @if (
                             $serviceGroup->status

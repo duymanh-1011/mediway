@@ -11,7 +11,7 @@
     <span aria-hidden="true">/</span>
     <span>Lịch và đặt khám</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">{{ $appointment->appointment_code }}</strong>
+    <strong aria-current="page">@include('admin.layouts.partials.record-code', ['code' => $appointment->appointment_code])</strong>
 @endsection
 
 
@@ -53,7 +53,7 @@
         <div>
 
             <h1 class="page-title">
-                {{ $appointment->appointment_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $appointment->appointment_code])
             </h1>
 
             <p class="page-description">
@@ -99,7 +99,7 @@
                 Lịch hẹn này đã phát sinh lượt khám:
 
                 <strong>
-                    {{ $medicalVisit->visit_code }}
+                    @include('admin.layouts.partials.record-code', ['code' => $medicalVisit->visit_code])
                 </strong>
 
             </div>
@@ -188,10 +188,10 @@
                 </span>
 
                 <strong>
-                    {{ $appointment
+                    @include('admin.layouts.partials.record-code', ['code' => $appointment
                         ->patient
                         ?->patient_code
-                        ?? '—' }}
+                        ?? '—'])
                 </strong>
 
             </div>
@@ -312,10 +312,10 @@
 
                 <strong>
 
-                    {{ $appointment
+                    @include('admin.layouts.partials.record-code', ['code' => $appointment
                         ->doctor
                         ?->doctor_code
-                        ?? '—' }}
+                        ?? '—'])
 
                     -
 
@@ -353,10 +353,10 @@
 
                 <strong>
 
-                    {{ $appointment
+                    @include('admin.layouts.partials.record-code', ['code' => $appointment
                         ->examinationRoom
                         ?->room_code
-                        ?? '—' }}
+                        ?? '—'])
 
                     -
 

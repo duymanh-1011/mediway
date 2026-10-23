@@ -147,7 +147,7 @@
                 <strong>Mã lượt khám</strong>
 
                 <div>
-                    {{ $queue->medicalVisit?->visit_code ?: '—' }}
+                    @include('admin.layouts.partials.record-code', ['code' => $queue->medicalVisit?->visit_code ?: '—'])
                 </div>
             </div>
 

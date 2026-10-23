@@ -87,7 +87,7 @@
                             @include('admin.layouts.partials.row-number', ['rows' => $administrators, 'index' => $loop->index])
                             <td>
                                 <strong>
-                                    {{ $administrator->user?->business_code ?? '-' }}
+                                    @include('admin.layouts.partials.record-code', ['code' => $administrator->user?->business_code ?? '-'])
                                 </strong>
                             </td>
                             <td>{{ $administrator->full_name }}</td>

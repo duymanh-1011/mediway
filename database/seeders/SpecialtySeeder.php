@@ -11,6 +11,11 @@ class SpecialtySeeder extends Seeder
     {
         $specialties = [
             [
+                'specialty_code' => 'CKDK',
+                'name' => 'Đa khoa',
+                'pre_visit_instructions' => 'Mang theo hồ sơ khám và kết quả trước đây nếu có',
+            ],
+            [
                 'specialty_code' => 'CKTMH',
                 'name' => 'Tai Mũi Họng',
                 'pre_visit_instructions' => 'Mang theo đơn thuốc và kết quả khám cũ nếu có',
@@ -42,6 +47,7 @@ class SpecialtySeeder extends Seeder
                 ['specialty_code' => $specialty['specialty_code']],
                 [
                     'name' => $specialty['name'],
+                    'is_general' => $specialty['specialty_code'] === 'CKDK',
                     'description' => null,
                     'image_path' => null,
                     'pre_visit_instructions' => $specialty['pre_visit_instructions'],

@@ -31,7 +31,7 @@
 
     @component('admin.layouts.partials.filter-panel', [
         'title' => 'Bộ lọc bác sĩ',
-        'description' => 'Lọc theo từ khóa và trạng thái.',
+        'description' => 'Lọc theo từ khóa, chuyên khoa và trạng thái.',
     ])
         <form method="GET" action="{{ route('admin.doctors.index') }}"
               class="dx-filters admin-filter-form">
@@ -43,6 +43,16 @@
 @error('search')<div class="field-error">{{ $message }}</div>@enderror
             </div>
 
+            <div class="dx-field admin-filter-field">
+                <label for="specialty_id">Chuyên khoa</label>
+                <select id="specialty_id" name="specialty_id">
+                    <option value="">Tất cả chuyên khoa</option>
+                    @foreach($specialties as $specialty)
+                        <option value="{{ $specialty->id }}" @selected((string) request('specialty_id') === (string) $specialty->id)>{{ $specialty->name }}</option>
+                    @endforeach
+                </select>
+                @error('specialty_id')<div class="field-error">{{ $message }}</div>@enderror
+            </div>
             <div class="dx-field admin-filter-field">
                 <label for="status">Trạng thái</label>
                 <select id="status" name="status">
@@ -79,6 +89,7 @@
                         <th scope="col" class="admin-row-number">STT</th>
                         <th>Mã bác sĩ</th>
                         <th>Họ và tên</th>
+                        <th>Chuyên khoa</th>
                         <th>Số điện thoại</th>
                         <th>Chuyên môn</th>
                         <th>Giấy phép hành nghề</th>
@@ -90,8 +101,9 @@
                     @forelse($doctors as $doctor)
                         <tr>
                             @include('admin.layouts.partials.row-number', ['rows' => $doctors, 'index' => $loop->index])
-                            <td><strong>{{ $doctor->doctor_code }}</strong></td>
+                            <td><strong>@include('admin.layouts.partials.record-code', ['code' => $doctor->doctor_code])</strong></td>
                             <td>{{ $doctor->full_name }}</td>
+                            <td>{{ $doctor->specialty?->name ?? 'Chưa phân chuyên khoa' }}</td>
                             <td>{{ $doctor->user?->phone ?? '-' }}</td>
                             <td>
                                 {{ $doctor->detail?->professional_qualification ?: 'Chưa cập nhật' }}
@@ -114,7 +126,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="dx-empty">
+                            <td colspan="9" class="dx-empty">
                                 Chưa có bác sĩ phù hợp với điều kiện tìm kiếm.
                             </td>
                         </tr>

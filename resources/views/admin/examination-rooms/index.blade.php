@@ -264,7 +264,7 @@
 
                         <td>
                             <strong>
-                                {{ $room->room_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $room->room_code])
                             </strong>
                         </td>
 

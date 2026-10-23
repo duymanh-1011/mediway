@@ -189,6 +189,7 @@ class DoctorScheduleController extends Controller
 
         $doctors =
             Doctor::query()
+                ->with('specialty')
                 ->orderBy('full_name')
                 ->get();
 
@@ -420,6 +421,7 @@ class DoctorScheduleController extends Controller
 
         $doctors =
             Doctor::query()
+                ->with('specialty')
                 ->orderBy('full_name')
                 ->get();
 
@@ -474,6 +476,8 @@ class DoctorScheduleController extends Controller
     {
         $doctors =
             Doctor::query()
+                ->with('specialty')
+                ->whereHas('specialty', fn ($query) => $query->where('status', 'ACTIVE'))
                 ->where(
                     'status',
                     'ACTIVE'
@@ -632,6 +636,7 @@ class DoctorScheduleController extends Controller
     ) {
         $doctors =
             Doctor::query()
+                ->with('specialty')
                 ->orderBy('full_name')
                 ->get();
 
@@ -664,7 +669,10 @@ class DoctorScheduleController extends Controller
             $data = $request->validated();
 
             $doctorSchedule = DoctorSchedule::whereKey($doctorSchedule->id)->lockForUpdate()->firstOrFail();
-            $this->lockActiveScheduleParents($data);
+            $allowLegacyDeactivation = $data['status'] === 'INACTIVE'
+                && (int) $doctorSchedule->doctor_id === (int) $data['doctor_id']
+                && (int) $doctorSchedule->specialty_id === (int) $data['specialty_id'];
+            $this->lockActiveScheduleParents($data, $allowLegacyDeactivation);
 
             if ($data['status'] === 'ACTIVE') {
 
@@ -840,16 +848,20 @@ class DoctorScheduleController extends Controller
     }
 
     /** @param array<string, mixed> $data */
-    private function lockActiveScheduleParents(array $data): void
+    private function lockActiveScheduleParents(array $data, bool $allowLegacyDeactivation = false): void
     {
-        if ($data['status'] !== 'ACTIVE') {
-            return;
-        }
+        $doctor = null;
         foreach (['doctor_id' => Doctor::class, 'specialty_id' => Specialty::class, 'examination_room_id' => ExaminationRoom::class] as $field => $model) {
             $parent = $model::whereKey($data[$field])->lockForUpdate()->firstOrFail();
-            if ($parent->status !== 'ACTIVE') {
+            if ($field === 'doctor_id') {
+                $doctor = $parent;
+            }
+            if ($data['status'] === 'ACTIVE' && $parent->status !== 'ACTIVE') {
                 throw ValidationException::withMessages([$field => 'Không thể tạo hoặc kích hoạt lịch với bác sĩ, chuyên khoa hoặc phòng đã ngừng hoạt động.']);
             }
+        }
+        if (! $allowLegacyDeactivation && ! $doctor->canPracticeSpecialty((int) $data['specialty_id'])) {
+            throw ValidationException::withMessages(['doctor_id' => 'Bác sĩ không thuộc chuyên khoa đã chọn. Vui lòng chọn lại bác sĩ hoặc chuyên khoa.']);
         }
     }
 

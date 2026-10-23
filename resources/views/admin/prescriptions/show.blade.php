@@ -32,7 +32,7 @@
             <span aria-hidden="true">/</span>
 
             <strong aria-current="page">
-                {{ $prescription->prescription_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $prescription->prescription_code])
             </strong>
 
         </nav>
@@ -125,7 +125,7 @@
                     </span>
 
                     <strong class="prescription-code">
-                        {{ $prescription->prescription_code }}
+                        @include('admin.layouts.partials.record-code', ['code' => $prescription->prescription_code])
                     </strong>
 
                 </div>
@@ -138,7 +138,7 @@
                     </span>
 
                     <strong>
-                        {{ $visit?->visit_code ?? '—' }}
+                        @include('admin.layouts.partials.record-code', ['code' => $visit?->visit_code ?? '—'])
                     </strong>
 
                 </div>
@@ -157,7 +157,7 @@
                     @if ($doctor?->doctor_code)
 
                         <small>
-                            {{ $doctor->doctor_code }}
+                            @include('admin.layouts.partials.record-code', ['code' => $doctor->doctor_code])
                         </small>
 
                     @endif
@@ -306,7 +306,7 @@
                                 @include('admin.layouts.partials.row-number', ['rows' => $prescription->items, 'index' => $loop->index])
                                 <td class="admin-medicine-info">
                                     <strong>{{ $medicine?->name ?? 'Thuốc không xác định' }}</strong>
-                                    <p>{{ $medicine?->medicine_code ?? '—' }}</p>
+                                    <p>@include('admin.layouts.partials.record-code', ['code' => $medicine?->medicine_code ?? '—'])</p>
                                     <p>Hoạt chất: {{ $medicine?->active_ingredient ?? '—' }}</p>
                                     <p>Hàm lượng: {{ $medicine?->strength ?? '—' }}</p>
                                     <p>Dạng bào chế: {{ $medicine?->dosage_form ?? '—' }}</p>

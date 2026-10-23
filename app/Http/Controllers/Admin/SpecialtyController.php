@@ -422,6 +422,8 @@ class SpecialtyController extends Controller
             $hasSchedules
             || $hasAppointments
             || $hasVisits
+            || $specialty->doctors()->exists()
+            || $specialty->is_general
         ) {
             $specialty->update([
                 'status' => 'INACTIVE',

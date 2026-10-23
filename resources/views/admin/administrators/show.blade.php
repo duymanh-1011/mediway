@@ -31,7 +31,7 @@
         <div>
             <h1 class="page-title">{{ $administrator->full_name }}</h1>
             <p class="page-description">
-                Hồ sơ quản trị viên {{ $user?->business_code ?? '' }}
+                Hồ sơ quản trị viên @include('admin.layouts.partials.record-code', ['code' => $user?->business_code ?? ''])
             </p>
         </div>
 
@@ -92,7 +92,7 @@
             <h2>Tài khoản đăng nhập</h2>
 
             <dl class="ad-details">
-                <div><dt>Mã tài khoản</dt><dd><strong>{{ $user?->business_code ?? '-' }}</strong></dd></div>
+                <div><dt>Mã tài khoản</dt><dd><strong>@include('admin.layouts.partials.record-code', ['code' => $user?->business_code ?? '-'])</strong></dd></div>
                 <div><dt>Số điện thoại</dt><dd>{{ $user?->phone ?? '-' }}</dd></div>
                 <div><dt>Vai trò</dt><dd>{{ \App\Models\AdminDisplay::label($user?->role?->name ?? '-') }}</dd></div>
                 <div>

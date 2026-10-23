@@ -13,7 +13,7 @@
     <span aria-hidden="true">/</span>
     <span>Chuyên khoa</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">{{ $specialty->specialty_code }}</strong>
+    <strong aria-current="page">@include('admin.layouts.partials.record-code', ['code' => $specialty->specialty_code])</strong>
 @endsection
 
 @section('content')
@@ -28,7 +28,7 @@
 
             <p class="page-description">
                 Mã chuyên khoa:
-                {{ $specialty->specialty_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $specialty->specialty_code])
             </p>
 
         </div>
@@ -82,7 +82,7 @@
                 </div>
 
                 <div class="detail-value">
-                    {{ $specialty->specialty_code }}
+                    @include('admin.layouts.partials.record-code', ['code' => $specialty->specialty_code])
                 </div>
 
             </div>
@@ -265,7 +265,7 @@
 
                                 <td>
 
-                                    {{ $schedule->doctor_code }}
+                                    @include('admin.layouts.partials.record-code', ['code' => $schedule->doctor_code])
 
                                     <br>
 
@@ -277,7 +277,7 @@
 
                                 <td>
 
-                                    {{ $schedule->room_code }}
+                                    @include('admin.layouts.partials.record-code', ['code' => $schedule->room_code])
 
                                     <br>
 
@@ -374,8 +374,8 @@
                         @include('admin.layouts.partials.row-number', ['rows' => $recentAppointments, 'index' => $loop->index])
                         <td>
                             <strong>
-                                {{ $appointment
-                                    ->appointment_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $appointment
+                                    ->appointment_code])
                             </strong>
                         </td>
 
@@ -390,8 +390,8 @@
 
                         <td>
 
-                            {{ $appointment
-                                ->patient_code }}
+                            @include('admin.layouts.partials.record-code', ['code' => $appointment
+                                ->patient_code])
 
                             <br>
 
@@ -404,8 +404,8 @@
 
                         <td>
 
-                            {{ $appointment
-                                ->doctor_code }}
+                            @include('admin.layouts.partials.record-code', ['code' => $appointment
+                                ->doctor_code])
 
                             <br>
 

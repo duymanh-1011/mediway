@@ -78,7 +78,7 @@
             <h1 class="page-title">{{ $patient->full_name }}</h1>
             <p class="page-description">
                 Hồ sơ bệnh nhân
-                <strong>{{ $patient->patient_code }}</strong>
+                <strong>@include('admin.layouts.partials.record-code', ['code' => $patient->patient_code])</strong>
 
                 @include('admin.layouts.partials.status-badge', ['badgeCode' => $patient->status])
             </p>
@@ -163,7 +163,7 @@
                 <dl class="pd-details">
                     <div>
                         <dt>Mã bệnh nhân</dt>
-                        <dd><strong>{{ $patient->patient_code }}</strong></dd>
+                        <dd><strong>@include('admin.layouts.partials.record-code', ['code' => $patient->patient_code])</strong></dd>
                     </div>
 
                     <div>
@@ -207,7 +207,7 @@
                         <div>
                             <dt>Mã tài khoản</dt>
                             <dd>
-                                <strong>{{ $user->business_code }}</strong>
+                                <strong>@include('admin.layouts.partials.record-code', ['code' => $user->business_code])</strong>
                             </dd>
                         </div>
 
@@ -376,7 +376,7 @@
                 <div>
                     <h2>Lịch sử chỉ số sức khỏe</h2>
                     <p class="pd-help">
-                        {{ $patient->patient_code }} —
+                        @include('admin.layouts.partials.record-code', ['code' => $patient->patient_code]) —
                         {{ $healthRecordCount }} lần ghi nhận
                     </p>
                 </div>

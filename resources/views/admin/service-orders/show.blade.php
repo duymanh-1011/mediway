@@ -25,7 +25,7 @@
             <span aria-hidden="true">/</span>
 
             <strong aria-current="page">
-                {{ $order->service_order_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $order->service_order_code])
             </strong>
 
         </nav>
@@ -38,7 +38,7 @@
 
 
                 <h1>
-                    {{ $order->service_order_code }}
+                    @include('admin.layouts.partials.record-code', ['code' => $order->service_order_code])
                 </h1>
 
                 <p>
@@ -113,7 +113,7 @@
                     </div>
 
                     <div class="order-code">
-                        {{ $order->service_order_code }}
+                        @include('admin.layouts.partials.record-code', ['code' => $order->service_order_code])
                     </div>
 
                 </div>
@@ -128,7 +128,7 @@
                     @if ($order->medicalVisit)
 
                         <div class="order-value-code">
-                            {{ $order->medicalVisit->visit_code }}
+                            @include('admin.layouts.partials.record-code', ['code' => $order->medicalVisit->visit_code])
                         </div>
 
                     @else
@@ -157,7 +157,7 @@
                             </strong>
 
                             <span>
-                                {{ $order->orderedByDoctor->doctor_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $order->orderedByDoctor->doctor_code])
                             </span>
 
                         </div>
@@ -355,7 +355,7 @@
                                     </h3>
 
                                     <div class="service-code">
-                                        {{ $item->medicalService->service_code }}
+                                        @include('admin.layouts.partials.record-code', ['code' => $item->medicalService->service_code])
                                     </div>
 
                                 @else
@@ -607,7 +607,7 @@
                                     </strong>
 
                                     <span>
-                                        {{ $item->performer->employee_code }}
+                                        @include('admin.layouts.partials.record-code', ['code' => $item->performer->employee_code])
                                     </span>
 
                                 </div>
@@ -883,7 +883,7 @@
                                         </span>
 
                                         <strong class="related-code">
-                                            {{ $payable->payable_code }}
+                                            @include('admin.layouts.partials.record-code', ['code' => $payable->payable_code])
                                         </strong>
 
                                     </div>

@@ -32,7 +32,7 @@
         <label for="patient_id">Bệnh nhân <span>*</span></label>
 
         @if($editing)
-            <input
+            <input class="admin-record-code"
                 type="text"
                 value="{{ $record->patient?->patient_code }} — {{ $record->patient?->full_name }}"
                 disabled

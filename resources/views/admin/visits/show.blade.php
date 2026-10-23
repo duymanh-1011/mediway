@@ -13,7 +13,7 @@
     <span aria-hidden="true">/</span>
     <span>Lượt khám</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">{{ $medicalVisit->visit_code }}</strong>
+    <strong aria-current="page">@include('admin.layouts.partials.record-code', ['code' => $medicalVisit->visit_code])</strong>
 @endsection
 
 
@@ -31,7 +31,7 @@
 
         <div>
             <h1 class="page-title">
-                {{ $medicalVisit->visit_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $medicalVisit->visit_code])
             </h1>
 
             <p class="page-description">
@@ -209,7 +209,7 @@
                 <span>Mã lượt khám</span>
 
                 <strong>
-                    {{ $medicalVisit->visit_code }}
+                    @include('admin.layouts.partials.record-code', ['code' => $medicalVisit->visit_code])
                 </strong>
             </div>
 
@@ -283,9 +283,9 @@
                     <span>Mã lịch hẹn</span>
 
                     <strong>
-                        {{ $medicalVisit
+                        @include('admin.layouts.partials.record-code', ['code' => $medicalVisit
                             ->appointment
-                            ->appointment_code }}
+                            ->appointment_code])
                     </strong>
                 </div>
 
@@ -357,10 +357,10 @@
                 <span>Mã bệnh nhân</span>
 
                 <strong>
-                    {{ $medicalVisit
+                    @include('admin.layouts.partials.record-code', ['code' => $medicalVisit
                         ->patient
                         ?->patient_code
-                        ?? '—' }}
+                        ?? '—'])
                 </strong>
             </div>
 
@@ -434,10 +434,10 @@
                 <span>Bác sĩ</span>
 
                 <strong>
-                    {{ $medicalVisit
+                    @include('admin.layouts.partials.record-code', ['code' => $medicalVisit
                         ->doctor
                         ?->doctor_code
-                        ?? '—' }}
+                        ?? '—'])
 
                     -
 
@@ -465,10 +465,10 @@
                 <span>Phòng khám</span>
 
                 <strong>
-                    {{ $medicalVisit
+                    @include('admin.layouts.partials.record-code', ['code' => $medicalVisit
                         ->examinationRoom
                         ?->room_code
-                        ?? '—' }}
+                        ?? '—'])
 
                     -
 
@@ -886,7 +886,7 @@
                                 @include('admin.layouts.partials.row-number', ['rows' => $medicalVisit->serviceOrders, 'index' => $loop->index])
                                 <td>
                                     <strong>
-                                        {{ $order->service_order_code }}
+                                        @include('admin.layouts.partials.record-code', ['code' => $order->service_order_code])
                                     </strong>
                                 </td>
 
@@ -965,10 +965,10 @@
                                                     </strong>
 
                                                     <span class="service-code">
-                                                        {{ $item
+                                                        @include('admin.layouts.partials.record-code', ['code' => $item
                                                             ->medicalService
                                                             ?->service_code
-                                                            ?? '' }}
+                                                            ?? ''])
                                                     </span>
 
                                                 </div>

@@ -49,7 +49,7 @@
     @if($editing)
         <div class="pf-field">
             <label>Mã bệnh nhân</label>
-            <input type="text" value="{{ $patient->patient_code }}" disabled>
+            <input class="admin-record-code" type="text" value="{{ $patient->patient_code }}" disabled>
         </div>
     @endif
 

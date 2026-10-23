@@ -27,7 +27,7 @@
             <span aria-hidden="true">/</span>
 
             <strong aria-current="page">
-                {{ $transaction->transaction_code }}
+                @include('admin.layouts.partials.record-code', ['code' => $transaction->transaction_code])
             </strong>
 
         </nav>
@@ -91,7 +91,7 @@
                     <span>Mã giao dịch</span>
 
                     <strong class="transaction-code">
-                        {{ $transaction->transaction_code }}
+                        @include('admin.layouts.partials.record-code', ['code' => $transaction->transaction_code])
                     </strong>
                 </div>
 
@@ -100,7 +100,7 @@
                     <span>Khoản phải thanh toán</span>
 
                     <strong>
-                        {{ $payable?->payable_code ?? '—' }}
+                        @include('admin.layouts.partials.record-code', ['code' => $payable?->payable_code ?? '—'])
                     </strong>
                 </div>
 
@@ -109,7 +109,7 @@
                     <span>Lượt khám</span>
 
                     <strong>
-                        {{ $visit?->visit_code ?? '—' }}
+                        @include('admin.layouts.partials.record-code', ['code' => $visit?->visit_code ?? '—'])
                     </strong>
                 </div>
 
@@ -164,10 +164,8 @@
                     <span>Mã giao dịch nhà cung cấp</span>
 
                     <strong>
-                        {{
-        $transaction->provider_transaction_code
-        ?: '—'
-                        }}
+                        @include('admin.layouts.partials.record-code', ['code' => $transaction->provider_transaction_code
+        ?: '—'])
                     </strong>
                 </div>
 
@@ -181,7 +179,7 @@
 
                     @if ($collector?->employee_code)
                         <small>
-                            {{ $collector->employee_code }}
+                            @include('admin.layouts.partials.record-code', ['code' => $collector->employee_code])
                         </small>
                     @endif
                 </div>
@@ -328,7 +326,7 @@
                         <span>Mã khoản thu</span>
 
                         <strong>
-                            {{ $payable->payable_code }}
+                            @include('admin.layouts.partials.record-code', ['code' => $payable->payable_code])
                         </strong>
                     </div>
 

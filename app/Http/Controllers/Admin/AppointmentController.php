@@ -194,6 +194,7 @@ class AppointmentController extends Controller
 
         $doctors =
             Doctor::query()
+                ->with('specialty')
                 ->orderBy('full_name')
                 ->get();
 
@@ -631,6 +632,10 @@ class AppointmentController extends Controller
                 throw ValidationException::withMessages(['appointment' => 'Khung giờ của lịch hẹn vừa thay đổi. Vui lòng tải lại trang.']);
             }
             $lockedAppointment->assertReceptionDate();
+            $doctor = Doctor::whereKey($lockedAppointment->doctor_id)->lockForUpdate()->firstOrFail();
+            if (! $doctor->canPracticeSpecialty((int) $lockedAppointment->specialty_id)) {
+                throw ValidationException::withMessages(['appointment' => 'Bác sĩ chưa được phân chuyên khoa phù hợp với lịch hẹn. Vui lòng kiểm tra hồ sơ bác sĩ trước khi tiếp nhận.']);
+            }
             $duplicateVisit = MedicalVisit::query()->join('appointments', 'appointments.id', '=', 'medical_visits.appointment_id')
                 ->where('appointments.patient_id', $lockedAppointment->patient_id)
                 ->where('appointments.appointment_time_slot_id', $receptionSlot->id)
@@ -1301,6 +1306,7 @@ class AppointmentController extends Controller
     private function getSelectableSchedules(?int $currentSlotId = null)
     {
         return DoctorSchedule::query()
+            ->withQualifiedDoctor()
             ->with([
                 'doctor', 'specialty', 'examinationRoom',
                 'appointmentTimeSlots' => fn ($query) => $query->where('status', 'ACTIVE')
@@ -1573,7 +1579,12 @@ class AppointmentController extends Controller
     {
         $schedule = DoctorSchedule::whereKey($doctorScheduleId)->lockForUpdate()->firstOrFail();
         $slot = AppointmentTimeSlot::whereKey($slotId)->lockForUpdate()->firstOrFail();
+        $doctor = Doctor::whereKey($schedule->doctor_id)->lockForUpdate()->firstOrFail();
+        $schedule->setRelation('doctor', $doctor);
         $slot->setRelation('doctorSchedule', $schedule);
+        if (! $doctor->canPracticeSpecialty((int) $schedule->specialty_id)) {
+            throw ValidationException::withMessages(['appointment_time_slot_id' => 'Bác sĩ chưa được phân chuyên khoa phù hợp với lịch làm việc này. Vui lòng chọn lịch khác hoặc cập nhật hồ sơ bác sĩ.']);
+        }
         if (! $schedule->work_date->betweenIncluded(today(), today()->addDays(Appointment::BOOKING_ADVANCE_DAYS))) {
             throw ValidationException::withMessages(['appointment_time_slot_id' => 'Chỉ được đặt lịch từ ngày '.today()->format('d/m/Y').' đến ngày '.today()->addDays(Appointment::BOOKING_ADVANCE_DAYS)->format('d/m/Y').'. Vui lòng chọn lại khung giờ.']);
         }

@@ -78,12 +78,12 @@
     @if($editing)
         <div class="em-field">
             <label>Mã nhân viên</label>
-            <input type="text" value="{{ $employee->employee_code }}" disabled>
+            <input class="admin-record-code" type="text" value="{{ $employee->employee_code }}" disabled>
         </div>
 
         <div class="em-field">
             <label>Tài khoản liên kết</label>
-            <input
+            <input class="admin-record-code"
                 type="text"
                 value="{{ $employee->user?->business_code }} — {{ $employee->user?->phone }}"
                 disabled

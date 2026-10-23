@@ -150,7 +150,7 @@
                         <tr>
                             @include('admin.layouts.partials.row-number', ['rows' => $users, 'index' => $loop->index])
                             <td>
-                                <strong>{{ $user->business_code }}</strong>
+                                <strong>@include('admin.layouts.partials.record-code', ['code' => $user->business_code])</strong>
                             </td>
 
                             <td>{{ $user->phone }}</td>

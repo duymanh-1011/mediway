@@ -268,7 +268,7 @@
                             </td>
 
                             <td>
-                                {{ $queue->medicalVisit?->visit_code ?: '—' }}
+                                @include('admin.layouts.partials.record-code', ['code' => $queue->medicalVisit?->visit_code ?: '—'])
                             </td>
 
                             <td>

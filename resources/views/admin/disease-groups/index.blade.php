@@ -198,8 +198,8 @@
 
                         <td>
                             <strong>
-                                {{ $diseaseGroup
-                                    ->disease_group_code }}
+                                @include('admin.layouts.partials.record-code', ['code' => $diseaseGroup
+                                    ->disease_group_code])
                             </strong>
                         </td>
 

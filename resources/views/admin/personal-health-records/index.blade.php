@@ -112,7 +112,7 @@
                             @include('admin.layouts.partials.row-number', ['rows' => $records, 'index' => $loop->index])
                             <td>{{ $record->recorded_at?->format('d/m/Y H:i') }}</td>
                             <td>
-                                <strong>{{ $record->patient_code }}</strong>
+                                <strong>@include('admin.layouts.partials.record-code', ['code' => $record->patient_code])</strong>
                             </td>
                             <td>{{ $record->patient?->full_name ?? '-' }}</td>
                             <td>

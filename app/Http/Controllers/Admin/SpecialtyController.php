@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreSpecialtyRequest;
 use App\Http\Requests\Admin\UpdateSpecialtyRequest;
 use App\Models\Specialty;
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -36,11 +35,11 @@ class SpecialtyController extends Controller
                     'like',
                     "%{$keyword}%"
                 )
-                ->orWhere(
-                    'name',
-                    'like',
-                    "%{$keyword}%"
-                );
+                    ->orWhere(
+                        'name',
+                        'like',
+                        "%{$keyword}%"
+                    );
             });
         }
 
@@ -434,7 +433,7 @@ class SpecialtyController extends Controller
                 )
                 ->with(
                     'success',
-                    'Chuyên khoa đã được sử dụng trong hệ thống nên không thể xóa. Hệ thống đã chuyển chuyên khoa sang trạng thái INACTIVE.'
+                    'Chuyên khoa đã có lịch sử sử dụng nên không thể xóa. Đã ngừng hoạt động chuyên khoa và giữ nguyên lịch sử.'
                 );
         }
 

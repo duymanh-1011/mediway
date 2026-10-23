@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditValuePresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -107,11 +108,15 @@ class AuditLogController extends Controller
             ->where('al.id', $id)
             ->first();
 
-        abort_if(!$log, 404);
+        abort_if(! $log, 404);
+
+        $presenter = app(AuditValuePresenter::class);
+        $oldRows = $presenter->rows($log->old_values);
+        $newRows = $presenter->rows($log->new_values);
 
         return view(
             'admin.audit-logs.show',
-            compact('log')
+            compact('log', 'oldRows', 'newRows')
         );
     }
 }

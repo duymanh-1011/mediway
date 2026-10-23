@@ -33,10 +33,8 @@
         <div class="header-actions">
             <a
                 href="{{ route('admin.visits.show', $visit) }}"
-                class="admin-btn admin-btn-secondary btn btn-secondary"
-            >
-                ← Quay lại lượt khám
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
         </div>
 
     </div>
@@ -124,9 +122,7 @@
             <div class="detail-row">
                 <span>Trạng thái</span>
 
-                <strong>
-                    {{ \App\Models\AdminDisplay::label($visit->status?->name ?? '—') }}
-                </strong>
+                <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $visit->status?->name ?? '—'])</strong>
             </div>
 
         </div>
@@ -355,12 +351,12 @@
 
             <a
                 href="{{ route('admin.visits.show', $visit) }}"
-                class="btn btn-secondary"
+                class="admin-btn admin-btn-secondary"
             >Hủy</a>
 
             <button
                 type="submit"
-                class="btn btn-primary"
+                class="admin-btn admin-btn-primary"
                 {{ $services->isEmpty() ? 'disabled' : '' }}
             >
                 Tạo phiếu chỉ định

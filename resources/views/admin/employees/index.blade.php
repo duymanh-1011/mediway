@@ -21,9 +21,7 @@
                 Tra cứu nhân viên theo phòng ban, loại nhân viên và trạng thái.
             </p>
         </div>
-        <a href="{{ route('admin.employees.create') }}" class="admin-btn ei-btn ei-primary admin-btn-primary">
-            + Thêm nhân viên
-        </a>
+        <a href="{{ route('admin.employees.create') }}" class="admin-btn admin-btn-primary">Thêm nhân viên</a>
     </div>
 
     @if(session('success'))
@@ -73,8 +71,8 @@
                 <label for="status">Trạng thái</label>
                 <select id="status" name="status">
                     <option value="">Tất cả</option>
-                    <option value="ACTIVE" @selected($status === 'ACTIVE')>Hoạt động</option>
-                    <option value="INACTIVE" @selected($status === 'INACTIVE')>Không hoạt động</option>
+                    <option value="ACTIVE" @selected($status === 'ACTIVE')>Đang hoạt động</option>
+                    <option value="INACTIVE" @selected($status === 'INACTIVE')>Ngừng hoạt động</option>
                 </select>
 @error('status')<div class="field-error">{{ $message }}</div>@enderror
             </div>
@@ -87,6 +85,8 @@
     @endcomponent
 
     <div class="ei-card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách nhân viên'])
+
 
         @if($errors->any())
             <div class="ei-alert ei-error">
@@ -122,18 +122,16 @@
                             <td>{{ $employee->detail?->position ?: '-' }}</td>
                             <td>{{ \App\Models\AdminDisplay::label($employee->detail?->employee_type) }}</td>
                             <td>
-                                <span class="ei-status {{ $employee->status === 'ACTIVE' ? 'ei-active' : 'ei-inactive' }}">
-                                    {{ $employee->status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động' }}
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => $employee->status])
                             </td>
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
                                 <div class="ei-row-actions">
                                     <a href="{{ route('admin.employees.show', $employee) }}"
-                                       class="admin-btn admin-btn-detail ei-link ei-view">Chi tiết</a>
+                                       class="admin-btn admin-btn-detail">Chi tiết</a>
                                     <a href="{{ route('admin.employees.edit', $employee) }}"
-                                       class="admin-btn admin-btn-secondary ei-link ei-edit">Sửa</a>
+                                       class="admin-btn admin-btn-secondary">Sửa</a>
                                 </div>
-                            </td>
+                            </div></td>
                         </tr>
                     @empty
                         <tr>
@@ -150,19 +148,19 @@
             <span>Hiển thị {{ $employees->count() }} / {{ $employees->total() }} nhân viên</span>
             <div class="ei-pages">
                 @if($employees->onFirstPage())
-                    <span class="ei-btn ei-light ei-disabled">Trước</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
                 @else
                     <a href="{{ $employees->previousPageUrl() }}"
-                       class="ei-btn ei-light">Trước</a>
+                       class="admin-btn admin-btn-secondary">Trước</a>
                 @endif
 
                 <span>Trang {{ $employees->currentPage() }} / {{ $employees->lastPage() }}</span>
 
                 @if($employees->hasMorePages())
                     <a href="{{ $employees->nextPageUrl() }}"
-                       class="ei-btn ei-light">Sau</a>
+                       class="admin-btn admin-btn-secondary">Sau</a>
                 @else
-                    <span class="ei-btn ei-light ei-disabled">Sau</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
                 @endif
             </div>
         </div>

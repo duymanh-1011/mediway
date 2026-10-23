@@ -5,15 +5,7 @@
 
 @section('content')
 
-    @php
-        $resultClass = match (
-        strtoupper($transaction->transaction_result ?? '')
-        ) {
-            'SUCCESS' => 'success',
-            'FAILED' => 'failed',
-            default => 'default',
-        };
-    @endphp
+
 
 
     <div class="transaction-detail-page">
@@ -60,21 +52,14 @@
             </div>
 
 
-            <span class="
-                    transaction-result
-                    {{ $resultClass }}
-                ">
-                {{ \App\Models\AdminDisplay::label($transaction->transaction_result) }}
-            </span>
+            @include('admin.layouts.partials.status-badge', ['badgeCode' => $transaction->transaction_result])
 
         </div>
 
 
         <div class="transaction-actions">
 
-            <a href="{{ route('admin.payment-transactions.index') }}" class="transaction-btn transaction-btn-secondary">
-                ← Quay lại danh sách
-            </a>
+            <a href="{{ route('admin.payment-transactions.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
 
 
             @if ($payable)
@@ -82,7 +67,7 @@
                     <a href="{{ route(
                     'admin.payables.show',
                     $payable->id
-                ) }}" class="transaction-btn transaction-btn-primary">
+                ) }}" class="admin-btn admin-btn-detail">
                         Xem khoản phải thanh toán
                     </a>
 
@@ -141,9 +126,7 @@
                 <div>
                     <span>Kết quả</span>
 
-                    <strong>
-                        {{ \App\Models\AdminDisplay::label($transaction->transaction_result) }}
-                    </strong>
+                    <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $transaction->transaction_result])</strong>
                 </div>
 
 
@@ -368,9 +351,7 @@
                     <div>
                         <span>Trạng thái khoản thu</span>
 
-                        <strong>
-                            {{ \App\Models\AdminDisplay::label($payable->paymentStatus?->name ?? '—') }}
-                        </strong>
+                        <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $payable->paymentStatus?->name ?? '—', 'badgeContext' => 'payment'])</strong>
                     </div>
 
 

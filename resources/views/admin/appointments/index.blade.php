@@ -34,10 +34,8 @@
             href="{{ route(
                 'admin.appointments.create'
             ) }}"
-            class="admin-btn btn btn-primary admin-btn-primary"
-        >
-            + Thêm lịch hẹn
-        </a>
+            class="admin-btn admin-btn-primary"
+        >Thêm lịch hẹn</a>
 
     </div>
 
@@ -283,6 +281,8 @@
 
 
     <div class="card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách lịch hẹn'])
+
 
         <div class="table-wrapper">
 
@@ -375,12 +375,7 @@
 
                         <td>
 
-                            <span class="status-badge">
-                                {{ \App\Models\AdminDisplay::label($appointment
-                                    ->appointmentStatus
-                                    ?->name
-                                    ?? '—') }}
-                            </span>
+                            @include('admin.layouts.partials.status-badge', ['badgeCode' => $appointment->appointmentStatus?->name ?? '—'])
 
                         </td>
 
@@ -402,17 +397,17 @@
 
                         </td>
 
-                        <td>
+                        <td><div class="admin-actions admin-table-actions">
 
                             <a
                                 href="{{ route(
                                     'admin.appointments.show',
                                     $appointment
                                 ) }}"
-                                class="admin-btn admin-btn-detail action-link"
+                                class="admin-btn admin-btn-detail"
                             >Chi tiết</a>
 
-                        </td>
+                        </div></td>
 
                     </tr>
 

@@ -71,11 +71,13 @@ class UpdateVisitDiagnosisRequest extends FormRequest
 
             'diagnosis_type.max' => 'Loại chẩn đoán không được vượt quá 40 ký tự.',
 
+            'diagnosis_type.unique' => 'Lượt khám đã có bệnh này với cùng loại chẩn đoán. Vui lòng sửa chẩn đoán đã có hoặc chọn loại khác.',
+
             'severity.max' => 'Mức độ không được vượt quá 40 ký tự.',
 
             'diagnosis_description.max' => 'Mô tả chẩn đoán không được vượt quá 5000 ký tự.',
 
-            'diagnosed_at.date' => 'Thời điểm chẩn đoán không hợp lệ.',
+            'diagnosed_at.date' => 'Thời điểm chẩn đoán chưa hợp lệ. Vui lòng chọn đủ ngày và giờ.',
 
             'notes.max' => 'Ghi chú không được vượt quá 5000 ký tự.',
         ];

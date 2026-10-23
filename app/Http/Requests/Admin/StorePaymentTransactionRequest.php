@@ -49,37 +49,28 @@ class StorePaymentTransactionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'payment_method.required' =>
-                'Vui lòng chọn phương thức thanh toán.',
+            'payment_method.required' => 'Vui lòng chọn phương thức thanh toán.',
 
-            'payment_method.in' =>
-                'Phương thức thanh toán không hợp lệ.',
+            'payment_method.in' => 'Vui lòng chọn phương thức thanh toán từ các lựa chọn có sẵn.',
 
-            'provider_transaction_code.max' =>
-                'Mã giao dịch nhà cung cấp không được vượt quá 120 ký tự.',
+            'provider_transaction_code.max' => 'Mã giao dịch nhà cung cấp không được vượt quá 120 ký tự.',
 
-            'payment_content.max' =>
-                'Nội dung thanh toán không được vượt quá 255 ký tự.',
+            'payment_content.max' => 'Nội dung thanh toán không được vượt quá 255 ký tự.',
 
-            'confirm_payment.accepted' =>
-                'Bạn phải xác nhận trước khi ghi nhận thanh toán.',
+            'confirm_payment.accepted' => 'Vui lòng xác nhận thông tin thanh toán trước khi lưu giao dịch.',
         ];
     }
 
     public function attributes(): array
     {
         return [
-            'payment_method' =>
-                'phương thức thanh toán',
+            'payment_method' => 'phương thức thanh toán',
 
-            'provider_transaction_code' =>
-                'mã giao dịch nhà cung cấp',
+            'provider_transaction_code' => 'mã giao dịch nhà cung cấp',
 
-            'payment_content' =>
-                'nội dung thanh toán',
+            'payment_content' => 'nội dung thanh toán',
 
-            'notes' =>
-                'ghi chú',
+            'notes' => 'ghi chú',
         ];
     }
 }

@@ -49,11 +49,11 @@ class StoreAppointmentTimeSlotRequest extends FormRequest
         return [
             'start_time.required' => 'Vui lòng nhập giờ bắt đầu.',
 
-            'start_time.date_format' => 'Giờ bắt đầu không hợp lệ.',
+            'start_time.date_format' => 'Giờ bắt đầu chưa đúng. Vui lòng nhập theo dạng giờ:phút, ví dụ 08:30.',
 
             'end_time.required' => 'Vui lòng nhập giờ kết thúc.',
 
-            'end_time.date_format' => 'Giờ kết thúc không hợp lệ.',
+            'end_time.date_format' => 'Giờ kết thúc chưa đúng. Vui lòng nhập theo dạng giờ:phút, ví dụ 11:30.',
 
             'end_time.after' => 'Giờ kết thúc phải sau giờ bắt đầu.',
 
@@ -61,11 +61,11 @@ class StoreAppointmentTimeSlotRequest extends FormRequest
 
             'max_patients.integer' => 'Sức chứa phải là số nguyên.',
 
-            'max_patients.min' => 'Sức chứa phải lớn hơn hoặc bằng 1.',
+            'max_patients.min' => 'Mỗi khung giờ phải tiếp nhận được ít nhất 1 bệnh nhân.',
 
             'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' => 'Trạng thái khung giờ không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái khung giờ từ các lựa chọn có sẵn.',
         ];
     }
 }

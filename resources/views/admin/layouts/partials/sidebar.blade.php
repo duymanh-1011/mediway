@@ -519,10 +519,7 @@
                 href="{{ route(
                     'admin.payment-transactions.index'
                 ) }}"
-                class="sidebar-link
-                    {{ request()->routeIs(
-                        'admin.payment-transactions.*'
-                    ) ? 'active' : '' }}"
+                class="sidebar-link {{ request()->routeIs('admin.payment-transactions.*') ? 'active' : '' }}"
             >
                 <span class="sidebar-link-dot"></span>
 

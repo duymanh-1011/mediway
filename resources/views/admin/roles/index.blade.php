@@ -20,9 +20,7 @@
                 Quản lý các nhóm tài khoản và vai trò trong hệ thống Mediway.
             </p>
         </div>
-        <a href="{{ route('admin.roles.create') }}" class="admin-btn btn btn-primary admin-btn-primary">
-            + Thêm vai trò
-        </a>
+        <a href="{{ route('admin.roles.create') }}" class="admin-btn admin-btn-primary">Thêm vai trò</a>
     </div>
 
     @component('admin.layouts.partials.filter-panel', [
@@ -42,9 +40,7 @@
                 <label for="status">Trạng thái</label>
                 <select id="status" name="status">
                     <option value="">Tất cả trạng thái</option>
-                    <option value="ACTIVE" {{ $status === 'ACTIVE' ? 'selected' : '' }}>
-                        Hoạt động
-                    </option>
+                    <option value="ACTIVE" {{ $status === 'ACTIVE' ? 'selected' : '' }}>Đang hoạt động</option>
                     <option value="INACTIVE" {{ $status === 'INACTIVE' ? 'selected' : '' }}>
                         Ngừng hoạt động
                     </option>
@@ -60,6 +56,8 @@
     @endcomponent
 
     <div class="card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách vai trò'])
+
 
         <div class="table-wrapper">
             <table class="admin-table">
@@ -82,9 +80,7 @@
                             <td>{{ $role->description ?: 'Chưa có mô tả' }}</td>
                             <td>{{ $role->users_count }}</td>
                             <td>
-                                <span class="badge {{ $role->status === 'ACTIVE' ? 'badge-success' : 'badge-danger' }}">
-                                    {{ $role->status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động' }}
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => $role->status])
 </td>
                             <td>
                                 @if ($role->isSystemRole())
@@ -93,13 +89,13 @@
                                     <span class="badge badge-warning">Tùy chỉnh</span>
                                 @endif
                             </td>
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
                                 <div class="role-actions">
                                     <a href="{{ route('admin.roles.show', $role) }}"
-                                       class="admin-btn admin-btn-detail role-action role-view">Chi tiết</a>
+                                       class="admin-btn admin-btn-detail">Chi tiết</a>
 
                                     <a href="{{ route('admin.roles.edit', $role) }}"
-                                       class="admin-btn admin-btn-secondary role-action role-edit">Sửa</a>
+                                       class="admin-btn admin-btn-secondary">Sửa</a>
 
                                     @if (!$role->isSystemRole() && $role->users_count === 0)
                                         <form novalidate method="POST"
@@ -107,13 +103,13 @@
                                               onsubmit="return confirm('Bạn chắc chắn muốn xóa vai trò này?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="role-action role-delete">
+                                            <button type="submit" class="admin-btn admin-btn-danger">
                                                 Xóa
                                             </button>
                                         </form>
                                     @endif
                                 </div>
-                            </td>
+                            </div></td>
                         </tr>
                     @empty
                         <tr>
@@ -133,9 +129,9 @@
 
             <div class="role-pagination">
                 @if ($roles->onFirstPage())
-                    <span class="btn btn-secondary">Trước</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
                 @else
-                    <a class="btn btn-secondary" href="{{ $roles->previousPageUrl() }}">
+                    <a class="admin-btn admin-btn-secondary" href="{{ $roles->previousPageUrl() }}">
                         Trước
                     </a>
                 @endif
@@ -143,11 +139,11 @@
                 <span>Trang {{ $roles->currentPage() }} / {{ $roles->lastPage() }}</span>
 
                 @if ($roles->hasMorePages())
-                    <a class="btn btn-secondary" href="{{ $roles->nextPageUrl() }}">
+                    <a class="admin-btn admin-btn-secondary" href="{{ $roles->nextPageUrl() }}">
                         Sau
                     </a>
                 @else
-                    <span class="btn btn-secondary">Sau</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
                 @endif
             </div>
         </div>

@@ -20,9 +20,7 @@
                 Theo dõi tài khoản đăng nhập, vai trò và trạng thái sử dụng hệ thống.
             </p>
         </div>
-        <a href="{{ route('admin.users.create') }}" class="admin-btn admin-btn-primary users-button users-button-primary">
-            + Thêm tài khoản
-        </a>
+        <a href="{{ route('admin.users.create') }}" class="admin-btn admin-btn-primary">Thêm tài khoản</a>
     </div>
 
     @if(session('success'))
@@ -68,9 +66,7 @@
                 <label for="status">Trạng thái</label>
                 <select id="status" name="status">
                     <option value="">Tất cả</option>
-                    <option value="ACTIVE" {{ $status === 'ACTIVE' ? 'selected' : '' }}>
-                        Hoạt động
-                    </option>
+                    <option value="ACTIVE" {{ $status === 'ACTIVE' ? 'selected' : '' }}>Đang hoạt động</option>
                     <option value="LOCKED" {{ $status === 'LOCKED' ? 'selected' : '' }}>
                         Đã khóa
                     </option>
@@ -86,6 +82,8 @@
     @endcomponent
 
     <div class="users-panel">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách tài khoản'])
+
 
         <div class="users-table-wrap">
             <table class="users-table">
@@ -109,28 +107,22 @@
                             <td>{{ \App\Models\AdminDisplay::label($user->role?->name ?? 'Chưa xác định') }}</td>
                             <td>
                                 @if($user->status === 'ACTIVE')
-                                    <span class="users-badge users-badge-success">
-                                        Hoạt động
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
                                 @elseif($user->status === 'LOCKED')
-                                    <span class="users-badge users-badge-danger">
-                                        Đã khóa
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'LOCKED'])
                                 @else
-                                    <span class="users-badge users-badge-neutral">
-                                        {{ \App\Models\AdminDisplay::label($user->status) }}
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $user->status])
                                 @endif
                             </td>
                             <td>{{ $user->created_at?->format('d/m/Y H:i') ?? '-' }}</td>
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
                                 <div class="users-row-actions">
                                     <a href="{{ route('admin.users.show', $user) }}"
-                                       class="admin-btn admin-btn-detail users-link users-link-blue">Chi tiết</a>
+                                       class="admin-btn admin-btn-detail">Chi tiết</a>
                                     <a href="{{ route('admin.users.edit', $user) }}"
-                                       class="admin-btn admin-btn-secondary users-link users-link-gray">Sửa</a>
+                                       class="admin-btn admin-btn-secondary">Sửa</a>
                                 </div>
-                            </td>
+                            </div></td>
                         </tr>
                     @empty
                         <tr>
@@ -153,14 +145,14 @@
                     <span class="users-button users-button-light users-disabled">Trước</span>
                 @else
                     <a href="{{ $users->previousPageUrl() }}"
-class="users-button users-button-light">Trước</a>
+class="admin-btn admin-btn-secondary">Trước</a>
                 @endif
 
                 <span>Trang {{ $users->currentPage() }} / {{ $users->lastPage() }}</span>
 
                 @if($users->hasMorePages())
                     <a href="{{ $users->nextPageUrl() }}"
-                       class="users-button users-button-light">Sau</a>
+                       class="admin-btn admin-btn-secondary">Sau</a>
                 @else
                     <span class="users-button users-button-light users-disabled">Sau</span>
                 @endif

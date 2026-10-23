@@ -23,9 +23,7 @@
             </p>
         </div>
         <a href="{{ route('admin.users.show', $user) }}"
-           class="account-edit-btn account-edit-light">
-            ← Quay lại chi tiết
-        </a>
+           class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="account-edit-card">
@@ -90,12 +88,8 @@
 
             <div class="account-edit-actions">
                 <a href="{{ route('admin.users.show', $user) }}"
-class="account-edit-btn account-edit-light">
-                    Hủy bỏ
-                </a>
-                <button type="submit" class="account-edit-btn account-edit-primary">
-                    Lưu thay đổi
-                </button>
+class="admin-btn admin-btn-secondary">Hủy</a>
+                <button type="submit" class="admin-btn admin-btn-primary">Cập nhật</button>
             </div>
         </form>
     </div>

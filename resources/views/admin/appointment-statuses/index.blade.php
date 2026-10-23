@@ -104,9 +104,7 @@
 
             <div class="filter-item admin-filter-field">
 
-                <label class="filter-label">
-                    Hoạt động
-                </label>
+                <label class="filter-label">Trạng thái</label>
 
                 <select
                     name="is_active"
@@ -161,7 +159,7 @@
                             $allowsTransition === '1'
                         )
                     >
-                        Cho phép chuyển tiếp
+                        Cho phép chuyển trạng thái
                     </option>
 
                     <option
@@ -193,146 +191,5 @@
         </form>
     @endcomponent
 
-    <div class="card">
-
-        <div class="table-wrapper">
-
-            <table class="admin-table">
-
-                <thead>
-
-                    <tr>
-                        <th scope="col" class="admin-row-number">STT</th>
-                        <th>Thứ tự xử lý</th>
-                        <th>Tên trạng thái</th>
-                        <th>Mô tả</th>
-                        <th>Cho phép chuyển tiếp</th>
-                        <th>Hoạt động</th>
-                        <th>Thao tác</th>
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                @forelse (
-                    $appointmentStatuses
-                    as $appointmentStatus
-                )
-
-                    <tr>
-
-                        @include('admin.layouts.partials.row-number', ['rows' => $appointmentStatuses, 'index' => $loop->index])
-                        <td>
-                            <span class="order-badge">
-                                {{ $appointmentStatus
-                                    ->process_order }}
-                            </span>
-                        </td>
-
-                        <td>
-                            <strong>
-                                {{ \App\Models\AdminDisplay::label($appointmentStatus->name) }}
-                            </strong>
-                        </td>
-
-                        <td class="description-cell">
-                            {{ \App\Models\AdminDisplay::text($appointmentStatus->description ?? '—') }}
-                        </td>
-
-                        <td>
-
-                            @if (
-                                $appointmentStatus
-                                    ->allows_transition
-                            )
-
-                                <span class="badge badge-success">
-                                    Có
-                                </span>
-
-                            @else
-
-                                <span class="badge badge-secondary">
-                                    Không
-                                </span>
-
-                            @endif
-
-                        </td>
-
-                        <td>
-
-                            @if (
-                                $appointmentStatus
-                                    ->is_active
-                            )
-
-                                <span class="badge badge-success">
-                                    Đang hoạt động
-                                </span>
-
-                            @else
-
-                                <span class="badge badge-danger">
-                                    Ngừng hoạt động
-                                </span>
-
-                            @endif
-
-                        </td>
-
-                        <td>
-
-                            <div class="action-group">
-
-                                <a
-                                    href="{{ route(
-                                        'admin.appointment-statuses.show',
-                                        $appointmentStatus
-                                    ) }}"
-                                    class="admin-btn admin-btn-detail action-link view"
-                                >Chi tiết</a>
-
-                                <a
-                                    href="{{ route(
-                                        'admin.appointment-statuses.edit',
-                                        $appointmentStatus
-                                    ) }}"
-                                    class="admin-btn admin-btn-secondary action-link edit"
-                                >Sửa</a>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                @empty
-
-                    <tr>
-
-                        <td
-                            colspan="7"
-                            class="empty-state"
-                        >
-                            Không tìm thấy trạng thái phù hợp.
-                        </td>
-
-                    </tr>
-
-                @endforelse
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-        <div class="pagination-wrapper">
-            {{ $appointmentStatuses->links() }}
-        </div>
-
-    </div>
-
+    @include('admin.layouts.partials.status-list', ['listTitle' => 'Danh sách trạng thái lịch hẹn', 'statusRows' => $appointmentStatuses, 'statusRoute' => 'admin.appointment-statuses', 'permissionField' => 'allows_transition', 'statusContext' => null])
 @endsection

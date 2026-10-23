@@ -25,9 +25,7 @@
         </div>
 
         <a href="{{ route('admin.employees.show', $employee) }}"
-           class="em-btn em-light">
-            ← Chi tiết nhân viên
-        </a>
+           class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="em-card">
@@ -60,17 +58,13 @@
 
             <div class="em-actions">
                 <a href="{{ route('admin.employees.show', $employee) }}"
-                   class="em-btn em-light">
-                    Hủy bỏ
-                </a>
+                   class="admin-btn admin-btn-secondary">Hủy</a>
 
                 <button
                     type="submit"
-                    class="em-btn em-primary"
+                    class="admin-btn admin-btn-primary"
                     onclick="return confirm('Xác nhận lưu thay đổi hồ sơ nhân viên?');"
-                >
-                    Lưu thay đổi
-                </button>
+                >Cập nhật</button>
             </div>
         </form>
     </div>

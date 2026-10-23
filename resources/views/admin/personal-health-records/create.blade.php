@@ -26,9 +26,7 @@
         </div>
 
         <a href="{{ route('admin.personal-health-records.index') }}"
-           class="hr-btn hr-light">
-            ← Lịch sử sức khỏe
-        </a>
+           class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="hr-card">
@@ -56,13 +54,9 @@
 
             <div class="hr-actions">
                 <a href="{{ route('admin.personal-health-records.index') }}"
-                   class="hr-btn hr-light">
-                    Hủy bỏ
-                </a>
+                   class="admin-btn admin-btn-secondary">Hủy</a>
 
-                <button type="submit" class="hr-btn hr-primary">
-                    Lưu chỉ số sức khỏe
-                </button>
+                <button type="submit" class="admin-btn admin-btn-primary">Lưu</button>
             </div>
         </form>
     </div>

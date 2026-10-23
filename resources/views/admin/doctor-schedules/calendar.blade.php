@@ -39,19 +39,15 @@
                 href="{{ route(
                     'admin.doctor-schedules.index'
                 ) }}"
-                class="admin-btn admin-btn-secondary btn btn-secondary"
-            >
-                ☰ Danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             <a
                 href="{{ route(
                     'admin.doctor-schedules.create'
                 ) }}"
-                class="btn btn-primary"
-            >
-                + Thêm lịch
-            </a>
+                class="admin-btn admin-btn-primary"
+            >Thêm lịch làm việc</a>
 
         </div>
 
@@ -240,7 +236,7 @@
                         $roomId,
                 ])
             ) }}"
-            class="btn btn-secondary"
+            class="admin-btn admin-btn-secondary"
         >
             ← Tháng trước
         </a>
@@ -271,7 +267,7 @@
                         $roomId,
                 ])
             ) }}"
-            class="btn btn-secondary"
+            class="admin-btn admin-btn-secondary"
         >
             Tháng sau →
         </a>

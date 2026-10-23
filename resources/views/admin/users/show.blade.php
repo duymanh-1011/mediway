@@ -58,17 +58,13 @@
         <div class="account-detail-buttons">
             <a
                 href="{{ route('admin.users.index') }}"
-                class="account-detail-btn account-btn-light"
-            >
-                ← Danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             <a
                 href="{{ route('admin.users.edit', $user) }}"
-                class="account-detail-btn account-btn-primary"
-            >
-                Sửa thông tin
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >Sửa</a>
         </div>
     </div>
 
@@ -124,17 +120,11 @@
                     <dt>Trạng thái</dt>
                     <dd>
                         @if($user->status === 'ACTIVE')
-                            <span class="account-status account-status-active">
-                                Hoạt động
-                            </span>
+                            @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
                         @elseif($user->status === 'LOCKED')
-                            <span class="account-status account-status-locked">
-                                Đã khóa
-                            </span>
+                            @include('admin.layouts.partials.status-badge', ['badgeCode' => 'LOCKED'])
                         @else
-                            <span class="account-status account-status-other">
-                                {{ \App\Models\AdminDisplay::label($user->status) }}
-                            </span>
+                            @include('admin.layouts.partials.status-badge', ['badgeCode' => $user->status])
                         @endif
                     </dd>
                 </div>
@@ -176,22 +166,17 @@
                 </div>
 
                 <p class="account-profile-hint">
-                    Hồ sơ này được liên kết với tài khoản đăng nhập hiện tại.
+                    Hồ sơ này thuộc tài khoản đang xem.
                     Các thông tin chuyên môn và thông tin cá nhân chi tiết
-                    được quản lý tại module tương ứng.
+                    được quản lý tại mục quản lý tương ứng.
                 </p>
 
-                @if(
-                    $linkedType === 'Quản trị viên'
-                    && $user->administrator
-                )
-                    <a
-                        href="{{ route('admin.administrators.show', $user->administrator) }}"
-                        class="account-detail-btn account-btn-light"
-                    >
-                        Xem hồ sơ quản trị viên
-                    </a>
-                @endif
+                <a class="admin-btn admin-btn-detail" href="{{ route(match ($linkedType) {
+                    'Quản trị viên' => 'admin.administrators.show',
+                    'Bác sĩ' => 'admin.doctors.show',
+                    'Nhân viên' => 'admin.employees.show',
+                    default => 'admin.patients.show',
+                }, $linkedProfile) }}">Xem hồ sơ</a>
             @else
 <div class="account-profile-icon account-profile-empty">
                     !
@@ -208,7 +193,7 @@
 
                 <p class="account-profile-hint">
                     Các hồ sơ nghiệp vụ sẽ được bổ sung và quản lý
-                    tại module tương ứng.
+                    tại mục quản lý tương ứng.
                 </p>
             @endif
         </section>
@@ -249,7 +234,7 @@
                         >
 
                         <button
-                            class="account-detail-btn account-btn-danger"
+                            class="admin-btn admin-btn-danger"
                             type="submit"
                         >
                             Khóa tài khoản
@@ -274,7 +259,7 @@
                     >
 
                     <button
-                        class="account-detail-btn account-btn-primary"
+                        class="admin-btn admin-btn-success"
                         type="submit"
                     >
                         Mở khóa tài khoản
@@ -346,7 +331,7 @@
 
                 <button
                     type="submit"
-                    class="account-detail-btn account-btn-primary"
+                    class="admin-btn admin-btn-primary"
                 >
                     Lưu mật khẩu mới
                 </button>

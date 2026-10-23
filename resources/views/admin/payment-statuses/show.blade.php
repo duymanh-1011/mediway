@@ -24,9 +24,7 @@
 
             <span aria-hidden="true">/</span>
 
-            <strong aria-current="page">
-                {{ \App\Models\AdminDisplay::label($status->name) }}
-            </strong>
+            <strong aria-current="page">@include('admin.layouts.partials.status-badge', ['badgeCode' => $status->name, 'badgeContext' => 'payment'])</strong>
 
         </nav>
 
@@ -50,17 +48,11 @@
 
             @if ($status->is_active)
 
-                <span class="status-active-badge active">
-                    <span></span>
-                    Đang sử dụng
-                </span>
+                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
             @else
 
-                <span class="status-active-badge inactive">
-                    <span></span>
-                    Ngừng sử dụng
-                </span>
+                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
             @endif
 
@@ -70,14 +62,12 @@
         {{-- Actions --}}
         <div class="status-top-actions">
 
-            <a href="{{ route('admin.payment-statuses.index') }}" class="status-back-btn">
-                ← Quay lại danh sách
-            </a>
+            <a href="{{ route('admin.payment-statuses.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
 
             <a href="{{ route(
         'admin.payment-statuses.edit',
         $status->id
-    ) }}" class="status-edit-btn">Sửa</a>
+    ) }}" class="admin-btn admin-btn-secondary">Sửa</a>
 
         </div>
 
@@ -115,9 +105,7 @@
                                 Tên trạng thái
                             </div>
 
-                            <div class="status-name">
-                                {{ \App\Models\AdminDisplay::label($status->name) }}
-                            </div>
+                            <div class="status-name">@include('admin.layouts.partials.status-badge', ['badgeCode' => $status->name, 'badgeContext' => 'payment'])</div>
 
                         </div>
 
@@ -145,15 +133,11 @@
 
                             @if ($status->allows_service_execution)
 
-                                <span class="status-badge badge-yes">
-                                    Cho phép
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ALLOWED'])
 
                             @else
 
-                                <span class="status-badge badge-no">
-                                    Không cho phép
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'DENIED'])
 
                             @endif
 
@@ -164,20 +148,16 @@
                         <div class="status-info-item">
 
                             <div class="status-info-label">
-                                Trạng thái sử dụng
+                                Trạng thái
                             </div>
 
                             @if ($status->is_active)
 
-                                <span class="status-badge badge-active">
-                                    Đang sử dụng
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                             @else
 
-                                <span class="status-badge badge-inactive">
-                                    Ngừng sử dụng
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                             @endif
 
@@ -310,7 +290,7 @@
                         <p>
                             Không đổi tên trạng thái tùy tiện.
                             Không thay đổi thứ tự xử lý tại màn hình sửa.
-                            Không hard-delete trạng thái đã được sử dụng.
+                            Không xóa vĩnh viễn trạng thái đã được sử dụng.
                         </p>
 
                     </div>

@@ -55,7 +55,7 @@ final class BusinessCodeGenerator
         if (DB::getDriverName() === 'mysql') {
             $value = DB::table($table)->selectRaw('COALESCE(MAX(CAST(REGEXP_SUBSTR(`'.$field.'`, ?) AS UNSIGNED)), 0) AS maximum', ['[0-9]+$'])->first()->maximum;
             if (strlen(ltrim((string) $value, '0')) > 18) {
-                throw new \RuntimeException('Phần số của mã hiện tại vượt giới hạn cấp mã an toàn.');
+                throw new \RuntimeException('Không thể cấp mã mới vì mã hiện có vượt giới hạn hệ thống. Vui lòng báo người phụ trách hệ thống.');
             }
 
             return (int) $value;
@@ -66,7 +66,7 @@ final class BusinessCodeGenerator
             foreach ($rows as $row) {
                 if (preg_match('/([0-9]+)$/', (string) $row->{$field}, $matches)) {
                     if (strlen(ltrim($matches[1], '0')) > 18) {
-                        throw new \RuntimeException('Phần số của mã hiện tại vượt giới hạn cấp mã an toàn.');
+                        throw new \RuntimeException('Không thể cấp mã mới vì mã hiện có vượt giới hạn hệ thống. Vui lòng báo người phụ trách hệ thống.');
                     }
                     $maximum = max($maximum, (int) $matches[1]);
                 }

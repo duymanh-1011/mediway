@@ -182,7 +182,7 @@ class VisitDiagnosisController extends Controller
         if (! $diagnosis->medicalVisit->canRecordClinicalData()) {
             abort(
                 403,
-                'Chỉ được sửa hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
+                'Chưa thể sửa hồ sơ ở bước này. Chỉ được sửa khi đang khám hoặc đang khám lại sau dịch vụ.'
             );
         }
 
@@ -224,7 +224,7 @@ class VisitDiagnosisController extends Controller
         if (! $diagnosis->medicalVisit->canRecordClinicalData()) {
             return back()->with(
                 'error',
-                'Chỉ được sửa hồ sơ khi đang khám hoặc đã quay lại bác sĩ.'
+                'Chưa thể sửa hồ sơ ở bước này. Chỉ được sửa khi đang khám hoặc đang khám lại sau dịch vụ.'
             );
         }
 

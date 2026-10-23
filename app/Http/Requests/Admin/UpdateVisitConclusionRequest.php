@@ -98,11 +98,11 @@ class UpdateVisitConclusionRequest extends FormRequest
 
             'has_follow_up.required' => 'Vui lòng chọn có tái khám hay không.',
 
-            'has_follow_up.boolean' => 'Giá trị tái khám không hợp lệ.',
+            'has_follow_up.boolean' => 'Vui lòng chọn Có hoặc Không cho yêu cầu tái khám.',
 
             'follow_up_date.required_if' => 'Vui lòng chọn ngày tái khám.',
 
-            'follow_up_date.date' => 'Ngày tái khám không hợp lệ.',
+            'follow_up_date.date' => 'Ngày tái khám chưa hợp lệ. Vui lòng chọn lại ngày bằng ô lịch.',
 
             'follow_up_reason.required_if' => 'Vui lòng nhập lý do tái khám.',
 
@@ -110,7 +110,7 @@ class UpdateVisitConclusionRequest extends FormRequest
 
             'notes.max' => 'Ghi chú không được vượt quá 5000 ký tự.',
 
-            'concluded_at.date' => 'Thời điểm kết luận không hợp lệ.',
+            'concluded_at.date' => 'Thời điểm kết luận chưa hợp lệ. Vui lòng chọn đủ ngày và giờ.',
         ];
     }
 }

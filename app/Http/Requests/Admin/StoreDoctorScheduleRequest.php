@@ -79,21 +79,21 @@ class StoreDoctorScheduleRequest extends FormRequest
 
             'work_date.required' => 'Vui lòng chọn ngày làm việc.',
 
-            'work_date.date' => 'Ngày làm việc không hợp lệ.',
+            'work_date.date' => 'Ngày làm việc chưa hợp lệ. Vui lòng chọn lại ngày bằng ô lịch.',
 
             'start_time.required' => 'Vui lòng nhập giờ bắt đầu.',
 
-            'start_time.date_format' => 'Giờ bắt đầu không hợp lệ.',
+            'start_time.date_format' => 'Giờ bắt đầu chưa đúng. Vui lòng nhập theo dạng giờ:phút, ví dụ 08:30.',
 
             'end_time.required' => 'Vui lòng nhập giờ kết thúc.',
 
-            'end_time.date_format' => 'Giờ kết thúc không hợp lệ.',
+            'end_time.date_format' => 'Giờ kết thúc chưa đúng. Vui lòng nhập theo dạng giờ:phút, ví dụ 11:30.',
 
             'end_time.after' => 'Giờ kết thúc phải sau giờ bắt đầu.',
 
             'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' => 'Trạng thái lịch làm việc không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái lịch làm việc từ các lựa chọn có sẵn.',
         ];
     }
 }

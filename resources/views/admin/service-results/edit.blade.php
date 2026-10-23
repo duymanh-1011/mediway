@@ -17,7 +17,7 @@
 
         <nav class="admin-breadcrumb" aria-label="Đường dẫn">
 
-            <a class="admin-btn admin-btn-detail" href="{{ route('admin.dashboard') }}">
+            <a href="{{ route('admin.dashboard') }}">
                 Bảng điều khiển
             </a>
 
@@ -60,19 +60,23 @@
             </div>
 
 
-            @if ($result->verified_by_user_id)
+            <div class="admin-actions">
 
-                <span class="result-header-badge verified">
-                    Đã xác nhận
-                </span>
+                @if ($result->verified_by_user_id)
 
-            @else
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'VERIFIED'])
 
-                <span class="result-header-badge pending">
-                    Chưa xác nhận
-                </span>
+                @else
 
-            @endif
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'UNVERIFIED'])
+
+                @endif
+
+                <a href="{{ route('admin.service-results.show', $result->id) }}" class="admin-btn admin-btn-secondary">
+                    ← Quay lại
+                </a>
+
+            </div>
 
         </div>
 
@@ -180,9 +184,7 @@
                             Trạng thái dịch vụ
                         </span>
 
-                        <strong>
-                            {{ \App\Models\AdminDisplay::label($serviceStatus?->name ?? '—') }}
-                        </strong>
+                        <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $serviceStatus?->name ?? '—', 'badgeContext' => 'service'])</strong>
 
                     </div>
 
@@ -465,15 +467,13 @@
                         'admin.service-results.show',
                         $result->id
                     ) }}"
-                    class="admin-btn admin-btn-secondary result-btn result-btn-secondary"
+                    class="admin-btn admin-btn-secondary"
                 >Hủy</a>
 
                 <button
                     type="submit"
-                    class="result-btn result-btn-primary"
-                >
-                    Cập nhật kết quả
-                </button>
+                    class="admin-btn admin-btn-primary"
+                >Cập nhật</button>
 
             </div>
 

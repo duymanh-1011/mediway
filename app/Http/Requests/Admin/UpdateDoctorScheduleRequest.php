@@ -87,7 +87,7 @@ class UpdateDoctorScheduleRequest extends FormRequest
 
             'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' => 'Trạng thái lịch làm việc không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái lịch làm việc từ các lựa chọn có sẵn.',
         ];
     }
 }

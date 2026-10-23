@@ -34,15 +34,15 @@
 
             <a
                 href="{{ route('admin.queue-statuses.index') }}"
-                class="admin-btn admin-btn-secondary btn btn-secondary"
-            >Quay lại</a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             <a
                 href="{{ route(
                     'admin.queue-statuses.edit',
                     $queueStatus
                 ) }}"
-                class="admin-btn btn btn-primary admin-btn-primary"
+                class="admin-btn admin-btn-secondary"
             >Sửa</a>
 
         </div>
@@ -59,9 +59,7 @@
                     Tên trạng thái
                 </strong>
 
-                <div class="admin-u-a5595d11">
-                    {{ \App\Models\AdminDisplay::label($queueStatus->name) }}
-                </div>
+                <div class="admin-u-a5595d11">@include('admin.layouts.partials.status-badge', ['badgeCode' => $queueStatus->name])</div>
             </div>
 
 
@@ -85,15 +83,11 @@
 
                     @if ($queueStatus->allows_transition)
 
-                        <span class="badge badge-success">
-                            Có
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ALLOWED'])
 
                     @else
 
-                        <span class="badge badge-warning">
-                            Không
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'DENIED'])
 
                     @endif
 
@@ -102,23 +96,17 @@
 
 
             <div>
-                <strong>
-                    Hoạt động
-                </strong>
+                <strong>Trạng thái</strong>
 
                 <div class="admin-u-a5595d11">
 
                     @if ($queueStatus->is_active)
 
-                        <span class="badge badge-success">
-                            Đang hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                     @else
 
-                        <span class="badge badge-danger">
-                            Ngừng hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                     @endif
 

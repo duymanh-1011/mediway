@@ -293,7 +293,7 @@ class DiseaseController extends Controller
                 )
                 ->with(
                     'success',
-                    'Bệnh đã được sử dụng trong chẩn đoán nên không thể xóa. Hệ thống đã chuyển bệnh sang trạng thái INACTIVE.'
+                    'Bệnh đã được dùng trong chẩn đoán nên không thể xóa. Đã ngừng hoạt động bệnh và giữ nguyên lịch sử chẩn đoán.'
                 );
         }
 

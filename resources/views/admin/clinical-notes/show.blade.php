@@ -36,8 +36,8 @@
                 href="{{ route(
                     'admin.clinical-notes.index'
                 ) }}"
-                class="admin-btn admin-btn-secondary btn btn-secondary"
-            >Quay lại</a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             @if ($clinicalNote->medicalVisit?->canRecordClinicalData())
 
@@ -46,7 +46,7 @@
                         'admin.clinical-notes.edit',
                         $clinicalNote
                     ) }}"
-                    class="admin-btn btn btn-primary admin-btn-primary"
+                    class="admin-btn admin-btn-secondary"
                 >Sửa</a>
 
             @endif
@@ -110,9 +110,7 @@
             <div>
                 <strong>Trạng thái</strong>
 
-                <div>
-                    {{ \App\Models\AdminDisplay::label($clinicalNote->medicalVisit?->status?->name ?: '—') }}
-                </div>
+                <div>@include('admin.layouts.partials.status-badge', ['badgeCode' => $clinicalNote->medicalVisit?->status?->name ?: '—'])</div>
             </div>
 
         </div>
@@ -127,7 +125,7 @@
                         'admin.visits.show',
                         $clinicalNote->medicalVisit
                     ) }}"
-                    class="btn btn-secondary"
+                    class="admin-btn admin-btn-detail"
                 >
                     Xem lượt khám
                 </a>

@@ -131,7 +131,7 @@
 
             <div class="audit-card-header audit-list-header">
                 <div>
-                    <h2>Danh sách nhật ký</h2>
+                    <h2 class="admin-list-title">Danh sách nhật ký hoạt động</h2>
 
                     <p>
                         Các thao tác mới nhất được hiển thị trước.
@@ -167,15 +167,7 @@
                         @forelse ($logs as $log)
 
                                             @php
-                                                $badgeClass = match ($log->action) {
-                                                    'CREATE' => 'badge-create',
-                                                    'UPDATE' => 'badge-update',
-                                                    'STATUS_CHANGE' => 'badge-status',
-                                                    'LOGIN' => 'badge-login',
-                                                    'DELETE' => 'badge-delete',
-                                                    'PRINT' => 'badge-print',
-                                                    default => 'badge-default',
-                                                };
+
 
                                                 $avatar = $log->user_business_code
                                                     ? mb_substr(
@@ -215,9 +207,7 @@
                                                 </td>
 
                                                 <td>
-                                                    <span class="audit-badge {{ $badgeClass }}">
-                                                        {{ \App\Models\AdminDisplay::label($log->action) }}
-                                                    </span>
+                                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $log->action])
                                                 </td>
 
                                                 <td>
@@ -247,12 +237,12 @@
                                                     </div>
                                                 </td>
 
-                                                <td>
+                                                <td><div class="admin-actions admin-table-actions">
                                                     <a href="{{ route(
                                 'admin.audit-logs.show',
                                 $log->id
-                            ) }}" class="admin-btn admin-btn-detail audit-detail-btn">Chi tiết</a>
-                                                </td>
+                            ) }}" class="admin-btn admin-btn-detail">Chi tiết</a>
+                                                </div></td>
 
                                             </tr>
 
@@ -297,23 +287,15 @@
                     <div class="audit-pagination-buttons">
 
                         @if ($logs->onFirstPage())
-                            <span class="audit-page-btn disabled">
-                                ← Trước
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
                         @else
-                            <a href="{{ $logs->previousPageUrl() }}" class="audit-page-btn">
-                                ← Trước
-                            </a>
+                            <a href="{{ $logs->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
                         @endif
 
                         @if ($logs->hasMorePages())
-                            <a href="{{ $logs->nextPageUrl() }}" class="audit-page-btn">
-                                Sau →
-                            </a>
+                            <a href="{{ $logs->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
                         @else
-                            <span class="audit-page-btn disabled">
-                                Sau →
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
                         @endif
 
                     </div>

@@ -24,9 +24,7 @@
             </p>
         </div>
 
-        <a href="{{ route('admin.employees.index') }}" class="em-btn em-light">
-            ← Danh sách nhân viên
-        </a>
+        <a href="{{ route('admin.employees.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="em-card">
@@ -57,11 +55,11 @@
 
             <div class="em-actions">
                 <a href="{{ route('admin.employees.index') }}"
-                   class="em-btn em-light">
+                   class="admin-btn admin-btn-secondary">
                     Hủy
                 </a>
 
-                <button type="submit" class="em-btn em-primary">
+                <button type="submit" class="admin-btn admin-btn-primary">
                     Lưu
                 </button>
             </div>

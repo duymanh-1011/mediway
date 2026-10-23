@@ -5,8 +5,11 @@ namespace Tests\Feature;
 use App\Models\AdminDisplay;
 use App\Models\MedicalVisit;
 use App\Models\Payable;
+use App\Models\ServiceResult;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
+use DOMDocument;
+use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -138,6 +141,33 @@ class AdminViewsTest extends TestCase
         $this->assertSame('KIOSK', $visit->fresh()->reception_source);
         $this->assertDatabaseHas('audit_logs', ['id' => $log->id, 'description' => 'Kiosk xác nhận check-in']);
         $this->assertSame('Chưa có vai trò Nhân viên.', AdminDisplay::text('Chưa có vai trò Employee.'));
+    }
+
+    public function test_service_result_actions_use_shared_buttons_and_edit_has_a_header_back_link(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->withoutVite();
+        $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
+        $result = ServiceResult::query()->firstOrFail();
+        $pages = [];
+        foreach (['show', 'edit'] as $page) {
+            $response = $this->get(route('admin.service-results.'.$page, $result->id))->assertOk();
+            $document = new DOMDocument;
+            $previous = libxml_use_internal_errors(true);
+            $document->loadHTML('<?xml encoding="UTF-8">'.$response->getContent(), LIBXML_NONET);
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+            $pages[$page] = new DOMXPath($document);
+        }
+        $editLink = $pages['show']->query('//main//a[@href="'.route('admin.service-results.edit', $result->id).'" and contains(@class,"admin-btn-secondary")]');
+        $this->assertCount(1, $editLink);
+        $this->assertSame('Sửa', trim($editLink->item(0)->textContent));
+        $this->assertCount(1, $pages['show']->query('//main//a[@href="'.route('admin.service-results.index').'" and contains(@class,"admin-btn-secondary")]'));
+        $backLink = $pages['edit']->query('//main//div[contains(@class,"result-header")]//a[@href="'.route('admin.service-results.show', $result->id).'" and contains(@class,"admin-btn-secondary") and not(ancestor::form)]');
+        $this->assertCount(1, $backLink);
+        $this->assertSame('← Quay lại', trim($backLink->item(0)->textContent));
+        $this->assertCount(1, $pages['edit']->query('//main//form[@action="'.route('admin.service-results.update', $result->id).'"]//button[@type="submit" and contains(@class,"admin-btn-primary")]'));
+        $this->assertCount(0, $pages['edit']->query('//nav[contains(@class,"admin-breadcrumb")]//a[contains(@class,"admin-btn")]'));
     }
 
     private function interfaceText(string $html): string

@@ -25,9 +25,7 @@
         </div>
 
         <a href="{{ route('admin.doctors.show', $doctor) }}"
-           class="dr-btn dr-light">
-            ← Chi tiết bác sĩ
-        </a>
+           class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="dr-card">
@@ -59,15 +57,11 @@
 
             <div class="dr-actions">
                 <a href="{{ route('admin.doctors.show', $doctor) }}"
-                   class="dr-btn dr-light">
-                    Hủy bỏ
-                </a>
+                   class="admin-btn admin-btn-secondary">Hủy</a>
 
                 <button type="submit"
-                        class="dr-btn dr-primary"
-                        onclick="return confirm('Xác nhận lưu thay đổi hồ sơ bác sĩ?');">
-                    Lưu thay đổi
-                </button>
+                        class="admin-btn admin-btn-primary"
+                        onclick="return confirm('Xác nhận lưu thay đổi hồ sơ bác sĩ?');">Cập nhật</button>
             </div>
         </form>
     </div>

@@ -24,9 +24,7 @@
         </div>
 
         <a href="{{ route('admin.personal-health-records.create') }}"
-           class="admin-btn hl-btn hl-primary admin-btn-primary">
-            + Thêm lần đo
-        </a>
+           class="admin-btn admin-btn-primary">Thêm lần đo</a>
     </div>
 
     @if(session('success'))
@@ -81,6 +79,8 @@
     @endcomponent
 
     <div class="hl-card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách lần đo sức khỏe'])
+
 
         @if($errors->any())
             <div class="hl-alert hl-error">
@@ -139,14 +139,14 @@
                             <td>
                                 {{ $record->heart_rate ?? '-' }}
                             </td>
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
                                 <div class="hl-actions">
                                     <a href="{{ route('admin.personal-health-records.show', $record) }}"
-                                       class="admin-btn admin-btn-detail hl-action hl-view">Chi tiết</a>
+                                       class="admin-btn admin-btn-detail">Chi tiết</a>
                                     <a href="{{ route('admin.personal-health-records.edit', $record) }}"
-                                       class="admin-btn admin-btn-secondary hl-action hl-edit">Sửa</a>
+                                       class="admin-btn admin-btn-secondary">Sửa</a>
                                 </div>
-                            </td>
+                            </div></td>
                         </tr>
                     @empty
                         <tr>
@@ -167,10 +167,10 @@
 
             <div class="hl-pages">
                 @if($records->onFirstPage())
-                    <span class="hl-btn hl-light hl-disabled">Trước</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
                 @else
                     <a href="{{ $records->previousPageUrl() }}"
-                       class="hl-btn hl-light">Trước</a>
+                       class="admin-btn admin-btn-secondary">Trước</a>
                 @endif
 
                 <span>
@@ -180,9 +180,9 @@
 
                 @if($records->hasMorePages())
                     <a href="{{ $records->nextPageUrl() }}"
-                       class="hl-btn hl-light">Sau</a>
+                       class="admin-btn admin-btn-secondary">Sau</a>
                 @else
-                    <span class="hl-btn hl-light hl-disabled">Sau</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
                 @endif
             </div>
         </div>

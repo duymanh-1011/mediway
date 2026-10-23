@@ -87,7 +87,7 @@ class StoreExaminationRoomRequest extends FormRequest
 
             'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' => 'Trạng thái phòng khám không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái phòng khám từ các lựa chọn có sẵn.',
         ];
     }
 }

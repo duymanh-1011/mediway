@@ -122,20 +122,15 @@ class UpdateMedicineRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'medicine_code.required' =>
-                'Vui lòng nhập mã thuốc.',
+            'medicine_code.required' => 'Vui lòng nhập mã thuốc.',
 
-            'medicine_code.unique' =>
-                'Mã thuốc đã tồn tại.',
+            'medicine_code.unique' => 'Mã thuốc đã tồn tại.',
 
-            'name.required' =>
-                'Vui lòng nhập tên thuốc.',
+            'name.required' => 'Vui lòng nhập tên thuốc.',
 
-            'status.required' =>
-                'Vui lòng chọn trạng thái.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' =>
-                'Trạng thái thuốc không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái thuốc từ các lựa chọn có sẵn.',
         ];
     }
 }

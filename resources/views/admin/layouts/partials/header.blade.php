@@ -38,7 +38,7 @@
 
             <button
                 type="submit"
-                class="logout-button"
+                class="admin-btn admin-btn-secondary"
             >
                 Đăng xuất
             </button>

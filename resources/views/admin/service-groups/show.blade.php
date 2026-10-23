@@ -16,11 +16,11 @@
             <p class="form-help">Mã nhóm: {{ $serviceGroup->service_group_code }}</p>
         </div>
         <div class="admin-actions">
-            <a class="admin-btn admin-btn-secondary" href="{{ route('admin.service-groups.index') }}">Quay lại</a>
-            <a class="admin-btn admin-btn-primary" href="{{ route('admin.service-groups.edit', $serviceGroup) }}">Sửa</a>
+            <a class="admin-btn admin-btn-secondary" href="{{ route('admin.service-groups.index') }}">← Quay lại</a>
+            <a class="admin-btn admin-btn-secondary" href="{{ route('admin.service-groups.edit', $serviceGroup) }}">Sửa</a>
             @if ($serviceGroup->status === 'ACTIVE')
-                <a class="admin-btn admin-btn-success" href="{{ route('admin.medical-services.create', ['group_id' => $serviceGroup->id]) }}">Thêm dịch vụ</a>
-                <a class="admin-btn admin-btn-secondary" href="#assign-services">Gán dịch vụ</a>
+                <a class="admin-btn admin-btn-primary" href="{{ route('admin.medical-services.create', ['group_id' => $serviceGroup->id]) }}">Thêm dịch vụ</a>
+                <a class="admin-btn admin-btn-primary" href="#assign-services">Gán dịch vụ</a>
             @endif
         </div>
     </div>
@@ -32,7 +32,7 @@
     <section class="admin-card">
         <h2>Thông tin nhóm</h2>
         <dl class="detail-grid">
-            <div><dt>Trạng thái</dt><dd>{{ \App\Models\AdminDisplay::label($serviceGroup->status) }}</dd></div>
+            <div><dt>Trạng thái</dt><dd>@include('admin.layouts.partials.status-badge', ['badgeCode' => $serviceGroup->status])</dd></div>
             <div><dt>Thứ tự hiển thị</dt><dd>{{ $serviceGroup->display_order }}</dd></div>
             <div><dt>Mô tả</dt><dd>{{ $serviceGroup->description ?: 'Chưa có mô tả' }}</dd></div>
             <div><dt>Ghi chú</dt><dd>{{ $serviceGroup->notes ?: '—' }}</dd></div>
@@ -66,8 +66,8 @@
                         <tr>
                             @include('admin.layouts.partials.row-number', ['rows' => $medicalServices, 'index' => $loop->index])
                             <td>{{ $service->service_code }}</td><td>{{ $service->name }}</td><td>{{ number_format($service->price, 0, ',', '.') }} đ</td><td>{{ $service->unit ?: '—' }}</td><td>{{ $service->estimated_duration_minutes ? $service->estimated_duration_minutes.' phút' : '—' }}</td>
-                            <td><span class="admin-badge admin-badge-{{ $service->status === 'ACTIVE' ? 'success' : 'danger' }}">{{ \App\Models\AdminDisplay::label($service->status) }}</span></td>
-                            <td><div class="admin-actions"><a class="admin-btn admin-btn-detail" href="{{ route('admin.medical-services.show', $service) }}">Chi tiết</a><a class="admin-btn admin-btn-secondary" href="{{ route('admin.medical-services.edit', $service) }}">Sửa</a></div></td>
+                            <td>@include('admin.layouts.partials.status-badge', ['badgeCode' => $service->status])</td>
+                            <td><div class="admin-actions admin-table-actions"><div class="admin-actions"><a class="admin-btn admin-btn-detail" href="{{ route('admin.medical-services.show', $service) }}">Chi tiết</a><a class="admin-btn admin-btn-secondary" href="{{ route('admin.medical-services.edit', $service) }}">Sửa</a></div></div></td>
                         </tr>
                     @empty
                         <tr><td colspan="8" class="empty-state">Không có dịch vụ phù hợp.</td></tr>

@@ -184,7 +184,7 @@ class EmployeeController extends Controller
 
                 if (! $role) {
                     throw ValidationException::withMessages([
-                        'user_id' => 'Chưa có vai trò nhân viên trong hệ thống.',
+                        'user_id' => 'Chưa có vai trò nhân viên trong hệ thống. Vui lòng báo người phụ trách hệ thống.',
                     ]);
                 }
 
@@ -603,7 +603,7 @@ class EmployeeController extends Controller
 
             if (! $path) {
                 throw ValidationException::withMessages([
-                    $input => 'Không thể lưu tài liệu.',
+                    $input => 'Không thể lưu tệp. Vui lòng thử lại hoặc báo người phụ trách hệ thống.',
                 ]);
             }
 

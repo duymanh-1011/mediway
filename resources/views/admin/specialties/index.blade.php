@@ -35,10 +35,8 @@
             href="{{ route(
                 'admin.specialties.create'
             ) }}"
-            class="admin-btn btn btn-primary admin-btn-primary"
-        >
-            + Thêm chuyên khoa
-        </a>
+            class="admin-btn admin-btn-primary"
+        >Thêm chuyên khoa</a>
 
     </div>
 
@@ -164,6 +162,8 @@
     @endcomponent
 
     <div class="card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách chuyên khoa'])
+
 
         <div class="table-wrapper">
 
@@ -243,19 +243,11 @@
                                 === 'ACTIVE'
                             )
 
-                                <span
-                                    class="badge badge-success"
-                                >
-                                    Đang hoạt động
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                             @else
 
-                                <span
-                                    class="badge badge-danger"
-                                >
-                                    Ngừng hoạt động
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                             @endif
 
@@ -267,7 +259,7 @@
                                 ?->format('d/m/Y') }}
                         </td>
 
-                        <td>
+                        <td><div class="admin-actions admin-table-actions">
 
                             <div class="action-group">
 
@@ -276,7 +268,7 @@
                                         'admin.specialties.show',
                                         $specialty
                                     ) }}"
-                                    class="admin-btn admin-btn-detail action-link view"
+                                    class="admin-btn admin-btn-detail"
                                 >Chi tiết</a>
 
                                 <a
@@ -284,14 +276,14 @@
                                         'admin.specialties.edit',
                                         $specialty
                                     ) }}"
-                                    class="admin-btn admin-btn-secondary action-link edit"
+                                    class="admin-btn admin-btn-secondary"
                                 >Sửa</a>
 
                                 @include('admin.layouts.partials.catalog-status', ['record' => $specialty, 'catalog' => 'specialties'])
 
                             </div>
 
-                        </td>
+                        </div></td>
 
                     </tr>
 

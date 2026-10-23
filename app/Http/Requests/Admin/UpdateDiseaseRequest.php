@@ -72,26 +72,19 @@ class UpdateDiseaseRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'disease_code.required' =>
-                'Vui lòng nhập mã bệnh.',
+            'disease_code.required' => 'Vui lòng nhập mã bệnh.',
 
-            'disease_code.unique' =>
-                'Mã bệnh đã tồn tại.',
+            'disease_code.unique' => 'Mã bệnh đã tồn tại.',
 
-            'disease_group_id.required' =>
-                'Vui lòng chọn nhóm bệnh.',
+            'disease_group_id.required' => 'Vui lòng chọn nhóm bệnh.',
 
-            'disease_group_id.exists' =>
-                'Nhóm bệnh không hợp lệ.',
+            'disease_group_id.exists' => 'Không tìm thấy nhóm bệnh đã chọn. Vui lòng tải lại trang và chọn lại.',
 
-            'name.required' =>
-                'Vui lòng nhập tên bệnh.',
+            'name.required' => 'Vui lòng nhập tên bệnh.',
 
-            'status.required' =>
-                'Vui lòng chọn trạng thái.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' =>
-                'Trạng thái bệnh không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái bệnh từ các lựa chọn có sẵn.',
         ];
     }
 }

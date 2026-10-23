@@ -75,7 +75,7 @@ class AdministratorController extends Controller
 
             if (! $role) {
                 throw ValidationException::withMessages([
-                    'role' => 'Vai trò quản trị viên không tồn tại hoặc đã bị vô hiệu hóa.',
+                    'role' => 'Chưa có vai trò quản trị viên đang hoạt động. Vui lòng báo người phụ trách hệ thống.',
                 ]);
             }
 
@@ -191,7 +191,7 @@ class AdministratorController extends Controller
             ],
         ], [
             'status.required' => 'Vui lòng chọn trạng thái.',
-            'status.in' => 'Trạng thái không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái từ các lựa chọn có sẵn.',
         ]);
 
         DB::transaction(function () use ($administrator, $data) {

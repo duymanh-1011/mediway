@@ -24,9 +24,7 @@
             </p>
         </div>
 
-        <a href="{{ route('admin.doctors.index') }}" class="dr-btn dr-light">
-            ← Danh sách bác sĩ
-        </a>
+        <a href="{{ route('admin.doctors.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="dr-card">
@@ -55,11 +53,11 @@
 
             <div class="dr-actions">
                 <a href="{{ route('admin.doctors.index') }}"
-                   class="dr-btn dr-light">
+                   class="admin-btn admin-btn-secondary">
                     Hủy
                 </a>
 
-                <button type="submit" class="dr-btn dr-primary">
+                <button type="submit" class="admin-btn admin-btn-primary">
                     Lưu
                 </button>
             </div>

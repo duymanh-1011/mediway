@@ -296,7 +296,7 @@ class AppointmentController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'patient_id' => 'Bệnh nhân hiện không ở trạng thái ACTIVE.',
+                    'patient_id' => 'Hồ sơ bệnh nhân đã ngừng hoạt động nên chưa thể đặt lịch. Vui lòng kiểm tra lại hồ sơ bệnh nhân.',
                 ]);
         }
 
@@ -312,7 +312,7 @@ class AppointmentController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'appointment_time_slot_id' => 'Khung giờ không còn khả dụng.',
+                    'appointment_time_slot_id' => 'Khung giờ đã chọn không còn nhận lịch hẹn. Vui lòng chọn khung giờ khác.',
                 ]);
         }
 
@@ -325,7 +325,7 @@ class AppointmentController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'appointment_time_slot_id' => 'Khung giờ này đã đủ số bệnh nhân tối đa.',
+                    'appointment_time_slot_id' => 'Khung giờ này đã đủ số bệnh nhân có thể tiếp nhận. Vui lòng chọn khung giờ khác.',
                 ]);
         }
 
@@ -349,7 +349,7 @@ class AppointmentController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'appointment_time_slot_id' => 'Không tìm thấy trạng thái BOOKED đang hoạt động.',
+                    'appointment_time_slot_id' => 'Chưa có trạng thái “Đã đặt lịch” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái lịch hẹn.',
                 ]);
         }
 
@@ -364,6 +364,8 @@ class AppointmentController extends Controller
             */
 
             $slot = $this->lockBookableSlot($slot->id, $slot->doctor_schedule_id);
+            $this->assertBookingSelection($data, $slot);
+            $this->assertNoDuplicateBooking($patient->id, $slot->id);
             $schedule = $slot->doctorSchedule;
             $appointment =
                 Appointment::create([
@@ -569,7 +571,7 @@ class AppointmentController extends Controller
                 )
                 ->with(
                     'error',
-                    'Không tìm thấy trạng thái lịch hẹn CHECKED_IN đang hoạt động.'
+                    'Chưa có trạng thái “Đã tiếp nhận” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái lịch hẹn.'
                 );
         }
 
@@ -581,7 +583,7 @@ class AppointmentController extends Controller
                 )
                 ->with(
                     'error',
-                    'Không tìm thấy trạng thái lượt khám WAITING đang hoạt động.'
+                    'Chưa có trạng thái “Đang chờ” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái lượt khám.'
                 );
         }
 
@@ -593,7 +595,7 @@ class AppointmentController extends Controller
                 )
                 ->with(
                     'error',
-                    'Không tìm thấy trạng thái hàng đợi WAITING đang hoạt động.'
+                    'Chưa có trạng thái “Đang chờ” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái hàng đợi.'
                 );
         }
 
@@ -611,6 +613,10 @@ class AppointmentController extends Controller
             |--------------------------------------------------------------------------
             */
 
+            $receptionSlot = AppointmentTimeSlot::findOrFail($appointment->appointment_time_slot_id);
+            $receptionSchedule = DoctorSchedule::whereKey($receptionSlot->doctor_schedule_id)->lockForUpdate()->firstOrFail();
+            $receptionSlot = AppointmentTimeSlot::whereKey($receptionSlot->id)->lockForUpdate()->firstOrFail();
+            $receptionSlot->setRelation('doctorSchedule', $receptionSchedule);
             $lockedAppointment =
                 Appointment::query()
                     ->whereKey(
@@ -620,6 +626,19 @@ class AppointmentController extends Controller
                     ->firstOrFail();
 
             $lockedAppointment->load('appointmentStatus');
+            $lockedAppointment->setRelation('appointmentTimeSlot', $receptionSlot);
+            if ($lockedAppointment->appointment_time_slot_id !== $receptionSlot->id) {
+                throw ValidationException::withMessages(['appointment' => 'Khung giờ của lịch hẹn vừa thay đổi. Vui lòng tải lại trang.']);
+            }
+            $lockedAppointment->assertReceptionDate();
+            $duplicateVisit = MedicalVisit::query()->join('appointments', 'appointments.id', '=', 'medical_visits.appointment_id')
+                ->where('appointments.patient_id', $lockedAppointment->patient_id)
+                ->where('appointments.appointment_time_slot_id', $receptionSlot->id)
+                ->where('appointments.id', '!=', $lockedAppointment->id)
+                ->select('medical_visits.*', 'appointments.appointment_code')->lockForUpdate()->first();
+            if ($duplicateVisit) {
+                throw ValidationException::withMessages(['appointment' => 'Bệnh nhân đã được tiếp nhận ở lịch hẹn '.$duplicateVisit->appointment_code.' trong cùng khung giờ. Không thể tạo thêm lượt khám trùng.']);
+            }
             if ($lockedAppointment->appointmentStatus?->name !== 'BOOKED') {
                 throw ValidationException::withMessages(['appointment' => 'Lịch hẹn không còn ở trạng thái đã đặt lịch.']);
             }
@@ -809,7 +828,7 @@ class AppointmentController extends Controller
                 )
                 ->with(
                     'error',
-                    'Lịch hẹn đã phát sinh lượt khám nên không thể chỉnh sửa thông tin đặt lịch.'
+                    'Bệnh nhân đã được tiếp nhận nên không thể sửa thông tin đặt lịch. Vui lòng mở lượt khám để xem thông tin khám.'
                 );
         }
 
@@ -907,7 +926,7 @@ class AppointmentController extends Controller
                 )
                 ->with(
                     'error',
-                    'Lịch hẹn đã phát sinh lượt khám nên không thể chỉnh sửa.'
+                    'Bệnh nhân đã được tiếp nhận nên không thể sửa thông tin đặt lịch. Vui lòng mở lượt khám để xem thông tin khám.'
                 );
         }
 
@@ -956,7 +975,7 @@ class AppointmentController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'patient_id' => 'Bệnh nhân hiện không ở trạng thái ACTIVE.',
+                    'patient_id' => 'Hồ sơ bệnh nhân đã ngừng hoạt động nên chưa thể đặt lịch. Vui lòng kiểm tra lại hồ sơ bệnh nhân.',
                 ]);
         }
 
@@ -974,7 +993,7 @@ class AppointmentController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'appointment_time_slot_id' => 'Khung giờ không còn khả dụng.',
+                    'appointment_time_slot_id' => 'Khung giờ đã chọn không còn nhận lịch hẹn. Vui lòng chọn khung giờ khác.',
                 ]);
         }
 
@@ -998,7 +1017,7 @@ class AppointmentController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'appointment_time_slot_id' => 'Khung giờ này đã đủ số bệnh nhân tối đa.',
+                    'appointment_time_slot_id' => 'Khung giờ này đã đủ số bệnh nhân có thể tiếp nhận. Vui lòng chọn khung giờ khác.',
                 ]);
         }
 
@@ -1027,6 +1046,8 @@ class AppointmentController extends Controller
             */
 
             $slot = $this->lockBookableSlot($slot->id, $slot->doctor_schedule_id, $appointment->id);
+            $this->assertBookingSelection($data, $slot);
+            $this->assertNoDuplicateBooking($patient->id, $slot->id, $appointment->id);
             $appointment = Appointment::whereKey($appointment->id)->lockForUpdate()->firstOrFail();
             $appointment->load('appointmentStatus');
             if ($appointment->medicalVisit()->exists() || in_array($appointment->appointmentStatus?->name, ['CANCELLED', 'COMPLETED'], true)) {
@@ -1123,7 +1144,7 @@ class AppointmentController extends Controller
                 )
                 ->with(
                     'error',
-                    'Lịch hẹn đã phát sinh lượt khám nên không thể hủy tại module lịch hẹn.'
+                    'Bệnh nhân đã được tiếp nhận nên không thể hủy lịch hẹn ở bước này. Vui lòng mở lượt khám để xem tình trạng hiện tại.'
                 );
         }
 
@@ -1194,7 +1215,7 @@ class AppointmentController extends Controller
                 )
                 ->with(
                     'error',
-                    'Không tìm thấy trạng thái CANCELLED.'
+                    'Chưa có trạng thái “Đã hủy” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái lịch hẹn.'
                 );
         }
 
@@ -1277,110 +1298,31 @@ class AppointmentController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    private function getSelectableSchedules(
-        ?int $currentSlotId = null
-    ) {
+    private function getSelectableSchedules(?int $currentSlotId = null)
+    {
         return DoctorSchedule::query()
             ->with([
-                'doctor',
-                'specialty',
-                'examinationRoom',
-
-                'appointmentTimeSlots' => function ($query) use (
-                    $currentSlotId
-                ) {
-
-                    $query
-                        ->where(
-                            function ($slotQuery) use (
-                                $currentSlotId
-                            ) {
-
-                                $slotQuery
-                                    ->where(
-                                        'status',
-                                        'ACTIVE'
-                                    );
-
-                                if ($currentSlotId) {
-
-                                    $slotQuery
-                                        ->orWhere(
-                                            'id',
-                                            $currentSlotId
-                                        );
-                                }
-                            }
-                        )
-                        ->orderBy(
-                            'start_time'
-                        );
-                },
+                'doctor', 'specialty', 'examinationRoom',
+                'appointmentTimeSlots' => fn ($query) => $query->where('status', 'ACTIVE')
+                    ->withCount(['appointments as booked_count' => fn ($bookings) => $bookings
+                        ->whereHas('appointmentStatus', fn ($status) => $status->where('name', '!=', 'CANCELLED'))])
+                    ->orderBy('start_time'),
             ])
-            ->where(
-                'status',
-                'ACTIVE'
-            )
-            ->whereDate(
-                'work_date',
-                '>=',
-                now()->toDateString()
-            )
-            ->orderBy('work_date')
-            ->orderBy('start_time')
-            ->get()
-            ->filter(
-                function (
-                    DoctorSchedule $schedule
-                ) use (
-                    $currentSlotId
-                ) {
+            ->where('status', 'ACTIVE')
+            ->whereHas('doctor', fn ($query) => $query->where('status', 'ACTIVE'))
+            ->whereHas('specialty', fn ($query) => $query->where('status', 'ACTIVE'))
+            ->whereHas('examinationRoom', fn ($query) => $query->where('status', 'ACTIVE'))
+            ->where('work_date', '>=', today()->toDateString())
+            ->where('work_date', '<', today()->addDays(Appointment::BOOKING_ADVANCE_DAYS + 1)->toDateString())
+            ->orderBy('work_date')->orderBy('start_time')->get()
+            ->filter(function (DoctorSchedule $schedule) use ($currentSlotId) {
+                $schedule->appointmentTimeSlots->each(function (AppointmentTimeSlot $slot) use ($schedule, $currentSlotId) {
+                    $slot->is_selectable = ((int) $slot->id === (int) $currentSlotId)
+                        || ($this->isSlotFuture($schedule, $slot) && $slot->booked_count < $slot->max_patients);
+                });
 
-                    $schedule
-                        ->appointmentTimeSlots
-                        ->transform(
-                            function (
-                                AppointmentTimeSlot $slot
-                            ) use (
-                                $schedule,
-                                $currentSlotId
-                            ) {
-
-                                $slot->is_selectable =
-                                    (int) $slot->id
-                                    ===
-                                    (int) $currentSlotId
-                                    ||
-                                    (
-                                        $this->isSlotFuture(
-                                            $schedule,
-                                            $slot
-                                        )
-                                        &&
-                                        $this->slotHasCapacity(
-                                            $slot->id
-                                        )
-                                    );
-
-                                $slot->booked_count =
-                                    $this->getActiveBookingCount(
-                                        $slot->id
-                                    );
-
-                                return $slot;
-                            }
-                        );
-
-                    return $schedule
-                        ->appointmentTimeSlots
-                        ->contains(
-                            function ($slot) {
-                                return $slot->is_selectable;
-                            }
-                        );
-                }
-            )
-            ->values();
+                return $schedule->appointmentTimeSlots->contains(fn ($slot) => $slot->is_selectable);
+            })->values();
     }
 
     /*
@@ -1632,6 +1574,9 @@ class AppointmentController extends Controller
         $schedule = DoctorSchedule::whereKey($doctorScheduleId)->lockForUpdate()->firstOrFail();
         $slot = AppointmentTimeSlot::whereKey($slotId)->lockForUpdate()->firstOrFail();
         $slot->setRelation('doctorSchedule', $schedule);
+        if (! $schedule->work_date->betweenIncluded(today(), today()->addDays(Appointment::BOOKING_ADVANCE_DAYS))) {
+            throw ValidationException::withMessages(['appointment_time_slot_id' => 'Chỉ được đặt lịch từ ngày '.today()->format('d/m/Y').' đến ngày '.today()->addDays(Appointment::BOOKING_ADVANCE_DAYS)->format('d/m/Y').'. Vui lòng chọn lại khung giờ.']);
+        }
         $bookings = Appointment::where('appointment_time_slot_id', $slotId)
             ->whereHas('appointmentStatus', fn ($query) => $query->where('name', '!=', 'CANCELLED'))
             ->when($ignoreAppointmentId, fn ($query) => $query->where('id', '!=', $ignoreAppointmentId))->count();
@@ -1642,10 +1587,30 @@ class AppointmentController extends Controller
             || $bookings >= $slot->max_patients
             || $schedule->doctor?->status !== 'ACTIVE' || $schedule->specialty?->status !== 'ACTIVE'
             || $schedule->examinationRoom?->status !== 'ACTIVE') {
-            throw ValidationException::withMessages(['appointment_time_slot_id' => 'Khung giờ đã đầy, đã qua hoặc không còn khả dụng trong lịch làm việc.']);
+            throw ValidationException::withMessages(['appointment_time_slot_id' => 'Không thể đặt vào khung giờ đã chọn vì khung giờ đã đầy, đã qua hoặc đã ngừng nhận lịch. Vui lòng chọn khung giờ khác.']);
         }
 
         return $slot;
+    }
+
+    private function assertBookingSelection(array $data, AppointmentTimeSlot $slot): void
+    {
+        foreach (['booking_doctor_id' => 'doctor_id', 'booking_room_id' => 'examination_room_id', 'booking_specialty_id' => 'specialty_id'] as $field => $column) {
+            if (! empty($data[$field]) && (int) $data[$field] !== (int) $slot->doctorSchedule->{$column}) {
+                throw ValidationException::withMessages(['appointment_time_slot_id' => 'Khung giờ khám không thuộc lựa chọn hiện tại. Vui lòng chọn lại lịch làm việc và khung giờ.']);
+            }
+        }
+    }
+
+    private function assertNoDuplicateBooking(int $patientId, int $slotId, ?int $ignoreId = null): void
+    {
+        $duplicate = Appointment::where('patient_id', $patientId)->where('appointment_time_slot_id', $slotId)
+            ->when($ignoreId, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->whereHas('appointmentStatus', fn ($query) => $query->where('name', '!=', 'CANCELLED'))
+            ->lockForUpdate()->first();
+        if ($duplicate) {
+            throw ValidationException::withMessages(['patient_id' => 'Bệnh nhân đã có lịch hẹn '.$duplicate->appointment_code.' trong khung giờ này. Vui lòng mở lịch hẹn đã có hoặc chọn khung giờ khác.']);
+        }
     }
 
     private function generateAppointmentCode(): string

@@ -59,7 +59,7 @@ class StoreDiseaseGroupRequest extends FormRequest
 
             'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' => 'Trạng thái nhóm bệnh không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái nhóm bệnh từ các lựa chọn có sẵn.',
         ];
     }
 }

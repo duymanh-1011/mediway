@@ -37,7 +37,7 @@
             href="{{ route(
                 'admin.disease-groups.index'
             ) }}"
-            class="admin-btn admin-btn-secondary btn btn-secondary"
+            class="admin-btn admin-btn-secondary"
         >
             ← Quay lại
         </a>
@@ -65,15 +65,13 @@
                     href="{{ route(
                         'admin.disease-groups.index'
                     ) }}"
-                    class="btn btn-secondary"
+                    class="admin-btn admin-btn-secondary"
                 >Hủy</a>
 
                 <button
                     type="submit"
-                    class="btn btn-primary"
-                >
-                    Lưu nhóm bệnh
-                </button>
+                    class="admin-btn admin-btn-primary"
+                >Lưu</button>
 
             </div>
 

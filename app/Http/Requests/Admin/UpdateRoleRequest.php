@@ -60,7 +60,7 @@ class UpdateRoleRequest extends FormRequest
             'description.max' => 'Mô tả không được quá 255 ký tự.',
 
             'status.required' => 'Vui lòng chọn trạng thái.',
-            'status.in' => 'Trạng thái không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái từ các lựa chọn có sẵn.',
         ];
     }
 }

@@ -183,6 +183,8 @@
 
 
     <div class="card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách nội dung khám'])
+
 
         @if ($clinicalNotes->count())
 
@@ -199,7 +201,7 @@
                         <th>Lý do khám</th>
                         <th>Nhận định ban đầu</th>
                         <th>Ghi nhận lúc</th>
-                        <th>Hành động</th>
+                        <th>Thao tác</th>
                     </tr>
                     </thead>
 
@@ -255,7 +257,7 @@
                                 ) ?: '—' }}
                             </td>
 
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
 
                                 <div class="admin-u-c9035c8e">
 
@@ -264,7 +266,7 @@
                                             'admin.clinical-notes.show',
                                             $note
                                         ) }}"
-                                        class="admin-btn admin-btn-detail btn btn-secondary"
+                                        class="admin-btn admin-btn-detail"
                                     >Chi tiết</a>
 
                                     @if ($note->medicalVisit?->canRecordClinicalData())
@@ -274,14 +276,14 @@
                                                 'admin.clinical-notes.edit',
                                                 $note
                                             ) }}"
-                                            class="admin-btn btn btn-primary admin-btn-primary"
+                                            class="admin-btn admin-btn-secondary"
                                         >Sửa</a>
 
                                     @endif
 
                                 </div>
 
-                            </td>
+                            </div></td>
 
                         </tr>
 

@@ -70,13 +70,13 @@ class ServiceOrderItemController extends Controller
             $serviceOrderItem->payable;
 
         if (! $serviceOrderItem->serviceStatus->allows_transition) {
-            return back()->with('error', 'Trạng thái dịch vụ hiện tại đang khóa chuyển trạng thái.');
+            return back()->with('error', 'Dịch vụ đang bị khóa thay đổi trạng thái. Vui lòng kiểm tra mục Trạng thái dịch vụ.');
         }
 
         if (! $payable) {
             return back()->with(
                 'error',
-                'Dịch vụ chưa có khoản phải thanh toán.'
+                'Chưa có khoản thu cho dịch vụ này nên chưa thể bắt đầu. Vui lòng kiểm tra mục Khoản phải thanh toán.'
             );
         }
 
@@ -86,7 +86,7 @@ class ServiceOrderItemController extends Controller
         if (! $paymentStatus) {
             return back()->with(
                 'error',
-                'Khoản phải thanh toán chưa có trạng thái hợp lệ.'
+                'Trạng thái khoản thu chưa được cấu hình đúng. Vui lòng kiểm tra mục Trạng thái thanh toán.'
             );
         }
 
@@ -112,7 +112,7 @@ class ServiceOrderItemController extends Controller
         if (! $processingStatus) {
             return back()->with(
                 'error',
-                'Không tìm thấy trạng thái dịch vụ PROCESSING đang hoạt động.'
+                'Chưa có trạng thái “Đang thực hiện” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái dịch vụ.'
             );
         }
 
@@ -150,7 +150,7 @@ class ServiceOrderItemController extends Controller
 
                 $currentStatus = ServiceStatus::whereKey($lockedItem->service_status_id)->lockForUpdate()->firstOrFail();
                 if (! $currentStatus->allows_transition) {
-                    throw ValidationException::withMessages(['service_status_id' => 'Trạng thái dịch vụ hiện tại đang khóa chuyển trạng thái.']);
+                    throw ValidationException::withMessages(['service_status_id' => 'Dịch vụ đang bị khóa thay đổi trạng thái. Vui lòng kiểm tra mục Trạng thái dịch vụ.']);
                 }
 
                 if (
@@ -294,13 +294,13 @@ class ServiceOrderItemController extends Controller
         }
 
         if (! $serviceOrderItem->serviceStatus->allows_transition) {
-            return back()->with('error', 'Trạng thái dịch vụ hiện tại đang khóa chuyển trạng thái.');
+            return back()->with('error', 'Dịch vụ đang bị khóa thay đổi trạng thái. Vui lòng kiểm tra mục Trạng thái dịch vụ.');
         }
 
         if (! $serviceOrderItem->result?->hasContent()) {
             return back()->with(
                 'error',
-                'Chưa thể hoàn tất dịch vụ: kết quả phải có nội dung hoặc tệp PDF/ảnh đính kèm.'
+                'Chưa thể hoàn tất dịch vụ. Vui lòng nhập nội dung kết quả hoặc tải lên tệp PDF/ảnh kết quả hợp lệ.'
             );
         }
 
@@ -319,7 +319,7 @@ class ServiceOrderItemController extends Controller
         if (! $completedStatus) {
             return back()->with(
                 'error',
-                'Không tìm thấy trạng thái dịch vụ COMPLETED đang hoạt động.'
+                'Chưa có trạng thái “Đã hoàn thành” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái dịch vụ.'
             );
         }
 
@@ -356,7 +356,7 @@ class ServiceOrderItemController extends Controller
 
                     $currentStatus = ServiceStatus::whereKey($lockedItem->service_status_id)->lockForUpdate()->firstOrFail();
                     if (! $currentStatus->allows_transition) {
-                        throw ValidationException::withMessages(['service_status_id' => 'Trạng thái dịch vụ hiện tại đang khóa chuyển trạng thái.']);
+                        throw ValidationException::withMessages(['service_status_id' => 'Dịch vụ đang bị khóa thay đổi trạng thái. Vui lòng kiểm tra mục Trạng thái dịch vụ.']);
                     }
 
                     if (! $lockedItem->result?->hasContent()) {
@@ -444,7 +444,7 @@ class ServiceOrderItemController extends Controller
         ) {
             return back()->with(
                 'error',
-                'Không thể hoàn tất dịch vụ. Vui lòng kiểm tra trạng thái và kết quả dịch vụ.'
+                'Chưa thể hoàn tất dịch vụ. Vui lòng tải lại trang, kiểm tra dịch vụ đang được thực hiện và đã có kết quả.'
             );
         }
 
@@ -456,7 +456,7 @@ class ServiceOrderItemController extends Controller
             )
             ->with(
                 'success',
-                'Đã hoàn tất dịch vụ. Nếu không còn dịch vụ chưa hủy cần chờ, bệnh nhân đã được đưa vào hàng đợi quay lại bác sĩ.'
+                'Đã hoàn tất dịch vụ. '.app(ServiceOrderProgress::class)->returnQueueMessage($serviceOrderItem->serviceOrder->medical_visit_id)
             );
     }
 

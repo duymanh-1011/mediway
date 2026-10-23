@@ -39,20 +39,16 @@
                 href="{{ route(
                     'admin.specialties.index'
                 ) }}"
-                class="btn btn-secondary"
-            >
-                ← Danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             <a
                 href="{{ route(
                     'admin.specialties.edit',
                     $specialty
                 ) }}"
-                class="btn btn-primary"
-            >
-                Sửa chuyên khoa
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >Sửa</a>
 
         </div>
 
@@ -116,19 +112,11 @@
                         === 'ACTIVE'
                     )
 
-                        <span
-                            class="badge badge-success"
-                        >
-                            Đang hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                     @else
 
-                        <span
-                            class="badge badge-danger"
-                        >
-                            Ngừng hoạt động
-                        </span>
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                     @endif
 
@@ -317,9 +305,7 @@
 
                                 </td>
 
-                                <td>
-                                    {{ \App\Models\AdminDisplay::label($schedule->status) }}
-                                </td>
+                                <td>@include('admin.layouts.partials.status-badge', ['badgeCode' => $schedule->status])</td>
 
                             </tr>
 
@@ -430,10 +416,7 @@
 
                         </td>
 
-                        <td>
-                            {{ \App\Models\AdminDisplay::label($appointment
-                                ->appointment_status) }}
-                        </td>
+                        <td>@include('admin.layouts.partials.status-badge', ['badgeCode' => $appointment ->appointment_status])</td>
 
                     </tr>
 

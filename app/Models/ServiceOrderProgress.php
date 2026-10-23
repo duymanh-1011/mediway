@@ -7,6 +7,25 @@ use Illuminate\Support\Facades\DB;
 
 final class ServiceOrderProgress
 {
+    public function returnQueueMessage(int $medicalVisitId): string
+    {
+        $remaining = ServiceOrderItem::whereHas('serviceOrder', fn (Builder $query): Builder => $query->where('medical_visit_id', $medicalVisitId))
+            ->unresolved()->count();
+        if ($remaining > 0) {
+            return 'Lượt khám còn '.$remaining.' dịch vụ cần hoàn tất. Bệnh nhân chưa được xếp hàng quay lại bác sĩ.';
+        }
+        $visit = MedicalVisit::with('status')->findOrFail($medicalVisitId);
+        if ($visit->status?->name === 'RETURNING') {
+            return 'Bệnh nhân đang khám lại với bác sĩ.';
+        }
+        if ($visit->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')
+            ->whereHas('status', fn (Builder $query): Builder => $query->whereIn('name', ['WAITING', 'CALLED', 'IN_SERVICE', 'SKIPPED']))->exists()) {
+            return 'Bệnh nhân đã được xếp vào hàng đợi quay lại bác sĩ.';
+        }
+
+        return 'Không còn dịch vụ cần chờ. Vui lòng xem trạng thái hiện tại của lượt khám.';
+    }
+
     /**
      * Call after completion or cancellation; lock the visit before all child rows.
      */
@@ -34,7 +53,7 @@ final class ServiceOrderProgress
 
             $waitingStatus = QueueStatus::where('name', 'WAITING')->where('is_active', true)->first();
             if (! $waitingStatus) {
-                throw new \RuntimeException('Không tìm thấy trạng thái hàng đợi đang chờ đang hoạt động.');
+                throw new \RuntimeException('Chưa có trạng thái “Đang chờ” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái hàng đợi.');
             }
             ExaminationRoom::whereKey($visit->examination_room_id)->lockForUpdate()->firstOrFail();
             $lastNumber = ExaminationRoomQueue::whereDate('queued_at', now()->toDateString())

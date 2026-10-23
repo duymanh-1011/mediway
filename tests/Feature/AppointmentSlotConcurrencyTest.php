@@ -7,6 +7,7 @@ use App\Models\AppointmentStatus;
 use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\ExaminationRoom;
+use App\Models\MedicalVisit;
 use App\Models\Patient;
 use App\Models\Specialty;
 use Database\Seeders\DatabaseSeeder;
@@ -35,12 +36,12 @@ class AppointmentSlotConcurrencyTest extends TestCase
         }
         $this->assertSame('mediway_codex_test_20261019', DB::getDatabaseName());
         $this->seed(DatabaseSeeder::class);
-        foreach (['overlap', 'capacity'] as $index => $scenario) {
+        foreach (['overlap', 'capacity', 'duplicate', 'duplicate_checkin'] as $index => $scenario) {
             $schedule = DoctorSchedule::create([
                 'doctor_id' => Doctor::where('doctor_code', 'BS000001')->value('id'),
                 'specialty_id' => Specialty::where('specialty_code', 'CKTMH')->value('id'),
                 'examination_room_id' => ExaminationRoom::where('room_code', 'PKTMH01')->value('id'),
-                'work_date' => now()->addDays($index + 1)->toDateString(),
+                'work_date' => $scenario === 'duplicate_checkin' ? today()->toDateString() : now()->addDays($index + 1)->toDateString(),
                 'start_time' => '09:00:00', 'end_time' => '11:00:00', 'status' => 'ACTIVE',
             ]);
             $data = ['start_time' => '09:00', 'end_time' => '09:30', 'max_patients' => 1, 'status' => 'ACTIVE'];
@@ -61,12 +62,38 @@ class AppointmentSlotConcurrencyTest extends TestCase
                     'appointment_time_slot_id' => $slot->id, 'reason_for_visit' => 'Đặt lịch đồng thời',
                 ], 'pause' => 'lock'];
             }
+            if (in_array($scenario, ['duplicate', 'duplicate_checkin'], true)) {
+                $slot = $schedule->appointmentTimeSlots()->create(['start_time' => '09:00:00', 'end_time' => '09:30:00', 'max_patients' => 10, 'status' => 'ACTIVE']);
+                $first = ['uri' => route('admin.appointments.store'), 'method' => 'POST', 'data' => [
+                    'patient_id' => Patient::where('patient_code', 'BN000005')->value('id'),
+                    'appointment_time_slot_id' => $slot->id, 'reason_for_visit' => 'Đặt lịch không trùng',
+                ], 'pause' => 'appointment_insert'];
+                $second = [...$first, 'pause' => 'lock'];
+                if ($scenario === 'duplicate_checkin') {
+                    $existing = Appointment::create([
+                        ...$first['data'], 'appointment_code' => 'LHRACERECEPTION', 'doctor_id' => $schedule->doctor_id,
+                        'specialty_id' => $schedule->specialty_id, 'examination_room_id' => $schedule->examination_room_id,
+                        'appointment_date' => $schedule->work_date, 'checkin_token' => (string) Str::uuid(),
+                        'appointment_status_id' => AppointmentStatus::where('name', 'BOOKED')->value('id'), 'booked_at' => now(),
+                    ]);
+                    $duplicate = $existing->replicate();
+                    $duplicate->appointment_code = 'LHRACERECEPTIONDUP';
+                    $duplicate->checkin_token = (string) Str::uuid();
+                    $duplicate->save();
+                    $first = ['uri' => route('admin.appointments.check-in', $existing), 'method' => 'POST', 'data' => [], 'pause' => 'visit_insert'];
+                    $second = ['uri' => route('admin.appointments.check-in', $duplicate), 'method' => 'POST', 'data' => [], 'pause' => 'lock'];
+                }
+            }
             $this->runConcurrentRequests($first, $second);
             if ($scenario === 'overlap') {
                 $this->assertSame(1, $schedule->appointmentTimeSlots()->count());
-            } else {
+            } elseif ($scenario === 'capacity') {
                 $this->assertSame(1, $slot->fresh()->max_patients);
                 $this->assertSame(1, $slot->appointments()->count());
+            } elseif ($scenario === 'duplicate') {
+                $this->assertSame(1, $slot->appointments()->count());
+            } else {
+                $this->assertSame(1, MedicalVisit::whereIn('appointment_id', [$existing->id, $duplicate->id])->count());
             }
         }
     }
@@ -105,7 +132,9 @@ Illuminate\Support\Facades\DB::connection()->beforeExecuting(function ($query, $
 Illuminate\Support\Facades\DB::listen(function ($event) use ($payload, $ready, $release, &$marked): void {
     $sql = str_replace('`', '', strtolower($event->sql));
     $matches = ($payload['pause'] === 'insert' && str_starts_with($sql, 'insert into appointment_time_slots'))
-        || ($payload['pause'] === 'count' && str_contains($sql, 'count(*)') && str_contains($sql, 'from appointments'));
+        || ($payload['pause'] === 'count' && str_contains($sql, 'count(*)') && str_contains($sql, 'from appointments'))
+        || ($payload['pause'] === 'appointment_insert' && str_starts_with($sql, 'insert into appointments'))
+        || ($payload['pause'] === 'visit_insert' && str_starts_with($sql, 'insert into medical_visits'));
     if ($marked || ! $matches) {
         return;
     }

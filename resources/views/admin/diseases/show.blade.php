@@ -36,26 +36,22 @@
 
         <div class="header-actions">
 
-            <a class="admin-btn admin-btn-secondary" href="{{ route('admin.disease-groups.show', $disease->disease_group_id) }}">Xem nhóm bệnh</a>
+            <a class="admin-btn admin-btn-detail" href="{{ route('admin.disease-groups.show', $disease->disease_group_id) }}">Xem nhóm bệnh</a>
 
             <a
                 href="{{ route(
                     'admin.diseases.index'
                 ) }}"
-                class="btn btn-secondary"
-            >
-                ← Danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             <a
                 href="{{ route(
                     'admin.diseases.edit',
                     $disease
                 ) }}"
-                class="btn btn-primary"
-            >
-                Sửa bệnh
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >Sửa</a>
 
         </div>
 
@@ -103,15 +99,11 @@
                     === 'ACTIVE'
                 )
 
-                    <span class="badge badge-success">
-                        Đang hoạt động
-                    </span>
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                 @else
 
-                    <span class="badge badge-danger">
-                        Ngừng hoạt động
-                    </span>
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                 @endif
 

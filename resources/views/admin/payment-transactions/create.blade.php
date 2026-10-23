@@ -52,10 +52,8 @@
                     'admin.payables.show',
                     $payable->id
                 ) }}"
-                class="admin-btn admin-btn-secondary btn btn-secondary"
-            >
-                ← Quay lại khoản phải thu
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
         </div>
 
@@ -141,12 +139,7 @@
                     Trạng thái
                 </span>
 
-                <strong>
-                    {{ \App\Models\AdminDisplay::label($payable
-                        ->paymentStatus
-                        ?->name
-                        ?? '—') }}
-                </strong>
+                <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $payable ->paymentStatus ?->name ?? '—', 'badgeContext' => 'payment'])</strong>
 
             </div>
 
@@ -428,12 +421,12 @@
                     'admin.payables.show',
                     $payable->id
                 ) }}"
-                class="btn btn-secondary"
+                class="admin-btn admin-btn-secondary"
             >Hủy</a>
 
             <button
                 type="submit"
-                class="btn btn-primary"
+                class="admin-btn admin-btn-primary"
             >
                 Xác nhận thanh toán
             </button>

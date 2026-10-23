@@ -29,8 +29,8 @@
 
         <a
             href="{{ route('admin.queues.index') }}"
-            class="admin-btn admin-btn-secondary btn btn-secondary"
-        >Quay lại</a>
+            class="admin-btn admin-btn-secondary"
+        >← Quay lại</a>
 
     </div>
 
@@ -69,9 +69,7 @@
                 <strong>Trạng thái</strong>
 
                 <div>
-                    <span class="badge">
-                        {{ \App\Models\AdminDisplay::label($queue->status?->name ?: '—') }}
-                    </span>
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $queue->status?->name ?: '—'])
                 </div>
             </div>
 
@@ -188,9 +186,7 @@
             <div>
                 <strong>Trạng thái lượt khám</strong>
 
-                <div>
-                    {{ \App\Models\AdminDisplay::label($queue->medicalVisit?->status?->name ?: '—') }}
-                </div>
+                <div>@include('admin.layouts.partials.status-badge', ['badgeCode' => $queue->medicalVisit?->status?->name ?: '—'])</div>
             </div>
 
         </div>
@@ -205,7 +201,7 @@
                         'admin.visits.show',
                         $queue->medicalVisit
                     ) }}"
-                    class="btn btn-secondary"
+                    class="admin-btn admin-btn-detail"
                 >
                     Xem lượt khám
                 </a>
@@ -244,7 +240,7 @@
 
                     <button
                         type="submit"
-                        class="btn btn-primary"
+                        class="admin-btn admin-btn-primary"
                     >
                         {{ $queue->status?->name === 'CALLED'
                             ? 'Gọi lại'
@@ -268,7 +264,7 @@
 
                     <button
                         type="submit"
-                        class="btn btn-primary"
+                        class="admin-btn admin-btn-primary"
                     >
                         Bắt đầu phục vụ
                     </button>
@@ -290,7 +286,7 @@
 
                     <button
                         type="submit"
-                        class="btn btn-primary"
+                        class="admin-btn admin-btn-success"
                     >
                         Hoàn tất
                     </button>
@@ -318,10 +314,10 @@
 
                     <button
                         type="submit"
-                        class="btn btn-danger"
+                        class="admin-btn admin-btn-warning"
                         onclick="
                             return confirm(
-                                'Xác nhận bỏ qua bệnh nhân này?'
+                                'Tạm bỏ qua bệnh nhân này trong hàng đợi? Bạn vẫn có thể gọi lại sau.'
                             );
                         "
                     >

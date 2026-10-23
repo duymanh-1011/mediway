@@ -39,17 +39,13 @@ class UpdatePayableStatusRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'payment_status_id.required' =>
-            'Vui lòng chọn trạng thái thanh toán.',
+            'payment_status_id.required' => 'Vui lòng chọn trạng thái thanh toán.',
 
-            'payment_status_id.integer' =>
-            'Trạng thái thanh toán không hợp lệ.',
+            'payment_status_id.integer' => 'Trạng thái thanh toán không hợp lệ.',
 
-            'payment_status_id.exists' =>
-            'Trạng thái thanh toán không hợp lệ.',
+            'payment_status_id.exists' => 'Trạng thái thanh toán không hợp lệ.',
 
-            'confirm_update.accepted' =>
-            'Bạn phải xác nhận trước khi thay đổi trạng thái.',
+            'confirm_update.accepted' => 'Vui lòng xác nhận thay đổi trạng thái trước khi lưu.',
         ];
     }
 }

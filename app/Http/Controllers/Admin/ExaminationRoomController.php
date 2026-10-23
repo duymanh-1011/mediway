@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreExaminationRoomRequest;
 use App\Http\Requests\Admin\UpdateExaminationRoomRequest;
 use App\Models\ExaminationRoom;
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -48,16 +47,16 @@ class ExaminationRoomController extends Controller
                         'like',
                         "%{$keyword}%"
                     )
-                    ->orWhere(
-                        'name',
-                        'like',
-                        "%{$keyword}%"
-                    )
-                    ->orWhere(
-                        'room_number',
-                        'like',
-                        "%{$keyword}%"
-                    );
+                        ->orWhere(
+                            'name',
+                            'like',
+                            "%{$keyword}%"
+                        )
+                        ->orWhere(
+                            'room_number',
+                            'like',
+                            "%{$keyword}%"
+                        );
                 }
             );
         }
@@ -469,7 +468,7 @@ class ExaminationRoomController extends Controller
                 )
                 ->with(
                     'success',
-                    'Phòng khám đã được sử dụng trong hệ thống nên không thể xóa. Hệ thống đã chuyển phòng sang trạng thái INACTIVE.'
+                    'Phòng khám đã có lịch sử sử dụng nên không thể xóa. Đã ngừng hoạt động phòng và giữ nguyên lịch sử.'
                 );
         }
 

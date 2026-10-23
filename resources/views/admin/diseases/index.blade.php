@@ -36,10 +36,8 @@
             href="{{ route(
                 'admin.diseases.create'
             ) }}"
-            class="admin-btn btn btn-primary admin-btn-primary"
-        >
-            + Thêm bệnh
-        </a>
+            class="admin-btn admin-btn-primary"
+        >Thêm bệnh</a>
 
     </div>
 
@@ -201,6 +199,8 @@
     @endcomponent
 
     <div class="card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách bệnh'])
+
 
         <div class="table-wrapper">
 
@@ -261,21 +261,17 @@
                                 === 'ACTIVE'
                             )
 
-                                <span class="badge badge-success">
-                                    Đang hoạt động
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
                             @else
 
-                                <span class="badge badge-danger">
-                                    Ngừng hoạt động
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => 'INACTIVE'])
 
                             @endif
 
                         </td>
 
-                        <td>
+                        <td><div class="admin-actions admin-table-actions">
 
                             <div class="action-group">
 
@@ -284,7 +280,7 @@
                                         'admin.diseases.show',
                                         $disease
                                     ) }}"
-                                    class="admin-btn admin-btn-detail action-link view"
+                                    class="admin-btn admin-btn-detail"
                                 >Chi tiết</a>
 
                                 <a
@@ -292,14 +288,14 @@
                                         'admin.diseases.edit',
                                         $disease
                                     ) }}"
-                                    class="admin-btn admin-btn-secondary action-link edit"
+                                    class="admin-btn admin-btn-secondary"
                                 >Sửa</a>
 
                                 @include('admin.layouts.partials.catalog-status', ['record' => $disease, 'catalog' => 'diseases'])
 
                             </div>
 
-                        </td>
+                        </div></td>
 
                     </tr>
 

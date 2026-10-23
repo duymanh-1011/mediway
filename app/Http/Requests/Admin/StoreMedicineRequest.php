@@ -123,7 +123,7 @@ class StoreMedicineRequest extends FormRequest
 
             'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' => 'Trạng thái thuốc không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái thuốc từ các lựa chọn có sẵn.',
         ];
     }
 }

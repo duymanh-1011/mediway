@@ -289,17 +289,17 @@ class PayableController extends Controller
                 throw ValidationException::withMessages(['payment_status_id' => 'Khoản thu hoặc dịch vụ đã hủy không thể được mở lại.']);
             }
             if ($item && $item->serviceOrder->medical_visit_id !== $payable->medical_visit_id) {
-                throw ValidationException::withMessages(['payment_status_id' => 'Khoản thu không thuộc lượt khám của dịch vụ.']);
+                throw ValidationException::withMessages(['payment_status_id' => 'Khoản thu không khớp với lượt khám của dịch vụ. Vui lòng kiểm tra lại phiếu chỉ định.']);
             }
             if ($newStatus->name === 'CANCELLED') {
-                throw ValidationException::withMessages(['payment_status_id' => 'Để hủy khoản thu và dịch vụ tương ứng, hãy dùng thao tác Hủy nghiệp vụ.']);
+                throw ValidationException::withMessages(['payment_status_id' => 'Để hủy khoản thu và dịch vụ chưa bắt đầu tương ứng, vui lòng dùng nút Hủy khoản thu.']);
             }
             $successfulTransaction = $payable->transactions()->where('transaction_result', 'SUCCESS')->orderByDesc('confirmed_at')->first();
             if (($oldStatus === 'PAID' || $payable->paid_at || $successfulTransaction) && $newStatus->name !== 'PAID') {
-                throw ValidationException::withMessages(['payment_status_id' => 'Khoản đã thanh toán không thể chuyển ngược trạng thái.']);
+                throw ValidationException::withMessages(['payment_status_id' => 'Khoản thu đã thanh toán nên không thể đổi sang trạng thái khác. Lịch sử thanh toán được giữ nguyên.']);
             }
             if ($newStatus->name === 'PAID' && ! $successfulTransaction) {
-                throw ValidationException::withMessages(['payment_status_id' => 'Không thể ghi nhận đã thanh toán khi chưa có giao dịch thành công.']);
+                throw ValidationException::withMessages(['payment_status_id' => 'Chưa có giao dịch thanh toán thành công cho khoản thu này. Vui lòng mở form thanh toán để ghi nhận giao dịch.']);
             }
             if ($oldStatus === $newStatus->name) {
                 return;
@@ -340,7 +340,7 @@ class PayableController extends Controller
                     $currentServiceStatus = ServiceStatus::whereKey($item->service_status_id)->lockForUpdate()->firstOrFail();
                     $item->setRelation('serviceStatus', $currentServiceStatus);
                     if ($currentServiceStatus->name !== 'CANCELLED' && ! $currentServiceStatus->allows_transition) {
-                        throw ValidationException::withMessages(['cancel_reason' => 'Trạng thái dịch vụ hiện tại đang khóa chuyển trạng thái, không thể hủy khoản thu kèm dịch vụ.']);
+                        throw ValidationException::withMessages(['cancel_reason' => 'Chưa thể hủy khoản thu vì dịch vụ đang bị khóa thay đổi trạng thái. Vui lòng kiểm tra mục Trạng thái dịch vụ.']);
                     }
                 }
                 if ($lockedPayable->paymentStatus?->name === 'PAID' || $lockedPayable->paid_at
@@ -354,12 +354,12 @@ class PayableController extends Controller
 
                 $cancelPaymentStatus = PaymentStatus::where('name', 'CANCELLED')->where('is_active', true)->first();
                 if (! $cancelPaymentStatus) {
-                    throw new \RuntimeException('Không tìm thấy trạng thái đã hủy đang hoạt động cho khoản thu.');
+                    throw new \RuntimeException('Chưa có trạng thái “Đã hủy” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái thanh toán.');
                 }
                 if ($item && $item->serviceStatus?->name !== 'CANCELLED') {
                     $cancelServiceStatus = ServiceStatus::where('name', 'CANCELLED')->where('is_active', true)->first();
                     if (! $cancelServiceStatus) {
-                        throw new \RuntimeException('Không tìm thấy trạng thái đã hủy đang hoạt động cho dịch vụ.');
+                        throw new \RuntimeException('Chưa có trạng thái “Đã hủy” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái dịch vụ.');
                     }
                     $oldItem = ['service_status_id' => $item->service_status_id, 'service_status' => $item->serviceStatus?->name, 'execution_notes' => $item->execution_notes];
                     $notes = trim(($item->execution_notes ? $item->execution_notes.PHP_EOL : '').'Lý do hủy: '.$reason);
@@ -400,7 +400,7 @@ class PayableController extends Controller
 
         return redirect()->route('admin.payables.show', $payable->id)->with('success',
             $payable->service_order_item_id
-                ? 'Đã hủy khoản thu và dịch vụ chưa bắt đầu tương ứng. Nếu không còn dịch vụ cần chờ, bệnh nhân được đưa vào hàng đợi quay lại bác sĩ.'
+                ? 'Đã hủy khoản thu '.$payable->payable_code.' và dịch vụ tương ứng. '.app(ServiceOrderProgress::class)->returnQueueMessage($payable->medical_visit_id)
                 : 'Đã hủy khoản phải thanh toán.'
         );
     }

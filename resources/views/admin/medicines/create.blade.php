@@ -34,7 +34,7 @@
 
         <a
             href="{{ route('admin.medicines.index') }}"
-            class="admin-btn admin-btn-secondary btn btn-secondary"
+            class="admin-btn admin-btn-secondary"
         >
             ← Quay lại
         </a>
@@ -56,15 +56,13 @@
 
                 <a
                     href="{{ route('admin.medicines.index') }}"
-                    class="btn btn-secondary"
+                    class="admin-btn admin-btn-secondary"
                 >Hủy</a>
 
                 <button
                     type="submit"
-                    class="btn btn-primary"
-                >
-                    Lưu thuốc
-                </button>
+                    class="admin-btn admin-btn-primary"
+                >Lưu</button>
 
             </div>
 

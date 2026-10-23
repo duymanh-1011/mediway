@@ -25,9 +25,7 @@
         </div>
 
         <a href="{{ route('admin.roles.show', $role) }}"
-           class="btn btn-secondary">
-            ← Quay lại chi tiết
-        </a>
+           class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <form novalidate action="{{ route('admin.roles.update', $role) }}" method="POST">
@@ -120,13 +118,9 @@ name="status"
 
             <div class="role-edit-actions">
                 <a href="{{ route('admin.roles.show', $role) }}"
-                   class="btn btn-secondary">
-                    Hủy bỏ
-                </a>
+                   class="admin-btn admin-btn-secondary">Hủy</a>
 
-                <button type="submit" class="btn btn-primary">
-                    Lưu thay đổi
-                </button>
+                <button type="submit" class="admin-btn admin-btn-primary">Cập nhật</button>
             </div>
 
         </div>

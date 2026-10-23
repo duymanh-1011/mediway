@@ -112,17 +112,17 @@ class UpdateMedicalServiceRequest extends FormRequest
 
             'service_group_ids.required' => 'Vui lòng chọn ít nhất một nhóm dịch vụ.',
 
-            'service_group_ids.array' => 'Danh sách nhóm dịch vụ không hợp lệ.',
+            'service_group_ids.array' => 'Vui lòng chọn nhóm dịch vụ từ danh sách gợi ý.',
 
             'service_group_ids.min' => 'Vui lòng chọn ít nhất một nhóm dịch vụ.',
 
-            'service_group_ids.*.required' => 'Nhóm dịch vụ không hợp lệ.',
+            'service_group_ids.*.required' => 'Vui lòng chọn lại nhóm dịch vụ từ danh sách gợi ý.',
 
-            'service_group_ids.*.integer' => 'Nhóm dịch vụ không hợp lệ.',
+            'service_group_ids.*.integer' => 'Vui lòng chọn lại nhóm dịch vụ từ danh sách gợi ý.',
 
             'service_group_ids.*.distinct' => 'Không được chọn trùng nhóm dịch vụ.',
 
-            'service_group_ids.*.exists' => 'Có nhóm dịch vụ không tồn tại.',
+            'service_group_ids.*.exists' => 'Nhóm dịch vụ đã chọn không tồn tại hoặc đã ngừng hoạt động. Vui lòng chọn lại.',
 
             'name.required' => 'Vui lòng nhập tên dịch vụ.',
             'name.unique' => 'Tên dịch vụ đã tồn tại. Hãy gán dịch vụ hiện có vào nhóm.',
@@ -133,7 +133,7 @@ class UpdateMedicalServiceRequest extends FormRequest
 
             'price.min' => 'Giá dịch vụ không được âm.',
 
-            'price.multiple_of' => 'Giá dịch vụ phải là bội số của 1.000 đồng.',
+            'price.multiple_of' => 'Giá dịch vụ phải chia hết cho 1.000 đồng, ví dụ 0, 1000 hoặc 2000.',
 
             'unit.required' => 'Vui lòng nhập đơn vị.',
 
@@ -149,7 +149,7 @@ class UpdateMedicalServiceRequest extends FormRequest
 
             'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' => 'Trạng thái dịch vụ không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái dịch vụ từ các lựa chọn có sẵn.',
         ];
     }
 }

@@ -22,9 +22,7 @@
                 Tạo tài khoản đăng nhập cho bệnh nhân, bác sĩ hoặc nhân viên.
             </p>
         </div>
-        <a href="{{ route('admin.users.index') }}" class="admin-btn admin-btn-secondary account-btn account-btn-light">
-            ← Danh sách tài khoản
-        </a>
+        <a href="{{ route('admin.users.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="account-form-card">
@@ -119,9 +117,7 @@
                     <select id="status" name="status" required
                             class="{{ $errors->has('status') ? 'account-invalid' : '' }}">
                         <option value="ACTIVE"
-                            {{ old('status', 'ACTIVE') === 'ACTIVE' ? 'selected' : '' }}>
-                            Hoạt động
-                        </option>
+                            {{ old('status', 'ACTIVE') === 'ACTIVE' ? 'selected' : '' }}>Đang hoạt động</option>
                         <option value="LOCKED"
                             {{ old('status') === 'LOCKED' ? 'selected' : '' }}>
                             Đã khóa
@@ -136,17 +132,15 @@
             <div class="account-note">
                 <strong>Lưu ý:</strong>
                 Trang này chỉ tạo tài khoản đăng nhập. Hồ sơ bệnh nhân,
-                bác sĩ hoặc nhân viên sẽ được liên kết tại module quản lý
+                bác sĩ hoặc nhân viên sẽ được liên kết tại mục quản lý
                 hồ sơ tương ứng. Tài khoản quản trị viên cần được tạo
                 trong mục Quản trị viên.
             </div>
 
             <div class="account-form-actions">
                 <a href="{{ route('admin.users.index') }}"
-                   class="account-btn account-btn-light">Hủy</a>
-                <button type="submit" class="account-btn account-btn-primary">
-                    Tạo tài khoản
-                </button>
+                   class="admin-btn admin-btn-secondary">Hủy</a>
+                <button type="submit" class="admin-btn admin-btn-primary">Lưu</button>
 </div>
         </form>
     </div>

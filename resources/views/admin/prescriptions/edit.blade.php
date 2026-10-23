@@ -334,7 +334,7 @@
 
                 <p>
                     Đây là dữ liệu y tế. Mọi thay đổi sẽ được lưu
-                    vào audit log với dữ liệu trước và sau cập nhật.
+                    vào nhật ký hoạt động với dữ liệu trước và sau cập nhật.
                 </p>
 
             </div>
@@ -345,10 +345,10 @@
                 <a href="{{ route(
         'admin.prescriptions.show',
         $prescription->id
-    ) }}" class="prescription-btn prescription-btn-secondary">Hủy</a>
+    ) }}" class="admin-btn admin-btn-secondary">Hủy</a>
 
-                <label for="prescription-confirm-modal" class="prescription-btn prescription-btn-primary">
-                    Cập nhật đơn thuốc
+                <label for="prescription-confirm-modal" class="admin-btn admin-btn-primary">
+                    Cập nhật
                 </label>
 
             </div>
@@ -383,14 +383,12 @@
 
                     <div class="prescription-modal-actions">
 
-                        <label for="prescription-confirm-modal" class="prescription-btn prescription-btn-secondary">
-                            Quay lại
-                        </label>
+                        <label for="prescription-confirm-modal" class="admin-btn admin-btn-secondary">Hủy</label>
 
 
                         <button type="submit" name="confirm_update" value="1"
-                            class="prescription-btn prescription-btn-danger">
-                            Xác nhận cập nhật
+                            class="admin-btn admin-btn-primary">
+                            Cập nhật
                         </button>
 
                     </div>

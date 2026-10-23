@@ -29,17 +29,13 @@ class CancelPayableRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'confirm_cancel.accepted' =>
-            'Bạn phải xác nhận trước khi hủy khoản phải thanh toán.',
+            'confirm_cancel.accepted' => 'Vui lòng xác nhận hủy khoản thu trước khi tiếp tục.',
 
-            'cancel_reason.required' =>
-            'Vui lòng nhập lý do hủy.',
+            'cancel_reason.required' => 'Vui lòng nhập lý do hủy.',
 
-            'cancel_reason.string' =>
-            'Lý do hủy không hợp lệ.',
+            'cancel_reason.string' => 'Vui lòng nhập lý do hủy bằng văn bản.',
 
-            'cancel_reason.max' =>
-            'Lý do hủy không được vượt quá 1000 ký tự.',
+            'cancel_reason.max' => 'Lý do hủy không được vượt quá 1000 ký tự.',
         ];
     }
 }

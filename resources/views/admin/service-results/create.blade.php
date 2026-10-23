@@ -62,9 +62,7 @@
 
             </div>
 
-            <span class="result-status">
-                {{ \App\Models\AdminDisplay::label($status?->name ?? '—') }}
-            </span>
+            @include('admin.layouts.partials.status-badge', ['badgeCode' => $status?->name ?? '—', 'badgeContext' => 'service'])
 
         </div>
 
@@ -155,9 +153,7 @@
                         Trạng thái
                     </span>
 
-                    <strong>
-                        {{ \App\Models\AdminDisplay::label($status?->name ?? '—') }}
-                    </strong>
+                    <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $status?->name ?? '—'])</strong>
 
                 </div>
 
@@ -376,15 +372,13 @@
                         'admin.service-orders.show',
                         $item->service_order_id
                     ) }}"
-                    class="btn-secondary"
+                    class="admin-btn admin-btn-secondary"
                 >Hủy</a>
 
                 <button
                     type="submit"
-                    class="btn-primary"
-                >
-                    Lưu kết quả
-                </button>
+                    class="admin-btn admin-btn-primary"
+                >Lưu</button>
 
             </div>
 

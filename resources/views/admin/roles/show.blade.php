@@ -29,14 +29,10 @@
 
         <div class="role-detail-actions">
             <a href="{{ route('admin.roles.index') }}"
-               class="btn btn-secondary">
-                ← Danh sách
-            </a>
+               class="admin-btn admin-btn-secondary">← Quay lại</a>
 
             <a href="{{ route('admin.roles.edit', $role) }}"
-               class="btn btn-primary">
-                Chỉnh sửa
-            </a>
+               class="admin-btn admin-btn-secondary">Sửa</a>
         </div>
     </div>
 
@@ -68,9 +64,7 @@
             <div class="role-detail-field">
                 <span>Trạng thái</span>
                 <div>
-                    <span class="badge {{ $role->status === 'ACTIVE' ? 'badge-success' : 'badge-danger' }}">
-                        {{ $role->status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động' }}
-                    </span>
+                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $role->status])
                 </div>
             </div>
 
@@ -126,7 +120,7 @@
                     @csrf
                     @method('DELETE')
 
-                    <button type="submit" class="btn btn-danger">
+                    <button type="submit" class="admin-btn admin-btn-danger">
                         Xóa vai trò
                     </button>
                 </form>
@@ -162,9 +156,7 @@
                             <td>{{ $user->phone }}</td>
 
                             <td>
-                                <span class="badge {{ $user->status === 'ACTIVE' ? 'badge-success' : 'badge-danger' }}">
-                                    {{ \App\Models\AdminDisplay::label($user->status) }}
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => $user->status])
                             </td>
 
                             <td>
@@ -190,10 +182,10 @@
 
             <div class="role-pagination-actions">
                 @if ($users->onFirstPage())
-                    <span class="btn btn-secondary role-disabled">Trước</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
                 @else
                     <a href="{{ $users->previousPageUrl() }}"
-                       class="btn btn-secondary">Trước</a>
+                       class="admin-btn admin-btn-secondary">Trước</a>
                 @endif
 
                 <span>
@@ -203,9 +195,9 @@
 
                 @if ($users->hasMorePages())
                     <a href="{{ $users->nextPageUrl() }}"
-                       class="btn btn-secondary">Sau</a>
+                       class="admin-btn admin-btn-secondary">Sau</a>
                 @else
-                    <span class="btn btn-secondary role-disabled">Sau</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
                 @endif
             </div>
         </div>

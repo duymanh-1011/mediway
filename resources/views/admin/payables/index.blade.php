@@ -122,7 +122,7 @@
                                 ===
                                 (string) $status->id
                             )>
-                                {{ \App\Models\AdminDisplay::label($status->name) }}
+                                {{ \App\Models\AdminDisplay::label($status->name, 'payment') }}
                             </option>
 
                         @endforeach
@@ -177,9 +177,7 @@
             <div class="payable-table-header">
 
                 <div>
-                    <h2>
-                        Danh sách khoản phải thanh toán
-                    </h2>
+                    <h2 class="admin-list-title">Danh sách khoản phải thanh toán</h2>
 
                     <p>
                         Tổng cộng {{ $payables->total() }} bản ghi
@@ -219,13 +217,7 @@
                                                     $payable->payment_status_name ?? ''
                                                 );
 
-                                                $statusClass = match ($statusName) {
-                                                    'PAID' => 'paid',
-                                                    'UNPAID' => 'unpaid',
-                                                    'PENDING' => 'pending',
-                                                    'CANCELLED' => 'cancelled',
-                                                    default => 'default',
-                                                };
+
 
                                                 $typeClass =
                                                     $payable->payment_type === 'EXAMINATION_FEE'
@@ -292,12 +284,7 @@
 
                                                 <td>
 
-                                                    <span class="
-                                                                payable-status
-                                                                {{ $statusClass }}
-                                                            ">
-                                                        {{ \App\Models\AdminDisplay::label($payable->payment_status_name ?? '—') }}
-                                                    </span>
+                                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $payable->payment_status_name ?? '—', 'badgeContext' => 'payment'])
 
                                                 </td>
 
@@ -355,14 +342,14 @@
                                                 </td>
 
 
-                                                <td class="text-right">
+                                                <td class="text-right"><div class="admin-actions admin-table-actions">
 
                                                     <a href="{{ route(
                                 'admin.payables.show',
                                 $payable->id
-                            ) }}" class="admin-btn admin-btn-detail payable-detail-link">Chi tiết</a>
+                            ) }}" class="admin-btn admin-btn-detail">Chi tiết</a>
 
-                                                </td>
+                                                </div></td>
 
                                             </tr>
 
@@ -425,13 +412,9 @@
                     <div class="payable-pagination-actions">
 
                         @if ($payables->onFirstPage())
-                            <span class="payable-page-btn disabled">
-                                ← Trước
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
                         @else
-                            <a href="{{ $payables->previousPageUrl() }}" class="payable-page-btn">
-                                ← Trước
-                            </a>
+                            <a href="{{ $payables->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
                         @endif
 
 
@@ -444,13 +427,9 @@
 
 
                         @if ($payables->hasMorePages())
-                            <a href="{{ $payables->nextPageUrl() }}" class="payable-page-btn">
-                                Sau →
-                            </a>
+                            <a href="{{ $payables->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
                         @else
-                            <span class="payable-page-btn disabled">
-                                Sau →
-                            </span>
+                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
                         @endif
 
                     </div>

@@ -72,7 +72,7 @@ class StoreServiceGroupRequest extends FormRequest
 
             'status.required' => 'Vui lòng chọn trạng thái.',
 
-            'status.in' => 'Trạng thái nhóm dịch vụ không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái nhóm dịch vụ từ các lựa chọn có sẵn.',
         ];
     }
 }

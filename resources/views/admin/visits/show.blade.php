@@ -44,10 +44,8 @@
 
             <a
                 href="{{ route('admin.visits.index') }}"
-                class="admin-btn admin-btn-detail btn btn-secondary"
-            >
-                ← Danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
 
             @if ($medicalVisit->appointment)
@@ -57,7 +55,7 @@
                         'admin.appointments.show',
                         $medicalVisit->appointment
                     ) }}"
-                    class="btn btn-secondary"
+                    class="admin-btn admin-btn-detail"
                 >
                     Xem lịch hẹn
                 </a>
@@ -84,9 +82,7 @@
                 Hiện tại:
             </span>
 
-            <strong class="status-badge">
-                {{ \App\Models\AdminDisplay::label($currentStatus ?? '—') }}
-            </strong>
+            <strong class="status-badge">@include('admin.layouts.partials.status-badge', ['badgeCode' => $currentStatus ?? '—'])</strong>
 
         </div>
 
@@ -144,7 +140,7 @@
 
                     <button
                         type="submit"
-                        class="btn btn-primary"
+                        class="admin-btn admin-btn-primary"
                     >
                         Cập nhật trạng thái
                     </button>
@@ -162,7 +158,7 @@
                         ) }}"
                         onsubmit="
                             return confirm(
-                                'Xác nhận hoàn tất lượt khám này?'
+                                'Hoàn tất lượt khám này? Sau khi hoàn tất, bạn không thể sửa trực tiếp nội dung khám, chẩn đoán, kết luận hoặc đơn thuốc.'
                             );
                         "
                     >
@@ -178,10 +174,8 @@
 
                         <button
                             type="submit"
-                            class="btn-complete"
-                        >
-                            ✓ Hoàn tất lượt khám
-                        </button>
+                            class="admin-btn admin-btn-success"
+                        >Hoàn tất lượt khám</button>
 
                     </form>
 
@@ -328,7 +322,7 @@
                             'admin.appointments.show',
                             $medicalVisit->appointment
                         ) }}"
-                        class="btn btn-secondary"
+                        class="admin-btn admin-btn-detail"
                     >
                         Xem chi tiết lịch hẹn
                     </a>
@@ -417,7 +411,7 @@
                             'admin.patients.show',
                             $medicalVisit->patient
                         ) }}"
-                        class="btn btn-secondary"
+                        class="admin-btn admin-btn-detail"
                     >
                         Xem hồ sơ bệnh nhân
                     </a>
@@ -502,7 +496,7 @@
 
             <a
                 href="{{ route('admin.queues.index') }}"
-                class="btn btn-secondary"
+                class="admin-btn admin-btn-detail"
             >
                 Danh sách hàng đợi
             </a>
@@ -547,12 +541,7 @@
                                     {{ \App\Models\AdminDisplay::label($queue->queue_type) }}
                                 </td>
 
-                                <td>
-                                    {{ \App\Models\AdminDisplay::label($queue
-                                        ->status
-                                        ?->name
-                                        ?? '—') }}
-                                </td>
+                                <td>@include('admin.layouts.partials.status-badge', ['badgeCode' => $queue->status?->name ?? '—'])</td>
 
                                 <td>
                                     {{ $queue
@@ -586,17 +575,17 @@
                                     {{ $queue->call_count }}
                                 </td>
 
-                                <td>
+                                <td><div class="admin-actions admin-table-actions">
 
                                     <a
                                         href="{{ route(
                                             'admin.queues.show',
                                             $queue
                                         ) }}"
-                                        class="btn btn-secondary"
+                                        class="admin-btn admin-btn-detail"
                                     >Chi tiết</a>
 
-                                </td>
+                                </div></td>
 
                             </tr>
 
@@ -677,7 +666,7 @@
                         'admin.clinical-notes.show',
                         $medicalVisit->clinicalNote
                     ) }}"
-                    class="admin-btn admin-btn-detail btn btn-secondary"
+                    class="admin-btn admin-btn-detail"
                 >
                     Xem nội dung khám
                 </a>
@@ -699,10 +688,8 @@
                             'admin.visits.clinical-note.create',
                             $medicalVisit
                         ) }}"
-                        class="btn btn-primary"
-                    >
-                        + Thêm nội dung khám
-                    </a>
+                        class="admin-btn admin-btn-primary"
+                    >Thêm nội dung khám</a>
 
                 </div>
 
@@ -780,17 +767,17 @@
                                         ?? '—' }}
                                 </td>
 
-                                <td>
+                                <td><div class="admin-actions admin-table-actions">
 
                                     <a
                                         href="{{ route(
                                             'admin.diagnoses.show',
                                             $diagnosis
                                         ) }}"
-                                        class="btn btn-secondary"
+                                        class="admin-btn admin-btn-detail"
                                     >Chi tiết</a>
 
-                                </td>
+                                </div></td>
 
                             </tr>
 
@@ -820,10 +807,8 @@
                         'admin.visits.diagnoses.create',
                         $medicalVisit
                     ) }}"
-                    class="admin-btn admin-btn-detail btn btn-primary"
-                >
-                    + Thêm chẩn đoán
-                </a>
+                    class="admin-btn admin-btn-primary"
+                >Thêm chẩn đoán</a>
 
             </div>
 
@@ -856,10 +841,8 @@
                         'admin.visits.service-orders.create',
                         $medicalVisit
                     ) }}"
-                    class="btn btn-primary"
-                >
-                    + Tạo chỉ định dịch vụ
-                </a>
+                    class="admin-btn admin-btn-primary"
+                >Tạo chỉ định dịch vụ</a>
 
             @endif
 
@@ -943,23 +926,21 @@
 
 
                                 <td>
-                                    <span class="order-status-badge">
-                                        {{ \App\Models\AdminDisplay::label($order->status ?? '—') }}
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $order->status ?? '—'])
                                 </td>
 
 
-                                <td>
+                                <td><div class="admin-actions admin-table-actions">
 
                                     <a
                                         href="{{ route(
                                             'admin.service-orders.show',
                                             $order->id
                                         ) }}"
-                                        class="btn btn-secondary"
+                                        class="admin-btn admin-btn-detail"
                                     >Chi tiết</a>
 
-                                </td>
+                                </div></td>
 
                             </tr>
 
@@ -1005,12 +986,7 @@
                                                         đ
                                                     </span>
 
-                                                    <span class="service-status">
-                                                        {{ \App\Models\AdminDisplay::label($item
-                                                            ->serviceStatus
-                                                            ?->name
-                                                            ?? '—') }}
-                                                    </span>
+                                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $item->serviceStatus?->name ?? '—'])
 
                                                 </div>
 
@@ -1047,10 +1023,8 @@
                             'admin.visits.service-orders.create',
                             $medicalVisit
                         ) }}"
-                        class="btn btn-primary"
-                    >
-                        + Tạo chỉ định đầu tiên
-                    </a>
+                        class="admin-btn admin-btn-primary"
+                    >Tạo chỉ định dịch vụ</a>
 
                 @endif
 
@@ -1185,7 +1159,7 @@
                         'admin.conclusions.show',
                         $medicalVisit->conclusion
                     ) }}"
-                    class="btn btn-secondary"
+                    class="admin-btn admin-btn-detail"
                 >
                     Xem kết luận
                 </a>
@@ -1207,10 +1181,8 @@
                             'admin.visits.conclusion.create',
                             $medicalVisit
                         ) }}"
-                        class="btn btn-primary"
-                    >
-                        + Thêm kết luận
-                    </a>
+                        class="admin-btn admin-btn-primary"
+                    >Thêm kết luận</a>
 
                 </div>
 

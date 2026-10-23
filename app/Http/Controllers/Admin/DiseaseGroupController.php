@@ -299,7 +299,7 @@ class DiseaseGroupController extends Controller
                 )
                 ->with(
                     'success',
-                    'Nhóm bệnh đang chứa danh mục bệnh nên không thể xóa. Hệ thống đã chuyển nhóm bệnh sang trạng thái INACTIVE.'
+                    'Nhóm đang có bệnh nên không thể xóa. Đã ngừng hoạt động nhóm và giữ nguyên các bệnh trong nhóm.'
                 );
         }
 

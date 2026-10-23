@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateMedicalVisitStatusRequest;
+use App\Models\AdminDisplay;
 use App\Models\AdminLookup;
 use App\Models\AppointmentStatus;
 use App\Models\Doctor;
@@ -289,7 +290,7 @@ class MedicalVisitController extends Controller
         if (! $currentStatus->allows_transition) {
             return back()->with(
                 'error',
-                'Trạng thái hiện tại không cho phép chuyển tiếp.'
+                'Trạng thái lượt khám đang bị khóa thay đổi. Vui lòng kiểm tra mục Trạng thái lượt khám.'
             );
         }
 
@@ -320,11 +321,11 @@ class MedicalVisitController extends Controller
         ) {
             return back()->with(
                 'error',
-                'Không thể chuyển từ trạng thái '
-                .$currentStatus->name
-                .' sang '
-                .$newStatus->name
-                .'.'
+                'Không thể đổi lượt khám từ “'
+                .AdminDisplay::label($currentStatus->name)
+                .'” sang “'
+                .AdminDisplay::label($newStatus->name)
+                .'” ở bước này. Vui lòng thực hiện đúng thứ tự các bước khám.'
             );
         }
 
@@ -334,15 +335,19 @@ class MedicalVisitController extends Controller
                 $newStatus
             ) {
                 $medicalVisit = MedicalVisit::with('status')->whereKey($medicalVisit->id)->lockForUpdate()->firstOrFail();
+                $medicalVisit->assertNotBeforeAppointmentDay();
+                if ($newStatus->name === 'IN_EXAMINATION') {
+                    $medicalVisit->assertCanBeginExamination();
+                }
                 if (! $medicalVisit->status?->allows_transition || ! in_array($newStatus->name, $this->allowedTransitions($medicalVisit->status?->name), true)) {
                     throw ValidationException::withMessages(['visit_status_id' => 'Trạng thái lượt khám đã thay đổi. Vui lòng tải lại trang.']);
                 }
                 if ($newStatus->name === 'COMPLETED' && ServiceOrderItem::whereHas('serviceOrder', fn ($q) => $q->where('medical_visit_id', $medicalVisit->id))
                     ->unresolved()->exists()) {
-                    throw ValidationException::withMessages(['visit_status_id' => 'Lượt khám còn dịch vụ chưa hoàn tất.']);
+                    throw ValidationException::withMessages(['visit_status_id' => 'Chưa thể hoàn tất lượt khám vì còn dịch vụ cần chờ. Vui lòng kiểm tra tiến độ dịch vụ.']);
                 }
                 if ($newStatus->name === 'COMPLETED' && (! $medicalVisit->diagnoses()->exists() || ! $medicalVisit->conclusion()->exists())) {
-                    throw ValidationException::withMessages(['visit_status_id' => 'Phải có đầy đủ chẩn đoán và kết luận trước khi hoàn tất lượt khám.']);
+                    throw ValidationException::withMessages(['visit_status_id' => 'Chưa thể hoàn tất lượt khám. Vui lòng bổ sung đủ chẩn đoán và kết luận.']);
                 }
                 $updateData = [
                     'visit_status_id' => $newStatus->id,

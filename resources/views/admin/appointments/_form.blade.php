@@ -1,648 +1,82 @@
 @php
-
-    $selectedPatientId = old(
-        'patient_id',
-        isset($appointment)
-            ? $appointment->patient_id
-            : ''
-    );
-
-    $selectedSlotId = old(
-        'appointment_time_slot_id',
-        isset($appointment)
-            ? $appointment->appointment_time_slot_id
-            : ''
-    );
-
-    $selectedScheduleId = '';
-
-    if (
-        isset($appointment)
-        &&
-        $appointment->appointmentTimeSlot
-    ) {
-        $selectedScheduleId =
-            $appointment
-                ->appointmentTimeSlot
-                ->doctor_schedule_id;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Khi validation lỗi ở trang Create
-    |--------------------------------------------------------------------------
-    |
-    | Form chỉ gửi appointment_time_slot_id,
-    | nên tìm lại schedule chứa slot đã chọn.
-    |
-    */
-
-    if (
-        old('appointment_time_slot_id')
-        &&
-        !$selectedScheduleId
-    ) {
-
-        foreach ($schedules as $schedule) {
-
-            foreach (
-                $schedule->appointmentTimeSlots
-                as $slot
-            ) {
-
-                if (
-                    (string) $slot->id
-                    ===
-                    (string) old(
-                        'appointment_time_slot_id'
-                    )
-                ) {
-                    $selectedScheduleId =
-                        $schedule->id;
-
-                    break 2;
-                }
-            }
-        }
-    }
-
+    $selectedPatientId = old('patient_id', $appointment->patient_id ?? '');
+    $selectedSlotId = old('appointment_time_slot_id', $appointment->appointment_time_slot_id ?? '');
+    $criteria = [
+        'doctor' => ['label' => 'Bác sĩ', 'field' => 'booking_doctor_id', 'code' => 'doctor_code', 'name' => 'full_name', 'items' => $schedules->pluck('doctor')->unique('id')->sortBy('full_name')],
+        'room' => ['label' => 'Phòng khám', 'field' => 'booking_room_id', 'code' => 'room_code', 'name' => 'name', 'items' => $schedules->pluck('examinationRoom')->unique('id')->sortBy('name')],
+        'specialty' => ['label' => 'Chuyên khoa', 'field' => 'booking_specialty_id', 'code' => 'specialty_code', 'name' => 'name', 'items' => $schedules->pluck('specialty')->unique('id')->sortBy('name')],
+    ];
+    $bookingSchedules = $schedules->map(fn ($schedule) => [
+        'id' => (string) $schedule->id, 'date' => $schedule->work_date->format('Y-m-d'),
+        'dateLabel' => $schedule->work_date->format('d/m/Y'),
+        'start' => substr($schedule->start_time, 0, 5), 'end' => substr($schedule->end_time, 0, 5),
+        'doctor' => ['id' => (string) $schedule->doctor_id, 'code' => $schedule->doctor->doctor_code, 'name' => $schedule->doctor->full_name],
+        'room' => ['id' => (string) $schedule->examination_room_id, 'code' => $schedule->examinationRoom->room_code, 'name' => $schedule->examinationRoom->name],
+        'specialty' => ['id' => (string) $schedule->specialty_id, 'code' => $schedule->specialty->specialty_code, 'name' => $schedule->specialty->name],
+        'slots' => $schedule->appointmentTimeSlots->filter(fn ($slot) => $slot->is_selectable)->map(fn ($slot) => [
+            'id' => (string) $slot->id, 'start' => substr($slot->start_time, 0, 5), 'end' => substr($slot->end_time, 0, 5),
+            'remaining' => max(0, (int) $slot->max_patients - (int) $slot->booked_count),
+        ])->values()->all(),
+    ])->values()->all();
 @endphp
 
-
-<div class="form-grid">
-
-    {{-- Bệnh nhân --}}
+<div data-appointment-booking data-selected-slot="{{ $selectedSlotId }}">
     <div class="form-group">
-
-        <label
-            for="patient_id"
-            class="form-label"
-        >
-            Bệnh nhân
-
-            <span class="required">
-                *
-            </span>
-        </label>
-
-
-        <select
-            id="patient_id"
-            name="patient_id"
-            class="form-control"
-            required
-        >
-
-            <option value="">
-                -- Chọn bệnh nhân --
-            </option>
-
-
+        <label for="patient_id" class="form-label">Bệnh nhân <span class="required">*</span></label>
+        <select id="patient_id" name="patient_id" class="form-control" required>
+            <option value="">-- Chọn bệnh nhân --</option>
             @foreach ($patients as $patient)
-
-                <option
-                    value="{{ $patient->id }}"
-
-                    @selected(
-                        (string) $selectedPatientId
-                        ===
-                        (string) $patient->id
-                    )
-                >
-
-                    {{ $patient->patient_code }}
-
-                    -
-
-                    {{ $patient->full_name }}
-
-                </option>
-
+                <option value="{{ $patient->id }}" @selected((string) $selectedPatientId === (string) $patient->id)>{{ $patient->patient_code }} - {{ $patient->full_name }}</option>
             @endforeach
-
         </select>
-
-
-        @error('patient_id')
-
-            <div class="field-error">
-                {{ \App\Models\AdminDisplay::text($message) }}
-            </div>
-
-        @enderror
-
+        @error('patient_id')<div class="field-error">{{ $message }}</div>@enderror
     </div>
 
-
-    {{-- Lịch làm việc bác sĩ --}}
-    <div class="form-group">
-
-        <label
-            for="doctor_schedule_id"
-            class="form-label"
-        >
-            Lịch làm việc bác sĩ
-
-            <span class="required">
-                *
-            </span>
-        </label>
-
-
-        <select
-            id="doctor_schedule_id"
-            class="form-control"
-            required
-        >
-
-            <option value="">
-                -- Chọn lịch làm việc --
-            </option>
-
-
-            @foreach ($schedules as $schedule)
-
-                <option
-                    value="{{ $schedule->id }}"
-
-                    @selected(
-                        (string) $selectedScheduleId
-                        ===
-                        (string) $schedule->id
-                    )
-                >
-
-                    {{ $schedule
-                        ->work_date
-                        ->format('d/m/Y') }}
-
-                    |
-
-                    {{ $schedule
-                        ->doctor
-                        ?->doctor_code }}
-
-                    -
-
-                    {{ $schedule
-                        ->doctor
-                        ?->full_name }}
-
-                    |
-
-                    {{ $schedule
-                        ->specialty
-                        ?->name }}
-
-                    |
-
-                    {{ $schedule
-                        ->examinationRoom
-                        ?->room_code }}
-
-                </option>
-
+    <fieldset class="admin-booking-method">
+        <legend>Đặt lịch theo <span class="required">*</span></legend>
+        <div class="admin-booking-choices">
+            @foreach ($criteria as $kind => $criterion)
+                <div class="form-group" data-booking-choice>
+                    <label for="{{ $criterion['field'] }}">{{ $criterion['label'] }}</label>
+                    <select id="{{ $criterion['field'] }}" name="{{ $criterion['field'] }}" class="form-control" data-booking-kind="{{ $kind }}" data-lookup-native>
+                        <option value="">-- Chọn {{ mb_strtolower($criterion['label']) }} --</option>
+                        @foreach ($criterion['items'] as $entity)
+                            <option value="{{ $entity->id }}" @selected((string) old($criterion['field'], '') === (string) $entity->id)>{{ $entity->{$criterion['code']} }} - {{ $entity->{$criterion['name']} }}</option>
+                        @endforeach
+                    </select>
+                    @error($criterion['field'])<div class="field-error">{{ $message }}</div>@enderror
+                </div>
             @endforeach
-
-        </select>
-
-    </div>
-
-
-    {{-- Khung giờ --}}
-    <div class="form-group">
-
-        <label
-            for="appointment_time_slot_id"
-            class="form-label"
-        >
-            Khung giờ khám
-
-            <span class="required">
-                *
-            </span>
-        </label>
-
-
-        <select
-            id="appointment_time_slot_id"
-            name="appointment_time_slot_id"
-            class="form-control"
-            required
-        >
-
-            <option value="">
-                -- Chọn lịch làm việc trước --
-            </option>
-
-
-            @foreach ($schedules as $schedule)
-
-                @foreach (
-                    $schedule->appointmentTimeSlots
-                    as $slot
-                )
-
-                    @if ($slot->is_selectable)
-
-                        @php
-
-                            $remaining =
-                                max(
-                                    0,
-                                    (int) $slot->max_patients
-                                    -
-                                    (int) $slot->booked_count
-                                );
-
-                        @endphp
-
-
-                        <option
-                            value="{{ $slot->id }}"
-
-                            data-schedule-id="{{ $schedule->id }}"
-
-                            @selected(
-                                (string) $selectedSlotId
-                                ===
-                                (string) $slot->id
-                            )
-                        >
-
-                            {{ substr(
-                                $slot->start_time,
-                                0,
-                                5
-                            ) }}
-
-                            -
-
-                            {{ substr(
-                                $slot->end_time,
-                                0,
-                                5
-                            ) }}
-
-                            |
-
-                            Đã đặt:
-                            {{ $slot->booked_count }}
-                            /
-                            {{ $slot->max_patients }}
-
-                            |
-
-                            Còn:
-                            {{ $remaining }}
-
-                        </option>
-
-                    @endif
-
-                @endforeach
-
-            @endforeach
-
-        </select>
-
-
-        @error('appointment_time_slot_id')
-
-            <div class="field-error">
-                {{ \App\Models\AdminDisplay::text($message) }}
-            </div>
-
-        @enderror
-
-    </div>
-
-</div>
-
-
-{{-- Lý do khám --}}
-<div class="form-group">
-
-    <label
-        for="reason_for_visit"
-        class="form-label"
-    >
-        Lý do khám
-
-        <span class="required">
-            *
-        </span>
-    </label>
-
-
-    <textarea
-        id="reason_for_visit"
-        name="reason_for_visit"
-        class="form-control"
-        rows="4"
-        placeholder="Nhập lý do bệnh nhân đến khám..."
-        required
-    >{{ old(
-        'reason_for_visit',
-        isset($appointment)
-            ? $appointment->reason_for_visit
-            : ''
-    ) }}</textarea>
-
-
-    @error('reason_for_visit')
-
-        <div class="field-error">
-            {{ \App\Models\AdminDisplay::text($message) }}
         </div>
+        <div class="field-error" data-booking-error hidden aria-live="polite"></div>
+        <button type="button" class="admin-btn admin-btn-secondary" data-booking-reset>Đổi cách chọn</button>
+    </fieldset>
 
-    @enderror
-
-</div>
-
-
-{{-- Ghi chú --}}
-<div class="form-group">
-
-    <label
-        for="patient_notes"
-        class="form-label"
-    >
-        Ghi chú bệnh nhân
-    </label>
-
-
-    <textarea
-        id="patient_notes"
-        name="patient_notes"
-        class="form-control"
-        rows="3"
-        placeholder="Ghi chú thêm nếu có..."
-    >{{ old(
-        'patient_notes',
-        isset($appointment)
-            ? $appointment->patient_notes
-            : ''
-    ) }}</textarea>
-
-
-    @error('patient_notes')
-
-        <div class="field-error">
-            {{ \App\Models\AdminDisplay::text($message) }}
+    <div class="form-grid">
+        <div class="form-group" data-booking-schedule-field>
+            <label for="doctor_schedule_id"><span data-booking-schedule-title>Ca làm việc</span> <span class="required">*</span></label>
+            <select id="doctor_schedule_id" class="form-control" required data-lookup-native>
+                <option value="">-- Chọn bác sĩ, phòng khám hoặc chuyên khoa --</option>
+            </select>
         </div>
+        <div class="form-group" data-booking-slot-field>
+            <label for="appointment_time_slot_id">Khung giờ khám <span class="required">*</span></label>
+            <select id="appointment_time_slot_id" name="appointment_time_slot_id" class="form-control" required data-lookup-native>
+                <option value="">-- Chọn lịch khám trước --</option>
+            </select>
+            @error('appointment_time_slot_id')<div class="field-error">{{ $message }}</div>@enderror
+        </div>
+    </div>
 
-    @enderror
-
+    <div class="form-group">
+        <label for="reason_for_visit">Lý do khám <span class="required">*</span></label>
+        <textarea id="reason_for_visit" name="reason_for_visit" class="form-control" rows="4" maxlength="2000" required>{{ old('reason_for_visit', $appointment->reason_for_visit ?? '') }}</textarea>
+        @error('reason_for_visit')<div class="field-error">{{ $message }}</div>@enderror
+    </div>
+    <div class="form-group">
+        <label for="patient_notes">Ghi chú bệnh nhân</label>
+        <textarea id="patient_notes" name="patient_notes" class="form-control" rows="3" maxlength="2000">{{ old('patient_notes', $appointment->patient_notes ?? '') }}</textarea>
+        @error('patient_notes')<div class="field-error">{{ $message }}</div>@enderror
+    </div>
+    <script type="application/json" data-booking-schedules>@json($bookingSchedules)</script>
 </div>
-
-
-<script>
-
-    document.addEventListener(
-        'DOMContentLoaded',
-        function () {
-
-            const scheduleSelect =
-                document.getElementById(
-                    'doctor_schedule_id'
-                );
-
-            const slotSelect =
-                document.getElementById(
-                    'appointment_time_slot_id'
-                );
-
-
-            if (
-                !scheduleSelect
-                ||
-                !slotSelect
-            ) {
-                return;
-            }
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Lưu toàn bộ option slot
-            |--------------------------------------------------------------------------
-            */
-
-            const allSlotOptions =
-                Array.from(
-                    slotSelect.querySelectorAll(
-                        'option[data-schedule-id]'
-                    )
-                );
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Lọc slot theo schedule
-            |--------------------------------------------------------------------------
-            */
-
-            function filterSlots(
-                keepSelected
-            ) {
-
-                const scheduleId =
-                    scheduleSelect.value;
-
-                let currentSelectedSlot =
-                    '';
-
-                if (keepSelected) {
-                    currentSelectedSlot =
-                        slotSelect.value;
-                }
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | Xóa toàn bộ option hiện tại
-                |--------------------------------------------------------------------------
-                */
-
-                slotSelect.innerHTML = '';
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | Option mặc định
-                |--------------------------------------------------------------------------
-                */
-
-                const defaultOption =
-                    document.createElement(
-                        'option'
-                    );
-
-                defaultOption.value = '';
-
-
-                if (!scheduleId) {
-
-                    defaultOption.textContent =
-                        '-- Chọn lịch làm việc trước --';
-
-                } else {
-
-                    defaultOption.textContent =
-                        '-- Chọn khung giờ --';
-
-                }
-
-
-                slotSelect.appendChild(
-                    defaultOption
-                );
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | Chưa chọn schedule
-                |--------------------------------------------------------------------------
-                */
-
-                if (!scheduleId) {
-                    return;
-                }
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | Lấy slot đúng schedule
-                |--------------------------------------------------------------------------
-                */
-
-                const matchingSlots =
-                    allSlotOptions.filter(
-                        function (option) {
-
-                            return String(
-                                option.dataset.scheduleId
-                            )
-                            ===
-                            String(scheduleId);
-                        }
-                    );
-
-
-                if (
-                    matchingSlots.length
-                    ===
-                    0
-                ) {
-
-                    defaultOption.textContent =
-                        '-- Không còn khung giờ khả dụng --';
-
-                    return;
-                }
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | Thêm slot vào select
-                |--------------------------------------------------------------------------
-                */
-
-                matchingSlots.forEach(
-                    function (originalOption) {
-
-                        const option =
-                            originalOption.cloneNode(
-                                true
-                            );
-
-
-                        if (
-                            currentSelectedSlot
-                            &&
-                            String(option.value)
-                            ===
-                            String(currentSelectedSlot)
-                        ) {
-                            option.selected = true;
-                        }
-
-
-                        slotSelect.appendChild(
-                            option
-                        );
-
-                    }
-                );
-            }
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Lần đầu mở trang
-            |--------------------------------------------------------------------------
-            |
-            | Nếu Edit hoặc validation quay lại,
-            | Blade đã selected schedule và slot.
-            |
-            */
-
-            const initialSelectedSlot =
-                slotSelect.value;
-
-
-            filterSlots(false);
-
-
-            if (initialSelectedSlot) {
-
-                const option =
-                    allSlotOptions.find(
-                        function (item) {
-
-                            return String(
-                                item.value
-                            )
-                            ===
-                            String(
-                                initialSelectedSlot
-                            );
-                        }
-                    );
-
-
-                if (option) {
-
-                    scheduleSelect.value =
-                        option.dataset.scheduleId;
-
-
-                    filterSlots(false);
-
-
-                    slotSelect.value =
-                        initialSelectedSlot;
-                }
-            }
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Khi đổi schedule
-            |--------------------------------------------------------------------------
-            */
-
-            scheduleSelect.addEventListener(
-                'change',
-                function () {
-
-                    filterSlots(false);
-
-                }
-            );
-
-        }
-    );
-
-</script>

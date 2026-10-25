@@ -46,9 +46,9 @@ class PrescriptionSeeder extends Seeder
                 ->where('doctor_code', $prescription['doctor_code'])
                 ->value('id');
 
-            if (!$medicalVisitId || !$doctorId) {
+            if (! $medicalVisitId || ! $doctorId) {
                 throw new RuntimeException(
-                    'Thiếu dữ liệu FK cho đơn thuốc ' .
+                    'Thiếu dữ liệu FK cho đơn thuốc '.
                         $prescription['prescription_code']
                 );
             }

@@ -303,6 +303,7 @@ class DoctorController extends Controller
                     }
                 }
 
+                $oldDoctorStatus = $lockedDoctor->status;
                 $lockedDoctor->update([
                     'specialty_id' => $specialty->id,
                     'full_name' => trim($data['full_name']),
@@ -311,9 +312,11 @@ class DoctorController extends Controller
                     'status' => $data['status'],
                 ]);
 
-                $user->update([
-                    'status' => $this->accountStatus($data['status']),
-                ]);
+                if ($data['status'] === 'INACTIVE') {
+                    $user->update(['status' => 'LOCKED']);
+                } elseif ($oldDoctorStatus === 'INACTIVE') {
+                    $user->update(['status' => 'ACTIVE']);
+                }
 
                 $detail = DoctorDetail::query()
                     ->where('doctor_id', $lockedDoctor->id)

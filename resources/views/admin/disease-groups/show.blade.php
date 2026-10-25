@@ -48,7 +48,7 @@
         'title' => 'Bộ lọc bệnh trong nhóm',
         'description' => 'Lọc theo mã, tên, tên thay thế và trạng thái bệnh trong nhóm hiện tại.',
     ])
-        <form method="GET" action="{{ route('admin.disease-groups.show', $diseaseGroup) }}" class="admin-filter-form">
+        <form data-filter-fields="2" method="GET" action="{{ route('admin.disease-groups.show', $diseaseGroup) }}" class="admin-filter-form">
             <div class="admin-filter-field">
                 <label for="group-disease-keyword">Từ khóa</label>
                 <input id="group-disease-keyword" name="keyword" value="{{ request('keyword') }}" placeholder="Mã, tên hoặc tên thay thế của bệnh...">

@@ -39,7 +39,7 @@
             'title' => 'Bộ lọc nhật ký',
             'description' => 'Lọc theo người thực hiện, hành động, đối tượng và khoảng thời gian.',
         ])
-            <form method="GET" action="{{ route('admin.audit-logs.index') }}" class="admin-filter-form">
+            <form data-filter-fields="5" method="GET" action="{{ route('admin.audit-logs.index') }}" class="admin-filter-form">
                     <div class="audit-filter-grid admin-filter-layout">
 
                         <div class="audit-form-group admin-filter-field">

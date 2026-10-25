@@ -9,6 +9,8 @@ class AuditValuePresenter
 {
     private const LABELS = [
         'id' => 'Số tham chiếu', 'items' => 'Danh sách dịch vụ', 'service_items' => 'Dịch vụ',
+        'credential_changed' => 'Đã đặt lại mật khẩu', 'documents_changed' => 'Thay đổi tài liệu',
+        'blood_glucose' => 'Đường huyết (mmol/L)',
         'service_order_id' => 'Phiếu chỉ định', 'service_order_item_id' => 'Dịch vụ được chỉ định',
         'medical_visit_id' => 'Lượt khám', 'appointment_id' => 'Lịch hẹn',
         'doctor_schedule_id' => 'Lịch làm việc', 'appointment_status_id' => 'Trạng thái lịch hẹn',
@@ -42,6 +44,7 @@ class AuditValuePresenter
     ];
 
     private const REFERENCES = [
+        'role_id' => [Role::class, 'name', null],
         'user_id' => [User::class, 'business_code', null],
         'verified_by_user_id' => [User::class, 'business_code', null],
         'patient_id' => [Patient::class, 'patient_code', 'full_name'],

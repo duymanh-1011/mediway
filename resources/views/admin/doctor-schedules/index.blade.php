@@ -99,7 +99,7 @@
         'title' => 'Bộ lọc lịch bác sĩ',
         'description' => 'Lọc theo từ khóa, bác sĩ, chuyên khoa, phòng khám, ngày làm việc và trạng thái.',
     ])
-        <form
+        <form data-filter-fields="6"
             method="GET"
             action="{{ route(
                 'admin.doctor-schedules.index'

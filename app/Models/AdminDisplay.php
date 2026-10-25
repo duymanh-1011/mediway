@@ -5,6 +5,7 @@ namespace App\Models;
 final class AdminDisplay
 {
     public const EMPLOYEE_TYPES = [
+        'RECEPTIONIST' => 'Nhân viên tiếp đón',
         'CASHIER' => 'Nhân viên thu ngân', 'IMAGING_TECHNICIAN' => 'Kỹ thuật viên chẩn đoán hình ảnh',
         'LAB_TECHNICIAN' => 'Kỹ thuật viên xét nghiệm', 'NURSE' => 'Điều dưỡng',
     ];
@@ -43,6 +44,8 @@ final class AdminDisplay
         'payables' => 'Khoản phải thanh toán', 'payment_transactions' => 'Giao dịch thanh toán',
         'prescriptions' => 'Đơn thuốc', 'prescription_items' => 'Chi tiết đơn thuốc',
         'patients' => 'Bệnh nhân', 'doctors' => 'Bác sĩ', 'employees' => 'Nhân viên',
+        'administrators' => 'Quản trị viên', 'doctor_details' => 'Thông tin bác sĩ', 'employee_details' => 'Thông tin nhân viên',
+        'patient_details' => 'Thông tin bệnh nhân', 'personal_health_records' => 'Chỉ số sức khỏe',
         'medical_services' => 'Dịch vụ y tế', 'MedicalService' => 'Dịch vụ y tế',
         'specialties' => 'Chuyên khoa', 'examination_rooms' => 'Phòng khám', 'service_groups' => 'Nhóm dịch vụ',
         'disease_groups' => 'Nhóm bệnh', 'diseases' => 'Bệnh', 'medicines' => 'Thuốc',

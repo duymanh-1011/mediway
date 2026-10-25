@@ -40,7 +40,6 @@ class VisitStatusController extends Controller
             });
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | Lọc trạng thái hoạt động
@@ -62,7 +61,6 @@ class VisitStatusController extends Controller
             );
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | Sắp xếp
@@ -75,13 +73,11 @@ class VisitStatusController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-
         return view(
             'admin.visit-statuses.index',
             compact('visitStatuses')
         );
     }
-
 
     public function show(
         VisitStatus $visitStatus
@@ -90,13 +86,11 @@ class VisitStatusController extends Controller
             'medicalVisits'
         );
 
-
         return view(
             'admin.visit-statuses.show',
             compact('visitStatus')
         );
     }
-
 
     public function edit(
         VisitStatus $visitStatus
@@ -107,13 +101,11 @@ class VisitStatusController extends Controller
         );
     }
 
-
     public function update(
         UpdateVisitStatusRequest $request,
         VisitStatus $visitStatus
     ): RedirectResponse {
         $data = $request->validated();
-
 
         /*
         |--------------------------------------------------------------------------
@@ -127,19 +119,14 @@ class VisitStatusController extends Controller
         */
 
         $visitStatus->update([
-            'description' =>
-                $data['description'] ?? null,
+            'description' => $data['description'] ?? null,
 
-            'process_order' =>
-                $data['process_order'],
+            'process_order' => $data['process_order'],
 
-            'allows_transition' =>
-                $data['allows_transition'],
+            'allows_transition' => $data['allows_transition'],
 
-            'is_active' =>
-                $data['is_active'],
+            'is_active' => $data['is_active'],
         ]);
-
 
         return redirect()
             ->route(

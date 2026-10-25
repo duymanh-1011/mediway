@@ -268,7 +268,7 @@ class DoctorScheduleController extends Controller
 
             $currentMonth =
                 Carbon::createFromFormat(
-                    'Y-m',
+                    '!Y-m',
                     $month
                 )->startOfMonth();
 

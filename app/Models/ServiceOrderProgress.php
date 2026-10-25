@@ -45,6 +45,9 @@ final class ServiceOrderProgress
                 return;
             }
 
+            // A serving queue belongs to the previous consultation, not a new return.
+            // This also handles old records created before queue handoff was automatic.
+            $visit->completeOpenQueues(now(), ['IN_SERVICE']);
             $alreadyQueued = $visit->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')
                 ->whereHas('status', fn (Builder $query): Builder => $query->whereIn('name', ['WAITING', 'CALLED', 'IN_SERVICE', 'SKIPPED']))->exists();
             if ($alreadyQueued) {

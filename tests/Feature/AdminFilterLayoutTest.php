@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\AdminDisplay;
 use App\Models\DiseaseGroup;
 use App\Models\Employee;
+use App\Models\Patient;
 use App\Models\ServiceGroup;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -35,6 +36,8 @@ class AdminFilterLayoutTest extends TestCase
         $pages['admin.doctor-schedules.calendar'] = route('admin.doctor-schedules.calendar');
         $pages['admin.service-groups.show'] = route('admin.service-groups.show', ServiceGroup::where('service_group_code', 'XN')->firstOrFail());
         $pages['admin.disease-groups.show'] = route('admin.disease-groups.show', DiseaseGroup::where('disease_group_code', 'NBHH')->firstOrFail());
+        $pages['admin.dashboard'] = route('admin.dashboard');
+        $pages['admin.patients.show'] = route('admin.patients.show', Patient::firstOrFail());
         foreach ($pages as $name => $url) {
             $html = $this->get($url)->assertOk()->getContent();
             $document = new DOMDocument;
@@ -53,9 +56,9 @@ class AdminFilterLayoutTest extends TestCase
                 $description = $xpath->query('./header/p', $panel)->item(0);
                 $this->assertNotNull($heading, $name);
                 $this->assertNotNull($description, $name);
-                $this->assertStringStartsWith('Bộ lọc ', trim($heading->textContent), $name);
+                $this->assertStringStartsWith($name === 'admin.dashboard' ? 'Ngày thống kê' : 'Bộ lọc ', trim($heading->textContent), $name);
                 $this->assertSame(trim($heading->textContent), $panel->getAttribute('aria-label'), $name);
-                $this->assertStringStartsWith('Lọc theo ', trim($description->textContent), $name);
+                $this->assertStringStartsWith($name === 'admin.dashboard' ? 'Chọn ngày ' : 'Lọc theo ', trim($description->textContent), $name);
                 $this->assertCount(0, $xpath->query('.//table', $panel), $name);
                 for ($parent = $panel->parentNode; $parent instanceof \DOMElement && $parent->tagName !== 'main'; $parent = $parent->parentNode) {
                     $classes = preg_split('/\s+/', trim($parent->getAttribute('class')));
@@ -66,16 +69,18 @@ class AdminFilterLayoutTest extends TestCase
                 $actions = $xpath->query('./div[contains(@class,"admin-filter-actions")]', $form);
                 $this->assertCount(1, $actions, $name);
                 $controls = $xpath->query('.//input[not(@type="hidden")]|.//select', $form);
+                $fields = $xpath->query('.//div[contains(concat(" ", normalize-space(@class), " "), " admin-filter-field ")]', $form);
+                $this->assertSame((string) $fields->length, $form->getAttribute('data-filter-fields'), $name.': số trường bố cục phải khớp số trường thật');
                 foreach ($controls as $control) {
                     $this->assertGreaterThan(0, $xpath->query('ancestor::div[contains(@class,"admin-filter-field")]', $control)->length, $name.': '.$control->getAttribute('name'));
                 }
                 $button = $xpath->query('.//button', $actions->item(0))->item(0);
-                $this->assertSame($controls->length > 1 ? 'Lọc' : 'Tìm kiếm', trim($button->textContent), $name);
+                $this->assertSame($controls->length > 1 || $name === 'admin.dashboard' ? 'Lọc' : 'Tìm kiếm', trim($button->textContent), $name);
                 $this->assertSame('Xóa bộ lọc', trim($xpath->query('.//a', $actions->item(0))->item(0)->textContent));
                 $checked++;
             }
         }
-        $this->assertGreaterThan(30, $checked);
+        $this->assertSame(38, $checked);
     }
 
     public function test_filter_values_results_and_reset_link_are_preserved(): void
@@ -114,7 +119,7 @@ class AdminFilterLayoutTest extends TestCase
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $employee = Employee::where('employee_code', 'NV000004')->firstOrFail();
-        $this->get(route('admin.employees.edit', $employee))->assertOk()->assertSee('value="Nhân viên thu ngân"', false);
+        $this->get(route('admin.employees.edit', $employee))->assertOk()->assertSee('value="CASHIER" selected', false)->assertSee('Nhân viên thu ngân');
         $this->put(route('admin.employees.update', $employee), ['full_name' => $employee->full_name, 'status' => $employee->status, 'employee_type' => 'Nhân viên thu ngân'])->assertSessionHasNoErrors();
         $this->assertSame('CASHIER', $employee->detail->fresh()->employee_type);
         $this->assertSame('Loại tùy chỉnh', AdminDisplay::employeeTypeCode('Loại tùy chỉnh'));

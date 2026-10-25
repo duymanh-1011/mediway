@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateAppointmentStatusRequest;
 use App\Models\AppointmentStatus;
-
 use Illuminate\Http\Request;
 
 class AppointmentStatusController extends Controller
@@ -41,11 +40,11 @@ class AppointmentStatusController extends Controller
                         'like',
                         "%{$keyword}%"
                     )
-                    ->orWhere(
-                        'description',
-                        'like',
-                        "%{$keyword}%"
-                    );
+                        ->orWhere(
+                            'description',
+                            'like',
+                            "%{$keyword}%"
+                        );
                 }
             );
         }

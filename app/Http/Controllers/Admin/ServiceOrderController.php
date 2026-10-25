@@ -11,7 +11,6 @@ use App\Models\PaymentStatus;
 use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceStatus;
-use App\Models\VisitStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -119,6 +118,7 @@ class ServiceOrderController extends Controller
      */
     public function create(MedicalVisit $visit)
     {
+        $visit->assertNotBeforeAppointmentDay();
         $visit->load([
             'patient',
             'doctor',
@@ -281,12 +281,12 @@ class ServiceOrderController extends Controller
                 $services
             ) {
                 $visit = MedicalVisit::with('status')->whereKey($visit->id)->lockForUpdate()->firstOrFail();
+                $visit->assertNotBeforeAppointmentDay();
                 if (! in_array($visit->status?->name, ['IN_EXAMINATION', 'RETURNING'], true) || ! $visit->status?->allows_transition) {
                     throw ValidationException::withMessages(['medical_service_ids' => 'Lượt khám không còn ở giai đoạn cho phép chỉ định dịch vụ.']);
                 }
-                if (! VisitStatus::where('name', 'WAITING_FOR_SERVICE')->where('is_active', true)->exists()) {
-                    throw ValidationException::withMessages(['medical_service_ids' => 'Chưa có trạng thái “Chờ thực hiện dịch vụ” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái lượt khám.']);
-                }
+                $waitingForServiceStatus = $visit->transitionStatus('WAITING_FOR_SERVICE');
+                $visit->completeOpenQueues(now());
                 $services = MedicalService::whereIn('id', $selectedServiceIds)->where('status', 'ACTIVE')->lockForUpdate()->get()->keyBy('id');
                 if ($services->count() !== $selectedServiceIds->count()) {
                     throw ValidationException::withMessages(['medical_service_ids' => 'Có dịch vụ vừa ngừng hoạt động. Vui lòng chọn lại.']);
@@ -486,23 +486,9 @@ class ServiceOrderController extends Controller
                         true
                     )
                 ) {
-                    $waitingForServiceStatus =
-                        DB::table('visit_statuses')
-                            ->where(
-                                'name',
-                                'WAITING_FOR_SERVICE'
-                            )
-                            ->where(
-                                'is_active',
-                                true
-                            )
-                            ->first();
-
-                    if ($waitingForServiceStatus) {
-                        $visit->update([
-                            'visit_status_id' => $waitingForServiceStatus->id,
-                        ]);
-                    }
+                    $visit->update([
+                        'visit_status_id' => $waitingForServiceStatus->id,
+                    ]);
                 }
 
                 return $order;

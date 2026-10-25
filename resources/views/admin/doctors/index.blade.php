@@ -33,7 +33,7 @@
         'title' => 'Bộ lọc bác sĩ',
         'description' => 'Lọc theo từ khóa, chuyên khoa và trạng thái.',
     ])
-        <form method="GET" action="{{ route('admin.doctors.index') }}"
+        <form data-filter-fields="3" method="GET" action="{{ route('admin.doctors.index') }}"
               class="dx-filters admin-filter-form">
             <div class="dx-field dx-search admin-filter-field">
                 <label for="search">Tìm kiếm</label>

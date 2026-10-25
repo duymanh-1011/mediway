@@ -58,4 +58,9 @@ class Patient extends Model
             'patient_id'
         );
     }
+
+    public function medicalVisits(): HasMany
+    {
+        return $this->hasMany(MedicalVisit::class);
+    }
 }

@@ -31,7 +31,7 @@
         'title' => 'Bộ lọc nội dung khám',
         'description' => 'Lọc theo từ khóa, bác sĩ, trạng thái lượt khám và khoảng thời gian.',
     ])
-        <form
+        <form data-filter-fields="5"
             method="GET"
             action="{{ route('admin.clinical-notes.index') }}"
          class="admin-filter-form">

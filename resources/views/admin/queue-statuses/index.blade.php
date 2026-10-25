@@ -32,7 +32,7 @@
         'title' => 'Bộ lọc trạng thái hàng đợi',
         'description' => 'Lọc theo từ khóa và trạng thái.',
     ])
-        <form
+        <form data-filter-fields="2"
             method="GET"
             action="{{ route('admin.queue-statuses.index') }}"
          class="admin-filter-form">

@@ -40,7 +40,6 @@ class QueueStatusController extends Controller
             });
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | Lọc trạng thái hoạt động
@@ -62,7 +61,6 @@ class QueueStatusController extends Controller
             );
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | Sắp xếp
@@ -75,13 +73,11 @@ class QueueStatusController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-
         return view(
             'admin.queue-statuses.index',
             compact('queueStatuses')
         );
     }
-
 
     public function show(
         QueueStatus $queueStatus
@@ -96,7 +92,6 @@ class QueueStatusController extends Controller
         );
     }
 
-
     public function edit(
         QueueStatus $queueStatus
     ): View {
@@ -106,7 +101,6 @@ class QueueStatusController extends Controller
         );
     }
 
-
     public function update(
         UpdateQueueStatusRequest $request,
         QueueStatus $queueStatus
@@ -114,17 +108,13 @@ class QueueStatusController extends Controller
         $data = $request->validated();
 
         $queueStatus->update([
-            'description' =>
-                $data['description'] ?? null,
+            'description' => $data['description'] ?? null,
 
-            'process_order' =>
-                $data['process_order'],
+            'process_order' => $data['process_order'],
 
-            'allows_transition' =>
-                $data['allows_transition'],
+            'allows_transition' => $data['allows_transition'],
 
-            'is_active' =>
-                $data['is_active'],
+            'is_active' => $data['is_active'],
         ]);
 
         return redirect()

@@ -56,7 +56,7 @@
             'title' => 'Bộ lọc khoản phải thanh toán',
             'description' => 'Lọc theo từ khóa, loại khoản thu, trạng thái và khoảng thời gian.',
         ])
-            <form method="GET" action="{{ route('admin.payables.index') }}" class="payable-filter-form admin-filter-form">
+            <form data-filter-fields="5" method="GET" action="{{ route('admin.payables.index') }}" class="payable-filter-form admin-filter-form">
 
                 <div class="payable-form-group payable-search-group admin-filter-field">
 

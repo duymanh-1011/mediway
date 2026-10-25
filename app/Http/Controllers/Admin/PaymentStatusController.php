@@ -29,12 +29,12 @@ class PaymentStatusController extends Controller
                     ->where(
                         'name',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'description',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     );
             });
         }
@@ -123,14 +123,11 @@ class PaymentStatusController extends Controller
         $validated = $request->validated();
 
         $status->update([
-            'description' =>
-            $validated['description'] ?? null,
+            'description' => $validated['description'] ?? null,
 
-            'allows_service_execution' =>
-            $validated['allows_service_execution'],
+            'allows_service_execution' => $validated['allows_service_execution'],
 
-            'is_active' =>
-            $validated['is_active'],
+            'is_active' => $validated['is_active'],
         ]);
 
         return redirect()

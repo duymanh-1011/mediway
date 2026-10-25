@@ -14,12 +14,13 @@ class AuthController extends Controller
 {
     public function showLoginForm()
     {
-        if (
-            Auth::check()
-            && Auth::user()->role
-            && Auth::user()->role->name === 'Administrator'
-        ) {
-            return redirect()->route('admin.dashboard');
+        if (Auth::check()) {
+            if (Auth::user()->canAccessAdmin()) {
+                return redirect()->route('admin.dashboard');
+            }
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
         }
 
         return view('admin.auth.login');
@@ -71,7 +72,7 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
-        if (! $user->role || $user->role->name !== 'Administrator') {
+        if (! $user->canAccessAdmin()) {
             $this->recordFailedLogin(array_keys($limits));
             Auth::logout();
 

@@ -27,7 +27,7 @@
         ['label' => 'Nhiệt độ cơ thể', 'value' => $record->body_temperature, 'unit' => '°C'],
         ['label' => 'SpO2', 'value' => $record->spo2, 'unit' => '%'],
         ['label' => 'Nhịp thở', 'value' => $record->respiratory_rate, 'unit' => 'lần/phút'],
-        ['label' => 'Đường huyết', 'value' => $record->blood_glucose, 'unit' => ''],
+        ['label' => 'Đường huyết', 'value' => $record->blood_glucose, 'unit' => \App\Models\PersonalHealthRecord::BLOOD_GLUCOSE_UNIT],
     ];
 @endphp
 

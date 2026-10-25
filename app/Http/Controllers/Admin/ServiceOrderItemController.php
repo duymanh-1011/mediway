@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\MedicalVisit;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceOrderProgress;
 use App\Models\ServiceStatus;
@@ -26,6 +27,7 @@ class ServiceOrderItemController extends Controller
         Request $request,
         ServiceOrderItem $serviceOrderItem
     ): RedirectResponse {
+        $serviceOrderItem->serviceOrder->medicalVisit->assertServiceDataWritable();
         $serviceOrderItem->load([
             'serviceStatus',
             'serviceOrder',
@@ -122,6 +124,8 @@ class ServiceOrderItemController extends Controller
                 $serviceOrderItem,
                 $processingStatus
             ) {
+                $visit = MedicalVisit::with('status')->whereKey($serviceOrderItem->serviceOrder->medical_visit_id)->lockForUpdate()->firstOrFail();
+                $visit->assertServiceDataWritable();
                 $lockedItem =
                     ServiceOrderItem::query()
                         ->with([
@@ -253,6 +257,7 @@ class ServiceOrderItemController extends Controller
         Request $request,
         ServiceOrderItem $serviceOrderItem
     ): RedirectResponse {
+        $serviceOrderItem->serviceOrder->medicalVisit->assertServiceDataWritable();
         $serviceOrderItem->load([
             'serviceStatus',
             'serviceOrder',
@@ -330,7 +335,8 @@ class ServiceOrderItemController extends Controller
                     $serviceOrderItem,
                     $completedStatus
                 ) {
-                    DB::table('medical_visits')->where('id', $serviceOrderItem->serviceOrder->medical_visit_id)->lockForUpdate()->first();
+                    $visit = MedicalVisit::with('status')->whereKey($serviceOrderItem->serviceOrder->medical_visit_id)->lockForUpdate()->firstOrFail();
+                    $visit->assertServiceDataWritable();
                     $lockedItem =
                         ServiceOrderItem::query()
                             ->with([

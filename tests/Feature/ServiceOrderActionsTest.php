@@ -10,6 +10,7 @@ use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceStatus;
 use App\Models\User;
+use App\Models\VisitStatus;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -29,6 +30,22 @@ class ServiceOrderActionsTest extends TestCase
     private function unpaidItem(): ServiceOrderItem
     {
         return ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail()->items()->firstOrFail();
+    }
+
+    public function test_visit_without_orders_has_only_one_create_order_link_in_its_header(): void
+    {
+        $visit = MedicalVisit::whereDoesntHave('serviceOrders')->firstOrFail();
+        $visit->update(['visit_status_id' => VisitStatus::where('name', 'IN_EXAMINATION')->value('id')]);
+        $html = $this->get(route('admin.visits.show', $visit))->assertOk()->getContent();
+        $document = new \DOMDocument;
+        $previous = libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NONET);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+        $xpath = new \DOMXPath($document);
+        $links = $xpath->query('//a[@href="'.route('admin.visits.service-orders.create', $visit).'"]');
+        $this->assertCount(1, $links);
+        $this->assertCount(0, $xpath->query('//div[contains(@class,"empty-service-orders")]//a'));
     }
 
     private function pay(ServiceOrderItem $item): void

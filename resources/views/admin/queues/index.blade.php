@@ -29,7 +29,7 @@
         'title' => 'Bộ lọc hàng đợi phòng khám',
         'description' => 'Lọc theo từ khóa, trạng thái, loại hàng đợi, ngày, bác sĩ và phòng khám.',
     ])
-        <form
+        <form data-filter-fields="6"
             method="GET"
             action="{{ route('admin.queues.index') }}"
          class="admin-filter-form">

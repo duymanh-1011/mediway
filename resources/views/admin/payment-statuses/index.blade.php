@@ -51,7 +51,7 @@
             'title' => 'Bộ lọc trạng thái thanh toán',
             'description' => 'Lọc theo từ khóa và trạng thái sử dụng.',
         ])
-            <form method="GET" action="{{ route('admin.payment-statuses.index') }}" class="admin-filter-form">
+            <form data-filter-fields="2" method="GET" action="{{ route('admin.payment-statuses.index') }}" class="admin-filter-form">
 
                     <div class="status-filter-grid admin-filter-layout">
 

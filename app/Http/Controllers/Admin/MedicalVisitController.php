@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateMedicalVisitStatusRequest;
 use App\Models\AdminDisplay;
 use App\Models\AdminLookup;
-use App\Models\AppointmentStatus;
 use App\Models\Doctor;
 use App\Models\ExaminationRoom;
 use App\Models\MedicalVisit;
@@ -229,6 +228,9 @@ class MedicalVisitController extends Controller
             'serviceOrders.items.medicalService',
 
             'serviceOrders.items.serviceStatus',
+            'serviceOrders.items.result',
+            'prescription.doctor',
+            'payables' => fn ($query) => $query->with('paymentStatus')->withCount('transactions')->orderByDesc('generated_at')->orderByDesc('id'),
         ]);
 
         $allowedStatusNames =
@@ -341,6 +343,10 @@ class MedicalVisitController extends Controller
                 }
                 if (! $medicalVisit->status?->allows_transition || ! in_array($newStatus->name, $this->allowedTransitions($medicalVisit->status?->name), true)) {
                     throw ValidationException::withMessages(['visit_status_id' => 'Trạng thái lượt khám đã thay đổi. Vui lòng tải lại trang.']);
+                }
+                $newStatus = $medicalVisit->transitionStatus($newStatus->name);
+                if ($newStatus->name === 'IN_EXAMINATION') {
+                    $medicalVisit->startInitialQueues();
                 }
                 if ($newStatus->name === 'COMPLETED' && ServiceOrderItem::whereHas('serviceOrder', fn ($q) => $q->where('medical_visit_id', $medicalVisit->id))
                     ->unresolved()->exists()) {
@@ -482,39 +488,6 @@ class MedicalVisitController extends Controller
         MedicalVisit $medicalVisit,
         string $statusName
     ): void {
-        if (
-            ! $medicalVisit
-                ->appointment_id
-        ) {
-            return;
-        }
-
-        $appointmentStatus =
-            AppointmentStatus::query()
-                ->where(
-                    'name',
-                    $statusName
-                )
-                ->where(
-                    'is_active',
-                    true
-                )
-                ->first();
-
-        if (! $appointmentStatus) {
-            return;
-        }
-
-        DB::table('appointments')
-            ->where(
-                'id',
-                $medicalVisit
-                    ->appointment_id
-            )
-            ->update([
-                'appointment_status_id' => $appointmentStatus->id,
-
-                'updated_at' => now(),
-            ]);
+        $medicalVisit->synchronizeAppointment($statusName);
     }
 }

@@ -68,6 +68,11 @@ class AdminTableNumberingTest extends TestCase
             if (! Route::has($name)) {
                 continue;
             }
+            if ($name === 'admin.patients.show') {
+                $tableCount += substr_count(file_get_contents(resource_path('views/admin/patients/_medical-history.blade.php')), '<table');
+            } elseif ($name === 'admin.visits.show') {
+                $tableCount += substr_count(file_get_contents(resource_path('views/admin/visits/_related-records.blade.php')), '<table');
+            }
             $parameters = $action === 'show' ? [DB::table($detailTables[$module])->value('id')] : [];
             $html = $this->get(route($name, $parameters))->assertOk()->getContent();
             $xpath = $this->xpath($html);
@@ -93,7 +98,7 @@ class AdminTableNumberingTest extends TestCase
                 $checked++;
             }
         }
-        $this->assertSame(50, $checked);
+        $this->assertSame(54, $checked);
     }
 
     public function test_row_numbers_continue_on_the_second_page_and_restart_for_filtered_results(): void

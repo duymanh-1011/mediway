@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdatePrescriptionRequest;
 use App\Models\ClinicalDocument;
+use App\Models\ClinicalTimeline;
 use App\Models\MedicalVisit;
 use App\Models\Prescription;
 use Illuminate\Http\Request;
@@ -390,6 +391,8 @@ class PrescriptionController extends Controller
             if ($visit->status?->name === 'COMPLETED') {
                 throw ValidationException::withMessages(['prescription' => 'Lượt khám đã hoàn tất, không thể sửa đơn thuốc.']);
             }
+            ClinicalTimeline::assertEventTime($updateData['prescribed_at'], $visit->examination_started_at ?? $visit->checked_in_at,
+                'prescribed_at', 'Thời điểm kê đơn');
             $prescription = Prescription::whereKey($prescription->id)->lockForUpdate()->firstOrFail();
             $oldValues = $prescription->only(['general_instructions', 'doctor_notes', 'status', 'prescription_pdf_path']);
             $oldValues['prescribed_at'] = $prescription->prescribed_at?->format('Y-m-d H:i:s');

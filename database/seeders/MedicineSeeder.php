@@ -16,7 +16,7 @@ class MedicineSeeder extends Seeder
             ['TH004', 'Natri clorid 0,9% xịt mũi', 'Natri clorid',                           '0,9%',       'Dung dịch xịt', 'chai', 'Xịt mũi'],
             ['TH005', 'Losartan',                   'Losartan potassium',                     '50 mg',      'Viên nén',      'viên', 'Uống'],
             ['TH006', 'Omeprazole',                 'Omeprazole',                             '20 mg',      'Viên nang',     'viên', 'Uống'],
-            ['TH007', 'Antacid',                    'Aluminium hydroxide + Magnesium hydroxide','10 ml',    'Hỗn dịch',      'gói',  'Uống'],
+            ['TH007', 'Antacid',                    'Aluminium hydroxide + Magnesium hydroxide', '10 ml',    'Hỗn dịch',      'gói',  'Uống'],
             ['TH008', 'Metformin',                  'Metformin',                              '500 mg',     'Viên nén',      'viên', 'Uống'],
             ['TH009', 'Hydrocortisone 1%',          'Hydrocortisone',                         '1%',         'Kem bôi',       'tuýp', 'Bôi ngoài da'],
             ['TH010', 'Acetylcysteine',             'Acetylcysteine',                         '200 mg',     'Gói bột',       'gói',  'Uống'],

@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 @section('admin-page', 'users-edit')
 
-@section('title', 'Chỉnh sửa tài khoản - Mediway')
+@section('title', 'Sửa tài khoản - Mediway')
 
 @section('breadcrumb')
     <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
@@ -10,14 +10,14 @@
     <span aria-hidden="true">/</span>
     <span>Tài khoản</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">Chỉnh sửa</strong>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
 <div class="account-edit-page">
     <div class="account-edit-heading">
         <div>
-            <h1 class="page-title">Chỉnh sửa tài khoản</h1>
+            <h1 class="page-title">Sửa tài khoản</h1>
             <p class="page-description">
                 Cập nhật thông tin đăng nhập của @include('admin.layouts.partials.record-code', ['code' => $user->business_code]).
             </p>

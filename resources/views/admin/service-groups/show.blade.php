@@ -44,7 +44,7 @@
         'title' => 'Bộ lọc dịch vụ trong nhóm',
         'description' => 'Lọc theo từ khóa và trạng thái.',
     ])
-        <form method="GET" class="admin-filter admin-filter-form" action="{{ route('admin.service-groups.show', $serviceGroup) }}">
+        <form data-filter-fields="2" method="GET" class="admin-filter admin-filter-form" action="{{ route('admin.service-groups.show', $serviceGroup) }}">
             <div class="admin-form-group admin-filter-field"><label for="keyword">Từ khóa</label><input class="admin-input" id="keyword" name="keyword" value="{{ request('keyword') }}" placeholder="Mã hoặc tên dịch vụ">
 @error('keyword')<div class="field-error">{{ $message }}</div>@enderror</div>
             <div class="admin-form-group admin-filter-field"><label for="status">Trạng thái</label><select class="admin-select" id="status" name="status"><option value="">Tất cả</option><option value="ACTIVE" @selected(request('status') === 'ACTIVE')>Đang hoạt động</option><option value="INACTIVE" @selected(request('status') === 'INACTIVE')>Ngừng hoạt động</option></select>

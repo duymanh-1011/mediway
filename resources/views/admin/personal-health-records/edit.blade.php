@@ -12,14 +12,14 @@
     <span aria-hidden="true">/</span>
     <span>Sức khỏe</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">Chỉnh sửa</strong>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
 <div class="hr-page">
     <div class="hr-heading">
         <div>
-            <h1 class="page-title">Chỉnh sửa chỉ số sức khỏe</h1>
+            <h1 class="page-title">Sửa chỉ số sức khỏe</h1>
             <p class="page-description">
                 Bản ghi #{{ $record->id }} —
                 @include('admin.layouts.partials.record-code', ['code' => $record->patient?->patient_code])
@@ -52,8 +52,6 @@
             <div class="hr-note">
                 Việc chỉnh sửa chỉ áp dụng cho lần đo này.
                 Bệnh nhân liên kết không thể thay đổi.
-                Trước khi sử dụng thực tế, các lần sửa chỉ số sức khỏe
-                phải được ghi nhật ký để truy vết.
             </div>
 
             <div class="hr-actions">

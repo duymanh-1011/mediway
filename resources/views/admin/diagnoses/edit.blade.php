@@ -17,7 +17,8 @@
 
 @section('content')
 
-    <div class="admin-u-ed1667a9">
+    <div class="admin-page-header">
+        <div>
 
         <h1 class="page-title">
             Sửa chẩn đoán
@@ -28,6 +29,8 @@
             @include('admin.layouts.partials.record-code', ['code' => $diagnosis->medicalVisit?->visit_code])
         </p>
 
+        </div>
+        <a href="{{ route('admin.diagnoses.show', $diagnosis) }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
 
@@ -279,11 +282,6 @@
 
                 <div class="admin-u-5786f359">
 
-                    <button
-                        type="submit"
-                        class="admin-btn admin-btn-primary"
-                    >Cập nhật</button>
-
                     <a
                         href="{{ route(
                             'admin.diagnoses.show',
@@ -291,6 +289,8 @@
                         ) }}"
                         class="admin-btn admin-btn-secondary"
                     >Hủy</a>
+
+                    <button type="submit" class="admin-btn admin-btn-primary">Cập nhật</button>
 
                 </div>
 

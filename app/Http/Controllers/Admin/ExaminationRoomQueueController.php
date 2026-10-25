@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\AppointmentStatus;
 use App\Models\Doctor;
 use App\Models\ExaminationRoom;
 use App\Models\ExaminationRoomQueue;
@@ -345,6 +344,8 @@ class ExaminationRoomQueueController extends Controller
                 || ! VisitStatus::where('name', $nextVisitStatus)->where('is_active', true)->exists()) {
                 throw ValidationException::withMessages(['queue' => 'Chưa thể bắt đầu phục vụ ở bước hiện tại. Vui lòng kiểm tra trạng thái lượt khám.']);
             }
+            $queue->medicalVisit->transitionStatus($nextVisitStatus);
+            $queue->medicalVisit->synchronizeAppointment('IN_EXAMINATION');
             if ($queue->queue_type === 'RETURN_AFTER_SERVICE') {
                 $items = ServiceOrderItem::whereHas('serviceOrder', fn ($q) => $q->where('medical_visit_id', $queue->medical_visit_id));
                 if (! $items->exists() || (clone $items)->unresolved()->exists()) {
@@ -397,11 +398,6 @@ class ExaminationRoomQueueController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
-                $this->syncAppointmentStatus(
-                    $queue->medicalVisit
-                        ->appointment_id,
-                    'IN_EXAMINATION'
-                );
             }
 
             /*
@@ -445,6 +441,10 @@ class ExaminationRoomQueueController extends Controller
         ExaminationRoomQueue $queue
     ): RedirectResponse {
         $queue->load('status');
+
+        if ($queue->status?->name === 'COMPLETED') {
+            return back()->with('success', 'Lượt phục vụ trong hàng đợi đã kết thúc.');
+        }
 
         if (
             $queue->status?->name
@@ -563,41 +563,5 @@ class ExaminationRoomQueueController extends Controller
         }
 
         return $queue;
-    }
-
-    private function syncAppointmentStatus(
-        ?int $appointmentId,
-        string $statusName
-    ): void {
-        if (! $appointmentId) {
-            return;
-        }
-
-        $appointmentStatus =
-            AppointmentStatus::query()
-                ->where(
-                    'name',
-                    $statusName
-                )
-                ->where(
-                    'is_active',
-                    true
-                )
-                ->first();
-
-        if (! $appointmentStatus) {
-            return;
-        }
-
-        DB::table('appointments')
-            ->where(
-                'id',
-                $appointmentId
-            )
-            ->update([
-                'appointment_status_id' => $appointmentStatus->id,
-
-                'updated_at' => now(),
-            ]);
     }
 }

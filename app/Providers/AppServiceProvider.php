@@ -2,7 +2,26 @@
 
 namespace App\Providers;
 
+use App\Models\Administrator;
 use App\Models\BusinessCodeGenerator;
+use App\Models\Doctor;
+use App\Models\DoctorDetail;
+use App\Models\Employee;
+use App\Models\EmployeeDetail;
+use App\Models\ExaminationRoomQueue;
+use App\Models\MedicalVisit;
+use App\Models\Patient;
+use App\Models\PatientDetail;
+use App\Models\PersonalHealthRecord;
+use App\Models\Role;
+use App\Models\ServiceOrder;
+use App\Models\ServiceOrderItem;
+use App\Models\User;
+use App\Models\VisitClinicalNote;
+use App\Models\VisitConclusion;
+use App\Models\VisitDiagnosis;
+use App\Observers\AdministrativeAuditObserver;
+use App\Observers\ClinicalAuditObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Arr;
@@ -26,6 +45,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        foreach ([User::class, Administrator::class, Role::class,
+            Doctor::class, DoctorDetail::class, Employee::class, EmployeeDetail::class,
+            Patient::class, PatientDetail::class, PersonalHealthRecord::class] as $model) {
+            $model::observe(AdministrativeAuditObserver::class);
+        }
+
+        foreach ([MedicalVisit::class, ExaminationRoomQueue::class, VisitClinicalNote::class,
+            VisitDiagnosis::class, VisitConclusion::class, ServiceOrder::class, ServiceOrderItem::class] as $model) {
+            $model::observe(ClinicalAuditObserver::class);
+        }
+
         foreach (BusinessCodeGenerator::CATALOGS as $field => [$model]) {
             $model::creating(function (Model $record) use ($field): void {
                 if (! $record->getAttribute($field)) {

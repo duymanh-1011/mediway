@@ -633,6 +633,22 @@ class AppointmentController extends Controller
             }
             $lockedAppointment->assertReceptionDate();
             $doctor = Doctor::whereKey($lockedAppointment->doctor_id)->lockForUpdate()->firstOrFail();
+            $patient = Patient::whereKey($lockedAppointment->patient_id)->lockForUpdate()->firstOrFail();
+            $specialty = Specialty::whereKey($lockedAppointment->specialty_id)->lockForUpdate()->firstOrFail();
+            $room = ExaminationRoom::whereKey($lockedAppointment->examination_room_id)->lockForUpdate()->firstOrFail();
+            if ($receptionSchedule->status !== 'ACTIVE' || $receptionSlot->status !== 'ACTIVE'
+                || $doctor->status !== 'ACTIVE' || $patient->status !== 'ACTIVE'
+                || $specialty->status !== 'ACTIVE' || $room->status !== 'ACTIVE') {
+                throw ValidationException::withMessages(['appointment' => 'Chưa thể tiếp nhận vì lịch làm việc, khung giờ, bác sĩ, bệnh nhân, chuyên khoa hoặc phòng khám đã ngừng hoạt động. Vui lòng kiểm tra và điều chỉnh lịch hẹn.']);
+            }
+            if ((int) $receptionSchedule->doctor_id !== (int) $lockedAppointment->doctor_id
+                || (int) $receptionSchedule->specialty_id !== (int) $lockedAppointment->specialty_id
+                || (int) $receptionSchedule->examination_room_id !== (int) $lockedAppointment->examination_room_id
+                || $receptionSlot->start_time < $receptionSchedule->start_time
+                || $receptionSlot->end_time > $receptionSchedule->end_time
+                || $receptionSlot->start_time >= $receptionSlot->end_time) {
+                throw ValidationException::withMessages(['appointment' => 'Thông tin lịch hẹn không còn khớp với ca làm việc. Vui lòng kiểm tra lại bác sĩ, chuyên khoa, phòng và khung giờ trước khi tiếp nhận.']);
+            }
             if (! $doctor->canPracticeSpecialty((int) $lockedAppointment->specialty_id)) {
                 throw ValidationException::withMessages(['appointment' => 'Bác sĩ chưa được phân chuyên khoa phù hợp với lịch hẹn. Vui lòng kiểm tra hồ sơ bác sĩ trước khi tiếp nhận.']);
             }
@@ -646,6 +662,9 @@ class AppointmentController extends Controller
             }
             if ($lockedAppointment->appointmentStatus?->name !== 'BOOKED') {
                 throw ValidationException::withMessages(['appointment' => 'Lịch hẹn không còn ở trạng thái đã đặt lịch.']);
+            }
+            if (! $lockedAppointment->appointmentStatus->allows_transition) {
+                throw ValidationException::withMessages(['appointment' => 'Trạng thái lịch hẹn đang bị khóa thay đổi. Vui lòng kiểm tra mục Trạng thái lịch hẹn.']);
             }
 
             $alreadyHasVisit =

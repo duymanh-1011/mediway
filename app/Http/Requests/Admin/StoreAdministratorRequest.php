@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\PasswordByteLimit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,6 +28,7 @@ class StoreAdministratorRequest extends FormRequest
                 'string',
                 'min:8',
                 'max:72',
+                new PasswordByteLimit,
                 'confirmed',
             ],
             'email' => [

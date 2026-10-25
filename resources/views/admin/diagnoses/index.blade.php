@@ -31,7 +31,7 @@
         'title' => 'Bộ lọc chẩn đoán',
         'description' => 'Lọc theo từ khóa, bệnh, loại chẩn đoán, mức độ và khoảng thời gian.',
     ])
-        <form
+        <form data-filter-fields="6"
             method="GET"
             action="{{ route('admin.diagnoses.index') }}"
          class="admin-filter-form">

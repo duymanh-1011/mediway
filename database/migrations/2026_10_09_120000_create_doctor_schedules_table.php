@@ -7,29 +7,29 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     public function up(): void
-{
-    Schema::create('doctor_schedules', function (Blueprint $table) {
-        $table->id();
+    {
+        Schema::create('doctor_schedules', function (Blueprint $table) {
+            $table->id();
 
-        $table->foreignId('doctor_id')
-            ->constrained('doctors');
+            $table->foreignId('doctor_id')
+                ->constrained('doctors');
 
-        $table->foreignId('specialty_id')
-            ->constrained('specialties');
+            $table->foreignId('specialty_id')
+                ->constrained('specialties');
 
-        $table->foreignId('examination_room_id')
-            ->constrained('examination_rooms');
+            $table->foreignId('examination_room_id')
+                ->constrained('examination_rooms');
 
-        $table->date('work_date');
-        $table->time('start_time');
-        $table->time('end_time');
+            $table->date('work_date');
+            $table->time('start_time');
+            $table->time('end_time');
 
-        $table->string('status', 20);
-        $table->text('notes')->nullable();
+            $table->string('status', 20);
+            $table->text('notes')->nullable();
 
-        $table->timestamps();
-    });
-}
+            $table->timestamps();
+        });
+    }
 
     public function down(): void
     {

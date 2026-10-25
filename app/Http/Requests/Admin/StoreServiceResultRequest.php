@@ -3,7 +3,9 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\ClinicalDocument;
+use App\Models\ClinicalTimeline;
 use App\Models\ServiceResult;
+use App\Rules\ActiveResultVerifier;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -46,6 +48,7 @@ class StoreServiceResultRequest extends FormRequest
             'verified_by_user_id' => [
                 'nullable',
                 'integer',
+                new ActiveResultVerifier,
 
                 Rule::exists('users', 'id')
                     ->where(function ($query) use ($doctorRoleId) {
@@ -78,6 +81,10 @@ class StoreServiceResultRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
+            if (! $validator->errors()->has('resulted_at')) {
+                $item = $this->route('serviceOrderItem');
+                ClinicalTimeline::assertEventTime($this->input('resulted_at'), $item?->started_at, 'resulted_at', 'Thời điểm trả kết quả');
+            }
             $hasUpload = collect(array_keys(ClinicalDocument::RESULT_FILES))->contains(
                 fn (string $field): bool => $this->hasFile($field) && ! $validator->errors()->has($field)
             );

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreVisitConclusionRequest;
+use App\Models\ClinicalTimeline;
 use App\Models\MedicalVisit;
 use App\Models\VisitConclusion;
 use Illuminate\Http\RedirectResponse;
@@ -108,6 +109,7 @@ class MedicalVisitConclusionController extends Controller
                 $hasFollowUp
             ) {
                 $visit = $visit->lockForClinicalWrite();
+                ClinicalTimeline::assertFollowUp($hasFollowUp, $data['follow_up_date'] ?? null, now());
                 if ($existing = $visit->conclusion()->first()) {
                     return $existing;
                 }

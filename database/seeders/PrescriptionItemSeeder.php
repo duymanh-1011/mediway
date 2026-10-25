@@ -82,10 +82,10 @@ class PrescriptionItemSeeder extends Seeder
                 ->where('medicine_code', $item['medicine_code'])
                 ->value('id');
 
-            if (!$prescriptionId || !$medicineId) {
+            if (! $prescriptionId || ! $medicineId) {
                 throw new RuntimeException(
-                    'Thiếu dữ liệu FK cho ' .
-                        $item['prescription_code'] . ' / ' .
+                    'Thiếu dữ liệu FK cho '.
+                        $item['prescription_code'].' / '.
                         $item['medicine_code']
                 );
             }

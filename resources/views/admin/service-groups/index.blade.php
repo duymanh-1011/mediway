@@ -85,7 +85,7 @@
         'title' => 'Bộ lọc nhóm dịch vụ',
         'description' => 'Lọc theo từ khóa và trạng thái.',
     ])
-        <form
+        <form data-filter-fields="2"
             method="GET"
             action="{{ route(
                 'admin.service-groups.index'

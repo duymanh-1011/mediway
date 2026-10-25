@@ -49,7 +49,7 @@
                 </h1>
 
                 <p>
-                    Chỉnh sửa có kiểm soát.
+                    Sửa có kiểm soát.
                     Mọi thay đổi sẽ được ghi nhật ký hoạt động.
                 </p>
 

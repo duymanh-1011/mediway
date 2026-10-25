@@ -97,10 +97,10 @@ class ServiceOrderItemSeeder extends Seeder
                     ->value('id');
             }
 
-            if (!$serviceOrderId || !$medicalServiceId || !$serviceStatusId) {
+            if (! $serviceOrderId || ! $medicalServiceId || ! $serviceStatusId) {
                 throw new RuntimeException(
-                    'Thiếu dữ liệu FK cho ' .
-                        $item['service_order_code'] . ' / ' .
+                    'Thiếu dữ liệu FK cho '.
+                        $item['service_order_code'].' / '.
                         $item['service_code']
                 );
             }

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\AdminDisplay;
+use App\Rules\PasswordByteLimit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -11,7 +12,7 @@ class StoreEmployeeRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         if (is_string($this->input('employee_type'))) {
-            $this->merge(['employee_type' => AdminDisplay::employeeTypeCode($this->input('employee_type'))]);
+            $this->merge(['employee_type' => strtoupper(trim(AdminDisplay::employeeTypeCode($this->input('employee_type'))))]);
         }
     }
 
@@ -44,7 +45,8 @@ class StoreEmployeeRequest extends FormRequest
                 'nullable',
                 'string',
                 'min:8',
-                'max:100',
+                'max:72',
+                new PasswordByteLimit,
                 'confirmed',
             ],
 
@@ -156,9 +158,10 @@ class StoreEmployeeRequest extends FormRequest
             ],
 
             'employee_type' => [
-                'nullable',
+                'required',
                 'string',
                 'max:80',
+                Rule::exists('employee_types', 'code'),
             ],
 
             'hire_date' => [
@@ -243,6 +246,8 @@ class StoreEmployeeRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'employee_type.required' => 'Vui lòng chọn loại nhân viên.',
+            'employee_type.exists' => 'Loại nhân viên không hợp lệ. Vui lòng chọn lại từ danh sách.',
             'user_id.exists' => 'Tài khoản được chọn không tồn tại.',
 
             'user_id.unique' => 'Tài khoản đã được liên kết với nhân viên khác.',

@@ -29,12 +29,12 @@ class ServiceStatusController extends Controller
                     ->where(
                         'name',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                     ->orWhere(
                         'description',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     );
             });
         }
@@ -122,14 +122,11 @@ class ServiceStatusController extends Controller
         $validated = $request->validated();
 
         $status->update([
-            'description' =>
-            $validated['description'] ?? null,
+            'description' => $validated['description'] ?? null,
 
-            'allows_transition' =>
-            $validated['allows_transition'],
+            'allows_transition' => $validated['allows_transition'],
 
-            'is_active' =>
-            $validated['is_active'],
+            'is_active' => $validated['is_active'],
         ]);
 
         return redirect()

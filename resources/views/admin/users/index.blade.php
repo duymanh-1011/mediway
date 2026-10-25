@@ -35,7 +35,7 @@
         'title' => 'Bộ lọc tài khoản',
         'description' => 'Lọc theo từ khóa, vai trò và trạng thái.',
     ])
-        <form method="GET" action="{{ route('admin.users.index') }}" class="users-filter admin-filter-form">
+        <form data-filter-fields="3" method="GET" action="{{ route('admin.users.index') }}" class="users-filter admin-filter-form">
             <div class="users-field users-search admin-filter-field">
                 <label for="search">Tìm kiếm</label>
                 <input

@@ -11,6 +11,7 @@ use App\Models\Employee;
 use App\Models\Patient;
 use App\Models\Role;
 use App\Models\User;
+use App\Rules\PasswordByteLimit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -174,9 +175,9 @@ class UserController extends Controller
     {
         $data = $request->validated();
 
-        $user->update([
-            'phone' => $data['phone'],
-        ]);
+        DB::transaction(function () use ($user, $data): void {
+            User::whereKey($user->id)->lockForUpdate()->firstOrFail()->update(['phone' => $data['phone']]);
+        });
 
         return redirect()
             ->route('admin.users.show', $user)
@@ -291,6 +292,7 @@ class UserController extends Controller
                 'string',
                 'min:8',
                 'max:72',
+                new PasswordByteLimit,
                 'confirmed',
             ],
         ], [
@@ -300,9 +302,9 @@ class UserController extends Controller
             'password.confirmed' => 'Mật khẩu nhập lại chưa khớp. Vui lòng kiểm tra cả hai ô mật khẩu.',
         ]);
 
-        $user->update([
-            'password' => $data['password'],
-        ]);
+        DB::transaction(function () use ($user, $data): void {
+            User::whereKey($user->id)->lockForUpdate()->firstOrFail()->update(['password' => $data['password']]);
+        });
 
         return redirect()
             ->route('admin.users.show', $user)

@@ -43,7 +43,7 @@
         <div class="header-actions">
 
             <a
-                href="{{ route('admin.visits.index') }}"
+                href="{{ request('from_patient_history') === '1' ? route('admin.patients.show', $medicalVisit->patient_id).'#history' : (request('from_medical_history') === '1' ? route('admin.patient-medical-history.index') : route('admin.visits.index')) }}"
                 class="admin-btn admin-btn-secondary"
             >← Quay lại</a>
 
@@ -324,7 +324,7 @@
                         ) }}"
                         class="admin-btn admin-btn-detail"
                     >
-                        Xem chi tiết lịch hẹn
+                        Xem lịch hẹn
                     </a>
 
                 </div>
@@ -986,7 +986,11 @@
                                                         đ
                                                     </span>
 
-                                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $item->serviceStatus?->name ?? '—'])
+                                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $item->serviceStatus?->name ?? '—', 'badgeContext' => 'service'])
+
+                                                    @if($item->result)
+                                                        <a href="{{ route('admin.service-results.show', $item->result) }}" class="admin-btn admin-btn-detail">Xem kết quả</a>
+                                                    @endif
 
                                                 </div>
 
@@ -1016,24 +1020,14 @@
                     Lượt khám này chưa có phiếu chỉ định dịch vụ.
                 </p>
 
-                @if (in_array($currentStatus, ['IN_EXAMINATION', 'RETURNING'], true))
-
-                    <a
-                        href="{{ route(
-                            'admin.visits.service-orders.create',
-                            $medicalVisit
-                        ) }}"
-                        class="admin-btn admin-btn-primary"
-                    >Tạo chỉ định dịch vụ</a>
-
-                @endif
-
             </div>
 
         @endif
 
     </div>
 
+
+    @include('admin.visits._related-records')
 
     {{-- KẾT LUẬN --}}
 

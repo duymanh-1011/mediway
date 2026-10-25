@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 @section('admin-page', 'patients-edit')
 
-@section('title', 'Chỉnh sửa bệnh nhân - Mediway')
+@section('title', 'Sửa bệnh nhân - Mediway')
 
 @section('breadcrumb')
     <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
@@ -10,14 +10,14 @@
     <span aria-hidden="true">/</span>
     <span>Bệnh nhân</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">Chỉnh sửa</strong>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
 <div class="pf-page">
     <div class="pf-heading">
         <div>
-            <h1 class="page-title">Chỉnh sửa bệnh nhân</h1>
+            <h1 class="page-title">Sửa bệnh nhân</h1>
             <p class="page-description">
                 @include('admin.layouts.partials.record-code', ['code' => $patient->patient_code]) — {{ $patient->full_name }}
             </p>

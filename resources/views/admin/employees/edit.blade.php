@@ -2,7 +2,7 @@
 @extends('admin.layouts.app')
 @section('admin-page', 'employees-edit')
 
-@section('title', 'Chỉnh sửa nhân viên - Mediway')
+@section('title', 'Sửa nhân viên - Mediway')
 
 @section('breadcrumb')
     <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
@@ -11,14 +11,14 @@
     <span aria-hidden="true">/</span>
     <span>Nhân viên</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">Chỉnh sửa</strong>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
 <div class="em-page">
     <div class="em-heading">
         <div>
-            <h1 class="page-title">Chỉnh sửa nhân viên</h1>
+            <h1 class="page-title">Sửa nhân viên</h1>
             <p class="em-description">
                 @include('admin.layouts.partials.record-code', ['code' => $employee->employee_code]) — {{ $employee->full_name }}
             </p>

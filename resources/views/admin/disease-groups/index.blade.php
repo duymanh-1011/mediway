@@ -85,7 +85,7 @@
         'title' => 'Bộ lọc nhóm bệnh',
         'description' => 'Lọc theo từ khóa và trạng thái.',
     ])
-        <form
+        <form data-filter-fields="2"
             method="GET"
             action="{{ route(
                 'admin.disease-groups.index'

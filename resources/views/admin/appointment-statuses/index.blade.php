@@ -77,7 +77,7 @@
         'title' => 'Bộ lọc trạng thái lịch hẹn',
         'description' => 'Lọc theo từ khóa, hoạt động và chuyển tiếp.',
     ])
-        <form
+        <form data-filter-fields="3"
             method="GET"
             action="{{ route(
                 'admin.appointment-statuses.index'

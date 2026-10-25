@@ -82,7 +82,7 @@
             'title' => 'Bộ lọc đơn thuốc',
             'description' => 'Lọc theo từ khóa, trạng thái và khoảng thời gian.',
         ])
-            <form method="GET" action="{{ route('admin.prescriptions.index') }}" class="prescription-filter-form admin-filter-form">
+            <form data-filter-fields="4" method="GET" action="{{ route('admin.prescriptions.index') }}" class="prescription-filter-form admin-filter-form">
 
                 {{-- Search --}}
                 <div class="prescription-form-group prescription-search-group admin-filter-field">

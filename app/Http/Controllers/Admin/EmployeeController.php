@@ -7,12 +7,14 @@ use App\Http\Requests\Admin\StoreEmployeeRequest;
 use App\Http\Requests\Admin\UpdateEmployeeRequest;
 use App\Models\Employee;
 use App\Models\EmployeeDetail;
+use App\Models\EmployeeType;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -66,7 +68,7 @@ class EmployeeController extends Controller
             'search' => ['nullable', 'string', 'max:150'],
             'status' => ['nullable', 'in:ACTIVE,INACTIVE'],
             'department' => ['nullable', 'string', 'max:120'],
-            'employee_type' => ['nullable', 'string', 'max:80'],
+            'employee_type' => ['nullable', 'string', Rule::exists('employee_types', 'code')],
         ]);
 
         $search = trim((string) $request->query('search', ''));
@@ -131,12 +133,7 @@ class EmployeeController extends Controller
             ->orderBy('department')
             ->pluck('department');
 
-        $employeeTypes = EmployeeDetail::query()
-            ->whereNotNull('employee_type')
-            ->where('employee_type', '<>', '')
-            ->distinct()
-            ->orderBy('employee_type')
-            ->pluck('employee_type');
+        $employeeTypes = EmployeeType::orderBy('display_order')->get();
 
         return view('admin.employees.index', compact(
             'employees',
@@ -155,8 +152,9 @@ class EmployeeController extends Controller
     public function create()
     {
         $availableUsers = $this->availableEmployeeUsers();
+        $employeeTypes = EmployeeType::orderBy('display_order')->get();
 
-        return view('admin.employees.create', compact('availableUsers'));
+        return view('admin.employees.create', compact('availableUsers', 'employeeTypes'));
     }
 
     /**
@@ -275,8 +273,9 @@ class EmployeeController extends Controller
     public function edit(Employee $employee)
     {
         $employee->load(['user', 'detail']);
+        $employeeTypes = EmployeeType::orderBy('display_order')->get();
 
-        return view('admin.employees.edit', compact('employee'));
+        return view('admin.employees.edit', compact('employee', 'employeeTypes'));
     }
 
     /**

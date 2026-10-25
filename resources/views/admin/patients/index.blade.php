@@ -36,7 +36,7 @@
         'title' => 'Bộ lọc bệnh nhân',
         'description' => 'Lọc theo từ khóa và trạng thái hồ sơ.',
     ])
-        <form method="GET"
+        <form data-filter-fields="2" method="GET"
               action="{{ route('admin.patients.index') }}"
               class="pt-filters admin-filter-form">
 
@@ -46,7 +46,7 @@
                        id="search"
                        name="search"
                        value="{{ $search }}"
-                       placeholder="Mã BN, họ tên, SĐT hoặc CCCD...">
+                       placeholder="Mã bệnh nhân, họ tên, SĐT hoặc CCCD...">
 @error('search')<div class="field-error">{{ $message }}</div>@enderror
             </div>
 
@@ -125,6 +125,9 @@
                                 <div class="pt-actions">
                                     <a href="{{ route('admin.patients.show', $patient) }}"
                                        class="admin-btn admin-btn-detail">Chi tiết</a>
+
+                                    <a href="{{ route('admin.patients.show', $patient) }}#history"
+                                       class="admin-btn admin-btn-detail">Lịch sử khám</a>
 
                                     <a href="{{ route('admin.patients.edit', $patient) }}"
                                        class="admin-btn admin-btn-secondary">Sửa</a>

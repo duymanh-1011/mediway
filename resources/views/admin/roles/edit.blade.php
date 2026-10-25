@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 @section('admin-page', 'roles-edit')
 
-@section('title', 'Chỉnh sửa vai trò - Mediway')
+@section('title', 'Sửa vai trò - Mediway')
 
 @section('breadcrumb')
     <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
@@ -10,7 +10,7 @@
     <span aria-hidden="true">/</span>
     <a href="{{ route('admin.roles.index') }}">Vai trò</a>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">Chỉnh sửa</strong>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
@@ -18,7 +18,7 @@
 
     <div class="role-edit-heading">
         <div>
-            <h1 class="page-title">Chỉnh sửa vai trò</h1>
+            <h1 class="page-title">Sửa vai trò</h1>
             <p class="page-description">
                 Cập nhật thông tin vai trò {{ \App\Models\AdminDisplay::label($role->name) }}.
             </p>

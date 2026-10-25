@@ -2,10 +2,21 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\ClinicalTimeline;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreVisitConclusionRequest extends FormRequest
 {
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            if (! $validator->errors()->has('follow_up_date')) {
+                ClinicalTimeline::assertFollowUp($this->boolean('has_follow_up'), $this->input('follow_up_date'), now());
+            }
+        }];
+    }
+
     public function authorize(): bool
     {
         return true;

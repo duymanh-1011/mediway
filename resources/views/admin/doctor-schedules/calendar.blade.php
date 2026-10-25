@@ -58,7 +58,7 @@
         'title' => 'Bộ lọc lịch bác sĩ theo tháng',
         'description' => 'Lọc theo tháng, bác sĩ, chuyên khoa và phòng khám.',
     ])
-        <form
+        <form data-filter-fields="4"
             method="GET"
             action="{{ route(
                 'admin.doctor-schedules.calendar'

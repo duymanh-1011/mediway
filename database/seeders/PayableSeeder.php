@@ -169,19 +169,19 @@ class PayableSeeder extends Seeder
                     ->value('soi.id');
             }
 
-            if (!$medicalVisitId || !$paymentStatusId) {
+            if (! $medicalVisitId || ! $paymentStatusId) {
                 throw new RuntimeException(
-                    'Thiếu dữ liệu FK cho ' .
+                    'Thiếu dữ liệu FK cho '.
                         $payable['payable_code']
                 );
             }
 
             if (
                 $payable['payment_type'] === 'SERVICE_FEE'
-                && !$serviceOrderItemId
+                && ! $serviceOrderItemId
             ) {
                 throw new RuntimeException(
-                    'Không tìm thấy service_order_item cho ' .
+                    'Không tìm thấy service_order_item cho '.
                         $payable['payable_code']
                 );
             }

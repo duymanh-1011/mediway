@@ -51,6 +51,11 @@ class StorePersonalHealthRecordRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
+            $measurements = ['height_cm', 'weight_kg', 'systolic_blood_pressure', 'diastolic_blood_pressure',
+                'heart_rate', 'body_temperature', 'spo2', 'respiratory_rate', 'blood_glucose'];
+            if (! collect($measurements)->contains(fn ($field) => $this->filled($field))) {
+                $validator->errors()->add('height_cm', 'Vui lòng nhập ít nhất một chỉ số sức khỏe trước khi lưu lần đo.');
+            }
             if ($validator->errors()->has('height_cm') || $validator->errors()->has('weight_kg')
                 || ! $this->filled('height_cm') || ! $this->filled('weight_kg')) {
                 return;

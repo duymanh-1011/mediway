@@ -10,14 +10,14 @@
     <span aria-hidden="true">/</span>
     <span>Quản trị viên</span>
     <span aria-hidden="true">/</span>
-    <strong aria-current="page">Chỉnh sửa</strong>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
 <div class="ae-page">
     <div class="ae-heading">
         <div>
-            <h1 class="page-title">Chỉnh sửa quản trị viên</h1>
+            <h1 class="page-title">Sửa quản trị viên</h1>
             <p class="page-description">
                 {{ $administrator->full_name }} —
                 @include('admin.layouts.partials.record-code', ['code' => $administrator->user?->business_code])

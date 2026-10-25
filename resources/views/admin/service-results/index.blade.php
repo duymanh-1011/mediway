@@ -70,7 +70,7 @@
             'title' => 'Bộ lọc kết quả dịch vụ',
             'description' => 'Lọc theo từ khóa, người xác nhận và khoảng thời gian.',
         ])
-            <form method="GET" action="{{ route('admin.service-results.index') }}" class="admin-filter-form">
+            <form data-filter-fields="4" method="GET" action="{{ route('admin.service-results.index') }}" class="admin-filter-form">
 
                     <div class="result-filter-grid admin-filter-layout">
 

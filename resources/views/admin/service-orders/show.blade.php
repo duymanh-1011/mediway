@@ -315,7 +315,9 @@
                             true
                         );
 
-                    $canStart =
+                    $visitWritable = $order->medicalVisit?->status?->name !== 'COMPLETED'
+                        && ! $order->medicalVisit?->appointment?->isScheduledInFuture();
+                    $canStart = $visitWritable &&
                         $serviceStatusName === 'PENDING'
                         && (bool) $item->serviceStatus?->allows_transition
                         &&
@@ -323,12 +325,12 @@
                         &&
                         $allowsServiceExecution;
 
-                    $canCreateResult =
+                    $canCreateResult = $visitWritable &&
                         $serviceStatusName === 'PROCESSING'
                         &&
                         !$item->result;
 
-                    $canComplete =
+                    $canComplete = $visitWritable &&
                         $serviceStatusName === 'PROCESSING'
                         && (bool) $item->serviceStatus?->allows_transition
                         && (bool) $item->result?->hasContent();

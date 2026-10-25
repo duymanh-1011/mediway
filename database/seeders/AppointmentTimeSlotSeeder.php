@@ -41,7 +41,7 @@ class AppointmentTimeSlotSeeder extends Seeder
                     ],
                     [
                         'max_patients' => 3,
-                        'status' => 'AVAILABLE',
+                        'status' => 'ACTIVE',
                         'notes' => null,
                         'created_at' => now(),
                         'updated_at' => now(),

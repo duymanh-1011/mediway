@@ -38,7 +38,7 @@ class DoctorScheduleSeeder extends Seeder
                 [
                     'specialty_id' => $specialtyId,
                     'examination_room_id' => $roomId,
-                    'status' => 'OPEN',
+                    'status' => 'ACTIVE',
                     'notes' => null,
                     'created_at' => now(),
                     'updated_at' => now(),

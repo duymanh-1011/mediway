@@ -3,7 +3,9 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\ClinicalDocument;
+use App\Models\ClinicalTimeline;
 use App\Models\ServiceResult;
+use App\Rules\ActiveResultVerifier;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -51,6 +53,7 @@ class UpdateServiceResultRequest extends FormRequest
             'verified_by_user_id' => [
                 'nullable',
                 'integer',
+                new ActiveResultVerifier,
 
                 Rule::exists('users', 'id')
                     ->where(function ($query) use ($doctorRoleId) {
@@ -84,6 +87,9 @@ class UpdateServiceResultRequest extends FormRequest
     {
         return [function (Validator $validator): void {
             $result = ServiceResult::find($this->route('id'));
+            if (! $validator->errors()->has('resulted_at')) {
+                ClinicalTimeline::assertEventTime($this->input('resulted_at'), $result?->serviceOrderItem?->started_at, 'resulted_at', 'Thời điểm trả kết quả');
+            }
             $values = $this->only(['result_summary', 'result_conclusion']);
             $values['result_pdf_path'] = $result?->result_pdf_path;
             $values['result_image_path'] = $result?->result_image_path;

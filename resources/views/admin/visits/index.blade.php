@@ -32,7 +32,7 @@
         'title' => 'Bộ lọc lượt khám',
         'description' => 'Lọc theo từ khóa, trạng thái, bác sĩ, chuyên khoa, phòng khám, nguồn tiếp nhận và khoảng thời gian.',
     ])
-        <form
+        <form data-filter-fields="8"
             method="GET"
             action="{{ route('admin.visits.index') }}"
          class="admin-filter-form">

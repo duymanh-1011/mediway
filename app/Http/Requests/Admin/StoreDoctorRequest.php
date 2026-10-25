@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\PasswordByteLimit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,7 +36,8 @@ class StoreDoctorRequest extends FormRequest
                 'nullable',
                 'string',
                 'min:8',
-                'max:100',
+                'max:72',
+                new PasswordByteLimit,
                 'confirmed',
             ],
 

@@ -35,7 +35,7 @@
         'title' => 'Bộ lọc quản trị viên',
         'description' => 'Lọc theo từ khóa và trạng thái tài khoản.',
     ])
-        <form action="{{ route('admin.administrators.index') }}"
+        <form data-filter-fields="2" action="{{ route('admin.administrators.index') }}"
               method="GET" class="as-filters admin-filter-form">
             <div class="as-field as-search admin-filter-field">
                 <label for="search">Tìm kiếm</label>

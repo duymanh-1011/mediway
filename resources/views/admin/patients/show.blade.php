@@ -128,6 +128,17 @@
         </button>
 
         <button type="button"
+                id="pd-tab-history"
+                class="pd-tab"
+                data-tab="history"
+                role="tab"
+                aria-controls="pd-panel-history"
+                aria-selected="false">
+            Lịch sử khám
+            <span class="pd-tab-count">{{ $visitCount }}</span>
+        </button>
+
+        <button type="button"
                 id="pd-tab-health"
                 class="pd-tab"
                 data-tab="health"
@@ -363,6 +374,15 @@
         </section>
     </div>
 
+    <div id="pd-panel-history"
+         class="pd-tab-panel"
+         data-panel="history"
+         role="tabpanel"
+         aria-labelledby="pd-tab-history"
+         hidden>
+        @include('admin.patients._medical-history')
+    </div>
+
     {{-- TAB 3: LỊCH SỬ SỨC KHỎE --}}
     <div id="pd-panel-health"
          class="pd-tab-panel"
@@ -562,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const tabs = document.querySelectorAll('.pd-tab[data-tab]');
     const panels = document.querySelectorAll('.pd-tab-panel[data-panel]');
     const openButtons = document.querySelectorAll('[data-open-tab]');
-    const validTabs = ['overview', 'personal', 'health', 'documents'];
+    const validTabs = ['overview', 'personal', 'history', 'health', 'documents'];
 
     function activateTab(name, updateHash) {
         if (!validTabs.includes(name)) {
@@ -628,7 +648,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const initialTab = window.location.hash.replace('#', '');
 
     activateTab(
-        validTabs.includes(initialTab) ? initialTab : 'overview',
+        validTabs.includes(initialTab) ? initialTab : @json($historyActive ? 'history' : 'overview'),
         false
     );
 

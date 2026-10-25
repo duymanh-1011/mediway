@@ -18,13 +18,11 @@
     </div>
 
     @component('admin.layouts.partials.filter-panel', ['title' => 'Ngày thống kê', 'description' => 'Chọn ngày để xem lịch hẹn, lượt khám, dịch vụ và tiền thu được xác nhận trong ngày.'])
-        <form method="GET" action="{{ route('admin.dashboard') }}" class="admin-filter-form">
-            <div class="admin-filter-grid">
-                <div>
+        <form data-filter-fields="1" method="GET" action="{{ route('admin.dashboard') }}" class="admin-filter-form">
+            <div class="admin-filter-field">
                     <label for="date">Ngày thống kê</label>
                     <input type="date" name="date" id="date" value="{{ $selectedDate }}">
                     @error('date')<div class="field-error">{{ $message }}</div>@enderror
-                </div>
             </div>
             @include('admin.layouts.partials.filter-actions', ['resetUrl' => route('admin.dashboard')])
         </form>

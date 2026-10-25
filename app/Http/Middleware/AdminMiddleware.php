@@ -18,11 +18,7 @@ class AdminMiddleware
 
         $user = Auth::user();
 
-        if (
-            ! $user->role
-            || $user->role->name !== 'Administrator'
-            || $user->status !== 'ACTIVE'
-        ) {
+        if (! $user->canAccessAdmin()) {
             Auth::logout();
 
             $request->session()->invalidate();

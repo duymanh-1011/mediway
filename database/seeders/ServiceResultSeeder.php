@@ -84,10 +84,10 @@ class ServiceResultSeeder extends Seeder
                 )
                 ->value('id');
 
-            if (!$serviceOrderItemId || !$verifiedByUserId) {
+            if (! $serviceOrderItemId || ! $verifiedByUserId) {
                 throw new RuntimeException(
-                    'Thiếu dữ liệu FK cho kết quả ' .
-                        $result['service_order_code'] . ' / ' .
+                    'Thiếu dữ liệu FK cho kết quả '.
+                        $result['service_order_code'].' / '.
                         $result['service_code']
                 );
             }

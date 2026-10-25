@@ -82,7 +82,7 @@
         'title' => 'Bộ lọc thuốc',
         'description' => 'Lọc theo từ khóa, dạng bào chế và trạng thái.',
     ])
-        <form
+        <form data-filter-fields="3"
             method="GET"
             action="{{ route('admin.medicines.index') }}"
             class="filter-form admin-filter-form"

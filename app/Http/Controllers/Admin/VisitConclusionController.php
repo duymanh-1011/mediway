@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateVisitConclusionRequest;
+use App\Models\ClinicalTimeline;
 use App\Models\Doctor;
 use App\Models\VisitConclusion;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -266,7 +268,11 @@ class VisitConclusionController extends Controller
         $hasFollowUp = (bool) $data['has_follow_up'];
 
         DB::transaction(function () use ($conclusion, $data, $hasFollowUp): void {
-            $conclusion->medicalVisit->lockForClinicalWrite();
+            $visit = $conclusion->medicalVisit->lockForClinicalWrite();
+            ClinicalTimeline::assertEventTime($data['concluded_at'] ?? null, $visit->examination_started_at ?? $visit->checked_in_at,
+                'concluded_at', 'Thời điểm kết luận');
+            $at = isset($data['concluded_at']) ? Carbon::parse($data['concluded_at']) : ($conclusion->concluded_at ?? now());
+            ClinicalTimeline::assertFollowUp($hasFollowUp, $data['follow_up_date'] ?? null, $at);
             if ((int) $data['doctor_id'] !== (int) $conclusion->doctor_id) {
                 $doctor = Doctor::whereKey($data['doctor_id'])->lockForUpdate()->firstOrFail();
                 if ($doctor->status !== 'ACTIVE' || ! $doctor->canPracticeSpecialty((int) $conclusion->medicalVisit->specialty_id)) {

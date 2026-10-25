@@ -113,6 +113,7 @@
                 class="sidebar-submenu"
                 {{ request()->routeIs(
                     'admin.patients.*',
+                    'admin.patient-medical-history.*',
                     'admin.personal-health-records.*'
                 ) ? 'open' : '' }}
             >
@@ -123,6 +124,7 @@
                         sidebar-submenu-toggle
                         {{ request()->routeIs(
                             'admin.patients.*',
+                            'admin.patient-medical-history.*',
                             'admin.personal-health-records.*'
                         ) ? 'active' : '' }}
                     "
@@ -158,6 +160,12 @@
                         <span class="sidebar-link-dot"></span>
 
                         Danh sách bệnh nhân
+                    </a>
+
+                    <a href="{{ route('admin.patient-medical-history.index') }}"
+                       class="sidebar-link sidebar-submenu-item {{ request()->routeIs('admin.patient-medical-history.*') ? 'active' : '' }}">
+                        <span class="sidebar-link-dot"></span>
+                        Lịch sử khám
                     </a>
 
                     <a

@@ -34,7 +34,7 @@
         'title' => 'Bộ lọc trạng thái lượt khám',
         'description' => 'Lọc theo từ khóa và trạng thái.',
     ])
-        <form
+        <form data-filter-fields="2"
             method="GET"
             action="{{ route('admin.visit-statuses.index') }}"
          class="admin-filter-form">

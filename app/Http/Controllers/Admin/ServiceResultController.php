@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreServiceResultRequest;
 use App\Http\Requests\Admin\UpdateServiceResultRequest;
 use App\Models\ClinicalDocument;
+use App\Models\ClinicalTimeline;
+use App\Models\MedicalVisit;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceResult;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -170,6 +173,8 @@ class ServiceResultController extends Controller
             'result',
         ]);
 
+        $serviceOrderItem->serviceOrder->medicalVisit->assertServiceDataWritable();
+
         if ($serviceOrderItem->result) {
             return redirect()
                 ->route(
@@ -199,22 +204,7 @@ class ServiceResultController extends Controller
                 );
         }
 
-        $verifiers = DB::table('users')
-            ->join(
-                'roles',
-                'roles.id',
-                '=',
-                'users.role_id'
-            )
-            ->where(
-                'roles.name',
-                'Doctor'
-            )
-            ->orderBy('users.business_code')
-            ->get([
-                'users.id',
-                'users.business_code',
-            ]);
+        $verifiers = User::eligibleResultVerifier()->orderBy('business_code')->get(['id', 'business_code']);
 
         return view(
             'admin.service-results.create',
@@ -240,6 +230,8 @@ class ServiceResultController extends Controller
                 $serviceOrderItem,
                 $validated
             ) {
+                $visit = MedicalVisit::with('status')->whereKey($serviceOrderItem->serviceOrder->medical_visit_id)->lockForUpdate()->firstOrFail();
+                $visit->assertServiceDataWritable();
                 $lockedItem = ServiceOrderItem::query()
                     ->with([
                         'serviceOrder',
@@ -265,6 +257,8 @@ class ServiceResultController extends Controller
                     return null;
                 }
 
+                User::lockResultVerifier($validated['verified_by_user_id'] ?? null);
+                ClinicalTimeline::assertEventTime($validated['resulted_at'] ?? null, $lockedItem->started_at, 'resulted_at', 'Thời điểm trả kết quả');
                 $paths = $documents->store($request, 'service-results/'.$lockedItem->id, ClinicalDocument::RESULT_FILES);
                 $result = ServiceResult::create([
                     'service_order_item_id' => $lockedItem->id,
@@ -464,22 +458,10 @@ class ServiceResultController extends Controller
             ])
             ->findOrFail($id);
 
-        $verifiers = DB::table('users')
-            ->join(
-                'roles',
-                'roles.id',
-                '=',
-                'users.role_id'
-            )
-            ->where(
-                'roles.name',
-                'Doctor'
-            )
-            ->orderBy('users.business_code')
-            ->get([
-                'users.id',
-                'users.business_code',
-            ]);
+        abort_if($result->serviceOrderItem->serviceOrder->medicalVisit->status?->name === 'COMPLETED',
+            403, 'Lượt khám đã hoàn tất, không thể sửa trực tiếp kết quả dịch vụ.');
+
+        $verifiers = User::eligibleResultVerifier()->orderBy('business_code')->get(['id', 'business_code']);
 
         return view(
             'admin.service-results.edit',
@@ -553,7 +535,15 @@ class ServiceResultController extends Controller
                 $updateData,
                 $roleNameSnapshot
             ) {
-                ServiceOrderItem::whereKey($result->service_order_item_id)->lockForUpdate()->firstOrFail();
+                $visit = MedicalVisit::with('status')->whereKey($result->serviceOrderItem->serviceOrder->medical_visit_id)
+                    ->lockForUpdate()->firstOrFail();
+                if ($visit->status?->name === 'COMPLETED') {
+                    throw ValidationException::withMessages(['result' => 'Lượt khám đã hoàn tất, không thể sửa trực tiếp kết quả dịch vụ.']);
+                }
+                $visit->assertServiceDataWritable();
+                $item = ServiceOrderItem::whereKey($result->service_order_item_id)->lockForUpdate()->firstOrFail();
+                User::lockResultVerifier($updateData['verified_by_user_id'] ?? null);
+                ClinicalTimeline::assertEventTime($updateData['resulted_at'] ?? null, $item->started_at, 'resulted_at', 'Thời điểm trả kết quả');
                 $result = ServiceResult::with(['serviceOrderItem.serviceOrder', 'serviceOrderItem.medicalService'])
                     ->whereKey($result->id)->lockForUpdate()->firstOrFail();
                 $oldValues = $result->only(['result_summary', 'result_conclusion', 'result_parameters', 'result_pdf_path', 'result_image_path', 'verified_by_user_id', 'notes']);

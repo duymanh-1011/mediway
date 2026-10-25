@@ -3,12 +3,26 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\ClinicalDocument;
+use App\Models\ClinicalTimeline;
 use App\Models\Prescription;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdatePrescriptionRequest extends FormRequest
 {
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            if (! $validator->errors()->has('prescribed_at')) {
+                $prescription = Prescription::find($this->route('id'));
+                $visit = $prescription?->medicalVisit;
+                ClinicalTimeline::assertEventTime($this->input('prescribed_at'), $visit?->examination_started_at ?? $visit?->checked_in_at,
+                    'prescribed_at', 'Thời điểm kê đơn');
+            }
+        }];
+    }
+
     public function authorize(): bool
     {
         return true;

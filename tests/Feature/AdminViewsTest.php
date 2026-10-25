@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\AdminDisplay;
+use App\Models\EmployeeType;
 use App\Models\MedicalVisit;
 use App\Models\Payable;
 use App\Models\ServiceResult;
 use App\Models\User;
+use App\Models\VisitStatus;
 use Database\Seeders\DatabaseSeeder;
 use DOMDocument;
 use DOMXPath;
@@ -118,7 +120,7 @@ class AdminViewsTest extends TestCase
         ]);
 
         $this->withViewErrors(session('errors')->getBag('default')->getMessages())
-            ->view('admin.employees.create', ['availableUsers' => collect()])
+            ->view('admin.employees.create', ['availableUsers' => collect(), 'employeeTypes' => EmployeeType::orderBy('display_order')->get()])
             ->assertSee('phòng ban không được quá 120 ký tự.')
             ->assertDontSee('tài khoản Employee');
     }
@@ -149,6 +151,10 @@ class AdminViewsTest extends TestCase
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $result = ServiceResult::query()->firstOrFail();
+        // This presentation fixture must remain editable; closed visits are tested separately.
+        $result->serviceOrderItem->serviceOrder->medicalVisit->update([
+            'visit_status_id' => VisitStatus::where('name', 'IN_EXAMINATION')->value('id'),
+        ]);
         $pages = [];
         foreach (['show', 'edit'] as $page) {
             $response = $this->get(route('admin.service-results.'.$page, $result->id))->assertOk();

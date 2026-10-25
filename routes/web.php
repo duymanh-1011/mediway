@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\MedicalVisitController;
 use App\Http\Controllers\Admin\MedicalVisitDiagnosisController;
 use App\Http\Controllers\Admin\MedicineController;
 use App\Http\Controllers\Admin\PatientController;
+use App\Http\Controllers\Admin\PatientMedicalHistoryController;
 use App\Http\Controllers\Admin\PayableController;
 use App\Http\Controllers\Admin\PaymentStatusController;
 use App\Http\Controllers\Admin\PaymentTransactionController;
@@ -186,6 +187,9 @@ Route::prefix('admin')
                     'avatar|citizen-id-front|citizen-id-back|profile-pdf'
                 )
                 ->name('patients.document');
+
+            Route::get('patient-medical-history', [PatientMedicalHistoryController::class, 'index'])
+                ->name('patient-medical-history.index');
 
             Route::resource(
                 'patients',

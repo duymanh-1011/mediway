@@ -70,7 +70,7 @@
             'title' => 'Bộ lọc phiếu chỉ định',
             'description' => 'Lọc theo từ khóa, trạng thái phiếu và khoảng thời gian.',
         ])
-            <form method="GET" action="{{ route('admin.service-orders.index') }}" class="admin-filter-form">
+            <form data-filter-fields="4" method="GET" action="{{ route('admin.service-orders.index') }}" class="admin-filter-form">
 
                     <div class="order-filter-grid admin-filter-layout">
 

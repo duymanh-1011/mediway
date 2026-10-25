@@ -84,7 +84,7 @@
         'title' => 'Bộ lọc chuyên khoa',
         'description' => 'Lọc theo từ khóa và trạng thái.',
     ])
-        <form
+        <form data-filter-fields="2"
             method="GET"
             action="{{ route(
                 'admin.specialties.index'

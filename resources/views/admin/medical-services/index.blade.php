@@ -93,7 +93,7 @@
         'title' => 'Bộ lọc dịch vụ y tế',
         'description' => 'Lọc theo từ khóa, nhóm dịch vụ, giá từ, giá đến và trạng thái.',
     ])
-        <form
+        <form data-filter-fields="5"
             method="GET"
             action="{{ route(
                 'admin.medical-services.index'

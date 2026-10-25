@@ -85,7 +85,7 @@
         'title' => 'Bộ lọc lịch hẹn',
         'description' => 'Lọc theo từ khóa, ngày khám, trạng thái, bác sĩ, chuyên khoa và phòng khám.',
     ])
-        <form
+        <form data-filter-fields="6"
             method="GET"
             action="{{ route(
                 'admin.appointments.index'

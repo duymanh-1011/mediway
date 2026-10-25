@@ -84,7 +84,7 @@
         'title' => 'Bộ lọc phòng khám',
         'description' => 'Lọc theo từ khóa, tòa nhà, tầng và trạng thái.',
     ])
-        <form
+        <form data-filter-fields="4"
             method="GET"
             action="{{ route(
                 'admin.examination-rooms.index'

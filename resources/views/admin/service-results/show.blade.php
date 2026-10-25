@@ -96,12 +96,14 @@
 
                 @endif
 
+                @if ($visit?->status?->name !== 'COMPLETED')
                 <a href="{{ route(
         'admin.service-results.edit',
         $result->id
     ) }}" class="admin-btn admin-btn-secondary">
                     Sửa
                 </a>
+                @endif
 
             </div>
 
@@ -805,9 +807,8 @@
                 </strong>
 
                 <p>
-                    Kết quả dịch vụ đã được xác nhận không được
-                    xóa vĩnh viễn. Mọi chỉnh sửa phải được thực hiện
-                    có kiểm soát để bảo toàn lịch sử y tế.
+                    Kết quả dịch vụ không được xóa vĩnh viễn.
+                    Khi lượt khám đã hoàn tất, không thể sửa trực tiếp kết quả dịch vụ.
                 </p>
 
             </div>

@@ -136,7 +136,7 @@
                     ) }}"
                     class="admin-btn admin-btn-detail"
                 >
-                    Xem toàn bộ lượt khám
+                    Xem lượt khám
                 </a>
 
             </div>

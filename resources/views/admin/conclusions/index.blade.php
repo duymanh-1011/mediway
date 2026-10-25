@@ -31,7 +31,7 @@
         'title' => 'Bộ lọc kết luận lượt khám',
         'description' => 'Lọc theo từ khóa, bác sĩ, hướng xử trí, tái khám và khoảng thời gian.',
     ])
-        <form
+        <form data-filter-fields="6"
             method="GET"
             action="{{ route('admin.conclusions.index') }}"
          class="admin-filter-form">

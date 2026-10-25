@@ -18,7 +18,7 @@
         ['name' => 'body_temperature', 'label' => 'Nhiệt độ (°C)', 'min' => '30', 'max' => '45', 'step' => '0.1'],
         ['name' => 'spo2', 'label' => 'SpO2 (%)', 'min' => '0', 'max' => '100', 'step' => '0.01'],
         ['name' => 'respiratory_rate', 'label' => 'Nhịp thở (lần/phút)', 'min' => '5', 'max' => '100', 'step' => '1'],
-        ['name' => 'blood_glucose', 'label' => 'Đường huyết (đơn vị theo quy ước hệ thống)', 'min' => '0', 'max' => '1000', 'step' => '0.01'],
+        ['name' => 'blood_glucose', 'label' => 'Đường huyết ('.\App\Models\PersonalHealthRecord::BLOOD_GLUCOSE_UNIT.')', 'min' => '0', 'max' => '1000', 'step' => '0.01'],
     ];
 @endphp
 

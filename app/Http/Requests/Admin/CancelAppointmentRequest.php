@@ -25,11 +25,9 @@ class CancelAppointmentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'cancellation_reason.required' =>
-                'Vui lòng nhập lý do hủy lịch hẹn.',
+            'cancellation_reason.required' => 'Vui lòng nhập lý do hủy lịch hẹn.',
 
-            'cancellation_reason.max' =>
-                'Lý do hủy không được vượt quá 2000 ký tự.',
+            'cancellation_reason.max' => 'Lý do hủy không được vượt quá 2000 ký tự.',
         ];
     }
 }

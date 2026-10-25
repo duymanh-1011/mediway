@@ -32,12 +32,12 @@
         'title' => 'Bộ lọc nhân viên',
         'description' => 'Lọc theo từ khóa, phòng ban, loại nhân viên và trạng thái.',
     ])
-        <form action="{{ route('admin.employees.index') }}" method="GET" class="ei-filters admin-filter-form">
+        <form data-filter-fields="4" action="{{ route('admin.employees.index') }}" method="GET" class="ei-filters admin-filter-form">
             <div class="ei-field ei-search admin-filter-field">
                 <label for="search">Tìm kiếm</label>
                 <input type="text" id="search" name="search"
                        maxlength="150" value="{{ $search }}"
-                       placeholder="Mã NV, họ tên, SĐT, chức vụ...">
+                       placeholder="Mã nhân viên, họ tên, SĐT, chức vụ...">
 @error('search')<div class="field-error">{{ $message }}</div>@enderror
             </div>
 
@@ -59,8 +59,8 @@
                 <select id="employee_type" name="employee_type">
                     <option value="">Tất cả loại</option>
                     @foreach($employeeTypes as $option)
-                        <option value="{{ $option }}" @selected($employeeType === $option)>
-                            {{ \App\Models\AdminDisplay::label($option) }}
+                        <option value="{{ $option->code }}" @selected($employeeType === $option->code)>
+                            {{ $option->name }}
                         </option>
                     @endforeach
                 </select>
@@ -101,11 +101,10 @@
                 <thead>
                     <tr>
                         <th scope="col" class="admin-row-number">STT</th>
-                        <th>Mã NV</th>
+                        <th>Mã nhân viên</th>
                         <th>Họ và tên</th>
-                        <th>Điện thoại</th>
+                        <th>Số điện thoại</th>
                         <th>Phòng ban</th>
-                        <th>Chức vụ</th>
                         <th>Loại nhân viên</th>
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
@@ -119,7 +118,6 @@
                             <td>{{ $employee->full_name }}</td>
                             <td>{{ $employee->user?->phone ?? '-' }}</td>
                             <td>{{ $employee->detail?->department ?: 'Chưa cập nhật' }}</td>
-                            <td>{{ $employee->detail?->position ?: '-' }}</td>
                             <td>{{ \App\Models\AdminDisplay::label($employee->detail?->employee_type) }}</td>
                             <td>
                                 @include('admin.layouts.partials.status-badge', ['badgeCode' => $employee->status])
@@ -135,7 +133,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="ei-empty">
+                            <td colspan="8" class="ei-empty">
                                 Không tìm thấy nhân viên phù hợp.
                             </td>
                         </tr>

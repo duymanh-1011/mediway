@@ -53,4 +53,9 @@ class EmployeeDetail extends Model
     {
         return $this->belongsTo(Employee::class);
     }
+
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(EmployeeType::class, 'employee_type', 'code');
+    }
 }

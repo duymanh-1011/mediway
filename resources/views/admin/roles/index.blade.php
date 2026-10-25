@@ -27,7 +27,7 @@
         'title' => 'Bộ lọc vai trò',
         'description' => 'Lọc theo từ khóa và trạng thái.',
     ])
-        <form action="{{ route('admin.roles.index') }}" method="GET" class="roles-filters admin-filter-form">
+        <form data-filter-fields="2" action="{{ route('admin.roles.index') }}" method="GET" class="roles-filters admin-filter-form">
             <div class="filter-field admin-filter-field">
                 <label for="search">Tìm kiếm</label>
                 <input type="text" id="search" name="search"

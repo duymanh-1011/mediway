@@ -45,7 +45,7 @@
             'title' => 'Bộ lọc giao dịch thanh toán',
             'description' => 'Lọc theo từ khóa, phương thức, kết quả và khoảng thời gian.',
         ])
-            <form method="GET" action="{{ route('admin.payment-transactions.index') }}" class="transaction-filter-form admin-filter-form">
+            <form data-filter-fields="5" method="GET" action="{{ route('admin.payment-transactions.index') }}" class="transaction-filter-form admin-filter-form">
 
                 <div class="transaction-form-group transaction-search-group admin-filter-field">
 

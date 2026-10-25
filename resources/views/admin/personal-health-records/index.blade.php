@@ -35,7 +35,7 @@
         'title' => 'Bộ lọc hồ sơ sức khỏe',
         'description' => 'Lọc theo bệnh nhân và khoảng thời gian.',
     ])
-        <form action="{{ route('admin.personal-health-records.index') }}"
+        <form data-filter-fields="3" action="{{ route('admin.personal-health-records.index') }}"
               method="GET"
               class="hl-filters admin-filter-form">
 
@@ -46,7 +46,7 @@
                     id="search"
                     name="search"
                     value="{{ $search }}"
-                    placeholder="Mã BN, họ tên hoặc số điện thoại..."
+                    placeholder="Mã bệnh nhân, họ tên hoặc số điện thoại..."
                 >
 @error('search')<div class="field-error">{{ $message }}</div>@enderror
             </div>
@@ -96,7 +96,7 @@
                     <tr>
                         <th scope="col" class="admin-row-number">STT</th>
                         <th>Thời điểm đo</th>
-                        <th>Mã BN</th>
+                        <th>Mã bệnh nhân</th>
                         <th>Bệnh nhân</th>
                         <th>Chiều cao</th>
                         <th>Cân nặng</th>

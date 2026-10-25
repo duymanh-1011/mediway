@@ -3,6 +3,7 @@
     $editing = isset($employee);
     $detail = $editing ? $employee->detail : null;
     $employeeTypeValue = old('employee_type', $detail?->employee_type);
+    $employeeTypeValue = is_string($employeeTypeValue) ? \App\Models\AdminDisplay::employeeTypeCode($employeeTypeValue) : '';
 
     $selectedUserId = old('user_id', '');
 
@@ -213,13 +214,13 @@
                 value="ACTIVE"
                 @selected(old('status', $editing ? $employee->status : 'ACTIVE') === 'ACTIVE')
             >
-                Hoạt động
+                Đang hoạt động
             </option>
             <option
                 value="INACTIVE"
                 @selected(old('status', $editing ? $employee->status : 'ACTIVE') === 'INACTIVE')
             >
-                Không hoạt động
+                Ngừng hoạt động
             </option>
         </select>
 
@@ -280,28 +281,31 @@
         <div class="em-field">
             <label for="{{ $field['name'] }}">
                 {{ $field['label'] }}
+                @if($field['name'] === 'employee_type')<span>*</span>@endif
             </label>
 
+            @if($field['name'] === 'employee_type')
+                <select id="employee_type" name="employee_type" required aria-required="true">
+                    <option value="">Chọn loại nhân viên</option>
+                    @foreach($employeeTypes as $type)
+                        <option value="{{ $type->code }}" @selected($employeeTypeValue === $type->code)>{{ $type->name }}</option>
+                    @endforeach
+                </select>
+            @else
             <input
                 type="text"
                 id="{{ $field['name'] }}"
                 name="{{ $field['name'] }}"
                 maxlength="{{ $field['max'] }}"
-                value="{{ $field['name'] === 'employee_type' ? (is_string($employeeTypeValue) && $employeeTypeValue !== '' ? \App\Models\AdminDisplay::label($employeeTypeValue) : '') : old($field['name'], $detail?->{$field['name']}) }}"
-                @if($field['name'] === 'employee_type') list="employee-type-suggestions" @endif
+                value="{{ old($field['name'], $detail?->{$field['name']}) }}"
             >
+            @endif
 
             @error($field['name'])
                 <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
         </div>
     @endforeach
-
-    <datalist id="employee-type-suggestions">
-        @foreach(\App\Models\AdminDisplay::EMPLOYEE_TYPES as $label)
-            <option value="{{ $label }}"></option>
-        @endforeach
-    </datalist>
 
     <div class="em-field">
         <label for="hire_date">Ngày tuyển dụng</label>

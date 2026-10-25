@@ -106,7 +106,7 @@
             @if($user)
                 <a href="{{ route('admin.users.show', $user) }}"
                    class="admin-btn admin-btn-detail">
-                    Xem chi tiết tài khoản
+                    Xem tài khoản
                 </a>
             @endif
         </section>

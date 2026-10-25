@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\ClinicalTimeline;
 use App\Models\Doctor;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -13,6 +15,15 @@ class UpdateVisitConclusionRequest extends FormRequest
     {
         return [function (Validator $validator) {
             $conclusion = $this->route('conclusion');
+            if (is_object($conclusion) && ! $validator->errors()->has('concluded_at')) {
+                ClinicalTimeline::assertEventTime($this->input('concluded_at'),
+                    $conclusion->medicalVisit->examination_started_at ?? $conclusion->medicalVisit->checked_in_at,
+                    'concluded_at', 'Thời điểm kết luận');
+                if (! $validator->errors()->has('follow_up_date')) {
+                    $at = $this->filled('concluded_at') ? Carbon::parse($this->input('concluded_at')) : ($conclusion->concluded_at ?? now());
+                    ClinicalTimeline::assertFollowUp($this->boolean('has_follow_up'), $this->input('follow_up_date'), $at);
+                }
+            }
             if ($validator->errors()->has('doctor_id') || ! is_object($conclusion)
                 || $this->integer('doctor_id') === (int) $conclusion->doctor_id) {
                 return;
@@ -44,7 +55,7 @@ class UpdateVisitConclusionRequest extends FormRequest
             'professional_conclusion' => [
                 'required',
                 'string',
-                'max:5000',
+                'max:10000',
             ],
 
             'disposition' => [
@@ -56,13 +67,13 @@ class UpdateVisitConclusionRequest extends FormRequest
             'treatment_plan' => [
                 'nullable',
                 'string',
-                'max:5000',
+                'max:10000',
             ],
 
             'instructions' => [
                 'nullable',
                 'string',
-                'max:5000',
+                'max:10000',
             ],
 
             'has_follow_up' => [
@@ -79,7 +90,7 @@ class UpdateVisitConclusionRequest extends FormRequest
             'follow_up_reason' => [
                 'nullable',
                 'string',
-                'max:2000',
+                'max:5000',
                 'required_if:has_follow_up,1',
             ],
 
@@ -105,13 +116,13 @@ class UpdateVisitConclusionRequest extends FormRequest
 
             'professional_conclusion.required' => 'Vui lòng nhập kết luận chuyên môn.',
 
-            'professional_conclusion.max' => 'Kết luận chuyên môn không được vượt quá 5000 ký tự.',
+            'professional_conclusion.max' => 'Kết luận chuyên môn không được vượt quá 10000 ký tự.',
 
             'disposition.max' => 'Hướng xử trí không được vượt quá 120 ký tự.',
 
-            'treatment_plan.max' => 'Kế hoạch điều trị không được vượt quá 5000 ký tự.',
+            'treatment_plan.max' => 'Kế hoạch điều trị không được vượt quá 10000 ký tự.',
 
-            'instructions.max' => 'Dặn dò không được vượt quá 5000 ký tự.',
+            'instructions.max' => 'Dặn dò không được vượt quá 10000 ký tự.',
 
             'has_follow_up.required' => 'Vui lòng chọn có tái khám hay không.',
 
@@ -123,7 +134,7 @@ class UpdateVisitConclusionRequest extends FormRequest
 
             'follow_up_reason.required_if' => 'Vui lòng nhập lý do tái khám.',
 
-            'follow_up_reason.max' => 'Lý do tái khám không được vượt quá 2000 ký tự.',
+            'follow_up_reason.max' => 'Lý do tái khám không được vượt quá 5000 ký tự.',
 
             'notes.max' => 'Ghi chú không được vượt quá 5000 ký tự.',
 

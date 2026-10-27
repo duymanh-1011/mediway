@@ -45,6 +45,12 @@ use App\Http\Controllers\Admin\VisitStatusController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\ValidateAdminFilters;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Portal\AuthController as PortalAuthController;
+use App\Http\Controllers\Portal\PasswordResetController;
+use App\Http\Controllers\Portal\PublicController;
+use App\Http\Controllers\Portal\RegistrationController;
+use App\Http\Controllers\Portal\PortalController;
+use App\Http\Middleware\PatientMiddleware;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,8 +58,30 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    return redirect()->route('admin.login');
+Route::get('/', [PublicController::class, 'home'])->name('public.home');
+Route::get('/gioi-thieu', [PublicController::class, 'about'])->name('public.about');
+Route::get('/quy-trinh-kham', [PublicController::class, 'careProcess'])->name('public.care-process');
+Route::get('/ho-tro', [PublicController::class, 'support'])->name('public.support');
+Route::get('/tin-tuc', [PublicController::class, 'news'])->name('public.news');
+Route::get('/tin-tuc/{slug}', [PublicController::class, 'article'])->name('public.news.show');
+
+Route::prefix('tai-khoan')->name('patient.')->group(function () {
+    Route::middleware('guest')->group(function () {
+        Route::get('/dang-nhap', [PortalAuthController::class, 'create'])->name('login');
+        Route::post('/dang-nhap', [PortalAuthController::class, 'store'])->name('login.store');
+        Route::get('/dang-ky', [RegistrationController::class, 'create'])->name('register');
+        Route::post('/dang-ky', [RegistrationController::class, 'store'])->name('register.store');
+        Route::get('/quen-mat-khau', [PasswordResetController::class, 'create'])->name('password.request');
+        Route::post('/quen-mat-khau', [PasswordResetController::class, 'send'])->name('password.send');
+        Route::get('/quen-mat-khau/xac-minh', [PasswordResetController::class, 'verifyForm'])->name('password.verify');
+        Route::post('/quen-mat-khau/xac-minh', [PasswordResetController::class, 'verify'])->name('password.verify.store');
+        Route::get('/quen-mat-khau/dat-lai', [PasswordResetController::class, 'resetForm'])->name('password.reset');
+        Route::post('/quen-mat-khau/dat-lai', [PasswordResetController::class, 'reset'])->name('password.reset.store');
+    });
+
+    Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->middleware(PatientMiddleware::class)->name('logout');
+    Route::middleware(PatientMiddleware::class)->get('/', [PortalController::class, 'placeholder'])->name('home');
+    Route::middleware(PatientMiddleware::class)->get('/thong-bao', [PortalController::class, 'notifications'])->name('notifications');
 });
 
 /*

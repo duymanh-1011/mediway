@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\PatientOtpSender;
+use App\Services\LocalDemoPatientOtpSender;
 use App\Models\Administrator;
 use App\Models\BusinessCodeGenerator;
 use App\Models\Doctor;
@@ -37,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PatientOtpSender::class, LocalDemoPatientOtpSender::class);
     }
 
     /**

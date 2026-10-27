@@ -81,6 +81,7 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
 
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->middleware(PatientMiddleware::class)->name('logout');
     Route::middleware(PatientMiddleware::class)->get('/', [PortalController::class, 'placeholder'])->name('home');
+    Route::middleware(PatientMiddleware::class)->get('/thong-bao', [PortalController::class, 'notifications'])->name('notifications');
 });
 
 /*

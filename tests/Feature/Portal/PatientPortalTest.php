@@ -64,12 +64,15 @@ class PatientPortalTest extends TestCase
     {
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
         $this->post(route('patient.login.store'), ['phone' => $patient->phone, 'password' => 'Mediway@123'])->assertRedirect(route('patient.home'));
-        $this->get(route('patient.home'))->assertOk()->assertSee('Nền tảng tài khoản');
+        $this->get(route('patient.home'))->assertOk()->assertSee('Kết quả khám bệnh')->assertSee($patient->patient->full_name)->assertSee('Đăng xuất')->assertSee('Thông báo')->assertSee(route('patient.notifications'))->assertSee('href="#"', false)->assertDontSee('Dashboard')->assertDontSee('Sắp ra mắt');
+        $this->get(route('patient.notifications', ['danh-muc' => 'lich-hen']))->assertOk()->assertSee('Lịch hẹn')->assertSee('Thanh toán');
 
         $this->post(route('patient.logout'))->assertRedirect(route('public.home'));
+        $this->get(route('patient.notifications'))->assertRedirect(route('patient.login'));
         $admin = User::where('business_code', 'QT000001')->firstOrFail();
         $this->post(route('patient.login.store'), ['phone' => $admin->phone, 'password' => 'Mediway@123'])->assertSessionHasErrors('phone');
         $this->actingAs($admin)->get(route('patient.home'))->assertRedirect(route('patient.login'));
+        $this->actingAs($admin)->get(route('patient.notifications'))->assertRedirect(route('patient.login'));
         $this->actingAs($patient)->get(route('admin.dashboard'))->assertRedirect(route('admin.login'));
     }
 

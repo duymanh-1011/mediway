@@ -51,6 +51,8 @@ use App\Http\Controllers\Portal\PublicController;
 use App\Http\Controllers\Portal\RegistrationController;
 use App\Http\Controllers\Portal\PortalController;
 use App\Http\Middleware\PatientMiddleware;
+use App\Http\Controllers\Portal\DoctorController as PortalDoctorController;
+use App\Http\Controllers\Portal\AppointmentController as PortalAppointmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -82,6 +84,10 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->middleware(PatientMiddleware::class)->name('logout');
     Route::middleware(PatientMiddleware::class)->get('/', [PortalController::class, 'placeholder'])->name('home');
     Route::middleware(PatientMiddleware::class)->get('/thong-bao', [PortalController::class, 'notifications'])->name('notifications');
+    Route::middleware(PatientMiddleware::class)->get('/bac-si', [PortalDoctorController::class, 'index'])->name('doctors.index');
+    Route::get('/dat-lich/{slot}', [PortalAppointmentController::class, 'create'])->name('appointments.create');
+    Route::post('/dat-lich', [PortalAppointmentController::class, 'store'])->name('appointments.store');
+    Route::get('/lich-hen/{appointment}', [PortalAppointmentController::class, 'show'])->name('appointments.show');
 });
 
 /*
@@ -986,7 +992,5 @@ Route::prefix('admin')
             )->name(
                 'logout'
             );
-
         });
-
     });

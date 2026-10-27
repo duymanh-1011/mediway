@@ -1,0 +1,6 @@
+@extends('portal.layouts.app')
+@section('title', 'Khu vực bệnh nhân - Mediway')
+@section('content')
+<section class="portal-page-head"><div class="portal-shell"><p class="portal-eyebrow">CỔNG BỆNH NHÂN</p><h1>Chào {{ auth()->user()->patient->full_name }}</h1><p class="portal-lead">Nền tảng tài khoản đã sẵn sàng. Các chức năng lịch khám, hồ sơ và kết quả sẽ được tích hợp bởi các module phụ trách.</p></div></section>
+<section class="portal-section"><div class="portal-shell portal-grid portal-grid--3">@foreach ([['Dashboard','Linh đang phát triển bảng điều khiển bệnh nhân.'],['Hồ sơ cá nhân','Linh đang phát triển cập nhật thông tin hồ sơ.'],['Đặt lịch khám','Tạo đang phát triển tra cứu và đặt lịch.'],['Hồ sơ sức khỏe','Huy đang phát triển lịch sử sức khỏe và kết quả.'],['Thanh toán','Tạo đang phát triển phần khoản cần thanh toán.'],['Bảo mật tài khoản','Bạn có thể đăng xuất an toàn sau khi sử dụng.']] as [$title, $text])<article class="portal-card"><h2>{{ $title }}</h2><p>{{ $text }}</p><span class="portal-card__pending">Đang chờ tích hợp module</span></article>@endforeach</div><form class="portal-logout" method="post" action="{{ route('patient.logout') }}">@csrf<x-portal.button type="submit" variant="secondary">Đăng xuất</x-portal.button></form></div></section>
+@endsection

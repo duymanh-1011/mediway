@@ -1,0 +1,7 @@
+@extends('portal.auth.layout')
+@section('title', 'Khôi phục mật khẩu - Mediway')
+@section('auth-content')
+<p class="portal-eyebrow">KHÔI PHỤC MẬT KHẨU</p><h1>Quên mật khẩu?</h1>
+@if ($demoEnabled)<x-portal.alert type="info">OTP mô phỏng chỉ hoạt động tại local/testing, chỉ với tài khoản demo đã cấu hình. Mã không hiển thị công khai và không có SMS thật.</x-portal.alert>@else<x-portal.alert type="info">Tự khôi phục mật khẩu hiện chưa được kích hoạt vì chưa có kênh xác minh SMS thật.</x-portal.alert>@endif
+<form method="post" action="{{ route('patient.password.send') }}" class="portal-form" novalidate>@csrf<label for="phone">Số điện thoại</label><input id="phone" name="phone" inputmode="numeric" autocomplete="tel" value="{{ old('phone') }}" required>@error('phone')<p class="portal-field-error">{{ $message }}</p>@enderror<x-portal.button type="submit" class="portal-btn--block">Yêu cầu mã xác minh</x-portal.button></form><p class="portal-auth__links"><a href="{{ route('patient.login') }}">Quay lại đăng nhập</a></p>
+@endsection

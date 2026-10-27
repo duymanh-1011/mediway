@@ -10,10 +10,10 @@ class ExampleTest extends TestCase
     /**
      * A basic test example.
      */
-    public function test_root_redirects_to_the_admin_login(): void
+    public function test_root_displays_the_public_mediway_homepage(): void
     {
         $response = $this->get('/');
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertOk()->assertSee('Chủ động chăm sóc sức khỏe');
     }
 }

@@ -42,6 +42,16 @@ class User extends Authenticatable
             && $this->administrator?->status === 'ACTIVE';
     }
 
+    public function canAccessPortal(): bool
+    {
+        $this->loadMissing(['role', 'patient']);
+
+        return $this->status === 'ACTIVE'
+            && $this->role?->name === 'Patient'
+            && $this->role?->status === 'ACTIVE'
+            && $this->patient?->status === 'ACTIVE';
+    }
+
     public function scopeEligibleResultVerifier(Builder $query): Builder
     {
         return $query->where('status', 'ACTIVE')

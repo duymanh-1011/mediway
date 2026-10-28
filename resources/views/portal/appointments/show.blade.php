@@ -21,11 +21,7 @@
 
     <section class="portal-section portal-section--tint">
         <div class="portal-shell">
-
-
-
             <div class="portal-grid portal-grid--3">
-
                 <article class="portal-card">
                     <p class="portal-eyebrow">
                         MÃ LỊCH HẸN
@@ -36,16 +32,39 @@
                     </h3>
 
                     <p>
-                        <strong>Trạng thái:</strong>
+                        <strong>
+                            Trạng thái:
+                        </strong>
 
                         <x-portal.badge type="info">
-                            {{ $appointment->appointmentStatus->description ?? $appointment->appointmentStatus->name ?? '—' }}
+                            {{
+        $appointment
+            ->appointmentStatus
+            ->description
+        ??
+        $appointment
+            ->appointmentStatus
+            ->name
+        ??
+        '—'
+                                }}
                         </x-portal.badge>
                     </p>
 
                     <p>
-                        <strong>Đặt lúc:</strong>
-                        {{ $appointment->booked_at?->format('d/m/Y H:i') ?? '—' }}
+                        <strong>
+                            Đặt lúc:
+                        </strong>
+
+                        {{
+        $appointment
+            ->booked_at
+                ?->format(
+                'd/m/Y H:i'
+            )
+        ??
+        '—'
+                            }}
                     </p>
                 </article>
 
@@ -59,12 +78,18 @@
                     </h3>
 
                     <p>
-                        <strong>Chuyên khoa:</strong>
+                        <strong>
+                            Chuyên khoa:
+                        </strong>
+
                         {{ $appointment->specialty->name }}
                     </p>
 
                     <p>
-                        <strong>Phòng khám:</strong>
+                        <strong>
+                            Phòng khám:
+                        </strong>
+
                         {{ $appointment->examinationRoom->name }}
                     </p>
                 </article>
@@ -75,26 +100,42 @@
                     </p>
 
                     <h3>
-                        {{ $appointment->appointment_date->format('d/m/Y') }}
+                        {{
+        $appointment
+            ->appointment_date
+            ->format(
+                'd/m/Y'
+            )
+                            }}
                     </h3>
 
                     <p>
-                        <strong>Khung giờ:</strong>
-                        {{ substr($appointment->appointmentTimeSlot->start_time, 0, 5) }}
+                        <strong>
+                            Khung giờ:
+                        </strong>
+
+                        {{
+        substr((string)$appointment
+                ->appointmentTimeSlot
+                ->start_time,
+            0,
+            5
+        )
+                            }}
+
                         -
-                        {{ substr($appointment->appointmentTimeSlot->end_time, 0, 5) }}
+
+                        {{
+        substr((string)$appointment->appointmentTimeSlot->end_time, 0, 5)}}
                     </p>
                 </article>
-
             </div>
         </div>
     </section>
 
     <section class="portal-section">
         <div class="portal-shell">
-
             <div class="portal-card">
-
                 <div class="portal-section__heading">
                     <p class="portal-eyebrow">
                         THÔNG TIN KHÁM
@@ -106,7 +147,9 @@
                 </div>
 
                 <p>
-                    <strong>Lý do khám:</strong>
+                    <strong>
+                        Lý do khám:
+                    </strong>
                 </p>
 
                 <p>
@@ -114,21 +157,28 @@
                 </p>
 
                 <p>
-                    <strong>Ghi chú:</strong>
+                    <strong>
+                        Ghi chú:
+                    </strong>
                 </p>
 
                 <p>
-                    {{ $appointment->patient_notes ?: 'Không có ghi chú.' }}
+                    {{
+        $appointment->patient_notes
+        ?:
+        'Không có ghi chú.'
+                        }}
                 </p>
 
                 <div class="portal-actions">
+                    <x-portal.button :href="route('patient.appointments.index')" variant="secondary">
+                        Lịch sử lịch hẹn
+                    </x-portal.button>
 
                     <x-portal.button :href="route('patient.doctors.index')" variant="secondary">
                         Tra cứu lịch khác
                     </x-portal.button>
-
                 </div>
-
             </div>
         </div>
     </section>

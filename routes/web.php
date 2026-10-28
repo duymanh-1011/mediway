@@ -53,6 +53,8 @@ use App\Http\Controllers\Portal\PortalController;
 use App\Http\Middleware\PatientMiddleware;
 use App\Http\Controllers\Portal\DoctorController as PortalDoctorController;
 use App\Http\Controllers\Portal\AppointmentController as PortalAppointmentController;
+use App\Http\Controllers\Portal\QueueController as PortalQueueController;
+use App\Http\Controllers\Portal\PaymentController as PortalPaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -84,10 +86,17 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->middleware(PatientMiddleware::class)->name('logout');
     Route::middleware(PatientMiddleware::class)->get('/', [PortalController::class, 'placeholder'])->name('home');
     Route::middleware(PatientMiddleware::class)->get('/thong-bao', [PortalController::class, 'notifications'])->name('notifications');
-    Route::middleware(PatientMiddleware::class)->get('/bac-si', [PortalDoctorController::class, 'index'])->name('doctors.index');
-    Route::get('/dat-lich/{slot}', [PortalAppointmentController::class, 'create'])->name('appointments.create');
-    Route::post('/dat-lich', [PortalAppointmentController::class, 'store'])->name('appointments.store');
-    Route::get('/lich-hen/{appointment}', [PortalAppointmentController::class, 'show'])->name('appointments.show');
+    Route::middleware(PatientMiddleware::class)->group(function () {
+        Route::get('/bac-si', [PortalDoctorController::class, 'index'])->name('doctors.index');
+        Route::get('/bac-si/{doctor}', [PortalDoctorController::class, 'show'])->name('doctors.show');
+        Route::get('/chuyen-khoa/{specialty}', [PortalDoctorController::class, 'specialty'])->name('specialties.show');
+        Route::get('/dat-lich/{slot}', [PortalAppointmentController::class, 'create'])->name('appointments.create');
+        Route::post('/dat-lich', [PortalAppointmentController::class, 'store'])->name('appointments.store');
+        Route::get('/lich-hen', [PortalAppointmentController::class, 'index'])->name('appointments.index');
+        Route::get('/lich-hen/{appointment}', [PortalAppointmentController::class, 'show'])->name('appointments.show');
+        Route::get('/lich-kham-hang-doi', [PortalQueueController::class, 'index'])->name('queues.index');
+        Route::get('/thanh-toan', [PortalPaymentController::class, 'index'])->name('payments.index');
+    });
 });
 
 /*

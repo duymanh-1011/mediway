@@ -11,7 +11,13 @@ class BrowseDoctorScheduleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user =
+            $this->user();
+
+        return
+            $user !== null
+            &&
+            $user->canAccessPortal();
     }
 
     public function rules(): array
@@ -20,20 +26,34 @@ class BrowseDoctorScheduleRequest extends FormRequest
             'specialty_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('specialties', 'id')
+
+                Rule::exists(
+                    'specialties',
+                    'id'
+                )
                     ->where(
                         fn(Builder $query): Builder =>
-                        $query->where('status', 'ACTIVE')
+                        $query->where(
+                            'status',
+                            'ACTIVE'
+                        )
                     ),
             ],
 
             'doctor_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('doctors', 'id')
+
+                Rule::exists(
+                    'doctors',
+                    'id'
+                )
                     ->where(
                         fn(Builder $query): Builder =>
-                        $query->where('status', 'ACTIVE')
+                        $query->where(
+                            'status',
+                            'ACTIVE'
+                        )
                     ),
             ],
 
@@ -42,8 +62,11 @@ class BrowseDoctorScheduleRequest extends FormRequest
                 'date_format:Y-m-d',
                 'after_or_equal:today',
                 'before_or_equal:'
-                    . today()
-                    ->addDays(Appointment::BOOKING_ADVANCE_DAYS)
+                    .
+                    today()
+                    ->addDays(
+                        Appointment::BOOKING_ADVANCE_DAYS
+                    )
                     ->toDateString(),
             ],
         ];
@@ -72,6 +95,20 @@ class BrowseDoctorScheduleRequest extends FormRequest
 
             'date.before_or_equal' =>
             'Ngày khám chỉ được tra cứu trong phạm vi lịch đang nhận đặt.',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'specialty_id' =>
+            'chuyên khoa',
+
+            'doctor_id' =>
+            'bác sĩ',
+
+            'date' =>
+            'ngày khám',
         ];
     }
 }

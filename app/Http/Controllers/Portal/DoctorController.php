@@ -9,11 +9,14 @@ use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\Specialty;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\View\View;
 
 class DoctorController extends Controller
 {
-    public function index(BrowseDoctorScheduleRequest $request)
-    {
+    public function index(
+        BrowseDoctorScheduleRequest $request
+    ): View {
         $data = $request->validated();
 
         $specialtyId =
@@ -32,7 +35,7 @@ class DoctorController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Chuyên khoa đang hoạt động
+        | Chuyên khoa ACTIVE
         |--------------------------------------------------------------------------
         */
 
@@ -54,8 +57,12 @@ class DoctorController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Bác sĩ đang hoạt động
+        | Bác sĩ ACTIVE
         |--------------------------------------------------------------------------
+        |
+        | Chỉ lấy các field cần cho Patient Portal.
+        | Không expose doctor_code, user_id, date_of_birth, gender...
+        |
         */
 
         $doctors =
@@ -89,16 +96,193 @@ class DoctorController extends Controller
                 'id',
                 'specialty_id',
                 'full_name',
+                'status',
             ]);
 
         /*
         |--------------------------------------------------------------------------
-        | Lịch và slot thực tế còn nhận đặt
+        | Lịch thực tế còn nhận đặt
         |--------------------------------------------------------------------------
         */
 
         $schedules =
-            DoctorSchedule::query()
+            $this->availableSchedules(
+                $specialtyId,
+                $doctorId,
+                $date
+            );
+
+        return view(
+            'portal.doctors.index',
+            compact(
+                'specialties',
+                'doctors',
+                'schedules',
+                'specialtyId',
+                'doctorId',
+                'date'
+            )
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | M05.3 - Trang bác sĩ
+    |--------------------------------------------------------------------------
+    */
+
+    public function show(
+        Doctor $doctor
+    ): View {
+        $doctor =
+            Doctor::query()
+            ->select([
+                'id',
+                'specialty_id',
+                'full_name',
+                'status',
+            ])
+            ->with([
+                /*
+                |--------------------------------------------------------------------------
+                | Chỉ lấy dữ liệu chuyên khoa được phép hiển thị cho Patient
+                |--------------------------------------------------------------------------
+                |
+                | Không lấy specialty_code, notes, dữ liệu nội bộ.
+                |
+                | description + pre_visit_instructions cần có vì Blade trang
+                | bác sĩ đang hiển thị hai trường này.
+                |
+                */
+                'specialty:id,name,description,pre_visit_instructions,status,is_general',
+            ])
+            ->whereKey(
+                $doctor->id
+            )
+            ->where(
+                'status',
+                'ACTIVE'
+            )
+            ->whereHas(
+                'specialty',
+                fn($query) =>
+                $query->where(
+                    'status',
+                    'ACTIVE'
+                )
+            )
+            ->firstOrFail();
+
+        $schedules =
+            $this->availableSchedules(
+                null,
+                $doctor->id,
+                null
+            );
+
+        return view(
+            'portal.doctors.show',
+            compact(
+                'doctor',
+                'schedules'
+            )
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | M05.3 - Trang chuyên khoa
+    |--------------------------------------------------------------------------
+    */
+
+    public function specialty(
+        Specialty $specialty
+    ): View {
+        $specialty =
+            Specialty::query()
+            ->select([
+                'id',
+                'name',
+                'description',
+                'pre_visit_instructions',
+                'status',
+                'is_general',
+            ])
+            ->whereKey(
+                $specialty->id
+            )
+            ->where(
+                'status',
+                'ACTIVE'
+            )
+            ->firstOrFail();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Bác sĩ có thể khám chuyên khoa này
+        |--------------------------------------------------------------------------
+        */
+
+        $doctors =
+            Doctor::query()
+            ->select([
+                'id',
+                'specialty_id',
+                'full_name',
+                'status',
+            ])
+            ->with([
+                'specialty:id,name,status,is_general',
+            ])
+            ->where(
+                'status',
+                'ACTIVE'
+            )
+            ->whereHas(
+                'specialty',
+                fn($query) =>
+                $query->where(
+                    'status',
+                    'ACTIVE'
+                )
+            )
+            ->forSpecialty(
+                $specialty->id
+            )
+            ->orderBy(
+                'full_name'
+            )
+            ->get();
+
+        $schedules =
+            $this->availableSchedules(
+                $specialty->id,
+                null,
+                null
+            );
+
+        return view(
+            'portal.specialties.show',
+            compact(
+                'specialty',
+                'doctors',
+                'schedules'
+            )
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lịch ACTIVE + slot ACTIVE + capacity + tương lai
+    |--------------------------------------------------------------------------
+    */
+
+    private function availableSchedules(
+        ?int $specialtyId = null,
+        ?int $doctorId = null,
+        ?string $date = null
+    ): Collection {
+        return DoctorSchedule::query()
             ->select([
                 'id',
                 'doctor_id',
@@ -111,6 +295,12 @@ class DoctorController extends Controller
             ])
             ->withQualifiedDoctor()
             ->with([
+                /*
+                |--------------------------------------------------------------------------
+                | Chỉ lấy dữ liệu cần thiết cho Portal
+                |--------------------------------------------------------------------------
+                */
+
                 'doctor:id,specialty_id,full_name,status',
 
                 'specialty:id,name,status',
@@ -181,7 +371,8 @@ class DoctorController extends Controller
             ->whereBetween(
                 'work_date',
                 [
-                    today()->toDateString(),
+                    today()
+                        ->toDateString(),
 
                     today()
                         ->addDays(
@@ -225,6 +416,12 @@ class DoctorController extends Controller
                 function (
                     DoctorSchedule $schedule
                 ) {
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Loại slot đã qua hoặc đã đầy
+                    |--------------------------------------------------------------------------
+                    */
+
                     $availableSlots =
                         $schedule
                         ->appointmentTimeSlots
@@ -245,30 +442,26 @@ class DoctorController extends Controller
                                             ' '
                                             .
                                             substr(
-                                                $slot->start_time,
+                                                (string) $slot->start_time,
                                                 0,
                                                 8
                                             )
                                     );
 
                                 return
-                                    $slotStart
-                                    ->isFuture()
+                                    $slotStart->isFuture()
                                     &&
-                                    (int) $slot
-                                        ->booked_count
+                                    (int) $slot->booked_count
                                     <
-                                    (int) $slot
-                                        ->max_patients;
+                                    (int) $slot->max_patients;
                             }
                         )
                         ->values();
 
-                    $schedule
-                        ->setRelation(
-                            'appointmentTimeSlots',
-                            $availableSlots
-                        );
+                    $schedule->setRelation(
+                        'appointmentTimeSlots',
+                        $availableSlots
+                    );
 
                     return
                         $availableSlots
@@ -276,17 +469,5 @@ class DoctorController extends Controller
                 }
             )
             ->values();
-
-        return view(
-            'portal.doctors.index',
-            compact(
-                'specialties',
-                'doctors',
-                'schedules',
-                'specialtyId',
-                'doctorId',
-                'date'
-            )
-        );
     }
 }

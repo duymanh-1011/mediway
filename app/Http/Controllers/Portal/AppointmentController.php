@@ -20,6 +20,51 @@ use Illuminate\View\View;
 
 class AppointmentController extends Controller
 {
+    public function index(): View
+    {
+        $patient =
+            $this->currentPatient();
+
+        /*
+    |--------------------------------------------------------------------------
+    | M06.3 - Lịch sử lịch hẹn của chính bệnh nhân
+    |--------------------------------------------------------------------------
+    |
+    | M06 sử dụng appointments + schedules + slots + statuses.
+    | medical_visits / queue thuộc M08 nên không kéo vào màn lịch sử M06.
+    |
+    */
+
+        $appointments =
+            Appointment::query()
+            ->where(
+                'patient_id',
+                $patient->id
+            )
+            ->with([
+                'doctor',
+                'specialty',
+                'examinationRoom',
+                'appointmentTimeSlot.doctorSchedule',
+                'appointmentStatus',
+            ])
+            ->orderByDesc(
+                'appointment_date'
+            )
+            ->orderByDesc(
+                'id'
+            )
+            ->paginate(
+                10
+            );
+
+        return view(
+            'portal.appointments.index',
+            compact(
+                'appointments'
+            )
+        );
+    }
     public function create(
         AppointmentTimeSlot $slot
     ): View|RedirectResponse {

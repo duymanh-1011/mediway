@@ -1,26 +1,31 @@
 
 @extends('admin.layouts.app')
+@section('admin-page', 'employees-edit')
 
-@section('title', 'Chỉnh sửa nhân viên - Mediway')
+@section('title', 'Sửa nhân viên - Mediway')
 
 @section('breadcrumb')
-    Admin / Nhân sự & bệnh nhân / Nhân viên / Chỉnh sửa
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Nhân sự & bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Nhân viên</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
 <div class="em-page">
     <div class="em-heading">
         <div>
-            <h1 class="page-title">Chỉnh sửa nhân viên</h1>
+            <h1 class="page-title">Sửa nhân viên</h1>
             <p class="em-description">
-                {{ $employee->employee_code }} — {{ $employee->full_name }}
+                @include('admin.layouts.partials.record-code', ['code' => $employee->employee_code]) — {{ $employee->full_name }}
             </p>
         </div>
 
         <a href="{{ route('admin.employees.show', $employee) }}"
-           class="em-btn em-light">
-            ← Chi tiết nhân viên
-        </a>
+           class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="em-card">
@@ -29,13 +34,13 @@
                 <strong>Vui lòng kiểm tra thông tin:</strong>
                 <ul>
                     @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
+                        <li>{{ \App\Models\AdminDisplay::text($error) }}</li>
                     @endforeach
                 </ul>
             </div>
         @endif
 
-        <form
+        <form novalidate
             method="POST"
             action="{{ route('admin.employees.update', $employee) }}"
             enctype="multipart/form-data"
@@ -53,23 +58,15 @@
 
             <div class="em-actions">
                 <a href="{{ route('admin.employees.show', $employee) }}"
-                   class="em-btn em-light">
-                    Hủy bỏ
-                </a>
+                   class="admin-btn admin-btn-secondary">Hủy</a>
 
                 <button
                     type="submit"
-                    class="em-btn em-primary"
+                    class="admin-btn admin-btn-primary"
                     onclick="return confirm('Xác nhận lưu thay đổi hồ sơ nhân viên?');"
-                >
-                    Lưu thay đổi
-                </button>
+                >Cập nhật</button>
             </div>
         </form>
     </div>
 </div>
 @endsection
-
-@push('styles')
-    @include('admin.employees._styles')
-@endpush

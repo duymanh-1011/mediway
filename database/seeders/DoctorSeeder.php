@@ -10,9 +10,9 @@ class DoctorSeeder extends Seeder
     public function run(): void
     {
         $doctors = [
-            ['code' => 'BS000001', 'name' => 'Nguyễn Văn Bình', 'dob' => '1978-03-10', 'gender' => 'Nam'],
-            ['code' => 'BS000002', 'name' => 'Trần Quốc Khánh', 'dob' => '1980-07-21', 'gender' => 'Nam'],
-            ['code' => 'BS000003', 'name' => 'Lê Minh Đức', 'dob' => '1984-12-02', 'gender' => 'Nam'],
+            ['code' => 'BS000001', 'name' => 'Nguyễn Văn Bình', 'dob' => '1978-03-10', 'gender' => 'Nam', 'specialty' => 'CKTMH'],
+            ['code' => 'BS000002', 'name' => 'Trần Quốc Khánh', 'dob' => '1980-07-21', 'gender' => 'Nam', 'specialty' => 'CKTM'],
+            ['code' => 'BS000003', 'name' => 'Lê Minh Đức', 'dob' => '1984-12-02', 'gender' => 'Nam', 'specialty' => 'CKNOI'],
         ];
 
         foreach ($doctors as $doctor) {
@@ -24,6 +24,7 @@ class DoctorSeeder extends Seeder
                 ['doctor_code' => $doctor['code']],
                 [
                     'user_id' => $userId,
+                    'specialty_id' => DB::table('specialties')->where('specialty_code', $doctor['specialty'])->value('id'),
                     'full_name' => $doctor['name'],
                     'date_of_birth' => $doctor['dob'],
                     'gender' => $doctor['gender'],

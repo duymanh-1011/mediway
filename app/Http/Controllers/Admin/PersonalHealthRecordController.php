@@ -32,13 +32,13 @@ class PersonalHealthRecordController extends Controller
             ->when($search !== '', function ($query) use ($search) {
                 $query->whereHas('patient', function ($patientQuery) use ($search) {
                     $patientQuery
-                        ->where('patient_code', 'like', '%' . $search . '%')
-                        ->orWhere('full_name', 'like', '%' . $search . '%')
+                        ->where('patient_code', 'like', '%'.$search.'%')
+                        ->orWhere('full_name', 'like', '%'.$search.'%')
                         ->orWhereHas('user', function ($userQuery) use ($search) {
                             $userQuery->where(
                                 'phone',
                                 'like',
-                                '%' . $search . '%'
+                                '%'.$search.'%'
                             );
                         });
                 });
@@ -99,7 +99,7 @@ class PersonalHealthRecordController extends Controller
 
             if ($patient->status !== 'ACTIVE') {
                 throw ValidationException::withMessages([
-                    'patient_id' => 'Không thể thêm chỉ số cho hồ sơ bệnh nhân không hoạt động.',
+                    'patient_id' => 'Hồ sơ bệnh nhân đã ngừng hoạt động nên chưa thể thêm lần đo mới.',
                 ]);
             }
 
@@ -110,7 +110,7 @@ class PersonalHealthRecordController extends Controller
 
         return redirect()
             ->route('admin.personal-health-records.show', $record)
-            ->with('success', 'Thêm bản ghi sức khỏe thành công.');
+            ->with('success', 'Đã lưu lần đo chỉ số sức khỏe.');
     }
 
     public function show(PersonalHealthRecord $personalHealthRecord)
@@ -156,7 +156,7 @@ class PersonalHealthRecordController extends Controller
 
         return redirect()
             ->route('admin.personal-health-records.show', $personalHealthRecord)
-            ->with('success', 'Cập nhật bản ghi sức khỏe thành công.');
+            ->with('success', 'Đã cập nhật các chỉ số của lần đo.');
     }
 
     /**
@@ -188,26 +188,19 @@ class PersonalHealthRecordController extends Controller
             'weight_kg' => $weight,
             'bmi' => $bmi,
 
-            'systolic_blood_pressure' =>
-                $data['systolic_blood_pressure'] ?? null,
+            'systolic_blood_pressure' => $data['systolic_blood_pressure'] ?? null,
 
-            'diastolic_blood_pressure' =>
-                $data['diastolic_blood_pressure'] ?? null,
+            'diastolic_blood_pressure' => $data['diastolic_blood_pressure'] ?? null,
 
-            'heart_rate' =>
-                $data['heart_rate'] ?? null,
+            'heart_rate' => $data['heart_rate'] ?? null,
 
-            'body_temperature' =>
-                $this->nullableNumber($data['body_temperature'] ?? null),
+            'body_temperature' => $this->nullableNumber($data['body_temperature'] ?? null),
 
-            'spo2' =>
-                $this->nullableNumber($data['spo2'] ?? null),
+            'spo2' => $this->nullableNumber($data['spo2'] ?? null),
 
-            'respiratory_rate' =>
-                $data['respiratory_rate'] ?? null,
+            'respiratory_rate' => $data['respiratory_rate'] ?? null,
 
-            'blood_glucose' =>
-                $this->nullableNumber($data['blood_glucose'] ?? null),
+            'blood_glucose' => $this->nullableNumber($data['blood_glucose'] ?? null),
 
             'recorded_at' => Carbon::createFromFormat(
                 '!Y-m-d H:i',

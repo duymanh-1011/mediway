@@ -1,10 +1,17 @@
 
 @extends('admin.layouts.app')
+@section('admin-page', 'employees-create')
 
 @section('title', 'Thêm nhân viên - Mediway')
 
 @section('breadcrumb')
-    Admin / Nhân sự & bệnh nhân / Nhân viên / Thêm mới
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Nhân sự & bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Nhân viên</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Thêm mới</strong>
 @endsection
 
 @section('content')
@@ -17,9 +24,7 @@
             </p>
         </div>
 
-        <a href="{{ route('admin.employees.index') }}" class="em-btn em-light">
-            ← Danh sách nhân viên
-        </a>
+        <a href="{{ route('admin.employees.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="em-card">
@@ -28,13 +33,13 @@
                 <strong>Vui lòng kiểm tra thông tin:</strong>
                 <ul>
                     @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
+                        <li>{{ \App\Models\AdminDisplay::text($error) }}</li>
                     @endforeach
                 </ul>
             </div>
         @endif
 
-        <form
+        <form novalidate
             method="POST"
             action="{{ route('admin.employees.store') }}"
             enctype="multipart/form-data"
@@ -45,24 +50,20 @@
 
             <div class="em-note">
                 Nếu chưa chọn tài khoản có sẵn, hệ thống sẽ tạo
-                tài khoản Employee mới và cấp mã nhân viên tự động.
+                tài khoản nhân viên mới và cấp mã nhân viên tự động.
             </div>
 
             <div class="em-actions">
                 <a href="{{ route('admin.employees.index') }}"
-                   class="em-btn em-light">
-                    Hủy bỏ
+                   class="admin-btn admin-btn-secondary">
+                    Hủy
                 </a>
 
-                <button type="submit" class="em-btn em-primary">
-                    Lưu nhân viên
+                <button type="submit" class="admin-btn admin-btn-primary">
+                    Lưu
                 </button>
             </div>
         </form>
     </div>
 </div>
 @endsection
-
-@push('styles')
-    @include('admin.employees._styles')
-@endpush

@@ -1,9 +1,14 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'administrators-index')
 
 @section('title', 'Quản lý quản trị viên - Mediway')
 
 @section('breadcrumb')
-    Admin / Hệ thống / Quản trị viên
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Hệ thống</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Quản trị viên</strong>
 @endsection
 
 @section('content')
@@ -15,9 +20,7 @@
                 Quản lý hồ sơ và quyền truy cập của quản trị viên Mediway.
             </p>
         </div>
-        <a href="{{ route('admin.administrators.create') }}" class="as-btn as-primary">
-            + Thêm quản trị viên
-        </a>
+        <a href="{{ route('admin.administrators.create') }}" class="admin-btn admin-btn-primary">Thêm quản trị viên</a>
     </div>
 
     @if(session('success'))
@@ -28,38 +31,48 @@
         <div class="as-alert as-error">{{ session('error') }}</div>
     @endif
 
-    <div class="as-card">
-        <form action="{{ route('admin.administrators.index') }}"
-              method="GET" class="as-filters">
-            <div class="as-field as-search">
+    @component('admin.layouts.partials.filter-panel', [
+        'title' => 'Bộ lọc quản trị viên',
+        'description' => 'Lọc theo từ khóa và trạng thái tài khoản.',
+    ])
+        <form data-filter-fields="2" action="{{ route('admin.administrators.index') }}"
+              method="GET" class="as-filters admin-filter-form">
+            <div class="as-field as-search admin-filter-field">
                 <label for="search">Tìm kiếm</label>
                 <input type="text" id="search" name="search"
                        value="{{ $search }}"
                        placeholder="Mã, họ tên, SĐT hoặc email...">
+@error('search')<div class="field-error">{{ $message }}</div>@enderror
             </div>
 
-            <div class="as-field">
+            <div class="as-field admin-filter-field">
                 <label for="status">Trạng thái tài khoản</label>
                 <select id="status" name="status">
                     <option value="">Tất cả trạng thái</option>
-                    <option value="ACTIVE" @selected($status === 'ACTIVE')>
-                        Hoạt động
-                    </option>
+                    <option value="ACTIVE" @selected($status === 'ACTIVE')>Đang hoạt động</option>
                     <option value="LOCKED" @selected($status === 'LOCKED')>
                         Đã khóa
                     </option>
                 </select>
+@error('status')<div class="field-error">{{ $message }}</div>@enderror
             </div>
 
-            <button type="submit" class="as-btn as-primary">Tìm kiếm</button>
-            <a href="{{ route('admin.administrators.index') }}"
-               class="as-btn as-light">Đặt lại</a>
+
+
+
+@include('admin.layouts.partials.filter-actions', ['resetUrl' => route('admin.administrators.index'), 'searchOnly' => false])
         </form>
+    @endcomponent
+
+    <div class="as-card">
+        @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách quản trị viên'])
+
 
         <div class="as-table-wrap">
             <table class="as-table">
                 <thead>
                     <tr>
+                        <th scope="col" class="admin-row-number">STT</th>
                         <th>Mã quản trị</th>
                         <th>Họ và tên</th>
                         <th>Số điện thoại</th>
@@ -71,9 +84,10 @@
                 <tbody>
                     @forelse($administrators as $administrator)
                         <tr>
+                            @include('admin.layouts.partials.row-number', ['rows' => $administrators, 'index' => $loop->index])
                             <td>
                                 <strong>
-                                    {{ $administrator->user?->business_code ?? '-' }}
+                                    @include('admin.layouts.partials.record-code', ['code' => $administrator->user?->business_code ?? '-'])
                                 </strong>
                             </td>
                             <td>{{ $administrator->full_name }}</td>
@@ -82,31 +96,23 @@
                             <td>
                                 @if($administrator->user?->status === 'ACTIVE'
                                     && $administrator->status === 'ACTIVE')
-                                    <span class="as-badge as-badge-success">
-                                        Hoạt động
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
                                 @else
-                                    <span class="as-badge as-badge-danger">
-                                        Đã khóa / Ngừng hoạt động
-                                    </span>
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $administrator->status === 'ACTIVE' ? $administrator->user?->status : $administrator->status])
                                 @endif
                             </td>
-                            <td>
+                            <td><div class="admin-actions admin-table-actions">
                                 <div class="as-actions">
-                                    <a class="as-action as-view"
-                                       href="{{ route('admin.administrators.show', $administrator) }}">
-                                        Chi tiết
-                                    </a>
-                                    <a class="as-action as-edit"
-                                       href="{{ route('admin.administrators.edit', $administrator) }}">
-                                        Sửa
-                                    </a>
+                                    <a class="admin-btn admin-btn-detail"
+                                       href="{{ route('admin.administrators.show', $administrator) }}">Chi tiết</a>
+                                    <a class="admin-btn admin-btn-secondary"
+                                       href="{{ route('admin.administrators.edit', $administrator) }}">Sửa</a>
                                 </div>
-                            </td>
+                            </div></td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="as-empty">
+                            <td colspan="7" class="as-empty">
                                 Không tìm thấy quản trị viên phù hợp.
                             </td>
                         </tr>
@@ -123,9 +129,9 @@
 
             <div class="as-pagination">
                 @if($administrators->onFirstPage())
-                    <span class="as-btn as-light as-disabled">Trước</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
                 @else
-                    <a class="as-btn as-light"
+                    <a class="admin-btn admin-btn-secondary"
                        href="{{ $administrators->previousPageUrl() }}">Trước</a>
                 @endif
 
@@ -135,54 +141,13 @@
                 </span>
 
                 @if($administrators->hasMorePages())
-                    <a class="as-btn as-light"
+                    <a class="admin-btn admin-btn-secondary"
                        href="{{ $administrators->nextPageUrl() }}">Sau</a>
                 @else
-                    <span class="as-btn as-light as-disabled">Sau</span>
+                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
                 @endif
             </div>
         </div>
     </div>
 </div>
 @endsection
-
-@push('styles')
-<style>
-.adminstaff-page{min-width:0}
-.adminstaff-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:15px;margin-bottom:22px}
-.adminstaff-heading .page-description{color:#64748b;margin:7px 0 0}
-.as-card{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:22px;box-shadow:0 4px 20px rgba(15,23,42,.035)}
-.as-filters{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin-bottom:22px}
-.as-field{display:flex;flex-direction:column;gap:7px;min-width:170px}
-.as-search{flex:1;min-width:230px}
-.as-field label{font-size:12px;color:#475569;font-weight:700}
-.as-field input,.as-field select{min-height:41px;width:100%;border:1px solid #cbd5e1;border-radius:9px;background:#fff;padding:10px 12px;outline:none;color:#0f172a}
-.as-field input:focus,.as-field select:focus{border-color:#2563eb;box-shadow:0 0 0 3px #dbeafe}
-.as-btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 15px;min-height:41px;border-radius:9px;border:1px solid transparent;text-decoration:none;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
-.as-primary{background:#2563eb;color:#fff}
-.as-primary:hover{background:#1d4ed8;color:#fff}
-.as-light{background:#fff;color:#334155;border-color:#cbd5e1}
-.as-light:hover{background:#f8fafc}
-.as-table-wrap{overflow-x:auto}
-.as-table{width:100%;border-collapse:collapse;min-width:760px;text-align:left}
-.as-table th{font-size:12px;color:#64748b;background:#f8fafc;padding:14px 12px}
-.as-table td{padding:15px 12px;font-size:13px;border-bottom:1px solid #edf2f7;color:#334155}
-.as-table tr:last-child td{border-bottom:0}
-.as-table tbody tr:hover{background:#fafcff}
-.as-badge{display:inline-block;border-radius:30px;padding:6px 10px;font-size:11px;font-weight:700}
-.as-badge-success{background:#dcfce7;color:#166534}
-.as-badge-danger{background:#fee2e2;color:#991b1b}
-.as-actions{display:flex;gap:8px}
-.as-action{font-size:12px;font-weight:700;text-decoration:none;padding:7px 10px;border-radius:7px}
-.as-view{background:#eff6ff;color:#1d4ed8}
-.as-edit{background:#f1f5f9;color:#334155}
-.as-empty{text-align:center;padding:40px!important;color:#64748b!important}
-.as-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:20px;font-size:12px;color:#64748b}
-.as-pagination{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.as-disabled{opacity:.45;cursor:default}
-.as-alert{padding:13px 16px;margin-bottom:16px;border-radius:9px;font-size:13px}
-.as-success{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
-.as-error{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
-@media(max-width:680px){.as-card{padding:14px}.as-filters{flex-direction:column;align-items:stretch}.as-field{width:100%}}
-</style>
-@endpush

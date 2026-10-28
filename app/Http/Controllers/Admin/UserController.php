@@ -6,8 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Administrator;
+use App\Models\Doctor;
+use App\Models\Employee;
+use App\Models\Patient;
 use App\Models\Role;
 use App\Models\User;
+use App\Rules\PasswordByteLimit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -32,8 +36,8 @@ class UserController extends Controller
             ->with('role')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('business_code', 'like', '%' . $search . '%')
-                        ->orWhere('phone', 'like', '%' . $search . '%');
+                    $q->where('business_code', 'like', '%'.$search.'%')
+                        ->orWhere('phone', 'like', '%'.$search.'%');
                 });
             })
             ->when(
@@ -84,16 +88,16 @@ class UserController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if (!$role || !array_key_exists($role->name, self::ACCOUNT_ROLES)) {
+            if (! $role || ! array_key_exists($role->name, self::ACCOUNT_ROLES)) {
                 throw ValidationException::withMessages([
-                    'role_id' => 'Vai trò không hợp lệ. Quản trị viên phải được tạo trong module Quản trị viên.',
+                    'role_id' => 'Vui lòng chọn vai trò bệnh nhân, bác sĩ hoặc nhân viên. Để thêm quản trị viên, hãy vào mục Quản trị viên.',
                 ]);
             }
 
             $prefix = self::ACCOUNT_ROLES[$role->name];
 
             $lastCode = User::query()
-->where('business_code', 'like', $prefix . '%')
+                ->where('business_code', 'like', $prefix.'%')
                 ->orderByDesc('business_code')
                 ->value('business_code');
 
@@ -102,7 +106,7 @@ class UserController extends Controller
             if (
                 is_string($lastCode)
                 && preg_match(
-                    '/^' . preg_quote($prefix, '/') . '([0-9]+)$/',
+                    '/^'.preg_quote($prefix, '/').'([0-9]+)$/',
                     $lastCode,
                     $matches
                 )
@@ -110,7 +114,7 @@ class UserController extends Controller
                 $lastNumber = (int) $matches[1];
             }
 
-            $businessCode = $prefix . str_pad(
+            $businessCode = $prefix.str_pad(
                 (string) ($lastNumber + 1),
                 6,
                 '0',
@@ -143,15 +147,15 @@ class UserController extends Controller
             'administrator',
         ];
 
-        if (class_exists(\App\Models\Patient::class)) {
+        if (class_exists(Patient::class)) {
             $relations[] = 'patient';
         }
 
-        if (class_exists(\App\Models\Doctor::class)) {
+        if (class_exists(Doctor::class)) {
             $relations[] = 'doctor';
         }
 
-        if (class_exists(\App\Models\Employee::class)) {
+        if (class_exists(Employee::class)) {
             $relations[] = 'employee';
         }
 
@@ -171,9 +175,9 @@ class UserController extends Controller
     {
         $data = $request->validated();
 
-        $user->update([
-            'phone' => $data['phone'],
-        ]);
+        DB::transaction(function () use ($user, $data): void {
+            User::whereKey($user->id)->lockForUpdate()->firstOrFail()->update(['phone' => $data['phone']]);
+        });
 
         return redirect()
             ->route('admin.users.show', $user)
@@ -189,7 +193,7 @@ class UserController extends Controller
             ],
         ], [
             'status.required' => 'Vui lòng chọn trạng thái.',
-            'status.in' => 'Trạng thái không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái từ các lựa chọn có sẵn.',
         ]);
 
         if (
@@ -198,7 +202,7 @@ class UserController extends Controller
         ) {
             throw ValidationException::withMessages([
                 'status' => 'Bạn không thể tự khóa tài khoản đang đăng nhập.',
-]);
+            ]);
         }
 
         DB::transaction(function () use ($user, $data) {
@@ -233,7 +237,7 @@ class UserController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if (!$profile) {
+            if (! $profile) {
                 throw ValidationException::withMessages([
                     'status' => 'Tài khoản quản trị viên chưa có hồ sơ liên kết.',
                 ]);
@@ -288,18 +292,19 @@ class UserController extends Controller
                 'string',
                 'min:8',
                 'max:72',
+                new PasswordByteLimit,
                 'confirmed',
             ],
         ], [
-'password.required' => 'Vui lòng nhập mật khẩu mới.',
+            'password.required' => 'Vui lòng nhập mật khẩu mới.',
             'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
             'password.max' => 'Mật khẩu không được quá 72 ký tự.',
-            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
+            'password.confirmed' => 'Mật khẩu nhập lại chưa khớp. Vui lòng kiểm tra cả hai ô mật khẩu.',
         ]);
 
-        $user->update([
-            'password' => $data['password'],
-        ]);
+        DB::transaction(function () use ($user, $data): void {
+            User::whereKey($user->id)->lockForUpdate()->firstOrFail()->update(['password' => $data['password']]);
+        });
 
         return redirect()
             ->route('admin.users.show', $user)

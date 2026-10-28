@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\PasswordByteLimit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,11 +36,13 @@ class StoreDoctorRequest extends FormRequest
                 'nullable',
                 'string',
                 'min:8',
-                'max:100',
+                'max:72',
+                new PasswordByteLimit,
                 'confirmed',
             ],
 
             'full_name' => ['required', 'string', 'max:120'],
+            'specialty_id' => ['required', 'integer', Rule::exists('specialties', 'id')->where('status', 'ACTIVE')],
             'date_of_birth' => [
                 'nullable',
                 'date',
@@ -156,40 +159,35 @@ class StoreDoctorRequest extends FormRequest
             'user_id.exists' => 'Tài khoản được chọn không tồn tại.',
             'user_id.unique' => 'Tài khoản đã liên kết với bác sĩ khác.',
 
-            'phone.required_without' =>
-                'Vui lòng chọn tài khoản có sẵn hoặc nhập số điện thoại để tạo tài khoản mới.',
+            'phone.required_without' => 'Vui lòng chọn tài khoản có sẵn hoặc nhập số điện thoại để tạo tài khoản mới.',
             'phone.regex' => 'Số điện thoại phải có 10 chữ số và bắt đầu bằng 0.',
             'phone.unique' => 'Số điện thoại đã được sử dụng.',
 
-            'password.required_without' =>
-                'Vui lòng nhập mật khẩu cho tài khoản mới.',
+            'password.required_without' => 'Vui lòng nhập mật khẩu cho tài khoản mới.',
             'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
-            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
+            'password.confirmed' => 'Mật khẩu nhập lại chưa khớp. Vui lòng kiểm tra cả hai ô mật khẩu.',
 
             'full_name.required' => 'Vui lòng nhập họ và tên bác sĩ.',
-            'date_of_birth.before_or_equal' =>
-                'Ngày sinh không được ở tương lai.',
-            'gender.in' => 'Giới tính không hợp lệ.',
+            'specialty_id.required' => 'Vui lòng chọn chuyên khoa của bác sĩ.',
+            'specialty_id.exists' => 'Chuyên khoa được chọn không tồn tại hoặc đã ngừng hoạt động.',
+            'date_of_birth.before_or_equal' => 'Ngày sinh không được ở tương lai.',
+            'gender.in' => 'Vui lòng chọn giới tính từ các lựa chọn có sẵn.',
             'status.required' => 'Vui lòng chọn trạng thái.',
-            'status.in' => 'Trạng thái không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái từ các lựa chọn có sẵn.',
 
             'citizen_id_number.regex' => 'Số CCCD phải có 12 chữ số.',
             'citizen_id_number.unique' => 'Số CCCD đã tồn tại.',
 
             'email.email' => 'Email không đúng định dạng.',
-            'years_of_experience.between' =>
-                'Số năm kinh nghiệm phải từ 0 đến 100.',
+            'years_of_experience.between' => 'Số năm kinh nghiệm phải từ 0 đến 100.',
 
-            'practice_license_number.unique' =>
-                'Số giấy phép hành nghề đã tồn tại.',
-            'practice_license_expiry_date.after_or_equal' =>
-                'Ngày hết hạn giấy phép không được trước ngày cấp.',
+            'practice_license_number.unique' => 'Số giấy phép hành nghề đã tồn tại.',
+            'practice_license_expiry_date.after_or_equal' => 'Ngày hết hạn giấy phép không được trước ngày cấp.',
 
             'avatar.max' => 'Ảnh đại diện tối đa 2 MB.',
             'citizen_id_front.max' => 'Ảnh CCCD mặt trước tối đa 2 MB.',
             'citizen_id_back.max' => 'Ảnh CCCD mặt sau tối đa 2 MB.',
-            'practice_license_file.max' =>
-                'Tệp giấy phép hành nghề tối đa 5 MB.',
+            'practice_license_file.max' => 'Tệp giấy phép hành nghề tối đa 5 MB.',
             'profile_pdf.max' => 'Hồ sơ PDF tối đa 5 MB.',
         ];
     }

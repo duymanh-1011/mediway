@@ -1,9 +1,18 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'personal-health-records-show')
 
 @section('title', 'Chi tiết chỉ số sức khỏe - Mediway')
 
 @section('breadcrumb')
-    Admin / Bệnh nhân / Sức khỏe / Chi tiết
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Nhân sự & bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Sức khỏe</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Chi tiết</strong>
 @endsection
 
 @section('content')
@@ -18,7 +27,7 @@
         ['label' => 'Nhiệt độ cơ thể', 'value' => $record->body_temperature, 'unit' => '°C'],
         ['label' => 'SpO2', 'value' => $record->spo2, 'unit' => '%'],
         ['label' => 'Nhịp thở', 'value' => $record->respiratory_rate, 'unit' => 'lần/phút'],
-        ['label' => 'Đường huyết', 'value' => $record->blood_glucose, 'unit' => ''],
+        ['label' => 'Đường huyết', 'value' => $record->blood_glucose, 'unit' => \App\Models\PersonalHealthRecord::BLOOD_GLUCOSE_UNIT],
     ];
 @endphp
 
@@ -27,21 +36,17 @@
         <div>
             <h1 class="page-title">Chi tiết lần đo sức khỏe</h1>
             <p class="page-description">
-                {{ $record->patient_code }} —
+                @include('admin.layouts.partials.record-code', ['code' => $record->patient_code]) —
                 {{ $record->recorded_at?->format('d/m/Y H:i') }}
             </p>
         </div>
 
         <div class="hd-actions">
             <a href="{{ route('admin.personal-health-records.index', ['patient_id' => $record->patient_id]) }}"
-               class="hd-btn hd-light">
-                ← Lịch sử sức khỏe
-            </a>
+               class="admin-btn admin-btn-secondary">← Quay lại</a>
 
             <a href="{{ route('admin.personal-health-records.edit', $record) }}"
-               class="hd-btn hd-primary">
-                Chỉnh sửa
-            </a>
+               class="admin-btn admin-btn-secondary">Sửa</a>
         </div>
     </div>
 
@@ -55,7 +60,7 @@
 
             <div class="hd-row">
                 <span>Mã bệnh nhân</span>
-                <strong>{{ $record->patient_code }}</strong>
+                <strong>@include('admin.layouts.partials.record-code', ['code' => $record->patient_code])</strong>
             </div>
 
             <div class="hd-row">
@@ -70,7 +75,7 @@
 
             @if($record->patient)
                 <a href="{{ route('admin.patients.show', $record->patient) }}"
-                   class="hd-btn hd-light hd-patient-link">
+                   class="admin-btn admin-btn-detail">
                     Xem hồ sơ bệnh nhân
                 </a>
             @endif
@@ -123,36 +128,3 @@
     </section>
 </div>
 @endsection
-
-@push('styles')
-<style>
-.health-detail-page{min-width:0}
-.hd-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-bottom:22px}
-.hd-heading .page-description{color:#64748b;margin:7px 0 0}
-.hd-actions{display:flex;gap:10px;flex-wrap:wrap}
-.hd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:19px}
-.hd-card{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:24px;box-shadow:0 4px 20px rgba(15,23,42,.035)}
-.hd-card h2{font-size:17px;color:#0f172a;margin:0 0 18px}
-.hd-section{margin-bottom:19px}
-.hd-row{display:flex;justify-content:space-between;gap:15px;align-items:start;padding:13px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
-.hd-row span{color:#64748b}
-.hd-row strong{text-align:right;color:#0f172a}
-.hd-row:last-of-type{border-bottom:0}
-.hd-help{font-size:12px;color:#64748b;line-height:1.7;margin:17px 0 0}
-.hd-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.hd-metric{border:1px solid #e2e8f0;background:#f8fafc;border-radius:11px;padding:18px;min-width:0}
-.hd-metric-label{color:#64748b;font-size:12px;font-weight:700;margin-bottom:12px}
-.hd-metric-value{color:#0f172a;font-size:25px;font-weight:800;overflow-wrap:anywhere}
-.hd-metric-value small{font-size:12px;font-weight:600;color:#64748b}
-.hd-missing{font-size:13px;font-weight:500;color:#94a3b8}
-.hd-notes{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:#475569;line-height:1.7;margin:0}
-.hd-btn{display:inline-flex;align-items:center;justify-content:center;min-height:41px;padding:10px 16px;border:1px solid transparent;border-radius:9px;text-decoration:none;font-size:13px;font-weight:700}
-.hd-primary{background:#2563eb;color:#fff}
-.hd-light{background:#fff;border-color:#cbd5e1;color:#334155}
-.hd-patient-link{margin-top:20px}
-.hd-alert{padding:13px 15px;border-radius:9px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;margin-bottom:17px;font-size:13px}
-@media(max-width:900px){.hd-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:720px){.hd-grid{grid-template-columns:1fr}}
-@media(max-width:490px){.hd-card{padding:17px}.hd-metrics{grid-template-columns:1fr}}
-</style>
-@endpush

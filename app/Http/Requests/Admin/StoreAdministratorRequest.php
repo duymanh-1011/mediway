@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\PasswordByteLimit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,6 +28,7 @@ class StoreAdministratorRequest extends FormRequest
                 'string',
                 'min:8',
                 'max:72',
+                new PasswordByteLimit,
                 'confirmed',
             ],
             'email' => [
@@ -69,20 +71,20 @@ class StoreAdministratorRequest extends FormRequest
             'password.required' => 'Vui lòng nhập mật khẩu.',
             'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
             'password.max' => 'Mật khẩu không được quá 72 ký tự.',
-            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
+            'password.confirmed' => 'Mật khẩu nhập lại chưa khớp. Vui lòng kiểm tra cả hai ô mật khẩu.',
 
             'email.email' => 'Email không đúng định dạng.',
             'email.max' => 'Email không được quá 150 ký tự.',
             'email.unique' => 'Email đã được sử dụng.',
 
-            'date_of_birth.date' => 'Ngày sinh không hợp lệ.',
+            'date_of_birth.date' => 'Ngày sinh chưa hợp lệ. Vui lòng chọn lại ngày bằng ô lịch.',
             'date_of_birth.before' => 'Ngày sinh phải trước ngày hiện tại.',
 
-            'gender.in' => 'Giới tính không hợp lệ.',
+            'gender.in' => 'Vui lòng chọn giới tính từ các lựa chọn có sẵn.',
             'address.max' => 'Địa chỉ không được quá 255 ký tự.',
 
             'status.required' => 'Vui lòng chọn trạng thái.',
-            'status.in' => 'Trạng thái không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái từ các lựa chọn có sẵn.',
         ];
     }
 }

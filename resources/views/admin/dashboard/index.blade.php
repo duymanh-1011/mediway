@@ -1,486 +1,116 @@
 @extends('admin.layouts.app')
-
-@section('title', 'Dashboard - Mediway Admin')
-
+@section('admin-page', 'dashboard-index')
+@section('title', 'Bảng điều khiển - Mediway')
 @section('breadcrumb')
-    <div class="breadcrumb">
-        Admin / Dashboard
-    </div>
+    <strong aria-current="page">Bảng điều khiển</strong>
 @endsection
 
 @section('content')
-
-    <div style="margin-bottom:24px;">
-        <h1 class="page-title">
-            Dashboard
-        </h1>
-
-        <p class="page-description">
-            Tổng quan hoạt động hệ thống Mediway.
-        </p>
+    <div class="admin-page-header">
+        <div>
+            <h1>Bảng điều khiển</h1>
+            <p class="page-description">Hoạt động ngày {{ \Carbon\Carbon::parse($selectedDate)->format('d/m/Y') }} và đối chiếu 7 ngày gần nhất.</p>
+        </div>
+        <div class="admin-actions">
+            <a class="admin-btn admin-btn-secondary" href="{{ route('admin.dashboard', ['date' => \Carbon\Carbon::parse($selectedDate)->subDay()->toDateString()]) }}">Ngày trước</a>
+            <a class="admin-btn admin-btn-secondary" href="{{ route('admin.dashboard', ['date' => \Carbon\Carbon::parse($selectedDate)->addDay()->toDateString()]) }}">Ngày sau</a>
+        </div>
     </div>
 
-    <div class="dashboard-grid">
-
-        <div class="stat-card">
-            <div class="stat-title">
-                Bệnh nhân
+    @component('admin.layouts.partials.filter-panel', ['title' => 'Ngày thống kê', 'description' => 'Chọn ngày để xem lịch hẹn, lượt khám, dịch vụ và tiền thu được xác nhận trong ngày.'])
+        <form data-filter-fields="1" method="GET" action="{{ route('admin.dashboard') }}" class="admin-filter-form">
+            <div class="admin-filter-field">
+                    <label for="date">Ngày thống kê</label>
+                    <input type="date" name="date" id="date" value="{{ $selectedDate }}">
+                    @error('date')<div class="field-error">{{ $message }}</div>@enderror
             </div>
+            @include('admin.layouts.partials.filter-actions', ['resetUrl' => route('admin.dashboard')])
+        </form>
+    @endcomponent
 
-            <div class="stat-value">
-                {{ number_format($totalPatients) }}
-            </div>
-
-            <div class="stat-description">
-                Tổng số bệnh nhân trong hệ thống
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-title">
-                Bác sĩ
-            </div>
-
-            <div class="stat-value">
-                {{ number_format($totalDoctors) }}
-            </div>
-
-            <div class="stat-description">
-                Tổng số bác sĩ
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-title">
-                Nhân viên
-            </div>
-
-            <div class="stat-value">
-                {{ number_format($totalEmployees) }}
-            </div>
-
-            <div class="stat-description">
-                Tổng số nhân viên
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-title">
-                Lịch hẹn hôm nay
-            </div>
-
-            <div class="stat-value">
-                {{ number_format($todayAppointments) }}
-            </div>
-
-            <div class="stat-description">
-                Tổng lịch hẹn trong ngày
-            </div>
-        </div>
-
+    <h2 class="section-title">Quy mô hồ sơ toàn hệ thống</h2>
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Bệnh nhân</div><div class="stat-value">{{ number_format($totalPatients) }}</div></div>
+        <div class="stat-card"><div class="stat-label">Bác sĩ</div><div class="stat-value">{{ number_format($totalDoctors) }}</div></div>
+        <div class="stat-card"><div class="stat-label">Nhân viên</div><div class="stat-value">{{ number_format($totalEmployees) }}</div></div>
+    </div>
+    <h2 class="section-title">Hoạt động ngày {{ \Carbon\Carbon::parse($selectedDate)->format('d/m/Y') }}</h2>
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Lịch hẹn trong ngày</div><div class="stat-value">{{ number_format($dailyAppointments) }}</div></div>
+        <div class="stat-card"><div class="stat-label">Lượt khám đã tiếp nhận</div><div class="stat-value">{{ number_format($dailyVisits) }}</div></div>
+        <div class="stat-card"><div class="stat-label">Dịch vụ hoàn tất trong ngày</div><div class="stat-value">{{ number_format($dailyCompletedServices) }}</div></div>
+        <div class="stat-card"><div class="stat-label">Tiền thu đã xác nhận</div><div class="stat-value">{{ number_format($dailyRevenue, 0, ',', '.') }} ₫</div><div class="stat-label">Giao dịch thành công: {{ number_format($dailySuccessfulPayments) }}</div></div>
     </div>
 
-    <div class="dashboard-grid">
-
-        <div class="stat-card">
-            <div class="stat-title">
-                Lượt khám hôm nay
-            </div>
-
-            <div class="stat-value">
-                {{ number_format($todayVisits) }}
-            </div>
-
-            <div class="stat-description">
-                Lượt khám đã check-in trong ngày
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-title">
-                Đang trong hàng đợi
-            </div>
-
-            <div class="stat-value">
-                {{ number_format($activeQueueCount) }}
-            </div>
-
-            <div class="stat-description">
-                WAITING / CALLED / IN_SERVICE
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-title">
-                Dịch vụ đang xử lý
-            </div>
-
-            <div class="stat-value">
-                {{ number_format($activeServiceCount) }}
-            </div>
-
-            <div class="stat-description">
-                PENDING / PROCESSING
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-title">
-                Khoản chưa thanh toán
-            </div>
-
-            <div class="stat-value">
-                {{ number_format($unpaidCount) }}
-            </div>
-
-            <div class="stat-description">
-                Tổng:
-                {{ number_format($unpaidAmount, 0, ',', '.') }}
-                VNĐ
-            </div>
-        </div>
-
-    </div>
-
-    <div class="dashboard-section">
-
-        <div class="revenue-card">
-
-            <div class="stat-title">
-                Doanh thu đã thanh toán
-            </div>
-
-            <div class="revenue-value">
-                {{ number_format($paidRevenue, 0, ',', '.') }}
-                VNĐ
-            </div>
-
-            <div class="stat-description">
-                Tổng các giao dịch có kết quả SUCCESS
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="dashboard-two-columns">
-
-        <div class="card">
-
-            <h3 class="section-title">
-                Trạng thái lịch hẹn hôm nay
-            </h3>
-
-            <div class="status-list">
-
-                <div class="status-item">
-                    <span>BOOKED</span>
-                    <strong>{{ $todayAppointmentStats['BOOKED'] ?? 0 }}</strong>
-                </div>
-
-                <div class="status-item">
-                    <span>CHECKED_IN</span>
-                    <strong>{{ $todayAppointmentStats['CHECKED_IN'] ?? 0 }}</strong>
-                </div>
-
-                <div class="status-item">
-                    <span>IN_EXAMINATION</span>
-                    <strong>{{ $todayAppointmentStats['IN_EXAMINATION'] ?? 0 }}</strong>
-                </div>
-
-                <div class="status-item">
-                    <span>COMPLETED</span>
-                    <strong>{{ $todayAppointmentStats['COMPLETED'] ?? 0 }}</strong>
-                </div>
-
-                <div class="status-item">
-                    <span>CANCELLED</span>
-                    <strong>{{ $todayAppointmentStats['CANCELLED'] ?? 0 }}</strong>
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="card">
-
-            <h3 class="section-title">
-                Trạng thái lượt khám hôm nay
-            </h3>
-
-            <div class="status-list">
-
-                <div class="status-item">
-                    <span>WAITING</span>
-                    <strong>{{ $todayVisitStats['WAITING'] ?? 0 }}</strong>
-                </div>
-
-                <div class="status-item">
-                    <span>IN_EXAMINATION</span>
-                    <strong>{{ $todayVisitStats['IN_EXAMINATION'] ?? 0 }}</strong>
-                </div>
-
-                <div class="status-item">
-                    <span>WAITING_FOR_SERVICE</span>
-                    <strong>{{ $todayVisitStats['WAITING_FOR_SERVICE'] ?? 0 }}</strong>
-                </div>
-
-                <div class="status-item">
-                    <span>RETURNING</span>
-                    <strong>{{ $todayVisitStats['RETURNING'] ?? 0 }}</strong>
-                </div>
-
-                <div class="status-item">
-                    <span>COMPLETED</span>
-                    <strong>{{ $todayVisitStats['COMPLETED'] ?? 0 }}</strong>
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="card" style="margin-top:24px;">
-
-        <div class="section-header">
-
-            <div>
-                <h3 class="section-title">
-                    Hoạt động gần đây
-                </h3>
-
-                <p class="section-description">
-                    10 hoạt động mới nhất trong hệ thống.
-                </p>
-            </div>
-
-        </div>
-
-        <div style="overflow-x:auto;">
-
+    <div class="admin-card">
+        <h2 class="section-title">Diễn biến 7 ngày</h2>
+        <div class="admin-table-scroll">
             <table class="admin-table">
-
-                <thead>
-                    <tr>
-                        <th>Người thao tác</th>
-                        <th>Vai trò</th>
-                        <th>Hành động</th>
-                        <th>Đối tượng</th>
-                        <th>Mã đối tượng</th>
-                        <th>Mô tả</th>
-                        <th>Thời gian</th>
-                    </tr>
-                </thead>
-
+                <thead><tr><th scope="col" class="admin-row-number">STT</th><th>Ngày</th><th>Lịch hẹn</th><th>Lượt tiếp nhận</th><th>Dịch vụ được chỉ định</th><th>Dịch vụ hoàn tất</th><th>Tiền thu xác nhận</th></tr></thead>
                 <tbody>
-
-                @forelse ($recentAuditLogs as $log)
-
-                    <tr>
-
-                        <td>
-                            {{ $log->business_code ?? 'Hệ thống' }}
-                        </td>
-
-                        <td>
-                            {{ $log->role_name_snapshot ?? '-' }}
-                        </td>
-
-                        <td>
-                            <span class="badge">
-                                {{ $log->action }}
-                            </span>
-                        </td>
-
-                        <td>
-                            {{ $log->entity_type }}
-                        </td>
-
-                        <td>
-                            {{ $log->entity_business_code
-                                ?? $log->entity_id
-                                ?? '-' }}
-                        </td>
-
-                        <td>
-                            {{ $log->description ?? '-' }}
-                        </td>
-
-                        <td>
-                            {{ $log->performed_at }}
-                        </td>
-
-                    </tr>
-
-                @empty
-
-                    <tr>
-                        <td
-                            colspan="7"
-                            style="text-align:center; color:#6b7280;"
-                        >
-                            Chưa có nhật ký hoạt động.
-                        </td>
-                    </tr>
-
-                @endforelse
-
+                    @foreach ($dailyRows as $day)
+                        <tr>
+                            @include('admin.layouts.partials.row-number', ['rows' => $dailyRows, 'index' => $loop->index])
+                            <td><a href="{{ route('admin.dashboard', ['date' => $day['date']]) }}">{{ \Carbon\Carbon::parse($day['date'])->format('d/m/Y') }}</a></td>
+                            <td>{{ number_format($day['appointments']) }}</td><td>{{ number_format($day['visits']) }}</td>
+                            <td>{{ number_format($day['services']) }}</td><td>{{ number_format($day['completed_services']) }}</td>
+                            <td>{{ number_format($day['revenue'], 0, ',', '.') }} ₫</td>
+                        </tr>
+                    @endforeach
                 </tbody>
-
             </table>
-
         </div>
-
     </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Dịch vụ được chỉ định trong ngày</div><div class="stat-value">{{ number_format($dailyServices) }}</div></div>
+        <div class="stat-card"><div class="stat-label">Khoản thu trong ngày còn chờ thanh toán</div><div class="stat-value">{{ number_format($dailyUnpaidCount) }}</div><p class="form-help">{{ number_format($dailyUnpaidAmount, 0, ',', '.') }} ₫</p></div>
+    </div>
+
+    <h2 class="section-title">Trạng thái hiện tại</h2>
+    <div class="admin-report-grid">
+        @foreach ([
+            ['title' => 'Lịch hẹn', 'stats' => $appointmentStats, 'codes' => ['BOOKED', 'CHECKED_IN', 'IN_EXAMINATION', 'COMPLETED', 'CANCELLED'], 'context' => null],
+            ['title' => 'Lượt khám', 'stats' => $visitStats, 'codes' => ['WAITING', 'IN_EXAMINATION', 'WAITING_FOR_SERVICE', 'RETURNING', 'COMPLETED'], 'context' => null],
+            ['title' => 'Dịch vụ được chỉ định', 'stats' => $serviceStats, 'codes' => ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'], 'context' => 'service'],
+            ['title' => 'Hàng đợi', 'stats' => $queueStats, 'codes' => ['WAITING', 'CALLED', 'IN_SERVICE', 'COMPLETED', 'SKIPPED'], 'context' => null],
+        ] as $group)
+            <section class="admin-card">
+                <h2 class="section-title">{{ $group['title'] }}</h2>
+                @foreach ($group['codes'] as $code)
+                    <div class="admin-stat-breakdown">
+                        @include('admin.layouts.partials.status-badge', ['badgeCode' => $code, 'badgeContext' => $group['context']])
+                        <strong>{{ number_format($group['stats'][$code] ?? 0) }}</strong>
+                        <progress value="{{ $group['stats'][$code] ?? 0 }}" max="{{ max(1, $group['stats']->sum()) }}" aria-label="{{ \App\Models\AdminDisplay::label($code, $group['context']) }}"></progress>
+                    </div>
+                @endforeach
+            </section>
+        @endforeach
+    </div>
+
+    <section class="admin-card">
+        <h2 class="section-title">Hoạt động trong ngày</h2>
+
+        <div class="admin-table-scroll">
+            <table class="admin-table">
+                <thead><tr><th scope="col" class="admin-row-number">STT</th><th>Người thao tác</th><th>Vai trò</th><th>Hành động</th><th>Đối tượng</th><th>Mã đối tượng</th><th>Mô tả</th><th>Thời gian</th></tr></thead>
+                <tbody>
+                    @forelse ($recentAuditLogs as $log)
+                        <tr>
+                            @include('admin.layouts.partials.row-number', ['rows' => $recentAuditLogs, 'index' => $loop->index])
+                            <td>@include('admin.layouts.partials.record-code', ['code' => $log->business_code ?? 'Hệ thống'])</td>
+                            <td>{{ \App\Models\AdminDisplay::label($log->role_name_snapshot) }}</td>
+                            <td>@include('admin.layouts.partials.status-badge', ['badgeCode' => $log->action])</td>
+                            <td>{{ \App\Models\AdminDisplay::label($log->entity_type) }}</td>
+                            <td>@include('admin.layouts.partials.record-code', ['code' => $log->entity_business_code ?? '—'])</td><td>{{ \App\Models\AdminDisplay::text($log->description) }}</td>
+                            <td>{{ \Carbon\Carbon::parse($log->performed_at)->format('d/m/Y H:i:s') }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" class="empty-state">Chưa có hoạt động trong ngày đã chọn.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </section>
 
 @endsection
-
-@push('styles')
-
-<style>
-
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 16px;
-        margin-bottom: 16px;
-    }
-
-    .stat-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 18px;
-    }
-
-    .stat-title {
-        color: #6b7280;
-        font-size: 13px;
-        font-weight: 600;
-        margin-bottom: 10px;
-    }
-
-    .stat-value {
-        font-size: 30px;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 6px;
-    }
-
-    .stat-description {
-        font-size: 13px;
-        color: #9ca3af;
-    }
-
-    .dashboard-section {
-        margin-top: 8px;
-        margin-bottom: 24px;
-    }
-
-    .revenue-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 22px;
-    }
-
-    .revenue-value {
-        font-size: 32px;
-        font-weight: 700;
-        color: #059669;
-        margin: 8px 0;
-    }
-
-    .dashboard-two-columns {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 20px;
-    }
-
-    .section-title {
-        margin: 0 0 16px;
-        font-size: 18px;
-    }
-
-    .section-description {
-        margin: -8px 0 16px;
-        color: #6b7280;
-        font-size: 13px;
-    }
-
-    .status-list {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .status-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 11px 0;
-        border-bottom: 1px solid #f3f4f6;
-        font-size: 14px;
-    }
-
-    .status-item:last-child {
-        border-bottom: none;
-    }
-
-    .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .admin-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-    }
-
-    .admin-table th,
-    .admin-table td {
-        padding: 12px 10px;
-        border-bottom: 1px solid #e5e7eb;
-        text-align: left;
-        white-space: nowrap;
-    }
-
-    .admin-table th {
-        background: #f9fafb;
-        color: #4b5563;
-        font-size: 12px;
-        text-transform: uppercase;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 999px;
-        background: #eff6ff;
-        color: #1d4ed8;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    @media (max-width: 1100px) {
-
-        .dashboard-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-    }
-
-    @media (max-width: 700px) {
-
-        .dashboard-grid,
-        .dashboard-two-columns {
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-</style>
-
-@endpush

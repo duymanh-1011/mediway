@@ -9,10 +9,12 @@ use App\Models\Patient;
 use App\Models\PatientDetail;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VisitStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -62,27 +64,27 @@ class PatientController extends Controller
                     $q->where(
                         'patient_code',
                         'like',
-                        '%' . $search . '%'
+                        '%'.$search.'%'
                     )
-                    ->orWhere(
-                        'full_name',
-                        'like',
-                        '%' . $search . '%'
-                    )
-                    ->orWhereHas('user', function ($userQuery) use ($search) {
-                        $userQuery->where(
-                            'phone',
+                        ->orWhere(
+                            'full_name',
                             'like',
-                            '%' . $search . '%'
-                        );
-                    })
-                    ->orWhereHas('detail', function ($detailQuery) use ($search) {
-                        $detailQuery->where(
-                            'citizen_id_number',
-                            'like',
-                            '%' . $search . '%'
-                        );
-                    });
+                            '%'.$search.'%'
+                        )
+                        ->orWhereHas('user', function ($userQuery) use ($search) {
+                            $userQuery->where(
+                                'phone',
+                                'like',
+                                '%'.$search.'%'
+                            );
+                        })
+                        ->orWhereHas('detail', function ($detailQuery) use ($search) {
+                            $detailQuery->where(
+                                'citizen_id_number',
+                                'like',
+                                '%'.$search.'%'
+                            );
+                        });
                 });
             })
             ->when(
@@ -123,9 +125,9 @@ class PatientController extends Controller
                     ->lockForUpdate()
                     ->first();
 
-                if (!$patientRole) {
+                if (! $patientRole) {
                     throw ValidationException::withMessages([
-                        'user_id' => 'Hệ thống chưa có vai trò Patient.',
+                        'user_id' => 'Chưa có vai trò bệnh nhân trong hệ thống. Vui lòng báo người phụ trách hệ thống.',
                     ]);
                 }
 
@@ -189,11 +191,28 @@ class PatientController extends Controller
             ->with('success', 'Thêm hồ sơ bệnh nhân thành công.');
     }
 
-    public function show(Patient $patient)
+    public function show(Request $request, Patient $patient)
     {
+        $filters = $request->validate([
+            'history_q' => ['nullable', 'string', 'max:150'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('date_from') ? ['after_or_equal:date_from'] : [])],
+            'visit_status_id' => ['nullable', 'integer', Rule::exists('visit_statuses', 'id')],
+            'visits_page' => ['nullable', 'integer', 'min:1', 'max:2147483647'],
+        ], [], [
+            'history_q' => 'tìm kiếm lịch sử khám', 'visits_page' => 'trang lịch sử khám',
+        ]);
         $patient->load(['user.role', 'detail']);
+        $visitCount = $patient->medicalVisits()->count();
+        $visitStatuses = VisitStatus::orderBy('process_order')->get();
+        $visits = $patient->medicalVisits()
+            ->with(['doctor', 'specialty', 'examinationRoom', 'status'])
+            ->forMedicalHistory($filters)
+            ->orderByDesc('checked_in_at')->orderByDesc('id')
+            ->paginate(10, ['*'], 'visits_page')->withQueryString()->fragment('history');
+        $historyActive = $request->hasAny(['history_q', 'date_from', 'date_to', 'visit_status_id', 'visits_page']);
 
-        return view('admin.patients.show', compact('patient'));
+        return view('admin.patients.show', compact('patient', 'visits', 'visitCount', 'visitStatuses', 'historyActive'));
     }
 
     public function edit(Patient $patient)
@@ -230,9 +249,9 @@ class PatientController extends Controller
                     ->lockForUpdate()
                     ->first();
 
-                if (!$patientRole) {
+                if (! $patientRole) {
                     throw ValidationException::withMessages([
-                        'user_id' => 'Hệ thống chưa có vai trò Patient.',
+                        'user_id' => 'Chưa có vai trò bệnh nhân trong hệ thống. Vui lòng báo người phụ trách hệ thống.',
                     ]);
                 }
 
@@ -336,12 +355,12 @@ class PatientController extends Controller
          * Ngăn việc sử dụng đường dẫn ngoài thư mục
          * tài liệu dành riêng cho bệnh nhân này.
          */
-        $expectedPrefix = 'patient-documents/' . $patient->id . '/';
+        $expectedPrefix = 'patient-documents/'.$patient->id.'/';
 
         abort_unless(
             str_starts_with($path, $expectedPrefix)
-                && !str_contains($path, '..')
-                && !str_contains($path, '\\'),
+                && ! str_contains($path, '..')
+                && ! str_contains($path, '\\'),
             404
         );
 
@@ -374,24 +393,24 @@ class PatientController extends Controller
         $paths = [];
 
         foreach (self::FILE_FIELDS as $input => $column) {
-            if (!$request->hasFile($input)) {
+            if (! $request->hasFile($input)) {
                 continue;
             }
 
             $file = $request->file($input);
 
-            if (!$file || !$file->isValid()) {
+            if (! $file || ! $file->isValid()) {
                 throw ValidationException::withMessages([
                     $input => 'Tệp tải lên không hợp lệ.',
                 ]);
             }
 
             $path = $file->store(
-                'patient-documents/' . $patient->id,
+                'patient-documents/'.$patient->id,
                 'local'
             );
 
-            if (!$path) {
+            if (! $path) {
                 throw ValidationException::withMessages([
                     $input => 'Không thể lưu tệp. Vui lòng thử lại.',
                 ]);
@@ -454,9 +473,9 @@ class PatientController extends Controller
             ->lockForUpdate()
             ->find($userId);
 
-        if (!$user || $user->role_id !== $roleId) {
+        if (! $user || $user->role_id !== $roleId) {
             throw ValidationException::withMessages([
-                'user_id' => 'Tài khoản không tồn tại hoặc không thuộc vai trò Patient.',
+                'user_id' => 'Tài khoản không tồn tại hoặc không thuộc vai trò bệnh nhân.',
             ]);
         }
 
@@ -493,7 +512,7 @@ class PatientController extends Controller
             $this->codeNumber($lastUserCode)
         );
 
-        return 'BN' . str_pad(
+        return 'BN'.str_pad(
             (string) ($lastNumber + 1),
             6,
             '0',

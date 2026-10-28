@@ -2,11 +2,20 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\AdminDisplay;
+use App\Rules\PasswordByteLimit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreEmployeeRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('employee_type'))) {
+            $this->merge(['employee_type' => strtoupper(trim(AdminDisplay::employeeTypeCode($this->input('employee_type'))))]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -36,7 +45,8 @@ class StoreEmployeeRequest extends FormRequest
                 'nullable',
                 'string',
                 'min:8',
-                'max:100',
+                'max:72',
+                new PasswordByteLimit,
                 'confirmed',
             ],
 
@@ -148,9 +158,10 @@ class StoreEmployeeRequest extends FormRequest
             ],
 
             'employee_type' => [
-                'nullable',
+                'required',
                 'string',
                 'max:80',
+                Rule::exists('employee_types', 'code'),
             ],
 
             'hire_date' => [
@@ -235,83 +246,59 @@ class StoreEmployeeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'user_id.exists' =>
-                'Tài khoản được chọn không tồn tại.',
+            'employee_type.required' => 'Vui lòng chọn loại nhân viên.',
+            'employee_type.exists' => 'Loại nhân viên không hợp lệ. Vui lòng chọn lại từ danh sách.',
+            'user_id.exists' => 'Tài khoản được chọn không tồn tại.',
 
-            'user_id.unique' =>
-                'Tài khoản đã được liên kết với nhân viên khác.',
+            'user_id.unique' => 'Tài khoản đã được liên kết với nhân viên khác.',
 
-            'phone.required_without' =>
-                'Vui lòng chọn tài khoản Employee có sẵn hoặc nhập số điện thoại mới.',
+            'phone.required_without' => 'Vui lòng chọn tài khoản nhân viên có sẵn hoặc nhập số điện thoại mới.',
 
-            'phone.regex' =>
-                'Số điện thoại phải có 10 chữ số và bắt đầu bằng 0.',
+            'phone.regex' => 'Số điện thoại phải có 10 chữ số và bắt đầu bằng 0.',
 
-            'phone.unique' =>
-                'Số điện thoại đã được sử dụng.',
+            'phone.unique' => 'Số điện thoại đã được sử dụng.',
 
-            'password.required_without' =>
-                'Vui lòng nhập mật khẩu khi tạo tài khoản mới.',
+            'password.required_without' => 'Vui lòng nhập mật khẩu khi tạo tài khoản mới.',
 
-            'password.min' =>
-                'Mật khẩu phải có ít nhất 8 ký tự.',
+            'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
 
-            'password.confirmed' =>
-                'Xác nhận mật khẩu không khớp.',
+            'password.confirmed' => 'Mật khẩu nhập lại chưa khớp. Vui lòng kiểm tra cả hai ô mật khẩu.',
 
-            'full_name.required' =>
-                'Vui lòng nhập họ và tên nhân viên.',
+            'full_name.required' => 'Vui lòng nhập họ và tên nhân viên.',
 
-            'full_name.max' =>
-                'Họ và tên không được vượt quá 120 ký tự.',
+            'full_name.max' => 'Họ và tên không được vượt quá 120 ký tự.',
 
-            'date_of_birth.before_or_equal' =>
-                'Ngày sinh không được ở tương lai.',
+            'date_of_birth.before_or_equal' => 'Ngày sinh không được ở tương lai.',
 
-            'gender.in' =>
-                'Giới tính không hợp lệ.',
+            'gender.in' => 'Vui lòng chọn giới tính từ các lựa chọn có sẵn.',
 
-            'status.required' =>
-                'Vui lòng chọn trạng thái nhân viên.',
+            'status.required' => 'Vui lòng chọn trạng thái nhân viên.',
 
-            'status.in' =>
-                'Trạng thái nhân viên không hợp lệ.',
+            'status.in' => 'Vui lòng chọn lại trạng thái nhân viên từ các lựa chọn có sẵn.',
 
-            'citizen_id_number.regex' =>
-                'Số CCCD phải có đúng 12 chữ số.',
+            'citizen_id_number.regex' => 'Số CCCD phải có đúng 12 chữ số.',
 
-            'citizen_id_number.unique' =>
-                'Số CCCD đã tồn tại trong hồ sơ nhân viên.',
+            'citizen_id_number.unique' => 'Số CCCD đã tồn tại trong hồ sơ nhân viên.',
 
-            'citizen_id_issue_date.before_or_equal' =>
-                'Ngày cấp CCCD không được ở tương lai.',
+            'citizen_id_issue_date.before_or_equal' => 'Ngày cấp CCCD không được ở tương lai.',
 
-            'email.email' =>
-                'Email không đúng định dạng.',
+            'email.email' => 'Email không đúng định dạng.',
 
-            'hire_date.before_or_equal' =>
-                'Ngày tuyển dụng không được ở tương lai.',
+            'hire_date.before_or_equal' => 'Ngày tuyển dụng không được ở tương lai.',
 
-            'termination_date.after_or_equal' =>
-                'Ngày nghỉ việc không được trước ngày tuyển dụng.',
+            'termination_date.after_or_equal' => 'Ngày nghỉ việc không được trước ngày tuyển dụng.',
 
-            'years_of_service.numeric' =>
-                'Số năm công tác phải là số.',
+            'years_of_service.numeric' => 'Số năm công tác phải là số.',
 
-            'years_of_service.between' =>
-                'Số năm công tác phải từ 0 đến 999,99.',
+            'years_of_service.between' => 'Số năm công tác phải từ 0 đến 999,99.',
 
-            'avatar.max' =>
-                'Ảnh đại diện không được vượt quá 2 MB.',
+            'avatar.max' => 'Ảnh đại diện không được vượt quá 2 MB.',
 
-            'citizen_id_front.max' =>
-                'Ảnh CCCD mặt trước không được vượt quá 2 MB.',
+            'citizen_id_front.max' => 'Ảnh CCCD mặt trước không được vượt quá 2 MB.',
 
-            'citizen_id_back.max' =>
-                'Ảnh CCCD mặt sau không được vượt quá 2 MB.',
+            'citizen_id_back.max' => 'Ảnh CCCD mặt sau không được vượt quá 2 MB.',
 
-            'profile_pdf.max' =>
-                'Hồ sơ PDF không được vượt quá 5 MB.',
+            'profile_pdf.max' => 'Hồ sơ PDF không được vượt quá 5 MB.',
         ];
     }
 }

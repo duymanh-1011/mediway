@@ -1,10 +1,17 @@
 
 @extends('admin.layouts.app')
+@section('admin-page', 'patients-show')
 
 @section('title', 'Chi tiết bệnh nhân - Mediway')
 
 @section('breadcrumb')
-    Admin / Bệnh nhân / Chi tiết
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Nhân sự & bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Chi tiết</strong>
 @endsection
 
 @section('content')
@@ -71,24 +78,18 @@
             <h1 class="page-title">{{ $patient->full_name }}</h1>
             <p class="page-description">
                 Hồ sơ bệnh nhân
-                <strong>{{ $patient->patient_code }}</strong>
+                <strong>@include('admin.layouts.partials.record-code', ['code' => $patient->patient_code])</strong>
 
-                <span class="pd-badge {{ $patient->status === 'ACTIVE' ? 'pd-green' : 'pd-neutral' }}">
-                    {{ $patient->status === 'ACTIVE' ? 'Hoạt động' : $patient->status }}
-                </span>
+                @include('admin.layouts.partials.status-badge', ['badgeCode' => $patient->status])
             </p>
         </div>
 
         <div class="pd-actions">
             <a href="{{ route('admin.patients.index') }}"
-               class="pd-btn pd-light">
-                ← Danh sách
-            </a>
+               class="admin-btn admin-btn-secondary">← Quay lại</a>
 
             <a href="{{ route('admin.patients.edit', $patient) }}"
-               class="pd-btn pd-primary">
-                Chỉnh sửa hồ sơ
-            </a>
+               class="admin-btn admin-btn-secondary">Sửa</a>
         </div>
     </div>
 
@@ -127,6 +128,17 @@
         </button>
 
         <button type="button"
+                id="pd-tab-history"
+                class="pd-tab"
+                data-tab="history"
+                role="tab"
+                aria-controls="pd-panel-history"
+                aria-selected="false">
+            Lịch sử khám
+            <span class="pd-tab-count">{{ $visitCount }}</span>
+        </button>
+
+        <button type="button"
                 id="pd-tab-health"
                 class="pd-tab"
                 data-tab="health"
@@ -162,7 +174,7 @@
                 <dl class="pd-details">
                     <div>
                         <dt>Mã bệnh nhân</dt>
-                        <dd><strong>{{ $patient->patient_code }}</strong></dd>
+                        <dd><strong>@include('admin.layouts.partials.record-code', ['code' => $patient->patient_code])</strong></dd>
                     </div>
 
                     <div>
@@ -185,9 +197,7 @@
                     <div>
                         <dt>Trạng thái hồ sơ</dt>
                         <dd>
-                            <span class="pd-badge {{ $patient->status === 'ACTIVE' ? 'pd-green' : 'pd-neutral' }}">
-                                {{ $patient->status === 'ACTIVE' ? 'Hoạt động' : $patient->status }}
-                            </span>
+                            @include('admin.layouts.partials.status-badge', ['badgeCode' => $patient->status])
                         </dd>
                     </div>
 
@@ -208,7 +218,7 @@
                         <div>
                             <dt>Mã tài khoản</dt>
                             <dd>
-                                <strong>{{ $user->business_code }}</strong>
+                                <strong>@include('admin.layouts.partials.record-code', ['code' => $user->business_code])</strong>
                             </dd>
                         </div>
 
@@ -219,21 +229,19 @@
 
                         <div>
                             <dt>Vai trò</dt>
-                            <dd>{{ $user->role?->name ?? 'Patient' }}</dd>
+                            <dd>{{ \App\Models\AdminDisplay::label($user->role?->name ?? 'Patient') }}</dd>
                         </div>
 
                         <div>
                             <dt>Trạng thái</dt>
                             <dd>
-                                <span class="pd-badge {{ $user->status === 'ACTIVE' ? 'pd-green' : 'pd-neutral' }}">
-                                    {{ $user->status === 'ACTIVE' ? 'Hoạt động' : $user->status }}
-                                </span>
+                                @include('admin.layouts.partials.status-badge', ['badgeCode' => $user->status])
                             </dd>
                         </div>
                     </dl>
 
                     <a href="{{ route('admin.users.show', $user) }}"
-                       class="pd-btn pd-light pd-account-link">
+                       class="admin-btn admin-btn-detail">
                         Xem tài khoản
                     </a>
                 @else
@@ -260,7 +268,7 @@
                 </div>
 
                 <button type="button"
-                        class="pd-btn pd-light"
+                        class="admin-btn admin-btn-detail"
                         data-open-tab="health">
                     Xem lịch sử sức khỏe →
                 </button>
@@ -366,6 +374,15 @@
         </section>
     </div>
 
+    <div id="pd-panel-history"
+         class="pd-tab-panel"
+         data-panel="history"
+         role="tabpanel"
+         aria-labelledby="pd-tab-history"
+         hidden>
+        @include('admin.patients._medical-history')
+    </div>
+
     {{-- TAB 3: LỊCH SỬ SỨC KHỎE --}}
     <div id="pd-panel-health"
          class="pd-tab-panel"
@@ -379,22 +396,20 @@
                 <div>
                     <h2>Lịch sử chỉ số sức khỏe</h2>
                     <p class="pd-help">
-                        {{ $patient->patient_code }} —
+                        @include('admin.layouts.partials.record-code', ['code' => $patient->patient_code]) —
                         {{ $healthRecordCount }} lần ghi nhận
                     </p>
                 </div>
 
                 <div class="pd-actions">
                     <a href="{{ route('admin.personal-health-records.index', ['patient_id' => $patient->id]) }}"
-                       class="pd-btn pd-light">
+                       class="admin-btn admin-btn-detail">
                         Xem toàn bộ
                     </a>
 
                     @if($patient->status === 'ACTIVE')
                         <a href="{{ route('admin.personal-health-records.create', ['patient_id' => $patient->id]) }}"
-                           class="pd-btn pd-primary">
-                            + Thêm lần đo
-                        </a>
+                           class="admin-btn admin-btn-primary">Thêm lần đo</a>
                     @endif
                 </div>
             </div>
@@ -404,6 +419,7 @@
                     <table class="pd-health-table">
                         <thead>
                             <tr>
+                                <th scope="col" class="admin-row-number">STT</th>
                                 <th>Thời điểm ghi nhận</th>
                                 <th>Chiều cao</th>
                                 <th>Cân nặng</th>
@@ -417,6 +433,7 @@
                         <tbody>
                             @foreach($healthRecords as $record)
                                 <tr>
+                                    @include('admin.layouts.partials.row-number', ['rows' => $healthRecords, 'index' => $loop->index])
                                     <td>
                                         <strong>
                                             {{ $record->recorded_at?->format('d/m/Y H:i') }}
@@ -447,19 +464,15 @@
                                         {{ $record->heart_rate ?? '-' }}
                                     </td>
 
-                                    <td>
+                                    <td><div class="admin-actions admin-table-actions">
                                         <div class="pd-row-actions">
                                             <a href="{{ route('admin.personal-health-records.show', $record) }}"
-                                               class="pd-action-link pd-view">
-                                                Chi tiết
-                                            </a>
+                                               class="admin-btn admin-btn-detail">Chi tiết</a>
 
                                             <a href="{{ route('admin.personal-health-records.edit', $record) }}"
-                                               class="pd-action-link pd-edit">
-                                                Sửa
-                                            </a>
+                                               class="admin-btn admin-btn-secondary">Sửa</a>
                                         </div>
-                                    </td>
+                                    </div></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -487,8 +500,8 @@
 
                     @if($patient->status === 'ACTIVE')
                         <a href="{{ route('admin.personal-health-records.create', ['patient_id' => $patient->id]) }}"
-                           class="pd-btn pd-primary">
-                            Ghi nhận chỉ số đầu tiên
+                           class="admin-btn admin-btn-primary">
+                            Thêm lần đo
                         </a>
                     @endif
                 </div>
@@ -514,9 +527,7 @@
                 </div>
 
                 <a href="{{ route('admin.patients.edit', $patient) }}"
-                   class="pd-btn pd-light">
-                    Cập nhật tài liệu
-                </a>
+                   class="admin-btn admin-btn-secondary">Sửa</a>
             </div>
 
             <div class="pd-documents">
@@ -563,107 +574,7 @@
 </div>
 @endsection
 
-@push('styles')
-<style>
-.patient-detail-page{min-width:0}
-.pd-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:22px}
-.pd-heading .page-description{margin:7px 0 0;color:#64748b;display:flex;align-items:center;flex-wrap:wrap;gap:10px}
-.pd-actions{display:flex;gap:10px;flex-wrap:wrap}
-.pd-card{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:24px;box-shadow:0 4px 20px rgba(15,23,42,.035);min-width:0}
-.pd-card h2{font-size:17px;color:#0f172a;margin:0 0 20px}
-.pd-section{margin-bottom:19px}
-.pd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:19px}
-.pd-details{margin:0}
-.pd-details>div{display:grid;grid-template-columns:135px minmax(0,1fr);gap:12px;padding:13px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
-.pd-details>div:last-child{border-bottom:0}
-.pd-details dt,.pd-information dt{color:#64748b}
-.pd-details dd,.pd-information dd{margin:0;color:#0f172a;overflow-wrap:anywhere}
-.pd-information{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 22px;margin:0}
-.pd-information>div{padding:14px 0;border-bottom:1px solid #f1f5f9;min-width:0}
-.pd-information dt{font-size:12px;font-weight:700;margin-bottom:8px}
-.pd-information dd{font-size:13px;line-height:1.6}
-.pd-badge{display:inline-block;border-radius:30px;padding:6px 10px;font-size:11px;font-weight:700}
-.pd-green{background:#dcfce7;color:#166534}
-.pd-neutral{background:#f1f5f9;color:#475569}
-.pd-btn{display:inline-flex;justify-content:center;align-items:center;min-height:41px;padding:10px 16px;border:1px solid transparent;border-radius:9px;text-decoration:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
-.pd-primary{background:#2563eb;color:#fff}
-.pd-light{background:#fff;color:#334155;border-color:#cbd5e1}
-.pd-account-link{margin-top:20px}
-.pd-empty-account,.pd-empty-health{font-size:13px;color:#334155;line-height:1.7}
-.pd-empty-account p,.pd-empty-health p{color:#64748b}
-.pd-empty-health{text-align:center;padding:35px 10px}
-.pd-empty-health .pd-empty-icon{margin:0 auto 14px}
-.pd-empty-icon{width:45px;height:45px;border-radius:13px;background:#fef3c7;color:#92400e;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:800;margin-bottom:13px}
-.pd-help{font-size:13px;color:#64748b;line-height:1.6;margin:0}
-.pd-notes{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.7;color:#475569}
-.pd-alert{padding:13px 15px;border-radius:9px;margin-bottom:17px;font-size:13px}
-.pd-success{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
-.pd-error{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
 
-/* Tabs */
-.pd-tabs{display:flex;align-items:center;gap:7px;overflow-x:auto;border-bottom:1px solid #e2e8f0;margin-bottom:22px;padding:0 0 1px;scrollbar-width:thin}
-.pd-tab{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;border:0;border-bottom:3px solid transparent;background:transparent;color:#64748b;padding:13px 17px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:color .15s,border-color .15s}
-.pd-tab:hover{color:#2563eb}
-.pd-tab.active{color:#1d4ed8;border-bottom-color:#2563eb}
-.pd-tab-count{display:inline-flex;align-items:center;justify-content:center;background:#e2e8f0;color:#475569;border-radius:20px;min-width:22px;height:22px;padding:0 7px;font-size:11px}
-.pd-tab.active .pd-tab-count{background:#dbeafe;color:#1d4ed8}
-.pd-tab-panel{min-width:0}
-.pd-tab-panel[hidden]{display:none!important}
-
-/* Tiêu đề từng section */
-.pd-section-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-bottom:20px}
-.pd-section-heading h2{margin:0 0 7px}
-.pd-section-heading .pd-actions{align-items:center}
-
-/* Tổng quan sức khỏe */
-.pd-summary-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
-.pd-summary-metric{background:#f8fafc;border:1px solid #e2e8f0;border-radius:11px;padding:16px;min-width:0}
-.pd-summary-metric span{display:block;font-size:12px;color:#64748b;margin-bottom:10px}
-.pd-summary-metric strong{display:block;font-size:17px;color:#0f172a;overflow-wrap:anywhere}
-
-/* Bảng lịch sử */
-.pd-table-wrap{overflow-x:auto}
-.pd-health-table{width:100%;min-width:850px;border-collapse:collapse;text-align:left}
-.pd-health-table th{background:#f8fafc;color:#64748b;font-size:12px;padding:14px 12px;white-space:nowrap}
-.pd-health-table td{color:#334155;font-size:13px;padding:15px 12px;border-bottom:1px solid #edf2f7}
-.pd-health-table tbody tr:hover{background:#fafcff}
-.pd-health-table tbody tr:last-child td{border-bottom:0}
-.pd-row-actions{display:flex;gap:7px}
-.pd-action-link{text-decoration:none;padding:7px 10px;border-radius:7px;font-size:12px;font-weight:700}
-.pd-view{background:#eff6ff;color:#1d4ed8}
-.pd-edit{background:#f1f5f9;color:#334155}
-.pd-table-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px;font-size:12px;color:#64748b}
-.pd-table-footer a{color:#1d4ed8;text-decoration:none;font-weight:700}
-
-/* Tài liệu */
-.pd-documents{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
-.pd-document{border:1px solid #e2e8f0;border-radius:11px;padding:14px;background:#fafcff;min-width:0}
-.pd-document-title{font-size:13px;font-weight:700;color:#334155;margin-bottom:13px}
-.pd-document-image-link{display:block;overflow:hidden;border-radius:9px;background:#edf2f7}
-.pd-document-image{display:block;width:100%;height:150px;object-fit:contain}
-.pd-pdf-placeholder{height:150px;background:#fef2f2;color:#b91c1c;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:29px;font-weight:800}
-.pd-document-link{display:inline-block;color:#1d4ed8;font-size:12px;font-weight:700;text-decoration:none;margin-top:13px}
-.pd-document-link:hover{text-decoration:underline}
-.pd-document-missing{height:150px;display:flex;justify-content:center;align-items:center;text-align:center;background:#f1f5f9;border-radius:9px;color:#94a3b8;font-size:12px;padding:10px}
-
-@media(max-width:1000px){
-    .pd-summary-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .pd-documents{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media(max-width:800px){
-    .pd-grid{grid-template-columns:1fr}
-}
-@media(max-width:600px){
-    .pd-card{padding:17px}
-    .pd-information{grid-template-columns:1fr}
-    .pd-details>div{grid-template-columns:1fr;gap:5px}
-    .pd-tab{padding:12px 13px}
-}
-@media(max-width:430px){
-    .pd-summary-metrics,.pd-documents{grid-template-columns:1fr}
-}
-</style>
-@endpush
 
 @push('scripts')
 <script>
@@ -671,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const tabs = document.querySelectorAll('.pd-tab[data-tab]');
     const panels = document.querySelectorAll('.pd-tab-panel[data-panel]');
     const openButtons = document.querySelectorAll('[data-open-tab]');
-    const validTabs = ['overview', 'personal', 'health', 'documents'];
+    const validTabs = ['overview', 'personal', 'history', 'health', 'documents'];
 
     function activateTab(name, updateHash) {
         if (!validTabs.includes(name)) {
@@ -737,7 +648,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const initialTab = window.location.hash.replace('#', '');
 
     activateTab(
-        validTabs.includes(initialTab) ? initialTab : 'overview',
+        validTabs.includes(initialTab) ? initialTab : @json($historyActive ? 'history' : 'overview'),
         false
     );
 

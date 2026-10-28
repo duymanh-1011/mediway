@@ -1,9 +1,16 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'users-show')
 
 @section('title', 'Chi tiết tài khoản - Mediway')
 
 @section('breadcrumb')
-    Admin / Hệ thống / Tài khoản / Chi tiết
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Hệ thống</span>
+    <span aria-hidden="true">/</span>
+    <span>Tài khoản</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Chi tiết</strong>
 @endsection
 
 @section('content')
@@ -44,24 +51,20 @@
         <div>
             <h1 class="page-title">Chi tiết tài khoản</h1>
             <p class="page-description">
-                Mã tài khoản: {{ $user->business_code }}
+                Mã tài khoản: @include('admin.layouts.partials.record-code', ['code' => $user->business_code])
             </p>
         </div>
 
         <div class="account-detail-buttons">
             <a
                 href="{{ route('admin.users.index') }}"
-                class="account-detail-btn account-btn-light"
-            >
-                ← Danh sách
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >← Quay lại</a>
 
             <a
                 href="{{ route('admin.users.edit', $user) }}"
-                class="account-detail-btn account-btn-primary"
-            >
-                Sửa thông tin
-            </a>
+                class="admin-btn admin-btn-secondary"
+            >Sửa</a>
         </div>
     </div>
 
@@ -83,7 +86,7 @@
 
             <ul>
                 @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
+                    <li>{{ \App\Models\AdminDisplay::text($error) }}</li>
                 @endforeach
             </ul>
         </div>
@@ -100,7 +103,7 @@
                 <div>
                     <dt>Mã tài khoản</dt>
                     <dd>
-                        <strong>{{ $user->business_code }}</strong>
+                        <strong>@include('admin.layouts.partials.record-code', ['code' => $user->business_code])</strong>
                     </dd>
                 </div>
 <div>
@@ -110,24 +113,18 @@
 
                 <div>
                     <dt>Vai trò</dt>
-                    <dd>{{ $user->role?->name ?? 'Chưa xác định' }}</dd>
+                    <dd>{{ \App\Models\AdminDisplay::label($user->role?->name ?? 'Chưa xác định') }}</dd>
                 </div>
 
                 <div>
                     <dt>Trạng thái</dt>
                     <dd>
                         @if($user->status === 'ACTIVE')
-                            <span class="account-status account-status-active">
-                                Hoạt động
-                            </span>
+                            @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
                         @elseif($user->status === 'LOCKED')
-                            <span class="account-status account-status-locked">
-                                Đã khóa
-                            </span>
+                            @include('admin.layouts.partials.status-badge', ['badgeCode' => 'LOCKED'])
                         @else
-                            <span class="account-status account-status-other">
-                                {{ $user->status }}
-                            </span>
+                            @include('admin.layouts.partials.status-badge', ['badgeCode' => $user->status])
                         @endif
                     </dd>
                 </div>
@@ -165,26 +162,21 @@
                 </div>
 
                 <div class="account-profile-code">
-                    Mã nghiệp vụ: {{ $linkedCode }}
+                    Mã nghiệp vụ: @include('admin.layouts.partials.record-code', ['code' => $linkedCode])
                 </div>
 
                 <p class="account-profile-hint">
-                    Hồ sơ này được liên kết với tài khoản đăng nhập hiện tại.
+                    Hồ sơ này thuộc tài khoản đang xem.
                     Các thông tin chuyên môn và thông tin cá nhân chi tiết
-                    được quản lý tại module tương ứng.
+                    được quản lý tại mục quản lý tương ứng.
                 </p>
 
-                @if(
-                    $linkedType === 'Quản trị viên'
-                    && $user->administrator
-                )
-                    <a
-                        href="{{ route('admin.administrators.show', $user->administrator) }}"
-                        class="account-detail-btn account-btn-light"
-                    >
-                        Xem hồ sơ quản trị viên
-                    </a>
-                @endif
+                <a class="admin-btn admin-btn-detail" href="{{ route(match ($linkedType) {
+                    'Quản trị viên' => 'admin.administrators.show',
+                    'Bác sĩ' => 'admin.doctors.show',
+                    'Nhân viên' => 'admin.employees.show',
+                    default => 'admin.patients.show',
+                }, $linkedProfile) }}">Xem hồ sơ</a>
             @else
 <div class="account-profile-icon account-profile-empty">
                     !
@@ -201,7 +193,7 @@
 
                 <p class="account-profile-hint">
                     Các hồ sơ nghiệp vụ sẽ được bổ sung và quản lý
-                    tại module tương ứng.
+                    tại mục quản lý tương ứng.
                 </p>
             @endif
         </section>
@@ -227,7 +219,7 @@
                         và không thể tự khóa mình.
                     </div>
                 @else
-                    <form
+                    <form novalidate
                         action="{{ route('admin.users.update-status', $user) }}"
                         method="POST"
                         onsubmit="return confirm('Xác nhận khóa tài khoản {{ $user->business_code }}? Người dùng sẽ không thể đăng nhập.');"
@@ -242,7 +234,7 @@
                         >
 
                         <button
-                            class="account-detail-btn account-btn-danger"
+                            class="admin-btn admin-btn-danger"
                             type="submit"
                         >
                             Khóa tài khoản
@@ -252,7 +244,7 @@
 
             @elseif($user->status === 'LOCKED')
 
-                <form
+                <form novalidate
                     action="{{ route('admin.users.update-status', $user) }}"
                     method="POST"
                     onsubmit="return confirm('Xác nhận mở khóa tài khoản này?');"
@@ -267,7 +259,7 @@
                     >
 
                     <button
-                        class="account-detail-btn account-btn-primary"
+                        class="admin-btn admin-btn-success"
                         type="submit"
                     >
                         Mở khóa tài khoản
@@ -290,7 +282,7 @@
                 Không thể xem lại mật khẩu cũ.
             </p>
 
-            <form
+            <form novalidate
                 action="{{ route('admin.users.reset-password', $user) }}"
                 method="POST"
                 onsubmit="return confirm('Xác nhận đặt lại mật khẩu cho tài khoản {{ $user->business_code }}?');"
@@ -315,7 +307,7 @@
 
                     @error('password')
                         <small class="account-field-error">
-                            {{ $message }}
+                            {{ \App\Models\AdminDisplay::text($message) }}
                         </small>
                     @enderror
                 </div>
@@ -334,11 +326,12 @@
                         autocomplete="new-password"
                         required
                     >
+@error('password_confirmation')<div class="field-error">{{ $message }}</div>@enderror
                 </div>
 
                 <button
                     type="submit"
-                    class="account-detail-btn account-btn-primary"
+                    class="admin-btn admin-btn-primary"
                 >
                     Lưu mật khẩu mới
                 </button>
@@ -347,271 +340,3 @@
     </div>
 </div>
 @endsection
-
-@push('styles')
-<style>
-.account-detail-page {
-    width: 100%;
-    min-width: 0;
-}
-
-.account-detail-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-bottom: 22px;
-}
-
-.account-detail-heading .page-description {
-    margin: 7px 0 0;
-    color: #64748b;
-}
-
-.account-detail-buttons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.account-detail-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    gap: 18px;
-    margin-bottom: 20px;
-}
-.account-management-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-}
-
-.account-detail-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 15px;
-    padding: 24px;
-    box-shadow: 0 4px 20px rgba(15,23,42,.035);
-    min-width: 0;
-}
-
-.account-detail-card h2 {
-    font-size: 17px;
-    margin: 0 0 19px;
-    color: #0f172a;
-}
-
-.account-details {
-    margin: 0;
-}
-
-.account-details > div {
-    display: grid;
-    grid-template-columns: 145px minmax(0, 1fr);
-    gap: 12px;
-    padding: 13px 0;
-    border-bottom: 1px solid #f1f5f9;
-    font-size: 13px;
-}
-
-.account-details > div:last-child {
-    border: 0;
-}
-
-.account-details dt {
-    color: #64748b;
-}
-
-.account-details dd {
-    margin: 0;
-    color: #0f172a;
-    overflow-wrap: anywhere;
-}
-
-.account-status {
-    padding: 6px 10px;
-    border-radius: 30px;
-    font-size: 11px;
-    font-weight: 700;
-    display: inline-block;
-}
-
-.account-status-active {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.account-status-locked {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.account-status-other {
-    background: #f1f5f9;
-    color: #475569;
-}
-
-.account-profile-icon {
-    width: 45px;
-    height: 45px;
-    border-radius: 14px;
-    background: #dcfce7;
-    color: #166534;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 21px;
-    font-weight: 800;
-    margin-bottom: 15px;
-}
-
-.account-profile-empty {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.account-profile-type {
-    font-size: 12px;
-    font-weight: 700;
-    color: #2563eb;
-    margin-bottom: 7px;
-}
-
-.account-profile-name {
-    font-size: 20px;
-    font-weight: 750;
-    color: #0f172a;
-    margin-bottom: 6px;
-}
-
-.account-profile-code {
-    color: #64748b;
-    font-size: 13px;
-}
-
-.account-profile-hint,
-.account-help {
-    font-size: 13px;
-    color: #64748b;
-    line-height: 1.7;
-    margin: 12px 0 20px;
-}
-
-.account-detail-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid transparent;
-    border-radius: 9px;
-    min-height: 40px;
-    padding: 10px 15px;
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-    cursor: pointer;
-    font-family: inherit;
-}
-
-.account-btn-light {
-    background: #fff;
-    border-color: #cbd5e1;
-    color: #334155;
-}
-
-.account-btn-primary {
-    background: #2563eb;
-    color: #fff;
-}
-
-.account-btn-danger {
-    background: #dc2626;
-    color: #fff;
-}
-
-.account-notice {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 9px;
-    padding: 13px 15px;
-    color: #92400e;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-.account-form-field {
-    margin-bottom: 16px;
-}
-
-.account-form-field label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #334155;
-}
-
-.account-form-field input {
-    width: 100%;
-    min-height: 42px;
-    padding: 10px 12px;
-    border-radius: 9px;
-border: 1px solid #cbd5e1;
-    outline: 0;
-}
-
-.account-form-field input:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px #dbeafe;
-}
-
-.account-field-error {
-    display: block;
-    color: #dc2626;
-    font-size: 12px;
-    margin-top: 6px;
-}
-
-.account-alert {
-    padding: 13px 16px;
-    border-radius: 10px;
-    margin-bottom: 17px;
-    font-size: 13px;
-}
-
-.account-alert-success {
-    background: #ecfdf5;
-    border: 1px solid #a7f3d0;
-    color: #065f46;
-}
-
-.account-alert-error {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #991b1b;
-}
-
-.account-alert ul {
-    margin: 8px 0 0;
-    padding-left: 19px;
-}
-
-@media (max-width: 850px) {
-    .account-detail-grid,
-    .account-management-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 550px) {
-    .account-detail-card {
-        padding: 17px;
-    }
-
-    .account-details > div {
-        grid-template-columns: 1fr;
-        gap: 5px;
-    }
-}
-</style>
-@endpush

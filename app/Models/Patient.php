@@ -29,12 +29,16 @@ class Patient extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(
+            User::class
+        );
     }
 
     public function detail(): HasOne
     {
-        return $this->hasOne(PatientDetail::class);
+        return $this->hasOne(
+            PatientDetail::class
+        );
     }
 
     /**
@@ -42,6 +46,21 @@ class Patient extends Model
      */
     public function healthRecords(): HasMany
     {
-        return $this->hasMany(PersonalHealthRecord::class);
+        return $this->hasMany(
+            PersonalHealthRecord::class
+        );
+    }
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(
+            Appointment::class,
+            'patient_id'
+        );
+    }
+
+    public function medicalVisits(): HasMany
+    {
+        return $this->hasMany(MedicalVisit::class);
     }
 }

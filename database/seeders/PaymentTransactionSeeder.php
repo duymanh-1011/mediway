@@ -108,9 +108,9 @@ class PaymentTransactionSeeder extends Seeder
                 ->where('payable_code', $transaction['payable_code'])
                 ->value('id');
 
-            if (!$payableId) {
+            if (! $payableId) {
                 throw new RuntimeException(
-                    'Không tìm thấy payable ' .
+                    'Không tìm thấy payable '.
                         $transaction['payable_code']
                 );
             }
@@ -125,9 +125,9 @@ class PaymentTransactionSeeder extends Seeder
                     )
                     ->value('id');
 
-                if (!$employeeId) {
+                if (! $employeeId) {
                     throw new RuntimeException(
-                        'Không tìm thấy employee ' .
+                        'Không tìm thấy employee '.
                             $transaction['employee_code']
                     );
                 }

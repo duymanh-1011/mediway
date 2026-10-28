@@ -139,41 +139,33 @@ class StorePatientRequest extends FormRequest
             'full_name.required' => 'Vui lòng nhập họ tên bệnh nhân.',
             'full_name.max' => 'Họ tên không được quá 120 ký tự.',
 
-            'date_of_birth.date' => 'Ngày sinh không hợp lệ.',
+            'date_of_birth.date' => 'Ngày sinh chưa hợp lệ. Vui lòng chọn lại ngày bằng ô lịch.',
             'date_of_birth.before_or_equal' => 'Ngày sinh không thể ở tương lai.',
 
-            'gender.in' => 'Giới tính không hợp lệ.',
+            'gender.in' => 'Vui lòng chọn giới tính từ các lựa chọn có sẵn.',
 
             'citizen_id_number.regex' => 'Số CCCD phải gồm 12 chữ số.',
             'citizen_id_number.unique' => 'Số CCCD đã được sử dụng.',
 
-            'citizen_id_issue_date.date' => 'Ngày cấp CCCD không hợp lệ.',
-            'citizen_id_issue_date.before_or_equal' =>
-                'Ngày cấp CCCD không thể ở tương lai.',
+            'citizen_id_issue_date.date' => 'Ngày cấp căn cước công dân chưa hợp lệ. Vui lòng chọn lại ngày bằng ô lịch.',
+            'citizen_id_issue_date.before_or_equal' => 'Ngày cấp CCCD không thể ở tương lai.',
 
             'email.email' => 'Email không đúng định dạng.',
-            'blood_type.in' => 'Nhóm máu không hợp lệ.',
+            'blood_type.in' => 'Vui lòng chọn nhóm máu từ các lựa chọn có sẵn.',
 
-            'emergency_contact_phone.regex' =>
-                'Số điện thoại liên hệ khẩn cấp phải gồm 10 chữ số và bắt đầu bằng 0.',
+            'emergency_contact_phone.regex' => 'Số điện thoại liên hệ khẩn cấp phải gồm 10 chữ số và bắt đầu bằng 0.',
 
             'avatar.mimes' => 'Ảnh đại diện phải là JPG, PNG hoặc WEBP.',
             'avatar.max' => 'Ảnh đại diện không được quá 2 MB.',
 
-            'citizen_id_front.mimes' =>
-                'Ảnh CCCD mặt trước phải là JPG, PNG hoặc WEBP.',
-            'citizen_id_front.max' =>
-                'Ảnh CCCD mặt trước không được quá 2 MB.',
+            'citizen_id_front.mimes' => 'Ảnh CCCD mặt trước phải là JPG, PNG hoặc WEBP.',
+            'citizen_id_front.max' => 'Ảnh CCCD mặt trước không được quá 2 MB.',
 
-            'citizen_id_back.mimes' =>
-                'Ảnh CCCD mặt sau phải là JPG, PNG hoặc WEBP.',
-            'citizen_id_back.max' =>
-                'Ảnh CCCD mặt sau không được quá 2 MB.',
+            'citizen_id_back.mimes' => 'Ảnh CCCD mặt sau phải là JPG, PNG hoặc WEBP.',
+            'citizen_id_back.max' => 'Ảnh CCCD mặt sau không được quá 2 MB.',
 
-            'profile_pdf.mimes' =>
-                'Hồ sơ đính kèm phải là tệp PDF.',
-            'profile_pdf.max' =>
-                'Hồ sơ PDF không được quá 5 MB.',
+            'profile_pdf.mimes' => 'Hồ sơ đính kèm phải là tệp PDF.',
+            'profile_pdf.max' => 'Hồ sơ PDF không được quá 5 MB.',
         ];
     }
 }

@@ -1,25 +1,30 @@
 @extends('admin.layouts.app')
+@section('admin-page', 'patients-edit')
 
-@section('title', 'Chỉnh sửa bệnh nhân - Mediway')
+@section('title', 'Sửa bệnh nhân - Mediway')
 
 @section('breadcrumb')
-    Admin / Bệnh nhân / Chỉnh sửa
+    <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a>
+    <span aria-hidden="true">/</span>
+    <span>Nhân sự & bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <span>Bệnh nhân</span>
+    <span aria-hidden="true">/</span>
+    <strong aria-current="page">Sửa</strong>
 @endsection
 
 @section('content')
 <div class="pf-page">
     <div class="pf-heading">
         <div>
-            <h1 class="page-title">Chỉnh sửa bệnh nhân</h1>
+            <h1 class="page-title">Sửa bệnh nhân</h1>
             <p class="page-description">
-                {{ $patient->patient_code }} — {{ $patient->full_name }}
+                @include('admin.layouts.partials.record-code', ['code' => $patient->patient_code]) — {{ $patient->full_name }}
             </p>
         </div>
 
         <a href="{{ route('admin.patients.show', $patient) }}"
-           class="pf-btn pf-light">
-            ← Chi tiết bệnh nhân
-        </a>
+           class="admin-btn admin-btn-secondary">← Quay lại</a>
     </div>
 
     <div class="pf-card">
@@ -28,13 +33,13 @@
                 <strong>Vui lòng kiểm tra lại dữ liệu:</strong>
                 <ul>
                     @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
+                        <li>{{ \App\Models\AdminDisplay::text($error) }}</li>
                     @endforeach
                 </ul>
             </div>
         @endif
 
-        <form
+        <form novalidate
             method="POST"
             action="{{ route('admin.patients.update', $patient) }}"
             enctype="multipart/form-data"
@@ -54,19 +59,11 @@
 
             <div class="pf-actions">
                 <a href="{{ route('admin.patients.show', $patient) }}"
-                   class="pf-btn pf-light">
-                    Hủy bỏ
-                </a>
+                   class="admin-btn admin-btn-secondary">Hủy</a>
 
-                <button type="submit" class="pf-btn pf-primary">
-                    Lưu thay đổi
-                </button>
+                <button type="submit" class="admin-btn admin-btn-primary">Cập nhật</button>
             </div>
         </form>
     </div>
 </div>
 @endsection
-
-@push('styles')
-@include('admin.patients._styles')
-@endpush

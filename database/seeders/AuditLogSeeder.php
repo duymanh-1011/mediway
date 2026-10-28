@@ -114,9 +114,9 @@ class AuditLogSeeder extends Seeder
                     )
                     ->value('id');
 
-                if (!$userId) {
+                if (! $userId) {
                     throw new RuntimeException(
-                        'Không tìm thấy user ' .
+                        'Không tìm thấy user '.
                             $log['user_business_code']
                     );
                 }
@@ -185,10 +185,10 @@ class AuditLogSeeder extends Seeder
             default => null,
         };
 
-        if (!$id) {
+        if (! $id) {
             throw new RuntimeException(
-                'Không tìm thấy entity ' .
-                    $entityType . ' / ' .
+                'Không tìm thấy entity '.
+                    $entityType.' / '.
                     $entityBusinessCode
             );
         }

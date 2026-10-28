@@ -1,0 +1,1 @@
+<span class="admin-badge admin-badge-{{ \App\Models\AdminDisplay::badge($badgeCode) }}" data-status="{{ $badgeCode ?? '' }}" data-status-context="{{ $badgeContext ?? '' }}">{{ \App\Models\AdminDisplay::label($badgeCode, $badgeContext ?? null) }}</span>

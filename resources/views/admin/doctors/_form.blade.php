@@ -49,36 +49,36 @@
 
 <div class="dr-section">
     <h2>Thông tin cơ bản</h2>
-    <p>Thông tin trong bảng doctors. Dấu * là trường bắt buộc.</p>
+    <p>Thông tin hồ sơ bác sĩ. Dấu * là trường bắt buộc.</p>
 </div>
 
 <div class="dr-grid">
     @if($editing)
         <div class="dr-field">
             <label>Mã bác sĩ</label>
-            <input type="text" value="{{ $doctor->doctor_code }}" disabled>
+            <input class="admin-record-code" type="text" value="{{ $doctor->doctor_code }}" disabled>
         </div>
 
         <div class="dr-field">
             <label>Tài khoản liên kết</label>
-            <input type="text"
+            <input class="admin-record-code" type="text"
                    value="{{ $doctor->user?->business_code }} — {{ $doctor->user?->phone }}"
                    disabled>
         </div>
     @else
         <div class="dr-field dr-full">
-            <label for="user_id">Tài khoản Doctor có sẵn</label>
+            <label for="user_id">Tài khoản bác sĩ có sẵn</label>
             <select name="user_id" id="user_id">
-                <option value="">-- Tạo tài khoản Doctor mới --</option>
+                <option value="">-- Tạo tài khoản bác sĩ mới --</option>
                 @foreach($availableUsers as $account)
                     <option value="{{ $account->id }}"
                             @selected((string)old('user_id') === (string)$account->id)>
                         {{ $account->business_code }} — {{ $account->phone }}
-                        ({{ $account->status }})
+                        ({{ \App\Models\AdminDisplay::label($account->status) }})
                     </option>
                 @endforeach
             </select>
-            @error('user_id')<small class="dr-error">{{ $message }}</small>@enderror
+            @error('user_id')<small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>@enderror
             <small class="dr-help">Chọn tài khoản có sẵn hoặc để trống và nhập thông tin tài khoản mới bên dưới.</small>
         </div>
 
@@ -87,20 +87,21 @@
             <input type="tel" id="phone" name="phone"
                    value="{{ old('phone') }}" maxlength="10"
                    placeholder="09xxxxxxxx">
-            @error('phone')<small class="dr-error">{{ $message }}</small>@enderror
+            @error('phone')<small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>@enderror
         </div>
 
         <div class="dr-field dr-account-new">
             <label for="password">Mật khẩu tài khoản mới</label>
             <input type="password" id="password" name="password"
                    autocomplete="new-password" placeholder="Tối thiểu 8 ký tự">
-            @error('password')<small class="dr-error">{{ $message }}</small>@enderror
+            @error('password')<small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>@enderror
         </div>
 
         <div class="dr-field dr-account-new">
             <label for="password_confirmation">Xác nhận mật khẩu</label>
             <input type="password" id="password_confirmation"
                    name="password_confirmation" autocomplete="new-password">
+@error('password_confirmation')<div class="field-error">{{ $message }}</div>@enderror
         </div>
     @endif
 
@@ -109,7 +110,18 @@
         <input type="text" id="full_name" name="full_name"
                value="{{ old('full_name', $editing ? $doctor->full_name : '') }}"
                maxlength="120" required>
-        @error('full_name')<small class="dr-error">{{ $message }}</small>@enderror
+        @error('full_name')<small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>@enderror
+    </div>
+
+    <div class="dr-field">
+        <label for="specialty_id">Chuyên khoa <span>*</span></label>
+        <select id="specialty_id" name="specialty_id" required>
+            <option value="">-- Chọn chuyên khoa --</option>
+            @foreach($specialties as $specialty)
+                <option value="{{ $specialty->id }}" @selected((string) old('specialty_id', $editing ? $doctor->specialty_id : '') === (string) $specialty->id)>{{ $specialty->name }}</option>
+            @endforeach
+        </select>
+        @error('specialty_id')<div class="field-error">{{ $message }}</div>@enderror
     </div>
 
     <div class="dr-field">
@@ -117,7 +129,7 @@
         <input type="date" id="date_of_birth" name="date_of_birth"
                max="{{ now()->toDateString() }}"
                value="{{ old('date_of_birth', $editing ? $doctor->date_of_birth?->format('Y-m-d') : '') }}">
-        @error('date_of_birth')<small class="dr-error">{{ $message }}</small>@enderror
+        @error('date_of_birth')<small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>@enderror
     </div>
 
     <div class="dr-field">
@@ -131,7 +143,7 @@
                 </option>
             @endforeach
         </select>
-        @error('gender')<small class="dr-error">{{ $message }}</small>@enderror
+        @error('gender')<small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>@enderror
     </div>
 
     <div class="dr-field">
@@ -146,13 +158,12 @@
                 Không hoạt động
             </option>
         </select>
-        @error('status')<small class="dr-error">{{ $message }}</small>@enderror
+        @error('status')<small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>@enderror
     </div>
 </div>
 
 <div class="dr-section dr-gap">
     <h2>Thông tin cá nhân và chuyên môn</h2>
-    <p>Các thông tin này được lưu trong bảng doctor_details.</p>
 </div>
 
 <div class="dr-grid">
@@ -166,7 +177,7 @@
                 maxlength="{{ $field['max'] }}"
                 value="{{ old($field['name'], $detail?->{$field['name']}) }}"
             >
-            @error($field['name'])<small class="dr-error">{{ $message }}</small>@enderror
+            @error($field['name'])<small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>@enderror
         </div>
     @endforeach
 
@@ -177,7 +188,7 @@
                    id="{{ $field['name'] }}"
                    name="{{ $field['name'] }}"
                    value="{{ old($field['name'], $detail?->{$field['name']}?->format('Y-m-d')) }}">
-            @error($field['name'])<small class="dr-error">{{ $message }}</small>@enderror
+            @error($field['name'])<small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>@enderror
         </div>
     @endforeach
 
@@ -186,7 +197,7 @@
         <input type="number" id="years_of_experience"
                name="years_of_experience" min="0" max="100"
                value="{{ old('years_of_experience', $detail?->years_of_experience) }}">
-        @error('years_of_experience')<small class="dr-error">{{ $message }}</small>@enderror
+        @error('years_of_experience')<small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>@enderror
     </div>
 
     @foreach($longFields as $field)
@@ -196,7 +207,7 @@
                       name="{{ $field['name'] }}"
                       maxlength="{{ $field['max'] }}"
                       rows="3">{{ old($field['name'], $detail?->{$field['name']}) }}</textarea>
-            @error($field['name'])<small class="dr-error">{{ $message }}</small>@enderror
+            @error($field['name'])<small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>@enderror
         </div>
     @endforeach
 </div>
@@ -224,14 +235,14 @@
                         id="dr-preview-{{ $document['input'] }}"
                         src="{{ $fileUrl ?: '' }}"
                         alt="{{ $document['label'] }}"
-                        style="{{ $hasFile ? '' : 'display:none;' }}"
+                        @if (! $hasFile) hidden @endif
                     >
                     <span
                         id="dr-empty-{{ $document['input'] }}"
-                        style="{{ $hasFile ? 'display:none;' : '' }}"
+                        @if ($hasFile) hidden @endif
                     >Chưa có ảnh</span>
                 @else
-                    <div class="dr-file-symbol">FILE</div>
+                    <div class="dr-file-symbol">Tệp</div>
                     <span id="dr-file-label-{{ $document['input'] }}">
                         {{ $hasFile ? 'Đã có tài liệu' : 'Chưa có tài liệu' }}
                     </span>
@@ -253,7 +264,7 @@
                    data-kind="{{ $document['image'] ? 'image' : 'file' }}">
 
             @error($document['input'])
-                <small class="dr-error">{{ $message }}</small>
+                <small class="dr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
 
             @if($editing)
@@ -274,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const show = accountSelect.value === '';
 
             newAccountFields.forEach(function (field) {
-                field.style.display = show ? '' : 'none';
+                field.hidden = !show;
                 field.querySelectorAll('input').forEach(function (input) {
                     input.disabled = !show;
                 });
@@ -305,10 +316,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!file) {
                 if (preview) {
                     preview.src = originalSrc || '';
-                    preview.style.display = originalSrc ? 'block' : 'none';
+                    preview.hidden = !originalSrc;
                 }
                 if (empty) {
-                    empty.style.display = originalSrc ? 'none' : '';
+                    empty.hidden = Boolean(originalSrc);
                 }
                 if (fileLabel) {
                     fileLabel.textContent = originalLabel;
@@ -325,10 +336,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 objectUrl = URL.createObjectURL(file);
                 preview.src = objectUrl;
-                preview.style.display = 'block';
+                preview.hidden = false;
 
                 if (empty) {
-                    empty.style.display = 'none';
+                    empty.hidden = true;
                 }
             } else if (fileLabel) {
                 fileLabel.textContent = 'Đã chọn: ' + file.name;

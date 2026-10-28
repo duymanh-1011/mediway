@@ -2,6 +2,8 @@
 @php
     $editing = isset($employee);
     $detail = $editing ? $employee->detail : null;
+    $employeeTypeValue = old('employee_type', $detail?->employee_type);
+    $employeeTypeValue = is_string($employeeTypeValue) ? \App\Models\AdminDisplay::employeeTypeCode($employeeTypeValue) : '';
 
     $selectedUserId = old('user_id', '');
 
@@ -77,12 +79,12 @@
     @if($editing)
         <div class="em-field">
             <label>Mã nhân viên</label>
-            <input type="text" value="{{ $employee->employee_code }}" disabled>
+            <input class="admin-record-code" type="text" value="{{ $employee->employee_code }}" disabled>
         </div>
 
         <div class="em-field">
             <label>Tài khoản liên kết</label>
-            <input
+            <input class="admin-record-code"
                 type="text"
                 value="{{ $employee->user?->business_code }} — {{ $employee->user?->phone }}"
                 disabled
@@ -90,9 +92,9 @@
         </div>
     @else
         <div class="em-field em-full">
-            <label for="user_id">Tài khoản Employee có sẵn</label>
+            <label for="user_id">Tài khoản nhân viên có sẵn</label>
             <select id="user_id" name="user_id">
-                <option value="">-- Tạo tài khoản Employee mới --</option>
+                <option value="">-- Tạo tài khoản nhân viên mới --</option>
 
                 @foreach($availableUsers as $account)
                     <option
@@ -100,17 +102,17 @@
                         @selected((string) $selectedUserId === (string) $account->id)
                     >
                         {{ $account->business_code }} — {{ $account->phone }}
-                        ({{ $account->status }})
+                        ({{ \App\Models\AdminDisplay::label($account->status) }})
                     </option>
                 @endforeach
             </select>
 
             @error('user_id')
-                <small class="em-error">{{ $message }}</small>
+                <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
 
             <small class="em-help">
-                Chọn tài khoản Employee chưa có hồ sơ nhân viên,
+                Chọn tài khoản nhân viên chưa có hồ sơ,
                 hoặc để trống để tạo tài khoản mới.
             </small>
         </div>
@@ -126,7 +128,7 @@
                 placeholder="09xxxxxxxx"
             >
             @error('phone')
-                <small class="em-error">{{ $message }}</small>
+                <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
         </div>
 
@@ -140,7 +142,7 @@
                 placeholder="Ít nhất 8 ký tự"
             >
             @error('password')
-                <small class="em-error">{{ $message }}</small>
+                <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
         </div>
 
@@ -152,6 +154,7 @@
                 name="password_confirmation"
                 autocomplete="new-password"
             >
+@error('password_confirmation')<div class="field-error">{{ $message }}</div>@enderror
         </div>
     @endif
 
@@ -166,7 +169,7 @@
             required
         >
         @error('full_name')
-            <small class="em-error">{{ $message }}</small>
+            <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -180,7 +183,7 @@
             value="{{ old('date_of_birth', $editing ? $employee->date_of_birth?->format('Y-m-d') : '') }}"
         >
         @error('date_of_birth')
-            <small class="em-error">{{ $message }}</small>
+            <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -200,7 +203,7 @@
         </select>
 
         @error('gender')
-            <small class="em-error">{{ $message }}</small>
+            <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -211,18 +214,18 @@
                 value="ACTIVE"
                 @selected(old('status', $editing ? $employee->status : 'ACTIVE') === 'ACTIVE')
             >
-                Hoạt động
+                Đang hoạt động
             </option>
             <option
                 value="INACTIVE"
                 @selected(old('status', $editing ? $employee->status : 'ACTIVE') === 'INACTIVE')
             >
-                Không hoạt động
+                Ngừng hoạt động
             </option>
         </select>
 
         @error('status')
-            <small class="em-error">{{ $message }}</small>
+            <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 </div>
@@ -248,7 +251,7 @@
             >
 
             @error($field['name'])
-                <small class="em-error">{{ $message }}</small>
+                <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
         </div>
     @endforeach
@@ -263,7 +266,7 @@
             value="{{ old('citizen_id_issue_date', $detail?->citizen_id_issue_date?->format('Y-m-d')) }}"
         >
         @error('citizen_id_issue_date')
-            <small class="em-error">{{ $message }}</small>
+            <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 </div>
@@ -278,8 +281,17 @@
         <div class="em-field">
             <label for="{{ $field['name'] }}">
                 {{ $field['label'] }}
+                @if($field['name'] === 'employee_type')<span>*</span>@endif
             </label>
 
+            @if($field['name'] === 'employee_type')
+                <select id="employee_type" name="employee_type" required aria-required="true">
+                    <option value="">Chọn loại nhân viên</option>
+                    @foreach($employeeTypes as $type)
+                        <option value="{{ $type->code }}" @selected($employeeTypeValue === $type->code)>{{ $type->name }}</option>
+                    @endforeach
+                </select>
+            @else
             <input
                 type="text"
                 id="{{ $field['name'] }}"
@@ -287,9 +299,10 @@
                 maxlength="{{ $field['max'] }}"
                 value="{{ old($field['name'], $detail?->{$field['name']}) }}"
             >
+            @endif
 
             @error($field['name'])
-                <small class="em-error">{{ $message }}</small>
+                <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
         </div>
     @endforeach
@@ -304,7 +317,7 @@
             value="{{ old('hire_date', $detail?->hire_date?->format('Y-m-d')) }}"
         >
         @error('hire_date')
-            <small class="em-error">{{ $message }}</small>
+            <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -317,7 +330,7 @@
             value="{{ old('termination_date', $detail?->termination_date?->format('Y-m-d')) }}"
         >
         @error('termination_date')
-            <small class="em-error">{{ $message }}</small>
+            <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 
@@ -333,7 +346,7 @@
             value="{{ old('years_of_service', $detail?->years_of_service) }}"
         >
         @error('years_of_service')
-            <small class="em-error">{{ $message }}</small>
+            <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
         <small class="em-help">
             Nhập theo số năm công tác do đơn vị xác nhận.
@@ -354,7 +367,7 @@
             >{{ old($field['name'], $detail?->{$field['name']}) }}</textarea>
 
             @error($field['name'])
-                <small class="em-error">{{ $message }}</small>
+                <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
         </div>
     @endforeach
@@ -391,12 +404,12 @@
                         id="em-preview-{{ $document['input'] }}"
                         src="{{ $fileUrl ?? '' }}"
                         alt="{{ $document['label'] }}"
-                        style="{{ $hasFile ? '' : 'display:none;' }}"
+                        @if (! $hasFile) hidden @endif
                     >
 
                     <span
                         id="em-empty-{{ $document['input'] }}"
-                        style="{{ $hasFile ? 'display:none;' : '' }}"
+                        @if ($hasFile) hidden @endif
                     >
                         Chưa có ảnh
                     </span>
@@ -430,7 +443,7 @@
             >
 
             @error($document['input'])
-                <small class="em-error">{{ $message }}</small>
+                <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
         </div>
     @endforeach
@@ -447,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const creatingAccount = userSelect.value === '';
 
             accountFields.forEach(function (field) {
-                field.style.display = creatingAccount ? '' : 'none';
+                field.hidden = !creatingAccount;
 
                 field.querySelectorAll('input').forEach(function (input) {
                     input.disabled = !creatingAccount;
@@ -480,11 +493,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!file) {
                 if (preview) {
                     preview.src = originalSrc || '';
-                    preview.style.display = originalSrc ? 'block' : 'none';
+                    preview.hidden = !originalSrc;
                 }
 
                 if (empty) {
-                    empty.style.display = originalSrc ? 'none' : '';
+                    empty.hidden = Boolean(originalSrc);
                 }
 
                 if (fileLabel) {
@@ -504,10 +517,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 objectUrl = URL.createObjectURL(file);
 
                 preview.src = objectUrl;
-                preview.style.display = 'block';
+                preview.hidden = false;
 
                 if (empty) {
-                    empty.style.display = 'none';
+                    empty.hidden = true;
                 }
             } else if (fileLabel) {
                 fileLabel.textContent = 'Đã chọn: ' + file.name;

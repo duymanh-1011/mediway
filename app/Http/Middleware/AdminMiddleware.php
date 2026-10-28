@@ -11,17 +11,14 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
+        app()->setLocale('vi');
         if (! Auth::check()) {
             return redirect()->route('admin.login');
         }
 
         $user = Auth::user();
 
-        if (
-            ! $user->role
-            || $user->role->name !== 'Administrator'
-            || $user->status !== 'ACTIVE'
-        ) {
+        if (! $user->canAccessAdmin()) {
             Auth::logout();
 
             $request->session()->invalidate();

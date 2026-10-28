@@ -18,7 +18,7 @@
         ['name' => 'body_temperature', 'label' => 'Nhiệt độ (°C)', 'min' => '30', 'max' => '45', 'step' => '0.1'],
         ['name' => 'spo2', 'label' => 'SpO2 (%)', 'min' => '0', 'max' => '100', 'step' => '0.01'],
         ['name' => 'respiratory_rate', 'label' => 'Nhịp thở (lần/phút)', 'min' => '5', 'max' => '100', 'step' => '1'],
-        ['name' => 'blood_glucose', 'label' => 'Đường huyết (đơn vị theo quy ước hệ thống)', 'min' => '0', 'max' => '1000', 'step' => '0.01'],
+        ['name' => 'blood_glucose', 'label' => 'Đường huyết ('.\App\Models\PersonalHealthRecord::BLOOD_GLUCOSE_UNIT.')', 'min' => '0', 'max' => '1000', 'step' => '0.01'],
     ];
 @endphp
 
@@ -32,7 +32,7 @@
         <label for="patient_id">Bệnh nhân <span>*</span></label>
 
         @if($editing)
-            <input
+            <input class="admin-record-code"
                 type="text"
                 value="{{ $record->patient?->patient_code }} — {{ $record->patient?->full_name }}"
                 disabled
@@ -52,7 +52,7 @@
                 @endforeach
             </select>
             @error('patient_id')
-                <small class="hr-error">{{ $message }}</small>
+                <small class="hr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
         @endif
     </div>
@@ -68,7 +68,7 @@
             required
         >
         @error('recorded_at')
-            <small class="hr-error">{{ $message }}</small>
+            <small class="hr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 </div>
@@ -93,7 +93,7 @@
                 placeholder="Chưa ghi nhận"
             >
             @error($field['name'])
-                <small class="hr-error">{{ $message }}</small>
+                <small class="hr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
             @enderror
         </div>
     @endforeach
@@ -119,7 +119,7 @@
             placeholder="Ghi chú về lần đo sức khỏe..."
         >{{ old('notes', $editing ? $record->notes : '') }}</textarea>
         @error('notes')
-            <small class="hr-error">{{ $message }}</small>
+            <small class="hr-error">{{ \App\Models\AdminDisplay::text($message) }}</small>
         @enderror
     </div>
 </div>

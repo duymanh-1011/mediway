@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PersonalHealthRecord extends Model
 {
+    public const BLOOD_GLUCOSE_UNIT = 'mmol/L';
+
     protected $table = 'personal_health_records';
 
     protected $fillable = [

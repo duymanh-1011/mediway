@@ -16,19 +16,22 @@
         <div class="patient-services__heading">
             <div><p class="portal-eyebrow">DỊCH VỤ CỦA BẠN</p><h2>Mọi thứ bạn cần, ở một nơi</h2><p>Tiện ích chăm sóc sức khỏe dành cho bạn.</p></div>
         </div>
+        {{-- Các thẻ dẫn đến chức năng bệnh nhân; tài liệu nằm trong kết quả khám. --}}
         <div class="patient-services__grid">
             @foreach ([
                 ['✚', 'Đặt lịch khám', 'Lựa chọn thời gian khám phù hợp với bạn.'],
                 ['▤', 'Hồ sơ cá nhân', 'Quản lý thông tin cá nhân của bạn.'],
                 ['♡', 'Hồ sơ sức khỏe', 'Theo dõi thông tin sức khỏe theo thời gian.'],
-                ['✳', 'Kết quả khám bệnh', 'Xem lại kết quả sau mỗi lần thăm khám.'],
+                ['✳', 'Kết quả khám bệnh', 'Xem kết quả và tài liệu trong hồ sơ của bạn.'],
                 ['▧', 'Đơn thuốc', 'Tra cứu thông tin đơn thuốc của bạn.'],
                 ['▣', 'Thanh toán', 'Theo dõi các khoản thanh toán khám chữa bệnh.'],
             ] as [$icon, $title, $description])
-                <a class="patient-service-card" href="#">
+                @php($url = match ($title) { 'Hồ sơ sức khỏe' => route('patient.health-history'), 'Kết quả khám bệnh' => route('patient.results'), 'Đơn thuốc' => route('patient.prescriptions'), default => '#' })
+                <a class="patient-service-card" href="{{ $url }}">
                     <span class="patient-service-card__icon" aria-hidden="true">{{ $icon }}</span>
                     <h3>{{ $title }}</h3>
                     <p>{{ $description }}</p>
+                    <span class="patient-service-card__action">Khám phá <span aria-hidden="true">→</span></span>
                 </a>
             @endforeach
         </div>

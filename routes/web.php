@@ -82,6 +82,15 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->middleware(PatientMiddleware::class)->name('logout');
     Route::middleware(PatientMiddleware::class)->get('/', [PortalController::class, 'placeholder'])->name('home');
     Route::middleware(PatientMiddleware::class)->get('/thong-bao', [PortalController::class, 'notifications'])->name('notifications');
+    // Các trang hồ sơ và tài liệu yêu cầu tài khoản bệnh nhân hợp lệ.
+    Route::middleware(PatientMiddleware::class)->get('/ho-so-suc-khoe', [\App\Http\Controllers\Portal\ClinicalHistoryController::class, 'index'])->name('health-history');
+    // Đường dẫn tài liệu cũ chuyển đến trang kết quả, nơi tài liệu được hiển thị.
+    Route::redirect('/tai-lieu', '/tai-khoan/ket-qua')->middleware(PatientMiddleware::class)->name('documents.index');
+    Route::middleware(PatientMiddleware::class)->get('/tai-lieu/{type}', [\App\Http\Controllers\Portal\PatientDocumentController::class, 'show'])->where('type', 'avatar|citizen-id-front|citizen-id-back|profile-pdf')->name('documents.show');
+    Route::middleware(PatientMiddleware::class)->get('/ket-qua', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'results'])->name('results');
+    Route::middleware(PatientMiddleware::class)->get('/ket-qua/{result}/tai-lieu/{type}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'resultDocument'])->where('type', 'result_pdf|result_image')->name('results.document');
+    Route::middleware(PatientMiddleware::class)->get('/don-thuoc', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptions'])->name('prescriptions');
+    Route::middleware(PatientMiddleware::class)->get('/don-thuoc/{prescription}/pdf', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptionDocument'])->name('prescriptions.document');
 });
 
 /*

@@ -50,6 +50,7 @@ use App\Http\Controllers\Portal\PasswordResetController;
 use App\Http\Controllers\Portal\PublicController;
 use App\Http\Controllers\Portal\RegistrationController;
 use App\Http\Controllers\Portal\PortalController;
+use App\Http\Controllers\Portal\ProfileController;
 use App\Http\Middleware\PatientMiddleware;
 
 /*
@@ -81,6 +82,14 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
 
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->middleware(PatientMiddleware::class)->name('logout');
     Route::middleware(PatientMiddleware::class)->get('/', [PortalController::class, 'placeholder'])->name('home');
+    Route::middleware(PatientMiddleware::class)->get('/lich-kham', [PortalController::class, 'appointments'])->name('appointments');
+    Route::middleware(PatientMiddleware::class)->group(function () {
+        Route::get('/ho-so', [ProfileController::class, 'show'])->name('profile.show');
+        Route::get('/ho-so/chinh-sua', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::get('/ho-so/doi-so-dien-thoai', [ProfileController::class, 'phoneChange'])->name('profile.phone');
+        Route::put('/ho-so', [ProfileController::class, 'update'])->name('profile.update');
+        Route::get('/ho-so/anh-dai-dien', [ProfileController::class, 'avatar'])->name('profile.avatar');
+    });
     Route::middleware(PatientMiddleware::class)->get('/thong-bao', [PortalController::class, 'notifications'])->name('notifications');
 });
 

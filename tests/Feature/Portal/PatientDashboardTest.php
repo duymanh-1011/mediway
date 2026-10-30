@@ -50,7 +50,7 @@ class PatientDashboardTest extends TestCase
         $this->actingAs($a)->get(route('patient.appointments', ['patient_id' => $b->patient->id]))
             ->assertOk()->assertSee('LH000001')->assertDontSee('LK000001')->assertDontSee('Lượt khám hiện tại')
             ->assertDontSee('Thông tin hàng đợi đang được cập nhật')->assertDontSee('LH000006')->assertDontSee('LH000002')
-            ->assertDontSee('LK000002')->assertDontSee($otherPayable)->assertHeader('Cache-Control', 'no-store, private');
+            ->assertDontSee('LK000002')->assertDontSee($otherPayable)->assertHeader('Cache-Control', 'must-revalidate, no-cache, no-store, private');
     }
 
     public function test_empty_states_and_cards_have_no_dead_links(): void

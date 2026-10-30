@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Contracts\PatientOtpSender;
 use App\Services\LocalDemoPatientOtpSender;
+use App\Services\EsmsDemoPatientOtpSender;
 use App\Models\Administrator;
 use App\Models\BusinessCodeGenerator;
 use App\Models\Doctor;
@@ -39,7 +40,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(PatientOtpSender::class, LocalDemoPatientOtpSender::class);
+        $this->app->bind(PatientOtpSender::class, fn () => config('portal.esms.enabled')
+            ? app(EsmsDemoPatientOtpSender::class) : app(LocalDemoPatientOtpSender::class));
     }
 
     /**

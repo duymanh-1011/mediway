@@ -105,7 +105,7 @@ class PatientProfileTest extends TestCase
         $this->actingAs($a)->get(route('patient.profile.show', ['patient_id' => $b->patient->id]))
             ->assertOk()->assertSee($a->patient->full_name)->assertSee($a->patient->patient_code)
             ->assertDontSee($b->patient->full_name)->assertDontSee('secret-internal-note')->assertDontSee('private-document-file.pdf')
-            ->assertHeader('Cache-Control', 'no-store, private');
+            ->assertHeader('Cache-Control', 'must-revalidate, no-cache, no-store, private');
     }
 
     public function test_missing_detail_and_invalid_users_are_safe(): void

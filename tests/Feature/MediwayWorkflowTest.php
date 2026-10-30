@@ -64,6 +64,7 @@ class MediwayWorkflowTest extends TestCase
         $slot = $this->slot();
         $appointment = $this->book($slot);
         $this->assertEquals($slot->doctorSchedule->doctor_id, $appointment->doctor_id);
+        $this->travelTo(today()->setTime(9, 0));
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
         $visit = $appointment->fresh()->medicalVisit;
         $this->assertSame('WAITING', $visit->status->name);
@@ -118,6 +119,7 @@ class MediwayWorkflowTest extends TestCase
     public function test_queue_can_start_after_the_visit_was_started_from_visit_details(): void
     {
         $appointment = $this->book($this->slot());
+        $this->travelTo(today()->setTime(9, 0));
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
         $visit = $appointment->fresh()->medicalVisit;
         $this->patch(route('admin.visits.update-status', $visit), ['visit_status_id' => VisitStatus::where('name', 'IN_EXAMINATION')->value('id')])->assertSessionHasNoErrors();

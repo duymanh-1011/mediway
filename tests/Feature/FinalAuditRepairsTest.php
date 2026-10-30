@@ -66,7 +66,9 @@ class FinalAuditRepairsTest extends TestCase
 
     private function receive(): MedicalVisit
     {
+        $this->travelTo(today()->setTime(7, 0));
         $appointment = $this->appointment();
+        $this->travelTo(today()->setTime(9, 0));
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors()->assertSessionMissing('error');
 
         return $appointment->medicalVisit()->sole();
@@ -140,7 +142,9 @@ class FinalAuditRepairsTest extends TestCase
     public function test_inactive_reception_dependencies_do_not_create_partial_visits_or_audit_logs(): void
     {
         foreach (['schedule', 'slot', 'doctor', 'patient', 'specialty', 'room'] as $kind) {
+            $this->travelTo(today()->setTime(7, 0));
             $appointment = $this->appointment();
+            $this->travelTo(today()->setTime(9, 0));
             $slot = $appointment->appointmentTimeSlot;
             $record = match ($kind) {
                 'schedule' => $slot->doctorSchedule, 'slot' => $slot, 'doctor' => $appointment->doctor,

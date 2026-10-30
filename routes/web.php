@@ -70,7 +70,7 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
         Route::get('/dang-nhap', [PortalAuthController::class, 'create'])->name('login');
         Route::post('/dang-nhap', [PortalAuthController::class, 'store'])->name('login.store');
         Route::get('/dang-ky', [RegistrationController::class, 'create'])->name('register');
-        Route::post('/dang-ky', [RegistrationController::class, 'store'])->name('register.store');
+        Route::post('/dang-ky', [RegistrationController::class, 'store'])->middleware('throttle:10,1')->name('register.store');
         Route::get('/quen-mat-khau', [PasswordResetController::class, 'create'])->name('password.request');
         Route::post('/quen-mat-khau', [PasswordResetController::class, 'send'])->name('password.send');
         Route::get('/quen-mat-khau/xac-minh', [PasswordResetController::class, 'verifyForm'])->name('password.verify');

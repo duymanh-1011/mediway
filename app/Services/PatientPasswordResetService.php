@@ -7,7 +7,7 @@ use App\Models\PatientPasswordResetChallenge;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use Throwable;
 
 final class PatientPasswordResetService
 {
@@ -16,15 +16,23 @@ final class PatientPasswordResetService
     public function request(User $user): bool
     {
         $otp = (string) random_int(100000, 999999);
-        if (! $this->sender->send($user, $otp)) {
-            return false;
-        }
-
-        DB::transaction(function () use ($user, $otp): void {
+        $otpHash = Hash::make($otp);
+        DB::transaction(function () use ($user, $otpHash): void {
             PatientPasswordResetChallenge::updateOrCreate(['user_id' => $user->id], [
-                'otp_hash' => Hash::make($otp), 'attempts' => 0, 'expires_at' => now()->addMinutes(10), 'used_at' => null,
+                'otp_hash' => $otpHash, 'attempts' => 0, 'expires_at' => now()->addMinutes(10), 'used_at' => null,
             ]);
         });
+
+        try {
+            $sent = $this->sender->send($user, $otp);
+        } catch (Throwable) {
+            $sent = false;
+        }
+        if (! $sent) {
+            PatientPasswordResetChallenge::where('user_id', $user->id)->where('otp_hash', $otpHash)
+                ->update(['expires_at' => now()->subSecond(), 'used_at' => now()]);
+            return false;
+        }
 
         // The OTP deliberately exists only in this method and its hash in storage.
         return true;
@@ -42,7 +50,7 @@ final class PatientPasswordResetService
                 return null;
             }
             $challenge->update(['used_at' => now()]);
-            return Str::random(64);
+            return hash('sha256', $challenge->otp_hash);
         });
     }
 }

@@ -43,7 +43,7 @@
             !$medicalVisit
             &&
             $statusName === 'BOOKED'
-            && $appointment->isScheduledForToday();
+            && $appointment->receptionUnavailableReason() === null;
 
     @endphp
 
@@ -169,6 +169,8 @@
 
         </div>
 
+    @elseif (!$medicalVisit && $statusName === 'BOOKED')
+        <div class="notice-box" role="status">{{ $appointment->receptionUnavailableReason() }}</div>
     @endif
 
 

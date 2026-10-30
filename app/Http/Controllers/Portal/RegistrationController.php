@@ -15,9 +15,9 @@ class RegistrationController extends Controller
     {
         try {
             $data = $request->safe()->only(['full_name', 'phone', 'password']);
-            $patient = $registration->register($data['full_name'], $data['phone'], $data['password']);
+            $registration->register($data['full_name'], $data['phone'], $data['password']);
         } catch (UniqueConstraintViolationException) {
-            return back()->withErrors(['phone' => 'Số điện thoại đã được sử dụng.'])->withInput();
+            return back()->withErrors(['phone' => 'Không thể hoàn tất đăng ký. Vui lòng kiểm tra lại thông tin và thử lại.'])->onlyInput('full_name', 'phone');
         }
         return redirect()->route('patient.login')->with('success', 'Đăng ký thành công. Bạn có thể đăng nhập bằng tài khoản mới.');
     }

@@ -24,17 +24,20 @@ class AuthController extends Controller
     {
         $data = $request->validated();
         $key = 'patient-login:'.hash('sha256', $data['phone'].'|'.$request->ip());
-        if (RateLimiter::tooManyAttempts($key, 5)) {
-            return back()->withErrors(['phone' => 'Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau '.max(1, RateLimiter::availableIn($key)).' giây.'])->onlyInput('phone');
+        $ipKey = 'patient-login-ip:'.hash('sha256', (string) $request->ip());
+        if (RateLimiter::tooManyAttempts($key, 5) || RateLimiter::tooManyAttempts($ipKey, 30)) {
+            return back()->withErrors(['phone' => 'Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau '.max(1, RateLimiter::availableIn($key), RateLimiter::availableIn($ipKey)).' giây.'])->onlyInput('phone');
         }
         if (! Auth::attempt(['phone' => $data['phone'], 'password' => $data['password'], 'status' => 'ACTIVE'])) {
             RateLimiter::hit($key, 60);
+            RateLimiter::hit($ipKey, 60);
             return back()->withErrors(['phone' => 'Số điện thoại hoặc mật khẩu không chính xác.'])->onlyInput('phone');
         }
         $request->session()->regenerate();
         $user = Auth::user();
         if (! $user instanceof User || ! $user->canAccessPortal()) {
             RateLimiter::hit($key, 60);
+            RateLimiter::hit($ipKey, 60);
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

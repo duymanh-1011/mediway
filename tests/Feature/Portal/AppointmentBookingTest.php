@@ -26,7 +26,20 @@ class AppointmentBookingTest extends TestCase
                 ->setTime(8, 0, 0)
         );
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(DatabaseSeeder::class);        // M06_TEST_PROFILE_FIXTURE_20261030
+        \Illuminate\Support\Facades\DB::table('patient_details')
+            ->whereIn(
+                'patient_id',
+                \Illuminate\Support\Facades\DB::table('patients')
+                    ->whereIn(
+                        'patient_code',
+                        ['BN000001', 'BN000002']
+                    )
+                    ->pluck('id')
+            )
+            ->update([
+                'current_address' => '12 Pho Bach Mai, Ha Noi',
+            ]);
         $this->withoutVite();
     }
 
@@ -93,6 +106,7 @@ class AppointmentBookingTest extends TestCase
             'appointment_time_slot_id' => $slotId,
             'reason_for_visit' => 'Đau họng và ho trong hai ngày.',
             'patient_notes' => 'Không có ghi chú thêm.',
+            'confirmed_information' => '1',
         ];
     }
 
@@ -662,4 +676,21 @@ class AppointmentBookingTest extends TestCase
                 ->count()
         );
     }
-}
+    public function test_booking_without_confirmation_is_rejected(): void
+    {
+        [, $slot] = $this->createSlot();
+        $user = $this->patientUser();
+        $this->actingAs($user)
+            ->post(
+                route('patient.appointments.store'),
+                [
+                    'appointment_time_slot_id' => $slot->id,
+                    'reason_for_visit' => 'Đau đầu và sốt.',
+                ]
+            )
+            ->assertSessionHasErrors('confirmed_information');
+        $this->assertDatabaseMissing('appointments', [
+            'patient_id' => $user->patient->id,
+            'appointment_time_slot_id' => $slot->id,
+        ]);
+    }}

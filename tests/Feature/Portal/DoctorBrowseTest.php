@@ -36,7 +36,20 @@ class DoctorBrowseTest extends TestCase
                 ->setTime(8, 0, 0)
         );
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(DatabaseSeeder::class);        // M06_TEST_PROFILE_FIXTURE_20261030
+        \Illuminate\Support\Facades\DB::table('patient_details')
+            ->whereIn(
+                'patient_id',
+                \Illuminate\Support\Facades\DB::table('patients')
+                    ->whereIn(
+                        'patient_code',
+                        ['BN000001', 'BN000002']
+                    )
+                    ->pluck('id')
+            )
+            ->update([
+                'current_address' => '12 Pho Bach Mai, Ha Noi',
+            ]);
 
         $this->withoutVite();
 
@@ -459,7 +472,7 @@ class DoctorBrowseTest extends TestCase
     |--------------------------------------------------------------------------
     */
 
-    public function test_past_time_slot_is_not_exposed(): void
+    public function test_past_time_slot_is_shown_but_cannot_be_booked(): void
     {
         $doctor =
             $this
@@ -525,9 +538,13 @@ class DoctorBrowseTest extends TestCase
             )
             ->all();
 
-        $this->assertNotContains(
-            $pastSlot->id,
-            $slotIds
+        $this->assertContains($pastSlot->id, $slotIds);
+        $response->assertSeeText('Đã qua giờ');
+        $this->assertStringNotContainsString(
+            'data-book-url="' .
+                route('patient.appointments.create', $pastSlot) .
+                '"',
+            $response->getContent()
         );
 
         $this->assertContains(
@@ -759,7 +776,7 @@ class DoctorBrowseTest extends TestCase
     |--------------------------------------------------------------------------
     */
 
-    public function test_full_time_slot_is_not_exposed(): void
+    public function test_full_time_slot_is_shown_but_cannot_be_booked(): void
     {
         $doctor =
             $this
@@ -803,8 +820,8 @@ class DoctorBrowseTest extends TestCase
                 'appointment_time_slot_id' =>
                 $slot->id,
 
-                'reason_for_visit' =>
-                'Đau họng và ho nhiều.',
+                'reason_for_visit' => 'Đau họng và ho nhiều.',
+                'confirmed_information' => '1',
             ]
         )
             ->assertSessionHasNoErrors();
@@ -843,9 +860,13 @@ class DoctorBrowseTest extends TestCase
             )
             ->all();
 
-        $this->assertNotContains(
-            $schedule->id,
-            $scheduleIds
+        $this->assertContains($schedule->id, $scheduleIds);
+        $response->assertSeeText('Hết chỗ');
+        $this->assertStringNotContainsString(
+            'data-book-url="' .
+                route('patient.appointments.create', $slot) .
+                '"',
+            $response->getContent()
         );
     }
 

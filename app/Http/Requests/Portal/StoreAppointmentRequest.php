@@ -8,26 +8,23 @@ class StoreAppointmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->user();
-
-        return $user !== null
-            && $user->canAccessPortal();
+        return $this->user() !== null
+            && $this->user()->canAccessPortal();
     }
 
     protected function prepareForValidation(): void
     {
-        $reasonForVisit = $this->input('reason_for_visit');
-        $patientNotes = $this->input('patient_notes');
+        $reason = $this->input('reason_for_visit');
+        $notes = $this->input('patient_notes');
 
         $this->merge([
-            'reason_for_visit' =>
-            is_string($reasonForVisit)
-                ? trim($reasonForVisit)
-                : $reasonForVisit,
+            'reason_for_visit' => is_string($reason)
+                ? trim($reason)
+                : $reason,
 
-            'patient_notes' =>
-            is_string($patientNotes) && trim($patientNotes) !== ''
-                ? trim($patientNotes)
+            'patient_notes' => is_string($notes)
+                && trim($notes) !== ''
+                ? trim($notes)
                 : null,
         ]);
     }
@@ -46,25 +43,6 @@ class StoreAppointmentRequest extends FormRequest
                 'bail',
                 'required',
                 'string',
-
-                /*
-                |--------------------------------------------------------------------------
-                | Phải có ít nhất một chữ cái
-                |--------------------------------------------------------------------------
-                |
-                | Cho phép:
-                | - đau đầu
-                | - đau chân 2 ngày
-                | - viêm da 123
-                |
-                | Không cho:
-                | - 123456
-                | - !!!@@@
-                |
-                | \p{L} hỗ trợ cả chữ tiếng Việt.
-                |
-                */
-
                 'regex:/\p{L}/u',
                 'max:2000',
             ],
@@ -73,6 +51,10 @@ class StoreAppointmentRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:2000',
+            ],
+
+            'confirmed_information' => [
+                'accepted',
             ],
         ];
     }
@@ -83,38 +65,23 @@ class StoreAppointmentRequest extends FormRequest
             'appointment_time_slot_id.required' =>
             'Vui lòng chọn khung giờ khám.',
 
-            'appointment_time_slot_id.integer' =>
-            'Khung giờ khám không hợp lệ.',
-
             'appointment_time_slot_id.exists' =>
             'Khung giờ khám không tồn tại.',
 
             'reason_for_visit.required' =>
             'Vui lòng nhập lý do khám.',
 
-            'reason_for_visit.string' =>
-            'Lý do khám không hợp lệ.',
-
             'reason_for_visit.regex' =>
-            'Lý do khám phải có ít nhất một chữ cái, không được chỉ nhập số hoặc ký tự đặc biệt.',
+            'Lý do khám phải có chữ cái, không được chỉ nhập số hoặc ký tự đặc biệt.',
 
             'reason_for_visit.max' =>
             'Lý do khám không được vượt quá 2000 ký tự.',
 
-            'patient_notes.string' =>
-            'Ghi chú không hợp lệ.',
-
             'patient_notes.max' =>
             'Ghi chú không được vượt quá 2000 ký tự.',
-        ];
-    }
 
-    public function attributes(): array
-    {
-        return [
-            'appointment_time_slot_id' => 'khung giờ khám',
-            'reason_for_visit' => 'lý do khám',
-            'patient_notes' => 'ghi chú',
+            'confirmed_information.accepted' =>
+            'Bạn phải tích chọn xác nhận thông tin trước khi đặt lịch khám.',
         ];
     }
 }

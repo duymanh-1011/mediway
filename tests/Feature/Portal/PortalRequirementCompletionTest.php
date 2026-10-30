@@ -322,22 +322,26 @@ class PortalRequirementCompletionTest extends TestCase
 
     public function test_cancel_and_reschedule_stay_disabled_until_policy_is_approved(): void
     {
-        $this->assertFalse(
-            Route::has(
-                'patient.appointments.cancel'
-            )
+        foreach (
+            [
+                'patient.appointments.cancel.form',
+                'patient.appointments.cancel',
+                'patient.appointments.reschedule.form',
+                'patient.appointments.reschedule',
+            ] as $routeName
+        ) {
+            $this->assertTrue(
+                \Illuminate\Support\Facades\Route::has($routeName)
+            );
+        }
+
+        config()->set('patient_appointments.self_service_approved', false);
+
+        $policy = app(
+            \App\Support\Portal\AppointmentChangePolicy::class
         );
 
-        $this->assertFalse(
-            Route::has(
-                'patient.appointments.reschedule'
-            )
-        );
-
-        $this->assertFalse(
-            Route::has(
-                'patient.appointments.update'
-            )
-        );
+        $this->assertFalse($policy->enabled('cancel'));
+        $this->assertFalse($policy->enabled('reschedule'));
     }
 }

@@ -9,45 +9,27 @@ use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\Specialty;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class DoctorController extends Controller
 {
-    public function index(
-        BrowseDoctorScheduleRequest $request
-    ): View {
-        $data = $request->validated();
+    public function index(BrowseDoctorScheduleRequest $request): View
+    {
+        $filters = $request->validated();
 
-        $specialtyId =
-            isset($data['specialty_id'])
-            ? (int) $data['specialty_id']
-            : null;
+        $specialtyId = filled($filters['specialty_id'] ?? null)
+            ? (int) $filters['specialty_id'] : null;
 
-        $doctorId =
-            isset($data['doctor_id'])
-            ? (int) $data['doctor_id']
-            : null;
+        $doctorId = filled($filters['doctor_id'] ?? null)
+            ? (int) $filters['doctor_id'] : null;
 
-        $date =
-            $data['date']
-            ?? null;
+        $date = $filters['date'] ?? null;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Chuyên khoa ACTIVE
-        |--------------------------------------------------------------------------
-        */
-
-        $specialties =
-            Specialty::query()
-            ->where(
-                'status',
-                'ACTIVE'
-            )
-            ->orderBy(
-                'name'
-            )
+        $specialties = Specialty::query()
+            ->where('status', 'ACTIVE')
+            ->orderBy('name')
             ->get([
                 'id',
                 'name',
@@ -55,43 +37,17 @@ class DoctorController extends Controller
                 'pre_visit_instructions',
             ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Bác sĩ ACTIVE
-        |--------------------------------------------------------------------------
-        |
-        | Chỉ lấy các field cần cho Patient Portal.
-        | Không expose doctor_code, user_id, date_of_birth, gender...
-        |
-        */
-
-        $doctors =
-            Doctor::query()
-            ->with([
-                'specialty:id,name,status,is_general',
-            ])
-            ->where(
-                'status',
-                'ACTIVE'
-            )
+        // Luon tai danh sach bac si day du cho dropdown.
+        // Khong loc dropdown theo specialtyId tai database.
+        $doctors = Doctor::query()
+            ->with('specialty:id,name,status,is_general')
+            ->where('status', 'ACTIVE')
             ->whereHas(
                 'specialty',
-                fn($query) =>
-                $query->where(
-                    'status',
-                    'ACTIVE'
-                )
+                fn(Builder $q) =>
+                $q->where('status', 'ACTIVE')
             )
-            ->when(
-                $specialtyId,
-                fn($query) =>
-                $query->forSpecialty(
-                    $specialtyId
-                )
-            )
-            ->orderBy(
-                'full_name'
-            )
+            ->orderBy('full_name')
             ->get([
                 'id',
                 'specialty_id',
@@ -100,17 +56,25 @@ class DoctorController extends Controller
             ]);
 
         /*
-        |--------------------------------------------------------------------------
-        | Lịch thực tế còn nhận đặt
-        |--------------------------------------------------------------------------
-        */
-
-        $schedules =
-            $this->availableSchedules(
-                $specialtyId,
-                $doctorId,
-                $date
-            );
+         * Trang tra cuu:
+         * Giu lai cac slot da day hoac da qua gio
+         * TRONG NGAY HOM NAY de hien thi trang thai.
+         *
+         * Ngay truoc hom nay duoc loai bo tai query.
+         */
+        $schedules = $this->scheduleQuery(
+            $specialtyId,
+            $doctorId,
+            $date
+        )
+            ->get()
+            ->filter(
+                fn(DoctorSchedule $schedule) =>
+                $schedule
+                    ->appointmentTimeSlots
+                    ->isNotEmpty()
+            )
+            ->values();
 
         return view(
             'portal.doctors.index',
@@ -125,81 +89,42 @@ class DoctorController extends Controller
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | M05.3 - Trang bác sĩ
-    |--------------------------------------------------------------------------
-    */
-
-    public function show(
-        Doctor $doctor
-    ): View {
-        $doctor =
-            Doctor::query()
+    public function show(Doctor $doctor): View
+    {
+        $doctor = Doctor::query()
             ->select([
                 'id',
                 'specialty_id',
                 'full_name',
                 'status',
             ])
-            ->with([
-                /*
-                |--------------------------------------------------------------------------
-                | Chỉ lấy dữ liệu chuyên khoa được phép hiển thị cho Patient
-                |--------------------------------------------------------------------------
-                |
-                | Không lấy specialty_code, notes, dữ liệu nội bộ.
-                |
-                | description + pre_visit_instructions cần có vì Blade trang
-                | bác sĩ đang hiển thị hai trường này.
-                |
-                */
-                'specialty:id,name,description,pre_visit_instructions,status,is_general',
-            ])
-            ->whereKey(
-                $doctor->id
+            ->with(
+                'specialty:id,name,description,pre_visit_instructions,status,is_general'
             )
-            ->where(
-                'status',
-                'ACTIVE'
-            )
+            ->whereKey($doctor->id)
+            ->where('status', 'ACTIVE')
             ->whereHas(
                 'specialty',
-                fn($query) =>
-                $query->where(
-                    'status',
-                    'ACTIVE'
-                )
+                fn(Builder $q) =>
+                $q->where('status', 'ACTIVE')
             )
             ->firstOrFail();
 
-        $schedules =
-            $this->availableSchedules(
-                null,
-                $doctor->id,
-                null
-            );
+        $schedules = $this->availableSchedules(
+            null,
+            (int) $doctor->id,
+            null
+        );
 
         return view(
             'portal.doctors.show',
-            compact(
-                'doctor',
-                'schedules'
-            )
+            compact('doctor', 'schedules')
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | M05.3 - Trang chuyên khoa
-    |--------------------------------------------------------------------------
-    */
-
-    public function specialty(
-        Specialty $specialty
-    ): View {
-        $specialty =
-            Specialty::query()
+    public function specialty(Specialty $specialty): View
+    {
+        $specialty = Specialty::query()
             ->select([
                 'id',
                 'name',
@@ -208,80 +133,55 @@ class DoctorController extends Controller
                 'status',
                 'is_general',
             ])
-            ->whereKey(
-                $specialty->id
-            )
-            ->where(
-                'status',
-                'ACTIVE'
-            )
+            ->whereKey($specialty->id)
+            ->where('status', 'ACTIVE')
             ->firstOrFail();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Bác sĩ có thể khám chuyên khoa này
-        |--------------------------------------------------------------------------
-        */
-
-        $doctors =
-            Doctor::query()
+        $doctors = Doctor::query()
             ->select([
                 'id',
                 'specialty_id',
                 'full_name',
                 'status',
             ])
-            ->with([
-                'specialty:id,name,status,is_general',
-            ])
-            ->where(
-                'status',
-                'ACTIVE'
-            )
+            ->with('specialty:id,name,status,is_general')
+            ->where('status', 'ACTIVE')
             ->whereHas(
                 'specialty',
-                fn($query) =>
-                $query->where(
-                    'status',
-                    'ACTIVE'
-                )
+                fn(Builder $q) =>
+                $q->where('status', 'ACTIVE')
             )
-            ->forSpecialty(
-                $specialty->id
-            )
-            ->orderBy(
-                'full_name'
-            )
+            ->forSpecialty((int) $specialty->id)
+            ->orderBy('full_name')
             ->get();
 
-        $schedules =
-            $this->availableSchedules(
-                $specialty->id,
-                null,
-                null
-            );
+        $schedules = $this->availableSchedules(
+            (int) $specialty->id,
+            null,
+            null
+        );
 
         return view(
             'portal.specialties.show',
-            compact(
-                'specialty',
-                'doctors',
-                'schedules'
-            )
+            compact('specialty', 'doctors', 'schedules')
         );
     }
 
     /*
-    |--------------------------------------------------------------------------
-    | Lịch ACTIVE + slot ACTIVE + capacity + tương lai
-    |--------------------------------------------------------------------------
-    */
-
-    private function availableSchedules(
-        ?int $specialtyId = null,
-        ?int $doctorId = null,
-        ?string $date = null
-    ): Collection {
+     * Query lich lam viec.
+     *
+     * - Chi lay lich ACTIVE
+     * - Bac si, chuyen khoa va phong ACTIVE
+     * - Khong lay ngay truoc hom nay
+     * - Gioi han so ngay duoc dat truoc
+     * - Dem so lich chua bi huy
+     * - Giu ACTIVE va FULL de hien thi trang thai
+     */
+    private function scheduleQuery(
+        ?int $specialtyId,
+        ?int $doctorId,
+        ?string $date
+    ): Builder {
         return DoctorSchedule::query()
             ->select([
                 'id',
@@ -295,20 +195,11 @@ class DoctorController extends Controller
             ])
             ->withQualifiedDoctor()
             ->with([
-                /*
-                |--------------------------------------------------------------------------
-                | Chỉ lấy dữ liệu cần thiết cho Portal
-                |--------------------------------------------------------------------------
-                */
-
                 'doctor:id,specialty_id,full_name,status',
-
                 'specialty:id,name,status',
-
                 'examinationRoom:id,name,status',
 
-                'appointmentTimeSlots' =>
-                fn($query) =>
+                'appointmentTimeSlots' => fn($query) =>
                 $query
                     ->select([
                         'id',
@@ -318,62 +209,45 @@ class DoctorController extends Controller
                         'max_patients',
                         'status',
                     ])
-                    ->where(
+                    ->whereIn(
                         'status',
-                        'ACTIVE'
+                        ['ACTIVE', 'FULL']
                     )
                     ->withCount([
                         'appointments as booked_count' =>
                         fn($bookings) =>
-                        $bookings
-                            ->whereHas(
-                                'appointmentStatus',
-                                fn($status) =>
-                                $status->where(
-                                    'name',
-                                    '!=',
-                                    'CANCELLED'
-                                )
-                            ),
+                        $bookings->whereHas(
+                            'appointmentStatus',
+                            fn($status) =>
+                            $status->where(
+                                'name',
+                                '!=',
+                                'CANCELLED'
+                            )
+                        ),
                     ])
-                    ->orderBy(
-                        'start_time'
-                    ),
+                    ->orderBy('start_time'),
             ])
-            ->where(
-                'status',
-                'ACTIVE'
-            )
+            ->where('status', 'ACTIVE')
             ->whereHas(
                 'doctor',
-                fn($query) =>
-                $query->where(
-                    'status',
-                    'ACTIVE'
-                )
+                fn(Builder $q) =>
+                $q->where('status', 'ACTIVE')
             )
             ->whereHas(
                 'specialty',
-                fn($query) =>
-                $query->where(
-                    'status',
-                    'ACTIVE'
-                )
+                fn(Builder $q) =>
+                $q->where('status', 'ACTIVE')
             )
             ->whereHas(
                 'examinationRoom',
-                fn($query) =>
-                $query->where(
-                    'status',
-                    'ACTIVE'
-                )
+                fn(Builder $q) =>
+                $q->where('status', 'ACTIVE')
             )
             ->whereBetween(
                 'work_date',
                 [
-                    today()
-                        ->toDateString(),
-
+                    today()->toDateString(),
                     today()
                         ->addDays(
                             Appointment::BOOKING_ADVANCE_DAYS
@@ -382,92 +256,69 @@ class DoctorController extends Controller
                 ]
             )
             ->when(
-                $specialtyId,
-                fn($query) =>
-                $query->where(
-                    'specialty_id',
-                    $specialtyId
-                )
+                $specialtyId !== null,
+                fn(Builder $q) =>
+                $q->where('specialty_id', $specialtyId)
             )
             ->when(
-                $doctorId,
-                fn($query) =>
-                $query->where(
-                    'doctor_id',
-                    $doctorId
-                )
+                $doctorId !== null,
+                fn(Builder $q) =>
+                $q->where('doctor_id', $doctorId)
             )
             ->when(
-                $date,
-                fn($query) =>
-                $query->whereDate(
-                    'work_date',
-                    $date
-                )
+                $date !== null,
+                fn(Builder $q) =>
+                $q->whereDate('work_date', $date)
             )
-            ->orderBy(
-                'work_date'
-            )
-            ->orderBy(
-                'start_time'
-            )
+            ->orderBy('work_date')
+            ->orderBy('start_time');
+    }
+
+    /*
+     * Trang chi tiet bac si / chuyen khoa van
+     * chi hien thi cac slot con dat duoc.
+     */
+    private function availableSchedules(
+        ?int $specialtyId = null,
+        ?int $doctorId = null,
+        ?string $date = null
+    ): Collection {
+        return $this->scheduleQuery(
+            $specialtyId,
+            $doctorId,
+            $date
+        )
             ->get()
-            ->filter(
-                function (
-                    DoctorSchedule $schedule
-                ) {
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Loại slot đã qua hoặc đã đầy
-                    |--------------------------------------------------------------------------
-                    */
+            ->filter(function (DoctorSchedule $schedule) {
+                $available = $schedule
+                    ->appointmentTimeSlots
+                    ->filter(function ($slot) use ($schedule) {
+                        $startsAt = Carbon::parse(
+                            $schedule->work_date
+                                ->format('Y-m-d')
+                                . ' '
+                                . substr(
+                                    (string) $slot->start_time,
+                                    0,
+                                    8
+                                )
+                        );
 
-                    $availableSlots =
-                        $schedule
-                        ->appointmentTimeSlots
-                        ->filter(
-                            function (
-                                $slot
-                            ) use (
-                                $schedule
-                            ) {
-                                $slotStart =
-                                    Carbon::parse(
-                                        $schedule
-                                            ->work_date
-                                            ->format(
-                                                'Y-m-d'
-                                            )
-                                            .
-                                            ' '
-                                            .
-                                            substr(
-                                                (string) $slot->start_time,
-                                                0,
-                                                8
-                                            )
-                                    );
+                        return $slot->status === 'ACTIVE'
+                            && $startsAt->isFuture()
+                            && (int) $slot->max_patients > 0
+                            && (int) $slot->booked_count
+                            < (int) $slot->max_patients;
+                    })
+                    ->values();
 
-                                return
-                                    $slotStart->isFuture()
-                                    &&
-                                    (int) $slot->booked_count
-                                    <
-                                    (int) $slot->max_patients;
-                            }
-                        )
-                        ->values();
+                $schedule->setRelation(
+                    'appointmentTimeSlots',
+                    $available
+                );
 
-                    $schedule->setRelation(
-                        'appointmentTimeSlots',
-                        $availableSlots
-                    );
-
-                    return
-                        $availableSlots
-                        ->isNotEmpty();
-                }
-            )
+                return $available->isNotEmpty();
+            })
             ->values();
     }
 }

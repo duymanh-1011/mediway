@@ -13,3 +13,9 @@ document.querySelectorAll('[data-password-toggle]').forEach((button) => {
         button.textContent = reveal ? 'Ẩn' : 'Hiện';
     });
 });
+
+// MEDIWAY_PORTAL_PAGE_ASSETS_BEGIN
+import './appointments-create.js';
+import './appointments-actions.js';
+
+// MEDIWAY_PORTAL_PAGE_ASSETS_END

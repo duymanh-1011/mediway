@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Validation\ValidationException;
+use Carbon\CarbonImmutable;
 
 class Appointment extends Model
 {
     public const BOOKING_ADVANCE_DAYS = 3;
+    public const RECEPTION_ADVANCE_MINUTES = 30;
 
     protected $fillable = [
         'appointment_code',
@@ -49,6 +51,49 @@ class Appointment extends Model
     {
         if (! $this->isScheduledForToday()) {
             throw ValidationException::withMessages(['appointment' => 'Chỉ được tiếp nhận vào đúng ngày hẹn khám. Lịch hẹn này có ngày khám là '.$this->appointment_date?->format('d/m/Y').'.']);
+        }
+    }
+
+    /** @return array{start: CarbonImmutable, end: CarbonImmutable}|null */
+    public function receptionWindow(): ?array
+    {
+        $slot = $this->appointmentTimeSlot;
+        $schedule = $slot?->doctorSchedule;
+        if (! $this->appointment_date || ! $slot?->start_time || ! $schedule?->work_date || ! $schedule->start_time || ! $schedule->end_time
+            || ! $this->appointment_date->isSameDay($schedule->work_date)) {
+            return null;
+        }
+
+        $date = $schedule->work_date->format('Y-m-d');
+        $shiftStart = CarbonImmutable::parse($date.' '.$schedule->start_time, config('app.timezone'));
+        $shiftEnd = CarbonImmutable::parse($date.' '.$schedule->end_time, config('app.timezone'));
+        $earlyStart = CarbonImmutable::parse($date.' '.$slot->start_time, config('app.timezone'))->subMinutes(self::RECEPTION_ADVANCE_MINUTES);
+
+        return ['start' => $shiftStart->greaterThan($earlyStart) ? $shiftStart : $earlyStart, 'end' => $shiftEnd];
+    }
+
+    public function receptionUnavailableReason(): ?string
+    {
+        if (! $this->isScheduledForToday()) {
+            return 'Chỉ được tiếp nhận vào đúng ngày hẹn khám. Lịch hẹn này có ngày khám là '.$this->appointment_date?->format('d/m/Y').'.';
+        }
+        $window = $this->receptionWindow();
+        if (! $window || $window['start']->greaterThanOrEqualTo($window['end'])) {
+            return 'Không thể xác định thời gian tiếp nhận phù hợp với ca làm việc. Vui lòng kiểm tra lại lịch hẹn.';
+        }
+        if (now()->lessThan($window['start'])) {
+            return 'Chỉ có thể tiếp nhận từ '.$window['start']->format('H:i').' ngày '.$window['start']->format('d/m/Y').' (tối đa 30 phút trước giờ hẹn và trong ca làm việc của bác sĩ).';
+        }
+        if (now()->greaterThanOrEqualTo($window['end'])) {
+            return 'Ca làm việc của bác sĩ đã kết thúc lúc '.$window['end']->format('H:i').', không thể tiếp nhận lịch hẹn này.';
+        }
+        return null;
+    }
+
+    public function assertReceptionWindow(): void
+    {
+        if ($message = $this->receptionUnavailableReason()) {
+            throw ValidationException::withMessages(['appointment' => $message]);
         }
     }
 

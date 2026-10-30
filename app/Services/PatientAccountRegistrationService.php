@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Patient;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -31,9 +32,17 @@ final class PatientAccountRegistrationService
                 'role_id' => $role->id, 'status' => 'ACTIVE',
             ]);
 
-            return Patient::create([
+            $patient = Patient::create([
                 'user_id' => $user->id, 'patient_code' => $code, 'full_name' => $fullName, 'status' => 'ACTIVE',
             ]);
+            AuditLog::create([
+                'user_id' => null, 'role_name_snapshot' => null, 'action' => 'CREATE',
+                'entity_type' => 'users', 'entity_id' => $user->id, 'entity_business_code' => $code,
+                'old_values' => [], 'new_values' => [], 'description' => 'Đăng ký tài khoản bệnh nhân.',
+                'ip_address' => request()->ip(), 'user_agent' => request()->userAgent(), 'performed_at' => now(),
+            ]);
+
+            return $patient;
         }, 3);
     }
 

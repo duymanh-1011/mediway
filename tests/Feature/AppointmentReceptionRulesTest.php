@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Appointment;
 use App\Models\AppointmentTimeSlot;
+use App\Models\AuditLog;
 use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\ExaminationRoom;
@@ -67,7 +68,7 @@ class AppointmentReceptionRulesTest extends TestCase
         $this->travelTo(today()->addDays(2)->setTime(7, 0));
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasErrors('appointment');
         $this->assertFalse($appointment->medicalVisit()->exists());
-        $this->travelTo(today()->subDay()->setTime(7, 0));
+        $this->travelTo(today()->subDay()->setTime(9, 0));
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
         $this->assertSame(1, $appointment->medicalVisit()->count());
         $this->post(route('admin.appointments.check-in', $appointment));
@@ -102,10 +103,66 @@ class AppointmentReceptionRulesTest extends TestCase
         $duplicate->appointment_code = 'LHDUPLICATE';
         $duplicate->checkin_token = (string) Str::uuid();
         $duplicate->save();
+        $this->travelTo(today()->setTime(9, 0));
         $this->post(route('admin.appointments.check-in', $first))->assertSessionHasNoErrors();
         $this->post(route('admin.appointments.check-in', $duplicate))->assertSessionHasErrors('appointment');
         $this->assertFalse($duplicate->medicalVisit()->exists());
         $this->assertSame('BOOKED', $duplicate->fresh()->appointmentStatus->name);
+    }
+
+    public function test_check_in_opens_exactly_thirty_minutes_before_appointment_during_doctor_shift(): void
+    {
+        $slot = $this->slot();
+        $slot->update(['start_time' => '10:00', 'end_time' => '10:30']);
+        $appointment = $this->book($slot);
+        $this->travelTo(today()->setTime(9, 29, 59));
+        $queueCount = ExaminationRoomQueue::count();
+        $auditCount = AuditLog::count();
+        $this->get(route('admin.appointments.show', $appointment))->assertOk()->assertSee('Chỉ có thể tiếp nhận từ 09:30')
+            ->assertDontSee('action="'.route('admin.appointments.check-in', $appointment).'"', false);
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasErrors('appointment');
+        $this->assertFalse($appointment->medicalVisit()->exists());
+        $this->assertSame('BOOKED', $appointment->fresh()->appointmentStatus->name);
+        $this->assertSame($queueCount, ExaminationRoomQueue::count());
+        $this->assertSame($auditCount, AuditLog::count());
+
+        $this->travelTo(today()->setTime(9, 30));
+        $this->get(route('admin.appointments.show', $appointment))->assertOk()->assertSee('action="'.route('admin.appointments.check-in', $appointment).'"', false);
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
+        $this->assertSame(1, $appointment->medicalVisit()->count());
+        $this->assertSame(1, $appointment->medicalVisit->queues()->count());
+    }
+
+    public function test_check_in_cannot_start_before_doctor_shift_even_within_thirty_minutes(): void
+    {
+        $slot = $this->slot();
+        $slot->update(['start_time' => '09:15', 'end_time' => '09:45']);
+        $appointment = $this->book($slot);
+        $this->travelTo(today()->setTime(8, 59, 59));
+        $this->get(route('admin.appointments.show', $appointment))->assertOk()->assertSee('Chỉ có thể tiếp nhận từ 09:00');
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasErrors('appointment');
+        $this->assertFalse($appointment->medicalVisit()->exists());
+        $this->travelTo(today()->setTime(9, 0));
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
+        $this->assertSame(1, $appointment->medicalVisit()->count());
+    }
+
+    public function test_check_in_after_shift_end_is_rejected_without_creating_visit(): void
+    {
+        $appointment = $this->book($this->slot());
+        $this->travelTo(today()->setTime(11, 0));
+        $this->get(route('admin.appointments.show', $appointment))->assertOk()->assertSee('Ca làm việc của bác sĩ đã kết thúc');
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasErrors('appointment');
+        $this->assertFalse($appointment->medicalVisit()->exists());
+        $this->assertSame('BOOKED', $appointment->fresh()->appointmentStatus->name);
+    }
+
+    public function test_late_check_in_is_allowed_before_doctor_shift_ends(): void
+    {
+        $appointment = $this->book($this->slot());
+        $this->travelTo(today()->setTime(10, 59, 59));
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
+        $this->assertSame(1, $appointment->medicalVisit()->count());
     }
 
     public function test_legacy_future_visit_cannot_start_examination_or_write_clinical_data(): void

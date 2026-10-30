@@ -12,13 +12,10 @@
     </div>
     <div class="profile-cards">
         <section class="profile-card" aria-labelledby="profile-patient"><div class="profile-card__head"><span class="profile-card__icon" aria-hidden="true">▤</span><div><h2 id="profile-patient">Thông tin bệnh nhân</h2><p>Thông tin cơ bản trong hồ sơ</p></div></div><dl class="profile-details">
-            @foreach ([['Họ và tên', $patient->full_name], ['Ngày sinh', $patient->date_of_birth?->format('d/m/Y')], ['Giới tính', $patient->gender], ['Mã bệnh nhân', $patient->patient_code], ['Trạng thái hồ sơ', 'Đang hoạt động']] as [$label, $value])
+            @foreach ([['Họ và tên', $patient->full_name], ['Ngày sinh', $patient->date_of_birth?->format('d/m/Y')], ['Giới tính', $patient->gender], ['Mã bệnh nhân', $patient->patient_code], ['Số CCCD', $patient->detail?->citizen_id_number ? '••••••••'.substr($patient->detail->citizen_id_number, -4) : null], ['Ngày cấp CCCD', $patient->detail?->citizen_id_issue_date?->format('d/m/Y')], ['Nơi cấp CCCD', $patient->detail?->citizen_id_issue_place], ['Nhóm máu (theo hồ sơ)', $patient->detail?->blood_type], ['Trạng thái hồ sơ', 'Đang hoạt động']] as [$label, $value])
                 <div><dt>{{ $label }}</dt><dd @class(['profile-value-empty' => ! $value])>{{ $value ?: 'Chưa cập nhật' }}</dd></div>
             @endforeach
         </dl></section>
-        <section class="profile-card" aria-labelledby="profile-account"><div class="profile-card__head"><span class="profile-card__icon" aria-hidden="true">✦</span><div><h2 id="profile-account">Thông tin tài khoản</h2><p>Thông tin đăng nhập của bạn</p></div></div><dl class="profile-details">
-            <div><dt>Số điện thoại đăng nhập</dt><dd>{{ $user->phone }}</dd></div><div><dt>Trạng thái tài khoản</dt><dd>Đang hoạt động</dd></div>
-        </dl><p class="profile-card__note">Số điện thoại và thông tin định danh được quản lý riêng. <a href="{{ route('public.support') }}">Liên hệ hỗ trợ</a> khi cần thay đổi.</p></section>
         <section class="profile-card" aria-labelledby="profile-contact"><div class="profile-card__head"><span class="profile-card__icon" aria-hidden="true">⌂</span><div><h2 id="profile-contact">Liên hệ và địa chỉ</h2><p>Thông tin liên lạc của bạn</p></div></div><dl class="profile-details">
             @foreach ([['Email', $patient->detail?->email], ['Địa chỉ hiện tại', $patient->detail?->current_address], ['Địa chỉ thường trú', $patient->detail?->permanent_address], ['Quê quán', $patient->detail?->hometown], ['Quốc tịch', $patient->detail?->nationality], ['Dân tộc', $patient->detail?->ethnicity], ['Nghề nghiệp', $patient->detail?->occupation]] as [$label, $value])
                 <div><dt>{{ $label }}</dt><dd @class(['profile-value-empty' => ! $value])>{{ $value ?: 'Chưa cập nhật' }}</dd></div>
@@ -29,6 +26,9 @@
                 <div><dt>{{ $label }}</dt><dd @class(['profile-value-empty' => ! $value])>{{ $value ?: 'Chưa cập nhật' }}</dd></div>
             @endforeach
         </dl></section>
+        <section class="profile-card" aria-labelledby="profile-account"><div class="profile-card__head"><span class="profile-card__icon" aria-hidden="true">✦</span><div><h2 id="profile-account">Thông tin tài khoản</h2><p>Thông tin đăng nhập của bạn</p></div></div><dl class="profile-details">
+            <div><dt>Số điện thoại đăng nhập</dt><dd>{{ $user->phone }}</dd></div><div><dt>Trạng thái tài khoản</dt><dd>Đang hoạt động</dd></div>
+        </dl><p class="profile-card__note">Số điện thoại đăng nhập được quản lý riêng. <a href="{{ route('patient.profile.phone') }}">Đổi số điện thoại</a></p></section>
     </div>
 </div></section>
 @endsection

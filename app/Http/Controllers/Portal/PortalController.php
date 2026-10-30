@@ -20,7 +20,7 @@ class PortalController extends Controller
     {
         $patient = $request->user()?->patient;
         abort_unless($patient && $request->user()->canAccessPortal(), 403);
-        $appointment = $visit = null;
+        $appointment = null;
         $unavailable = false;
 
         try {
@@ -32,16 +32,13 @@ class PortalController extends Controller
                     ->orWhere(fn ($q) => $q->whereDate('appointment_date', today())->where('appointment_time_slots.end_time', '>=', now()->format('H:i:s'))))
                 ->orderBy('appointment_date')->orderBy('appointment_time_slots.start_time')->orderBy('appointments.id')
                 ->with(['appointmentStatus', 'appointmentTimeSlot', 'doctor', 'specialty', 'examinationRoom'])->first();
-            $visit = $patient->medicalVisits()
-                ->whereHas('status', fn ($q) => $q->whereIn('name', ['WAITING', 'IN_EXAMINATION', 'WAITING_FOR_SERVICE', 'RETURNING']))
-                ->with(['status', 'examinationRoom'])->orderByDesc('checked_in_at')->orderByDesc('id')->first();
         } catch (QueryException $e) {
             report($e);
-            $appointment = $visit = null;
+            $appointment = null;
             $unavailable = true;
         }
 
-        return response()->view('portal.appointments', compact('appointment', 'visit', 'unavailable'))
+        return response()->view('portal.appointments', compact('appointment', 'unavailable', 'patient'))
             ->header('Cache-Control', 'private, no-store');
     }
 

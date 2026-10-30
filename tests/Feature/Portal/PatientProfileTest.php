@@ -66,6 +66,28 @@ class PatientProfileTest extends TestCase
         $this->actingAs($admin)->put(route('patient.profile.update'), ['full_name' => 'X'])->assertRedirect(route('patient.login'));
     }
 
+    public function test_initial_identity_fields_can_be_filled_once_and_id_is_masked(): void
+    {
+        $user = User::where('business_code', 'BN000001')->firstOrFail();
+        DB::table('patients')->where('id', $user->patient->id)->update(['date_of_birth' => null, 'gender' => null]);
+        DB::table('patient_details')->where('patient_id', $user->patient->id)->update(['citizen_id_number' => null]);
+        $user = $user->fresh();
+        $this->actingAs($user)->get(route('patient.profile.edit'))->assertOk()->assertSee('Ngày sinh (chỉ nhập một lần)')->assertSee('Số CCCD (chỉ nhập một lần)');
+        $this->put(route('patient.profile.update'), ['date_of_birth' => '2099-01-01', 'gender' => 'invalid', 'citizen_id_number' => '123'])->assertSessionHasErrors(['date_of_birth', 'gender', 'citizen_id_number']);
+        $this->put(route('patient.profile.update'), ['date_of_birth' => '1990-02-03', 'gender' => 'Nữ', 'citizen_id_number' => '999999991234'])->assertRedirect(route('patient.profile.show'));
+        $this->assertSame('1990-02-03', $user->patient->fresh()->date_of_birth->format('Y-m-d'));
+        $this->assertSame('Nữ', $user->patient->fresh()->gender);
+        $this->actingAs($user->fresh())->get(route('patient.profile.show'))->assertSee('••••••••1234')->assertDontSee('999999991234');
+        $this->put(route('patient.profile.update'), ['date_of_birth' => '2000-01-01', 'gender' => 'Nam', 'citizen_id_number' => '888888885678'])->assertSessionHasErrors(['date_of_birth', 'gender', 'citizen_id_number']);
+    }
+
+    public function test_phone_change_information_requires_patient_authentication(): void
+    {
+        $this->get(route('patient.profile.phone'))->assertRedirect(route('patient.login'));
+        $user = User::where('business_code', 'BN000001')->firstOrFail();
+        $this->actingAs($user)->get(route('patient.profile.phone'))->assertOk()->assertSee('chưa khả dụng')->assertSee($user->phone);
+    }
+
     public function test_validation_error_preserves_the_entered_values(): void
     {
         $user = User::where('business_code', 'BN000001')->firstOrFail();

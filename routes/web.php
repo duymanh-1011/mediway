@@ -86,6 +86,7 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::middleware(PatientMiddleware::class)->group(function () {
         Route::get('/ho-so', [ProfileController::class, 'show'])->name('profile.show');
         Route::get('/ho-so/chinh-sua', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::get('/ho-so/doi-so-dien-thoai', [ProfileController::class, 'phoneChange'])->name('profile.phone');
         Route::put('/ho-so', [ProfileController::class, 'update'])->name('profile.update');
         Route::get('/ho-so/anh-dai-dien', [ProfileController::class, 'avatar'])->name('profile.avatar');
     });

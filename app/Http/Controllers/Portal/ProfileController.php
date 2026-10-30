@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
@@ -46,6 +47,14 @@ class ProfileController extends Controller
         return response()->view('portal.profile.edit', compact('patient'))->header('Cache-Control', 'private, no-store');
     }
 
+    public function phoneChange(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->canAccessPortal(), 403);
+
+        return response()->view('portal.profile.phone', compact('user'))->header('Cache-Control', 'private, no-store');
+    }
+
     public function update(UpdateProfileRequest $request)
     {
         $data = $request->validated();
@@ -53,10 +62,26 @@ class ProfileController extends Controller
         DB::transaction(function () use ($data, $patientId, $request) {
             $patient = \App\Models\Patient::whereKey($patientId)->where('user_id', $request->user()->id)
                 ->where('status', 'ACTIVE')->lockForUpdate()->firstOrFail();
-            if (array_key_exists('full_name', $data)) {
-                $patient->update(['full_name' => $data['full_name']]);
+            $patientFields = Arr::only($data, ['full_name', 'date_of_birth', 'gender']);
+            foreach (['date_of_birth', 'gender'] as $field) {
+                if (! empty($patientFields[$field]) && $patient->{$field} !== null && $patient->{$field} !== '') {
+                    throw ValidationException::withMessages([$field => 'Thông tin này đã được cập nhật và không thể tự thay đổi.']);
+                }
+                if (array_key_exists($field, $patientFields) && $patientFields[$field] === null) {
+                    unset($patientFields[$field]);
+                }
             }
-            $details = Arr::except($data, ['full_name', 'date_of_birth', 'gender', 'citizen_id_number']);
+            if ($patientFields !== []) {
+                $patient->update($patientFields);
+            }
+            $details = Arr::except($data, ['full_name', 'date_of_birth', 'gender']);
+            if (array_key_exists('citizen_id_number', $details)) {
+                if ($details['citizen_id_number'] === null) {
+                    unset($details['citizen_id_number']);
+                } elseif ($patient->detail()->lockForUpdate()->first()?->citizen_id_number) {
+                    throw ValidationException::withMessages(['citizen_id_number' => 'Số CCCD đã được cập nhật và không thể tự thay đổi.']);
+                }
+            }
             if ($details !== []) {
                 $patient->detail()->updateOrCreate([], $details);
             }

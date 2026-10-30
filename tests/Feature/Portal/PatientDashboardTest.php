@@ -33,7 +33,7 @@ class PatientDashboardTest extends TestCase
         $this->actingAs($user->fresh())->get(route('patient.home'))->assertRedirect(route('patient.login'));
     }
 
-    public function test_appointment_and_visit_are_scoped_and_cancelled_is_excluded(): void
+    public function test_appointments_are_scoped_cancelled_is_excluded_and_visits_are_not_shown(): void
     {
         $a = User::where('business_code', 'BN000001')->firstOrFail();
         $b = User::where('business_code', 'BN000002')->firstOrFail();
@@ -48,8 +48,8 @@ class PatientDashboardTest extends TestCase
         $this->actingAs($a)->get(route('patient.home'))->assertOk()->assertSee(route('patient.appointments'))
             ->assertDontSee('LH000001')->assertDontSee('LK000001');
         $this->actingAs($a)->get(route('patient.appointments', ['patient_id' => $b->patient->id]))
-            ->assertOk()->assertSee('LH000001')->assertSee('LK000001')->assertSee('Đang khám')
-            ->assertSee('Thông tin hàng đợi đang được cập nhật')->assertDontSee('LH000006')->assertDontSee('LH000002')
+            ->assertOk()->assertSee('LH000001')->assertDontSee('LK000001')->assertDontSee('Lượt khám hiện tại')
+            ->assertDontSee('Thông tin hàng đợi đang được cập nhật')->assertDontSee('LH000006')->assertDontSee('LH000002')
             ->assertDontSee('LK000002')->assertDontSee($otherPayable)->assertHeader('Cache-Control', 'no-store, private');
     }
 
@@ -60,10 +60,28 @@ class PatientDashboardTest extends TestCase
         $response = $this->actingAs($user->fresh())->get(route('patient.home'));
         $response->assertOk()->assertSee('hoàn thiện thông tin hồ sơ')->assertSee('Thông tin khoản cần thanh toán đang được cập nhật')
             ->assertDontSee('href="#"', false)->assertSee(route('patient.notifications'))->assertSee(route('public.support'));
-        $this->get(route('patient.appointments'))->assertOk()->assertSee('Bạn chưa có lịch khám sắp tới')->assertSee('không có lượt khám đang tiến hành');
+        $this->get(route('patient.appointments'))->assertOk()->assertSee('Bạn chưa có lịch khám sắp tới')->assertDontSee('Lượt khám hiện tại');
         foreach (['Lịch khám', 'Hồ sơ cá nhân', 'Hồ sơ sức khỏe', 'Kết quả khám bệnh', 'Đơn thuốc', 'Thanh toán'] as $card) {
             $response->assertSee($card);
         }
+    }
+
+    public function test_appointment_disappears_after_its_slot_end_when_the_page_is_requested_again(): void
+    {
+        $user = User::where('business_code', 'BN000001')->firstOrFail();
+        $appointment = DB::table('appointments')->where('appointment_code', 'LH000001')->first();
+        $slot = DB::table('appointment_time_slots')->where('id', $appointment->appointment_time_slot_id)->first();
+        $date = '2026-10-15';
+        DB::table('appointments')->where('id', $appointment->id)->update([
+            'appointment_date' => $date,
+            'appointment_status_id' => DB::table('appointment_statuses')->where('name', 'BOOKED')->value('id'),
+        ]);
+
+        $this->travelTo(\Carbon\Carbon::parse($date.' '.$slot->end_time));
+        $this->actingAs($user)->get(route('patient.appointments'))->assertOk()->assertSee('LH000001');
+        $this->travel(1)->seconds();
+        $this->get(route('patient.appointments'))->assertOk()->assertDontSee('LH000001')->assertSee('Bạn chưa có lịch khám sắp tới');
+        $this->assertSame('BOOKED', DB::table('appointments')->join('appointment_statuses', 'appointment_statuses.id', '=', 'appointments.appointment_status_id')->where('appointments.id', $appointment->id)->value('appointment_statuses.name'));
     }
 
     public function test_admin_route_and_query_count(): void

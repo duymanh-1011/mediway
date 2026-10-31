@@ -58,8 +58,11 @@ class PatientDashboardTest extends TestCase
         $user = User::where('business_code', 'BN000001')->firstOrFail();
         DB::table('patients')->where('id', $user->patient->id)->update(['date_of_birth' => null, 'gender' => null]);
         $response = $this->actingAs($user->fresh())->get(route('patient.home'));
-        $response->assertOk()->assertSee('hoàn thiện thông tin hồ sơ')->assertSee('Thông tin khoản cần thanh toán đang được cập nhật')
+        $response->assertOk()->assertSee('hoàn thiện thông tin hồ sơ')->assertDontSee('Thông tin khoản cần thanh toán đang được cập nhật')
             ->assertDontSee('href="#"', false)->assertSee(route('patient.notifications'))->assertSee(route('public.support'));
+        foreach (['patient.doctors.index', 'patient.appointments.index', 'patient.queues.index', 'patient.payments.index'] as $route) {
+            $response->assertSee('href="'.route($route).'"', false);
+        }
         $this->get(route('patient.appointments'))->assertOk()->assertSee('Bạn chưa có lịch khám sắp tới')->assertDontSee('Lượt khám hiện tại');
         foreach (['Lịch khám', 'Hồ sơ cá nhân', 'Hồ sơ sức khỏe', 'Kết quả khám bệnh', 'Đơn thuốc', 'Thanh toán'] as $card) {
             $response->assertSee($card);

@@ -228,6 +228,16 @@
         margin: 0 0 5px;
     }
 
+    .mw-doctor-name a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .mw-doctor-name a:hover,
+    .mw-doctor-name a:focus-visible {
+        text-decoration: underline;
+    }
+
     .mw-doctor-sub {
         color: var(--muted);
         font-size: 13px;

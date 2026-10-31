@@ -12,6 +12,10 @@
 
         $schedule = $slot->doctorSchedule;
         $detail = $patient->detail;
+        $citizenId = trim((string) ($detail?->citizen_id_number ?? ''));
+        $maskedCitizenId = $citizenId === ''
+            ? 'Chưa cập nhật'
+            : '••••••••' . (strlen($citizenId) > 4 ? substr($citizenId, -4) : '');
 
         $dateLabel = $schedule->work_date?->format('d/m/Y')
             ?? 'Chưa cập nhật';
@@ -99,15 +103,6 @@
 
                 <div class="mw-book-body">
 
-                    @if (session('success'))
-                        <div
-                            class="mw-book-notice"
-                            role="status"
-                        >
-                            {{ session('success') }}
-                        </div>
-                    @endif
-
                     {{-- =====================================
                          01. THONG TIN BENH NHAN
                          ===================================== --}}
@@ -121,26 +116,31 @@
                             01. Thông tin bệnh nhân
                         </h2>
 
-                        @error('profile')
-                            <div
-                                class="mw-book-notice mw-book-notice--error"
-                                role="alert"
-                            >
-                                {{ $message }}
-                            </div>
-                        @enderror
-
                         {{-- Chi hien thi thong tin con thieu --}}
                         @if ($missingProfile !== [])
                             <div
-                                class="mw-book-notice mw-book-notice--warning"
-                                role="status"
+                                class="mw-book-profile-warning"
+                                role="{{ $errors->has('profile') ? 'alert' : 'status' }}"
+                                @if ($errors->has('profile')) tabindex="-1" data-profile-error @endif
                             >
-                                <strong>
-                                    Thông tin còn thiếu:
-                                </strong>
-
-                                {{ implode(', ', $missingProfile) }}.
+                                <div class="mw-book-profile-warning__content">
+                                    <span class="mw-book-profile-warning__icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v4.5M12 17h.01"/></svg>
+                                    </span>
+                                    <div class="mw-book-profile-warning__text">
+                                        <strong>{{ $errors->has('profile') ? 'Chưa thể xác nhận lịch khám' : 'Hồ sơ bệnh nhân chưa đầy đủ' }}</strong>
+                                        <p>{{ $errors->has('profile') ? 'Hồ sơ còn thiếu thông tin bắt buộc. Vui lòng nhấn Bổ sung thông tin để cập nhật trước khi đặt lịch.' : 'Vui lòng hoàn thiện các thông tin dưới đây để tiếp tục đặt lịch khám.' }}</p>
+                                        <ul>
+                                            @foreach ($missingProfile as $field)
+                                                <li>{{ $field }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
+                                <a class="mw-book-complete-profile" href="{{ route('patient.profile.edit', ['booking_slot' => $slot->id]) }}">
+                                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 10-4.5M15 18l4-4 2 2-4 4-2 .5V18Z"/></svg>
+                                    <span>Bổ sung thông tin</span>
+                                </a>
                             </div>
                         @endif
 
@@ -211,7 +211,7 @@
                                 </dd>
                             </div>
 
-                            <div class="mw-book-field wide">
+                            <div class="mw-book-field">
                                 <dt>Địa chỉ liên hệ</dt>
 
                                 <dd>
@@ -219,13 +219,13 @@
                                 </dd>
                             </div>
 
-                            @if (
-                                                    filled($detail?->emergency_contact_name)
-                                                    || filled($detail?->emergency_contact_phone)
-                                                )
+                            <div class="mw-book-field">
+                                <dt>Số CCCD</dt>
+                                <dd>{{ $maskedCitizenId }}</dd>
+                            </div>
 
                                                     <div class="mw-book-field">
-                                                        <dt>Người liên hệ khẩn cấp</dt>
+                                                        <dt>Họ tên liên hệ khẩn cấp</dt>
 
                                                         <dd>
                                                             {{
@@ -236,7 +236,7 @@
                                                     </div>
 
                                                     <div class="mw-book-field">
-                                                        <dt>Điện thoại khẩn cấp</dt>
+                                                        <dt>Số điện thoại liên hệ khẩn cấp</dt>
 
                                                         <dd>
                                                             {{
@@ -263,7 +263,6 @@
                                                                             </div>
                                                     @endif
 
-                            @endif
 
                         </dl>
 

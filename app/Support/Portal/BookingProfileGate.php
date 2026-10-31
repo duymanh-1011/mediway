@@ -11,6 +11,11 @@ class BookingProfileGate
 {
     private const SESSION_KEY = 'patient.booking.pending';
 
+    public function forgetPending(): void
+    {
+        session()->forget(self::SESSION_KEY);
+    }
+
     public function missingFields(Patient $patient): array
     {
         $patient->loadMissing(['user', 'detail']);
@@ -88,6 +93,21 @@ class BookingProfileGate
             || preg_match('/\p{L}/u', $address) !== 1
         ) {
             $missing[] = 'địa chỉ liên hệ';
+        }
+
+        $citizenId = (string) ($patient->detail?->citizen_id_number ?? '');
+        if (preg_match('/\A[0-9]{12}\z/', $citizenId) !== 1) {
+            $missing[] = 'số CCCD';
+        }
+
+        $emergencyName = trim((string) ($patient->detail?->emergency_contact_name ?? ''));
+        if (mb_strlen($emergencyName) < 2 || preg_match('/\p{L}/u', $emergencyName) !== 1) {
+            $missing[] = 'họ tên liên hệ khẩn cấp';
+        }
+
+        $emergencyPhone = preg_replace('/[\s.-]+/', '', (string) ($patient->detail?->emergency_contact_phone ?? ''));
+        if (preg_match('/^0\d{9}$/', $emergencyPhone) !== 1) {
+            $missing[] = 'số điện thoại liên hệ khẩn cấp';
         }
 
         return $missing;

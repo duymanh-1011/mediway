@@ -68,12 +68,17 @@ class DoctorController extends Controller
             $date
         )
             ->get()
-            ->filter(
-                fn(DoctorSchedule $schedule) =>
-                $schedule
-                    ->appointmentTimeSlots
-                    ->isNotEmpty()
-            )
+            ->filter(function (DoctorSchedule $schedule) {
+                // Do not advertise malformed slots that booking will reject.
+                $schedule->setRelation('appointmentTimeSlots', $schedule->appointmentTimeSlots
+                    ->filter(fn ($slot) => $slot->start_time < $slot->end_time
+                        && $slot->start_time >= $schedule->start_time
+                        && $slot->end_time <= $schedule->end_time
+                        && (int) $slot->max_patients > 0)
+                    ->values());
+
+                return $schedule->appointmentTimeSlots->isNotEmpty();
+            })
             ->values();
 
         return view(
@@ -304,7 +309,10 @@ class DoctorController extends Controller
                                 )
                         );
 
-                        return $slot->status === 'ACTIVE'
+                        return $slot->start_time < $slot->end_time
+                            && $slot->start_time >= $schedule->start_time
+                            && $slot->end_time <= $schedule->end_time
+                            && $slot->status === 'ACTIVE'
                             && $startsAt->isFuture()
                             && (int) $slot->max_patients > 0
                             && (int) $slot->booked_count

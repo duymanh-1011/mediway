@@ -17,6 +17,35 @@ class DoctorBrowseTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_unavailable_slot_redirect_explains_why_booking_failed(): void
+    {
+        $doctor = $this->activeDoctors(1)->firstOrFail();
+        $slot = $this->createSlot($this->createSchedule($doctor), '09:00', '09:30', 1, 'FULL');
+
+        $this->followingRedirects()->get(route('patient.appointments.create', $slot))
+            ->assertOk()->assertSeeText('Khung giờ đã chọn không còn nhận lịch. Vui lòng chọn khung giờ khác.');
+    }
+
+    public function test_slots_outside_their_schedule_are_not_advertised(): void
+    {
+        $doctor = $this->activeDoctors(1)->firstOrFail();
+        $schedule = $this->createSchedule($doctor);
+        $valid = $this->createSlot($schedule, '09:00', '09:30');
+        $invalid = $this->createSlot($schedule, '10:45', '11:30');
+
+        foreach (['patient.doctors.index', 'patient.doctors.show'] as $route) {
+            $response = $this->get(route($route, $route === 'patient.doctors.show' ? $doctor : []));
+            $response->assertOk();
+            $slots = $response->viewData('schedules')->firstWhere('id', $schedule->id)->appointmentTimeSlots;
+            $this->assertTrue($slots->contains('id', $valid->id));
+            $this->assertFalse($slots->contains('id', $invalid->id));
+        }
+
+        $this->get(route('patient.appointments.create', $invalid))
+            ->assertRedirect(route('patient.doctors.index'))
+            ->assertSessionHasErrors('appointment_time_slot_id');
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -207,6 +236,7 @@ class DoctorBrowseTest extends TestCase
 
         $response
             ->assertOk()
+            ->assertSee('href="'.route('patient.doctors.show', $doctor).'"', false)
             ->assertViewIs(
                 'portal.doctors.index'
             );

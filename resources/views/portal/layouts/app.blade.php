@@ -1,4 +1,3 @@
-@stack('portal_page_styles')
 <!doctype html>
 <html lang="vi">
 

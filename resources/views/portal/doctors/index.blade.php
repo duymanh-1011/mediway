@@ -142,6 +142,10 @@
 
     <div class="mw-search" id="mw-doctor-search">
 
+        @error('appointment_time_slot_id')
+            <x-portal.alert type="error" class="portal-shell portal-flash">{{ $message }}</x-portal.alert>
+        @enderror
+
         {{-- TIÊU ĐỀ --}}
         <section class="portal-page-head">
             <div class="portal-shell">
@@ -367,7 +371,7 @@
                                                     </p>
 
                                                     <h3 class="mw-doctor-name">
-                                                        {{ $doctor?->full_name }}
+                                                        <a href="{{ route('patient.doctors.show', $doctor) }}">{{ $doctor->full_name }}</a>
                                                     </h3>
 
                                                     <p class="mw-doctor-sub">

@@ -1,6 +1,11 @@
 /* MEDIWAY_PORTAL_EXTRACTED_FROM: resources/views/portal/appointments/create.blade.php */
 if (document.querySelector('[data-mediway-page-script="appointments-create"]')) {
 document.addEventListener('DOMContentLoaded', () => {
+        const profileError = document.querySelector('[data-profile-error]');
+        if (profileError) {
+            profileError.focus({ preventScroll: true });
+            profileError.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
         const form = document.getElementById('mw-book-form');
 
         if (!form) {

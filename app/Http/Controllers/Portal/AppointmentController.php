@@ -58,7 +58,7 @@ class AppointmentController extends Controller
 
         // GET luôn hiển thị trang xác nhận.
         // KHÔNG chuyển sang M09 tại bước này.
-        $patient->loadMissing(['user', 'detail']);
+        $patient->load(['user', 'detail']);
 
         $slot->load([
             'doctorSchedule.doctor',
@@ -81,18 +81,13 @@ class AppointmentController extends Controller
         $slotId = (int) $data['appointment_time_slot_id'];
 
         $profileGate = app(BookingProfileGate::class);
+        $patient->load(['user', 'detail']);
 
         // Chỉ kiểm tra hồ sơ khi bệnh nhân
         // bấm XÁC NHẬN ĐẶT LỊCH.
-        if ($profileGate->missingFields($patient) !== []) {
-            return $profileGate->redirectToProfile(
-                $patient,
-                $slotId,
-                [
-                    'reason_for_visit' => $data['reason_for_visit'],
-                    'patient_notes' => $data['patient_notes'] ?? null,
-                ]
-            );
+        if ($missing = $profileGate->missingFields($patient)) {
+            throw ValidationException::withMessages(['profile' => $missing])
+                ->redirectTo(route('patient.appointments.create', $slotId));
         }
 
         // Hồ sơ đầy đủ: tiếp tục kiểm tra suất khám.
@@ -133,6 +128,13 @@ class AppointmentController extends Controller
         DB::beginTransaction();
 
         try {
+            // Match the schedule -> slot -> doctor -> patient lock order used
+            // by rescheduling, so concurrent actions do not invert locks.
+            $lockedSlot = $this->lockBookableSlot(
+                (int) $slot->id,
+                (int) $slot->doctor_schedule_id
+            );
+
             // Khóa bệnh nhân trước khi tạo lịch.
             $lockedPatient = Patient::query()
                 ->whereKey($patient->id)
@@ -152,19 +154,9 @@ class AppointmentController extends Controller
             $missing = $profileGate->missingFields($lockedPatient);
 
             if ($missing !== []) {
-                throw ValidationException::withMessages([
-                    'profile' =>
-                    'Hồ sơ chưa đầy đủ: '
-                        . implode(', ', $missing) . '.',
-                ]);
+                throw ValidationException::withMessages(['profile' => $missing])
+                    ->redirectTo(route('patient.appointments.create', $slotId));
             }
-
-            // Giữ cơ chế khóa lịch và slot chống
-            // nhiều người cùng đặt vượt sức chứa.
-            $lockedSlot = $this->lockBookableSlot(
-                (int) $slot->id,
-                (int) $slot->doctor_schedule_id
-            );
 
             // Không cho bệnh nhân đặt trùng suất.
             $this->assertNoDuplicateBooking(
@@ -251,7 +243,7 @@ class AppointmentController extends Controller
     private function getValidatedSlot(int $slotId): ?AppointmentTimeSlot
     {
         $slot = AppointmentTimeSlot::query()
-            ->with('doctorSchedule')
+            ->with(['doctorSchedule.doctor.specialty', 'doctorSchedule.specialty', 'doctorSchedule.examinationRoom'])
             ->find($slotId);
 
         if (! $slot || ! $slot->doctorSchedule) {
@@ -263,6 +255,15 @@ class AppointmentController extends Controller
         if (
             $slot->status !== 'ACTIVE'
             || $schedule->status !== 'ACTIVE'
+            || $schedule->doctor?->status !== 'ACTIVE'
+            || $schedule->specialty?->status !== 'ACTIVE'
+            || $schedule->examinationRoom?->status !== 'ACTIVE'
+            || ! $schedule->doctor->canPracticeSpecialty((int) $schedule->specialty_id)
+            || ! $schedule->work_date->betweenIncluded(today(), today()->addDays(Appointment::BOOKING_ADVANCE_DAYS))
+            || $slot->start_time >= $slot->end_time
+            || $slot->start_time < $schedule->start_time
+            || $slot->end_time > $schedule->end_time
+            || (int) $slot->max_patients < 1
         ) {
             return null;
         }

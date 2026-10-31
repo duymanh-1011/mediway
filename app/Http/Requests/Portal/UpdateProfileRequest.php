@@ -17,6 +17,7 @@ class UpdateProfileRequest extends FormRequest
         $patient = $this->user()?->patient;
         $detail = $patient?->detail;
         return [
+            'booking_slot' => ['sometimes', 'nullable', 'integer', 'exists:appointment_time_slots,id'],
             'full_name' => ['sometimes', 'required', 'string', 'max:120', 'regex:/\S/u'],
             'email' => ['sometimes', 'nullable', 'email', 'max:150'],
             'hometown' => ['sometimes', 'nullable', 'string', 'max:255'],

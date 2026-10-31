@@ -42,9 +42,10 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         abort_unless($user && $user->canAccessPortal(), 403);
+        $bookingSlot = $request->validate(['booking_slot' => ['nullable', 'integer', 'exists:appointment_time_slots,id']])['booking_slot'] ?? null;
         $patient = $user->patient->load('detail');
 
-        return response()->view('portal.profile.edit', compact('patient'))->header('Cache-Control', 'private, no-store');
+        return response()->view('portal.profile.edit', compact('patient', 'bookingSlot'))->header('Cache-Control', 'private, no-store');
     }
 
     public function phoneChange(Request $request)
@@ -58,6 +59,8 @@ class ProfileController extends Controller
     public function update(UpdateProfileRequest $request)
     {
         $data = $request->validated();
+        $bookingSlot = $data['booking_slot'] ?? null;
+        unset($data['booking_slot']);
         $patientId = $request->user()->patient->id;
         DB::transaction(function () use ($data, $patientId, $request) {
             $patient = \App\Models\Patient::whereKey($patientId)->where('user_id', $request->user()->id)
@@ -86,6 +89,17 @@ class ProfileController extends Controller
                 $patient->detail()->updateOrCreate([], $details);
             }
         });
+
+        if ($bookingSlot) {
+            app(\App\Support\Portal\BookingProfileGate::class)->forgetPending();
+            return redirect()->route('patient.appointments.create', ['slot' => $bookingSlot])
+                ->with('success', 'Thông tin hồ sơ đã được cập nhật.');
+        }
+
+        $patient = $request->user()->patient->fresh();
+        if ($resume = app(\App\Support\Portal\BookingProfileGate::class)->resumeAfterProfileSaved($patient)) {
+            return $resume;
+        }
 
         return redirect()->route('patient.profile.show')->with('success', 'Thông tin hồ sơ đã được cập nhật.');
     }

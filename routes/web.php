@@ -52,6 +52,11 @@ use App\Http\Controllers\Portal\RegistrationController;
 use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\Portal\ProfileController;
 use App\Http\Middleware\PatientMiddleware;
+use App\Http\Controllers\Portal\DoctorController as PortalDoctorController;
+use App\Http\Controllers\Portal\AppointmentController as PortalAppointmentController;
+use App\Http\Controllers\Portal\QueueController as PortalQueueController;
+use App\Http\Controllers\Portal\PaymentController as PortalPaymentController;
+use App\Http\Controllers\Portal\AppointmentChangeController as PortalAppointmentChangeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -100,6 +105,33 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::middleware(PatientMiddleware::class)->get('/ket-qua/{result}/tai-lieu/{type}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'resultDocument'])->where('type', 'result_pdf|result_image')->name('results.document');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptions'])->name('prescriptions');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc/{prescription}/pdf', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptionDocument'])->name('prescriptions.document');
+    Route::middleware(PatientMiddleware::class)->group(function () {
+        Route::middleware(PatientMiddleware::class)->group(function () {
+            // M05 - Tra cứu bác sĩ, chuyên khoa
+            Route::get('/bac-si', [PortalDoctorController::class, 'index'])->name('doctors.index');
+            Route::get('/bac-si/{doctor}', [PortalDoctorController::class, 'show'])->name('doctors.show');
+            Route::get('/chuyen-khoa/{specialty}', [PortalDoctorController::class, 'specialty'])->name('specialties.show');
+            // M06 - Đặt lịch khám
+            Route::get('/dat-lich/{slot}', [PortalAppointmentController::class, 'create'])->name('appointments.create');
+            Route::post('/dat-lich', [PortalAppointmentController::class, 'store'])->name('appointments.store');
+            // Danh sách lịch hẹn
+            Route::get('/lich-hen', [PortalAppointmentController::class, 'index'])->name('appointments.index');
+            // M07 - Hiển thị trang hủy lịch
+            Route::get('/lich-hen/{appointment}/huy', [PortalAppointmentChangeController::class, 'cancelForm'])->name('appointments.cancel.form');
+            // M07 - Xử lý hủy lịch
+            Route::post('/lich-hen/{appointment}/huy', [PortalAppointmentChangeController::class, 'cancel'])->name('appointments.cancel');
+            // M07 - Hiển thị trang đổi lịch
+            Route::get('/lich-hen/{appointment}/doi-lich', [PortalAppointmentChangeController::class, 'rescheduleForm'])->name('appointments.reschedule.form');
+            // M07 - Xử lý đổi lịch
+            Route::post('/lich-hen/{appointment}/doi-lich', [PortalAppointmentChangeController::class, 'reschedule'])->name('appointments.reschedule');
+            // Chi tiết lịch hẹn
+            Route::get('/lich-hen/{appointment}', [PortalAppointmentController::class, 'show'])->name('appointments.show');
+            // M08 - Lịch khám và hàng đợi
+            Route::get('/lich-kham-hang-doi', [PortalQueueController::class, 'index'])->name('queues.index');
+            // M13 - Khoản cần thanh toán
+            Route::get('/thanh-toan', [PortalPaymentController::class, 'index'])->name('payments.index');
+        });
+    });
 });
 
 /*
@@ -1004,7 +1036,5 @@ Route::prefix('admin')
             )->name(
                 'logout'
             );
-
         });
-
     });

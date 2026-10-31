@@ -9,7 +9,9 @@
     <div class="profile-notice"><span class="profile-notice__icon" aria-hidden="true">i</span><div><strong>Thông tin được quản lý riêng</strong><p>Ngày sinh, giới tính và CCCD chỉ có thể nhập một lần khi chưa có dữ liệu. Số điện thoại đăng nhập được quản lý riêng. <a href="{{ route('patient.profile.phone') }}">Đổi số điện thoại</a> hoặc <a href="{{ route('public.support') }}">liên hệ hỗ trợ</a> khi cần.</p></div></div>
     @if ($errors->any())<x-portal.alert type="error" class="profile-alert">Vui lòng kiểm tra các thông tin chưa hợp lệ bên dưới.</x-portal.alert>@endif
     @if (session('error'))<x-portal.alert type="error" class="profile-alert">{{ session('error') }}</x-portal.alert>@endif
+    @if (session('warning'))<x-portal.alert type="info" class="profile-alert">{{ session('warning') }}</x-portal.alert>@endif
     <form method="post" action="{{ route('patient.profile.update') }}" class="profile-edit" data-profile-form>@csrf @method('PUT')
+        @if ($bookingSlot)<input type="hidden" name="booking_slot" value="{{ $bookingSlot }}">@endif
         @foreach ([
             ['Thông tin cá nhân', 'Thông tin cơ bản của bạn', '▤', [
                 ['full_name', 'Họ và tên', $patient->full_name, 'text'],
@@ -38,7 +40,7 @@
                         @if ($type === 'select')
                             <select id="{{ $name }}" name="{{ $name }}" aria-invalid="{{ $errors->has($name) ? 'true' : 'false' }}" @if ($errors->has($name)) aria-describedby="{{ $name }}-error" @endif><option value="">Chọn giới tính</option>@foreach (['Nam', 'Nữ', 'Khác'] as $option)<option value="{{ $option }}" @selected(old($name, $value) === $option)>{{ $option }}</option>@endforeach</select>
                         @else
-                            <input id="{{ $name }}" name="{{ $name }}" type="{{ $type }}" value="{{ old($name, $value) }}" @if ($name === 'full_name') required @endif @if ($name === 'citizen_id_number') inputmode="numeric" maxlength="12" @endif aria-invalid="{{ $errors->has($name) ? 'true' : 'false' }}" @if ($errors->has($name)) aria-describedby="{{ $name }}-error" @endif>
+                            <input id="{{ $name }}" name="{{ $name }}" type="{{ $type }}" value="{{ $name === 'citizen_id_number' ? '' : old($name, $value) }}" @if ($name === 'full_name') required @endif @if ($name === 'citizen_id_number') inputmode="numeric" maxlength="12" @endif aria-invalid="{{ $errors->has($name) ? 'true' : 'false' }}" @if ($errors->has($name)) aria-describedby="{{ $name }}-error" @endif>
                         @endif
                         @error($name)<p class="portal-field-error" id="{{ $name }}-error">{{ $message }}</p>@enderror
                     </div>

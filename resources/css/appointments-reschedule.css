@@ -1,0 +1,147 @@
+
+@import './appointments-actions.css';
+
+/* MEDIWAY - RESCHEDULE APPOINTMENT */
+
+.mw-appointment-action--reschedule .mw-action-icon {
+    background: #e9f2ff;
+    color: #255bd5;
+}
+
+.mw-appointment-action--reschedule .mw-slot-fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.mw-appointment-action--reschedule .mw-slot-legend {
+    display: block;
+    width: 100%;
+
+    margin: 0 0 13px;
+    padding: 0;
+
+    color: #273854;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.mw-appointment-action--reschedule .mw-slot-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.mw-appointment-action--reschedule .mw-slot-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+
+    min-width: 0;
+    margin: 0;
+    padding: 17px;
+
+    border: 1px solid #dbe4f2;
+    border-radius: 14px;
+
+    background: #fbfcff;
+
+    cursor: pointer;
+
+    transition:
+        border-color .15s ease,
+        background .15s ease,
+        box-shadow .15s ease;
+}
+
+.mw-appointment-action--reschedule .mw-slot-card:hover {
+    border-color: #8eb2f4;
+    background: #f5f9ff;
+}
+
+.mw-appointment-action--reschedule .mw-slot-card:has(input:checked),
+.mw-appointment-action--reschedule .mw-slot-card.is-selected {
+    border-color: #3977ef;
+    background: #eff6ff;
+    box-shadow: inset 0 0 0 1px #3977ef;
+}
+
+.mw-appointment-action--reschedule .mw-slot-card:focus-within {
+    outline: 3px solid rgba(56, 119, 239, .2);
+    outline-offset: 2px;
+}
+
+.mw-appointment-action--reschedule .mw-slot-radio {
+    flex: 0 0 auto;
+
+    width: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+
+    accent-color: #245fe7;
+}
+
+.mw-appointment-action--reschedule .mw-slot-content {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+}
+
+.mw-appointment-action--reschedule .mw-slot-primary {
+    color: #233755;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.mw-appointment-action--reschedule .mw-slot-secondary {
+    color: #75849d;
+    font-size: 12px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.mw-appointment-action--reschedule
+.mw-slot-fieldset:disabled
+.mw-slot-card {
+    cursor: not-allowed;
+    opacity: .65;
+}
+
+.mw-appointment-action--reschedule .mw-slot-empty {
+    grid-column: 1 / -1;
+
+    margin: 0;
+    padding: 17px;
+
+    border-radius: 12px;
+    background: #f3f6fa;
+
+    color: #687991;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.mw-appointment-action--reschedule
+.mw-action-buttons
+.mw-action-button--primary {
+    background: #245fe7;
+    border: 1px solid #245fe7;
+    color: #fff;
+    box-shadow: 0 5px 16px rgba(36, 95, 231, .14);
+}
+
+.mw-appointment-action--reschedule
+.mw-action-buttons
+.mw-action-button--primary:hover:not([disabled]) {
+    background: #184bc7;
+    border-color: #184bc7;
+}
+
+@media (max-width: 1050px) {
+    .mw-appointment-action--reschedule .mw-slot-list {
+        grid-template-columns: 1fr;
+    }
+}

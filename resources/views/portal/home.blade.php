@@ -28,11 +28,11 @@
                     ['Lịch khám', 'Xem lịch hẹn của bạn.', '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-9 3v5m-2.5-2.5h5"/>'],
                     ['Hồ sơ cá nhân', 'Quản lý thông tin cá nhân của bạn.', '<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="9" r="2.5"/><path d="M7.5 17c.6-2.1 2.2-3.2 4.5-3.2s3.9 1.1 4.5 3.2"/>'],
                     ['Hồ sơ sức khỏe', 'Theo dõi thông tin sức khỏe theo thời gian.', '<path d="M20.8 5.8a5.3 5.3 0 0 0-7.5 0L12 7.1l-1.3-1.3a5.3 5.3 0 0 0-7.5 7.5L12 22l8.8-8.7a5.3 5.3 0 0 0 0-7.5Z"/><path d="M6 12h3l1.5-2.5 2.5 5 1.5-2.5H18"/>'],
-                    ['Kết quả khám bệnh', 'Xem lại kết quả sau mỗi lần thăm khám.', '<path d="M7 3h7l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h4M9 12h6m-6 4h6"/>'],
+                    ['Kết quả khám bệnh', 'Xem kết quả và tài liệu trong hồ sơ của bạn.', '<path d="M7 3h7l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h4M9 12h6m-6 4h6"/>'],
                     ['Đơn thuốc', 'Tra cứu thông tin đơn thuốc của bạn.', '<path d="M8 4h8a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4Z"/><path d="M12 8v8m-4-4h8"/>'],
                     ['Thanh toán', 'Theo dõi các khoản thanh toán khám chữa bệnh.', '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M7 15h4"/>'],
                 ] as [$title, $description, $icon])
-                    @php($destination = match ($title) { 'Lịch khám' => route('patient.appointments'), 'Hồ sơ cá nhân' => route('patient.profile.show'), default => null })
+                    @php($destination = match ($title) { 'Lịch khám' => route('patient.appointments'), 'Hồ sơ cá nhân' => route('patient.profile.show'), 'Hồ sơ sức khỏe' => route('patient.health-history'), 'Kết quả khám bệnh' => route('patient.results'), 'Đơn thuốc' => route('patient.prescriptions'), default => null })
                     @if ($destination)<a class="patient-service-card" href="{{ $destination }}">@else<article class="patient-service-card">@endif
                         <span class="patient-service-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">{!! $icon !!}</svg></span>
                         <span class="patient-service-card__body"><h3>{{ $title }}</h3><p>{{ $description }}</p>

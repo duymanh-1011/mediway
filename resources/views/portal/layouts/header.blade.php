@@ -11,6 +11,9 @@
             <div class="portal-nav__account">
                 @auth
                     @if (auth()->user()->canAccessPortal())
+                        <a href="{{ route('patient.health-history') }}">Hồ sơ sức khỏe</a>
+                        <a href="{{ route('patient.results') }}">Kết quả khám</a>
+                        <a href="{{ route('patient.prescriptions') }}">Đơn thuốc</a>
                         <a href="{{ route('patient.notifications') }}">Thông báo</a>
                         <a href="{{ route('patient.home') }}">Bệnh nhân · {{ auth()->user()->patient->full_name }}</a>
                         <form method="post" action="{{ route('patient.logout') }}">@csrf<button class="portal-nav__logout" type="submit">Đăng xuất</button></form>

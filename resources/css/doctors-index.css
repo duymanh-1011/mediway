@@ -1,0 +1,686 @@
+/* MEDIWAY_PORTAL_EXTRACTED_FROM: resources/views/portal/doctors/index.blade.php */
+.mw-search {
+        --b: #2563eb;
+        --bd: #1d4ed8;
+        --ink: #172b4d;
+        --muted: #63758e;
+        --line: #dce6f3;
+        --soft: #f3f7fe;
+        color: var(--ink);
+        background: #fff;
+    }
+
+    .mw-search *,
+    .mw-search *::before,
+    .mw-search *::after {
+        box-sizing: border-box;
+    }
+
+    /* Tiêu đề trang */
+    .mw-search .portal-page-head {
+        padding: 40px 0;
+        background: #f0f5fe;
+        border-bottom: 1px solid #e2ebf6;
+    }
+
+    .mw-search .portal-page-head h1 {
+        font-size: clamp(30px, 3.6vw, 46px);
+        line-height: 1.2;
+        margin: 9px 0;
+        letter-spacing: -.025em;
+    }
+
+    .mw-search .portal-lead {
+        color: var(--muted);
+        margin: 0;
+    }
+
+    /* Bộ lọc */
+    .mw-filters {
+        background: #eef6fc;
+        padding: 29px 0;
+        border-bottom: 1px solid #e0ebf4;
+    }
+
+    .mw-filter-card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 25px;
+        box-shadow: 0 8px 25px #172b4d0b;
+    }
+
+    .mw-filter-card h2 {
+        margin: 0 0 5px;
+        font-size: 23px;
+    }
+
+    .mw-filter-card > p {
+        color: var(--muted);
+        margin: 0 0 20px;
+        font-size: 14px;
+    }
+
+    .mw-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .mw-filter-field {
+        display: grid;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .mw-filter-field label {
+        font-size: 13px;
+        font-weight: 750;
+    }
+
+    .mw-filter-field select,
+    .mw-filter-field input {
+        width: 100%;
+        height: 46px;
+        border: 1px solid #cad7e9;
+        border-radius: 10px;
+        padding: 0 12px;
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+        font-size: 14px;
+    }
+
+    .mw-filter-field select:focus,
+    .mw-filter-field input:focus {
+        outline: 3px solid #dbeafe;
+        border-color: var(--b);
+    }
+
+    .mw-field-error {
+        font-size: 12px;
+        color: #b42318;
+        margin: 0;
+    }
+
+    .mw-filter-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+    }
+
+    .mw-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 11px 19px;
+        border: 1px solid #cbdbf5;
+        border-radius: 10px;
+        background: #fff;
+        color: var(--bd);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 750;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .mw-btn--primary {
+        background: var(--b);
+        color: #fff;
+        border-color: var(--b);
+    }
+
+    .mw-btn--primary:hover {
+        background: var(--bd);
+        color: #fff;
+    }
+
+    .mw-btn:focus-visible,
+    .mw-expand:focus-visible,
+    .mw-day:focus-visible,
+    .mw-slot:focus-visible {
+        outline: 3px solid #93c5fd;
+        outline-offset: 3px;
+    }
+
+    /* Kết quả */
+    .mw-results {
+        padding: 32px 0 72px;
+        background: #f9fbff;
+        min-height: 340px;
+    }
+
+    .mw-context {
+        background: #edf4ff;
+        border: 1px solid #d6e4ff;
+        border-radius: 12px;
+        padding: 13px 16px;
+        font-size: 13px;
+        color: #526680;
+        margin: 0 0 20px;
+        line-height: 1.7;
+    }
+
+    .mw-context strong {
+        color: var(--bd);
+    }
+
+    .mw-list {
+        display: grid;
+        gap: 15px;
+    }
+
+    /* Thẻ bác sĩ */
+    .mw-doctor {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: #fff;
+        overflow: hidden;
+        box-shadow: 0 7px 24px #172b4d09;
+        transition: border-color .2s, box-shadow .2s;
+    }
+
+    .mw-doctor.is-open {
+        border-color: #9abafa;
+        box-shadow: 0 12px 30px #2563eb16;
+    }
+
+    .mw-doctor-head {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 23px;
+    }
+
+    .mw-avatar {
+        width: 60px;
+        height: 60px;
+        display: grid;
+        place-items: center;
+        flex: none;
+        border-radius: 16px;
+        background: #eaf2ff;
+        color: var(--b);
+    }
+
+    .mw-avatar svg {
+        width: 34px;
+        height: 34px;
+    }
+
+    .mw-doctor-info {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .mw-doctor-specialty {
+        font-size: 13px;
+        font-weight: 750;
+        color: var(--b);
+        margin: 0 0 5px;
+    }
+
+    .mw-doctor-name {
+        font-size: 20px;
+        line-height: 1.35;
+        margin: 0 0 5px;
+    }
+
+    .mw-doctor-sub {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .mw-availability {
+        display: inline-flex;
+        padding: 7px 11px;
+        border-radius: 999px;
+        white-space: nowrap;
+        font-size: 12px;
+        font-weight: 800;
+        background: #eaf8f0;
+        color: #18734b;
+    }
+
+    .mw-availability.is-none {
+        background: #f1f3f6;
+        color: #67758b;
+    }
+
+    .mw-expand {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 116px;
+        min-height: 46px;
+        padding: 10px 17px;
+        border: 1px solid var(--b);
+        border-radius: 10px;
+        background: var(--b);
+        color: #fff;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .mw-expand:hover {
+        background: var(--bd);
+    }
+
+    .mw-expand svg {
+        width: 17px;
+        height: 17px;
+        margin-left: 7px;
+        transition: transform .2s;
+    }
+
+    .mw-doctor.is-open .mw-expand {
+        color: var(--bd);
+        background: #eef5ff;
+        border-color: #c9dcff;
+    }
+
+    .mw-doctor.is-open .mw-expand svg {
+        transform: rotate(180deg);
+    }
+
+    /* Chi tiết lịch mở rộng */
+    .mw-doctor-panel {
+        display: none;
+        border-top: 1px solid var(--line);
+        padding: 24px;
+    }
+
+    .mw-doctor.is-open .mw-doctor-panel {
+        display: block;
+    }
+
+    .mw-section-heading {
+        margin: 0 0 14px;
+        font-size: 17px;
+    }
+
+    /* Các ngày khám */
+    .mw-days {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 2px 1px 12px;
+        margin-bottom: 14px;
+        scrollbar-width: thin;
+    }
+
+    .mw-day {
+        flex: 0 0 auto;
+        min-width: 112px;
+        border: 1px solid #d8e4f2;
+        border-radius: 12px;
+        padding: 12px 14px;
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+        font: inherit;
+        text-align: center;
+    }
+
+    .mw-day strong {
+        display: block;
+        font-size: 15px;
+    }
+
+    .mw-day span {
+        display: block;
+        font-size: 13px;
+        margin-top: 5px;
+    }
+
+    .mw-day small {
+        display: block;
+        color: #75869b;
+        font-size: 11px;
+        margin-top: 5px;
+    }
+
+    .mw-day.is-active {
+        background: var(--b);
+        border-color: var(--b);
+        color: #fff;
+        box-shadow: 0 6px 16px #2563eb20;
+    }
+
+    .mw-day.is-active small {
+        color: #e0edff;
+    }
+
+    .mw-day.is-unavailable:not(.is-active) {
+        background: #f3f5f8;
+        color: #718096;
+    }
+
+    .mw-day-panel {
+        display: none;
+    }
+
+    .mw-day-panel.is-active {
+        display: block;
+    }
+
+    .mw-day-title {
+        padding: 10px 0 16px;
+        border-bottom: 1px solid var(--line);
+        margin: 0 0 18px;
+        font-size: 18px;
+    }
+
+    .mw-day-title svg {
+        vertical-align: middle;
+        width: 20px;
+        height: 20px;
+        color: var(--b);
+        margin-right: 7px;
+    }
+
+    /* Ca sáng / chiều */
+    .mw-period {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        margin-bottom: 16px;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .mw-period.is-unavailable {
+        background: #f8f9fc;
+        border-color: #e5e9ef;
+    }
+
+    .mw-period-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 15px 17px;
+        background: #f3f7fd;
+    }
+
+    .mw-period.is-unavailable .mw-period-head {
+        background: #f1f3f6;
+    }
+
+    .mw-period-title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin: 0;
+        font-size: 16px;
+    }
+
+    .mw-period-icon {
+        display: grid;
+        place-items: center;
+        width: 33px;
+        height: 33px;
+        border-radius: 10px;
+        color: #e39a19;
+        background: #fff3dc;
+    }
+
+    .mw-period-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .mw-period--afternoon .mw-period-icon {
+        color: #2563eb;
+        background: #e4efff;
+    }
+
+    .mw-period-badge {
+        font-size: 12px;
+        font-weight: 800;
+        border-radius: 999px;
+        padding: 6px 10px;
+        color: #18734b;
+        background: #dff5e9;
+    }
+
+    .mw-period-badge.is-unavailable {
+        color: #68778a;
+        background: #e6eaf0;
+    }
+
+    .mw-period-body {
+        padding: 17px;
+    }
+
+    .mw-shift {
+        padding: 0 0 17px;
+        margin-bottom: 17px;
+        border-bottom: 1px dashed #dfe7f1;
+    }
+
+    .mw-shift:last-child {
+        border: 0;
+        margin: 0;
+        padding: 0;
+    }
+
+    .mw-shift-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        margin-bottom: 15px;
+        font-size: 13px;
+        color: #536680;
+    }
+
+    .mw-shift-meta strong {
+        color: #2b415e;
+    }
+
+    /* Khung giờ */
+    .mw-slot-grid {
+        display: grid;
+        grid-template-columns:
+            repeat(auto-fill, minmax(145px, 1fr));
+        gap: 10px;
+    }
+
+    .mw-slot {
+        padding: 10px 7px;
+        border: 1px solid #d1dff1;
+        border-radius: 10px;
+        min-height: 68px;
+        background: #fff;
+        text-align: center;
+        color: var(--ink);
+        cursor: pointer;
+        font: inherit;
+        transition: border-color .18s, background .18s;
+    }
+
+    .mw-slot-time {
+        display: block;
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .mw-slot-status {
+        display: block;
+        font-size: 11px;
+        color: #16805a;
+        margin-top: 6px;
+    }
+
+    .mw-slot:not(:disabled):hover {
+        border-color: var(--b);
+        background: #eff6ff;
+    }
+
+    .mw-slot.is-selected {
+        background: var(--b);
+        color: #fff;
+        border-color: var(--b);
+    }
+
+    .mw-slot.is-selected .mw-slot-status {
+        color: #e8f1ff;
+    }
+
+    /* Hết chỗ / quá giờ */
+    .mw-slot:disabled,
+    .mw-slot.is-full,
+    .mw-slot.is-past {
+        cursor: not-allowed;
+        background: #f2f4f7;
+        border-color: #e2e6ed;
+        color: #8895a6;
+    }
+
+    .mw-slot:disabled .mw-slot-status {
+        color: #7d8898;
+    }
+
+    .mw-empty-day {
+        font-size: 14px;
+        color: var(--muted);
+    }
+
+    /* Xác nhận đặt lịch */
+    .mw-bookbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-top: 22px;
+        padding: 17px 20px;
+        border-radius: 13px;
+        border: 1px solid #d2e1fb;
+        background: #eef5ff;
+    }
+
+    .mw-bookbar p {
+        margin: 0;
+        color: #415775;
+        font-size: 14px;
+        line-height: 1.65;
+    }
+
+    .mw-bookbar strong {
+        color: var(--bd);
+    }
+
+    .mw-bookbar .mw-btn {
+        flex: none;
+        min-width: 152px;
+    }
+
+    .mw-bookbar .mw-btn.is-disabled {
+        color: #fff;
+        background: #aebbd0;
+        border-color: #aebbd0;
+        pointer-events: none;
+    }
+
+    .mw-empty {
+        text-align: center;
+        padding: 46px 22px;
+        border: 1px dashed #cad8e9;
+        border-radius: 16px;
+        background: #fff;
+    }
+
+    .mw-empty h3 {
+        margin: 0 0 10px;
+        font-size: 20px;
+    }
+
+    .mw-empty p {
+        margin: 0;
+        color: var(--muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 850px) {
+        .mw-filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .mw-doctor-head {
+            flex-wrap: wrap;
+        }
+
+        .mw-availability {
+            margin-left: auto;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .mw-search .portal-page-head {
+            padding: 27px 0;
+        }
+
+        .mw-filter-card {
+            padding: 17px;
+        }
+
+        .mw-doctor-head {
+            padding: 16px;
+            gap: 12px;
+        }
+
+        .mw-avatar {
+            width: 50px;
+            height: 50px;
+        }
+
+        .mw-doctor-name {
+            font-size: 17px;
+        }
+
+        .mw-expand {
+            width: 100%;
+        }
+
+        .mw-doctor-panel {
+            padding: 16px;
+        }
+
+        .mw-availability {
+            margin-left: 0;
+        }
+
+        .mw-slot-grid {
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+        }
+
+        .mw-bookbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .mw-bookbar .mw-btn {
+            width: 100%;
+        }
+
+        .mw-period-head {
+            padding: 12px;
+        }
+
+        .mw-period-body {
+            padding: 13px;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .mw-search *,
+        .mw-search *::before,
+        .mw-search *::after {
+            transition: none !important;
+        }
+    }

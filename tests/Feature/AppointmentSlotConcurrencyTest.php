@@ -74,7 +74,7 @@ class AppointmentSlotConcurrencyTest extends TestCase
                         ...$first['data'], 'appointment_code' => 'LHRACERECEPTION', 'doctor_id' => $schedule->doctor_id,
                         'specialty_id' => $schedule->specialty_id, 'examination_room_id' => $schedule->examination_room_id,
                         'appointment_date' => $schedule->work_date, 'checkin_token' => (string) Str::uuid(),
-                        'appointment_status_id' => AppointmentStatus::where('name', 'BOOKED')->value('id'), 'booked_at' => now(),
+                        'appointment_status_id' => AppointmentStatus::where('name', 'BOOKED')->value('id'), 'booked_at' => today()->setTime(8, 0),
                     ]);
                     $duplicate = $existing->replicate();
                     $duplicate->appointment_code = 'LHRACERECEPTIONDUP';
@@ -82,6 +82,8 @@ class AppointmentSlotConcurrencyTest extends TestCase
                     $duplicate->save();
                     $first = ['uri' => route('admin.appointments.check-in', $existing), 'method' => 'POST', 'data' => [], 'pause' => 'visit_insert'];
                     $second = ['uri' => route('admin.appointments.check-in', $duplicate), 'method' => 'POST', 'data' => [], 'pause' => 'lock'];
+                    $first['test_now'] = today()->setTime(9, 0)->toDateTimeString();
+                    $second['test_now'] = $first['test_now'];
                 }
             }
             $this->runConcurrentRequests($first, $second);
@@ -116,6 +118,7 @@ if (Illuminate\Support\Facades\DB::getDatabaseName() !== 'mediway_codex_test_202
     throw new RuntimeException('Refuse to run concurrency test outside the isolated test database.');
 }
 $payload = json_decode($argv[1], true, 512, JSON_THROW_ON_ERROR);
+if (isset($payload['test_now'])) Carbon\Carbon::setTestNow($payload['test_now']);
 $ready = $argv[2];
 $release = $argv[3];
 $marked = false;

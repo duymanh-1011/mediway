@@ -109,6 +109,7 @@ class DoctorSpecialtyTest extends TestCase
     public function test_invalid_or_unassigned_doctor_schedules_cannot_be_booked_or_checked_in(): void
     {
         foreach ([$this->specialty('CKDL')->id, $this->specialty()->id] as $index => $specialtyId) {
+            $this->travelTo(today()->setTime(7, 0));
             if ($index === 1) {
                 $this->doctor()->update(['specialty_id' => null]);
             }
@@ -121,6 +122,7 @@ class DoctorSpecialtyTest extends TestCase
                 'specialty_id' => $specialtyId, 'examination_room_id' => $schedule->examination_room_id,
                 'appointment_date' => today(), 'appointment_status_id' => AppointmentStatus::where('name', 'BOOKED')->value('id'),
                 'checkin_token' => 'legacy-'.$index, 'booked_at' => now()]);
+            $this->travelTo(today()->setTime(9, 0));
             $this->post(route('admin.appointments.check-in', $legacy))->assertSessionHasErrors('appointment');
             $this->assertDatabaseMissing('medical_visits', ['appointment_id' => $legacy->id]);
             $this->assertDatabaseHas('appointments', ['id' => $legacy->id, 'specialty_id' => $specialtyId]);

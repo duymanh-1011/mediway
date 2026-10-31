@@ -25,6 +25,11 @@ class PatientMiddleware
                 ->withErrors(['auth' => 'Tài khoản không có quyền truy cập khu vực bệnh nhân hoặc đã ngừng hoạt động.']);
         }
 
-        return $next($request);
+        $response = $next($request);
+        $response->headers->set('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        return $response;
     }
 }

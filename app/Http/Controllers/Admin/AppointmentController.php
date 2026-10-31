@@ -631,7 +631,7 @@ class AppointmentController extends Controller
             if ($lockedAppointment->appointment_time_slot_id !== $receptionSlot->id) {
                 throw ValidationException::withMessages(['appointment' => 'Khung giờ của lịch hẹn vừa thay đổi. Vui lòng tải lại trang.']);
             }
-            $lockedAppointment->assertReceptionDate();
+            $lockedAppointment->assertReceptionWindow();
             $doctor = Doctor::whereKey($lockedAppointment->doctor_id)->lockForUpdate()->firstOrFail();
             $patient = Patient::whereKey($lockedAppointment->patient_id)->lockForUpdate()->firstOrFail();
             $specialty = Specialty::whereKey($lockedAppointment->specialty_id)->lockForUpdate()->firstOrFail();

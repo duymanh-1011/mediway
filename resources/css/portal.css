@@ -92,3 +92,41 @@ body.portal-body{font-family:"Segoe UI",Arial,Helvetica,sans-serif;font-size:15p
 /* Điều chỉnh bố cục khi xem trên điện thoại. */
 @media(max-width:700px){.medical-page{padding:16px 0 50px}.medical-nav{display:block;margin-bottom:18px}.portal-body .medical-nav__back{display:inline-block;margin-bottom:3px}.medical-nav__links{margin:0 -6px}.portal-body .medical-nav__links a{padding:12px 10px;font-size:13px}.medical-nav__links a.is-active:after{right:10px;left:10px}.medical-hero{padding:25px;border-radius:16px}.medical-hero__symbol{flex-basis:54px;width:54px;height:54px;border-radius:16px;font-size:26px}.medical-content{padding-top:30px}.medical-section-head{align-items:start;flex-wrap:wrap}.medical-section-head h2{font-size:21px}.medical-visit{gap:13px;padding:18px}.medical-visit__date{flex-basis:52px;height:59px}.medical-visit__date span{font-size:20px}.medical-visit__top{flex-wrap:wrap}.medical-metrics,.medical-medicine__facts{grid-template-columns:repeat(2,minmax(0,1fr))}.medical-measurement{padding:18px}}
 @media(max-width:420px){.medical-hero__symbol{display:none}.medical-visit{display:block}.medical-visit__date{display:flex;gap:5px;width:max-content;height:auto;margin-bottom:12px;padding:7px 10px}.medical-visit__date span{font-size:14px}.medical-visit__date small{margin:0;font-size:12px}.medical-empty{padding:20px}}
+
+/* Patient home */
+.patient-home .patient-welcome{overflow:hidden;background:#eef5ff;border-bottom:1px solid #dce8f8}
+.patient-home .patient-welcome__inner{position:relative;min-height:260px;padding-block:44px;gap:32px}
+.patient-home .patient-welcome__copy{position:relative;z-index:1;min-width:0}
+.patient-home .patient-welcome h1{max-width:720px;font-size:clamp(27px,3.2vw,40px);overflow-wrap:anywhere}
+.patient-home .patient-welcome__copy>p:not(.portal-eyebrow){margin:12px 0 0;color:#526175;font-size:16px}
+.portal-body .patient-home a.patient-welcome__link{display:inline-flex;align-items:center;gap:10px;margin-top:23px;color:#1d4ed8;font-size:14px;font-weight:700;text-decoration:none}
+.patient-home .patient-welcome__link span{display:grid;place-items:center;width:27px;height:27px;border:1px solid #cadcf8;border-radius:50%;background:#fff}
+.patient-home .patient-welcome__link:hover{text-decoration:underline}
+.patient-welcome__art{position:relative;display:grid;place-items:center;flex:0 0 216px;width:216px;height:170px;color:#2563eb}
+.patient-welcome__art-ring{position:absolute;width:160px;height:160px;border:1px solid #cbdfff;border-radius:50%;background:rgb(255 255 255 / 32%)}
+.patient-welcome__art-ring::before,.patient-welcome__art-ring::after{position:absolute;inset:17px;border:1px solid #d4e4fc;border-radius:50%;content:""}
+.patient-welcome__art-ring::after{inset:36px}
+.patient-welcome__art-card{position:relative;display:grid;place-items:center;width:86px;height:86px;border:1px solid #dbe8fa;border-radius:26px;background:#fff;box-shadow:0 14px 30px rgb(37 99 235 / 10%)}
+.patient-welcome__art-card svg{width:48px;height:48px}
+.patient-welcome__art-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:#9cbbf2}
+.patient-welcome__art-dot--one{top:20px;right:27px}.patient-welcome__art-dot--two{bottom:24px;left:23px;width:7px;height:7px}
+.patient-home .patient-services{padding:58px 0 72px;background:#f7f9fc;scroll-margin-top:90px}
+.patient-home .patient-services__heading{margin-bottom:25px}
+.patient-home .patient-services__heading h2{font-size:clamp(23px,2.4vw,30px);line-height:1.3}
+.patient-home .patient-services__heading p:last-child{margin-top:8px}
+.patient-home .patient-services__grid{gap:16px}
+.patient-home .patient-service-card{position:relative;min-height:190px;padding:24px;border:1px solid #e0e8f2;border-radius:16px;background:#fff;box-shadow:0 4px 18px rgb(31 55 85 / 4%)}
+.patient-home .patient-service-card:hover{border-color:#a9c6f4;box-shadow:0 12px 28px rgb(37 99 235 / 9%);transform:translateY(-3px)}
+.patient-home .patient-service-card__icon{width:48px;height:48px;margin-bottom:20px;border-radius:14px;background:#edf4ff;color:#2563eb}
+.patient-service-card__icon svg{width:24px;height:24px}
+.patient-home .patient-service-card h3{padding-right:25px;font-size:17px}
+.patient-home .patient-service-card p{max-width:270px;margin:8px 0 0;line-height:1.6}
+.patient-service-card__arrow{position:absolute;right:24px;top:29px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#f5f8fc;color:#64748b;font-size:18px;transition:background-color .16s,color .16s}
+.patient-service-card:hover .patient-service-card__arrow{background:#e8f1ff;color:#1d4ed8}
+.patient-home .patient-notifications{margin-top:24px;border-radius:16px;box-shadow:0 4px 18px rgb(31 55 85 / 4%)}
+.patient-home .patient-notifications__heading{padding:22px 24px;gap:16px}
+.patient-home .patient-notifications__icon{width:48px;height:48px;flex-basis:48px;border-radius:14px}
+.patient-home .patient-help{margin-top:16px;padding:22px 24px;border-radius:16px;background:#edf4ff}
+@media(max-width:767px){.patient-home .patient-welcome__inner{min-height:0;padding-block:38px}.patient-welcome__art{flex-basis:128px;width:128px;height:128px}.patient-welcome__art-ring{width:120px;height:120px}.patient-welcome__art-card{width:68px;height:68px;border-radius:20px}.patient-welcome__art-card svg{width:40px;height:40px}.patient-welcome__art-dot--one{right:2px}.patient-welcome__art-dot--two{left:3px}.patient-home .patient-services{padding:42px 0 52px}.patient-home .patient-service-card{min-height:180px;padding:20px}.patient-service-card__arrow{top:24px;right:20px}}
+@media(max-width:480px){.patient-home .patient-welcome__inner{padding-block:32px}.patient-welcome__art{display:none}.patient-home .patient-welcome__copy>p:not(.portal-eyebrow){font-size:15px}.patient-home .patient-services__grid{grid-template-columns:1fr}.patient-home .patient-service-card{min-height:0;flex-direction:row;align-items:center;gap:16px;padding:18px}.patient-home .patient-service-card__icon{flex:0 0 48px;margin:0}.patient-home .patient-service-card__body{min-width:0}.patient-home .patient-service-card h3{font-size:16px}.patient-home .patient-service-card p{font-size:13px}.patient-service-card__arrow{top:18px;right:18px}.patient-home .patient-notifications__heading{padding:18px}.patient-home .patient-help{padding:18px}}
+@media(prefers-reduced-motion:reduce){.patient-home .patient-service-card,.patient-service-card__arrow{transition:none}.patient-home .patient-service-card:hover{transform:none}}

@@ -50,6 +50,7 @@ use App\Http\Controllers\Portal\PasswordResetController;
 use App\Http\Controllers\Portal\PublicController;
 use App\Http\Controllers\Portal\RegistrationController;
 use App\Http\Controllers\Portal\PortalController;
+use App\Http\Controllers\Portal\ProfileController;
 use App\Http\Middleware\PatientMiddleware;
 
 /*
@@ -70,7 +71,7 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
         Route::get('/dang-nhap', [PortalAuthController::class, 'create'])->name('login');
         Route::post('/dang-nhap', [PortalAuthController::class, 'store'])->name('login.store');
         Route::get('/dang-ky', [RegistrationController::class, 'create'])->name('register');
-        Route::post('/dang-ky', [RegistrationController::class, 'store'])->name('register.store');
+        Route::post('/dang-ky', [RegistrationController::class, 'store'])->middleware('throttle:10,1')->name('register.store');
         Route::get('/quen-mat-khau', [PasswordResetController::class, 'create'])->name('password.request');
         Route::post('/quen-mat-khau', [PasswordResetController::class, 'send'])->name('password.send');
         Route::get('/quen-mat-khau/xac-minh', [PasswordResetController::class, 'verifyForm'])->name('password.verify');
@@ -81,6 +82,14 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
 
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->middleware(PatientMiddleware::class)->name('logout');
     Route::middleware(PatientMiddleware::class)->get('/', [PortalController::class, 'placeholder'])->name('home');
+    Route::middleware(PatientMiddleware::class)->get('/lich-kham', [PortalController::class, 'appointments'])->name('appointments');
+    Route::middleware(PatientMiddleware::class)->group(function () {
+        Route::get('/ho-so', [ProfileController::class, 'show'])->name('profile.show');
+        Route::get('/ho-so/chinh-sua', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::get('/ho-so/doi-so-dien-thoai', [ProfileController::class, 'phoneChange'])->name('profile.phone');
+        Route::put('/ho-so', [ProfileController::class, 'update'])->name('profile.update');
+        Route::get('/ho-so/anh-dai-dien', [ProfileController::class, 'avatar'])->name('profile.avatar');
+    });
     Route::middleware(PatientMiddleware::class)->get('/thong-bao', [PortalController::class, 'notifications'])->name('notifications');
     // Các trang hồ sơ và tài liệu yêu cầu tài khoản bệnh nhân hợp lệ.
     Route::middleware(PatientMiddleware::class)->get('/ho-so-suc-khoe', [\App\Http\Controllers\Portal\ClinicalHistoryController::class, 'index'])->name('health-history');

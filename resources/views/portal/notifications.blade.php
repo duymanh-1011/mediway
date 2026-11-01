@@ -15,7 +15,7 @@
                     <a href="{{ route('patient.notifications', ['danh-muc' => $key]) }}" @class(['notification-page__filter', 'is-active' => $category === $key]) @if ($category === $key) aria-current="page" @endif>{{ $label }}</a>
                 @endforeach
             </nav>
-            <div class="notification-page__content" aria-label="Danh sách thông báo"></div>
+            <div class="notification-page__content" aria-label="Danh sách thông báo"><x-portal.empty-state title="Chưa có thông báo" description="Tính năng thông báo đang được cập nhật." /></div>
         </div>
     </div>
 </section>

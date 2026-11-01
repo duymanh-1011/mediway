@@ -7,7 +7,7 @@
         <a class="appointment-back" href="{{ route('patient.home') }}"><span aria-hidden="true">←</span> Quay lại tài khoản</a>
         <header class="appointment-heading">
             <div><p class="portal-eyebrow">TÀI KHOẢN BỆNH NHÂN</p><h1>Lịch khám của bạn</h1><p>Theo dõi thông tin lịch hẹn tại Mediway.</p></div>
-            <div class="appointment-heading__icon" aria-hidden="true">✚</div>
+            <div class="appointment-actions"><x-portal.button variant="primary" :href="route('patient.doctors.index')">Đặt lịch khám</x-portal.button><x-portal.button variant="secondary" :href="route('patient.appointments.index')">Xem tất cả lịch hẹn</x-portal.button></div>
         </header>
         @if ($unavailable)
             <x-portal.alert type="error">Không thể tải thông tin khám lúc này. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.</x-portal.alert>

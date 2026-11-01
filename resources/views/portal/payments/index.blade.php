@@ -12,6 +12,7 @@
     <div class="payment-page">
         <section class="portal-page-head">
             <div class="portal-shell">
+                <a class="appointment-back" href="{{ route('patient.home') }}">← Quay lại tài khoản</a>
                 <p class="portal-eyebrow">
                     PATIENT PORTAL
                 </p>
@@ -29,6 +30,9 @@
 
         <section class="payment-summary-section">
             <div class="portal-shell">
+                @if ($summary['unknown_status_count'])
+                    <x-portal.alert type="info">Có khoản thu chưa xác định được trạng thái. Số tiền chưa hoàn tất bên dưới chỉ tính các khoản chưa thanh toán hoặc chờ xác nhận; vui lòng liên hệ cơ sở khám để kiểm tra.</x-portal.alert>
+                @endif
                 <div class="payment-summary-grid">
                     <div class="payment-summary-card">
                         <div class="payment-summary-label">

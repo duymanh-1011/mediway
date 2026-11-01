@@ -56,6 +56,21 @@ class AutoCancelNoShowTest extends TestCase
         return $appointment->fresh();
     }
 
+    public function test_no_show_is_cancelled_after_slot_end_when_grace_is_zero(): void
+    {
+        config()->set('appointments_auto_cancel.grace_minutes', 0);
+        $appointment = $this->bookedFixture();
+        $end = \Carbon\Carbon::parse($appointment->appointment_date->format('Y-m-d').' '.$appointment->appointmentTimeSlot->end_time);
+
+        $this->travelTo($end->copy()->subSecond());
+        $this->artisan('appointments:expire-unattended')->assertExitCode(0);
+        $this->assertSame('BOOKED', $appointment->fresh()->appointmentStatus->name);
+
+        $this->travelTo($end->copy()->addSecond());
+        $this->artisan('appointments:expire-unattended')->assertExitCode(0);
+        $this->assertSame('CANCELLED', $appointment->fresh()->appointmentStatus->name);
+    }
+
     public function test_expired_booked_appointment_is_cancelled_and_audited(): void
     {
         $appointment = $this->bookedFixture();

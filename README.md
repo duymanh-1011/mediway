@@ -43,6 +43,12 @@ Boost provides your agent 15+ tools and skills that help agents build Laravel ap
 
 ## Contributing
 
+### Lịch hẹn Patient Portal
+
+Theo cấu hình mặc định, bệnh nhân được tự hủy hoặc đổi lịch trước giờ bắt đầu ít nhất 120 phút. Lịch `BOOKED` chưa có lượt tiếp nhận được tự hủy khi hết khung giờ khám. Các giá trị `PATIENT_APPOINTMENT_*` và `APPOINTMENTS_*` trong `.env.example` cho phép cấu hình lại hoặc tắt từng chức năng.
+
+Để tự hủy chạy tự động, môi trường triển khai phải chạy Laravel scheduler mỗi phút (ví dụ `php artisan schedule:run` mỗi phút; môi trường phát triển có thể dùng `php artisan schedule:work`). Lệnh `php artisan appointments:expire-unattended --dry-run` chỉ đếm ứng viên và không thay đổi lịch. Khi bật scheduler trên dữ liệu thật, lịch đủ điều kiện sẽ được hủy và ghi nhật ký.
+
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
 
 ## Code of Conduct

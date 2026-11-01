@@ -3,9 +3,26 @@
 @section('content')
 <section class="medical-page"><div class="portal-shell medical-shell">
     @include('portal.clinical._navigation')
-    <header class="medical-hero"><div><p class="medical-hero__eyebrow">HỒ SƠ CỦA BẠN</p><h1>Kết quả khám bệnh</h1><p>Xem kết quả dịch vụ và các tài liệu trong hồ sơ của bạn.</p></div><div class="medical-hero__symbol" aria-hidden="true">✳</div></header>
+    <header class="medical-hero"><div><p class="medical-hero__eyebrow">HỒ SƠ CỦA BẠN</p><h1>Kết quả khám bệnh</h1><p>Xem kết luận khám, kết quả dịch vụ và các tài liệu trong hồ sơ của bạn.</p></div><div class="medical-hero__symbol" aria-hidden="true">✳</div></header>
     <div class="medical-content patient-records">
-    <div class="medical-section-head"><div><span class="medical-section-head__eyebrow">KẾT QUẢ DỊCH VỤ</span><h2>Kết quả của bạn</h2><p>Sắp xếp theo thời gian ghi nhận, mới nhất trước.</p></div><span class="medical-count">{{ $results->total() }} kết quả</span></div>
+    <div class="medical-section-head"><div><span class="medical-section-head__eyebrow">KẾT LUẬN KHÁM</span><h2>Kết quả khám</h2><p>Kết luận được ghi nhận trong từng lượt khám.</p></div><span class="medical-count">{{ $visitResults->total() }} lượt khám</span></div>
+    <div class="patient-records__list">
+    @forelse ($visitResults as $visit)
+        <article class="patient-record">
+            <div class="patient-record__header"><div><span class="patient-record__label">{{ $visit->visit_code }}</span><h3>{{ $visit->specialty?->name ?? 'Lượt khám' }}</h3></div></div>
+            <div class="patient-record__meta"><span>Ngày khám: <strong>{{ $visit->checked_in_at?->format('d/m/Y H:i') ?? 'Chưa cập nhật' }}</strong></span><span>Bác sĩ: <strong>{{ $visit->doctor?->full_name ?? 'Chưa cập nhật' }}</strong></span></div>
+            @if ($visit->diagnoses->isNotEmpty())<div class="patient-record__content"><h4>Chẩn đoán</h4>@foreach ($visit->diagnoses as $diagnosis)<p>{{ $diagnosis->disease?->name ?? 'Chẩn đoán' }}@if ($diagnosis->diagnosis_description) — {{ $diagnosis->diagnosis_description }}@endif</p>@endforeach</div>@endif
+            @foreach (['professional_conclusion' => 'Kết luận', 'disposition' => 'Hướng xử trí', 'treatment_plan' => 'Kế hoạch điều trị', 'instructions' => 'Hướng dẫn'] as $field => $label)
+                @if ($visit->conclusion->{$field})<div class="patient-record__content"><h4>{{ $label }}</h4><p>{{ $field === 'disposition' ? \App\Models\AdminDisplay::label($visit->conclusion->{$field}) : $visit->conclusion->{$field} }}</p></div>@endif
+            @endforeach
+            @if ($visit->conclusion->has_follow_up)<div class="patient-record__content"><h4>Tái khám</h4><p>{{ $visit->conclusion->follow_up_date?->format('d/m/Y') ?? 'Theo hướng dẫn của cơ sở y tế' }}@if ($visit->conclusion->follow_up_reason) — {{ $visit->conclusion->follow_up_reason }}@endif</p></div>@endif
+        </article>
+    @empty
+        <div class="patient-records__empty"><h3>Chưa có kết luận khám</h3><p>Kết luận sẽ xuất hiện khi được ghi nhận trong hồ sơ của bạn.</p></div>
+    @endforelse
+    </div>
+    {{ $visitResults->links() }}
+    <div class="medical-section-head medical-section-head--spaced"><div><span class="medical-section-head__eyebrow">KẾT QUẢ DỊCH VỤ</span><h2>Kết quả dịch vụ</h2><p>Sắp xếp theo thời gian ghi nhận, mới nhất trước.</p></div><span class="medical-count">{{ $results->total() }} kết quả</span></div>
     {{-- Mỗi kết quả đi kèm thông tin dịch vụ và lượt khám liên quan. --}}
     <div class="patient-records__list">
     @forelse ($results as $result)

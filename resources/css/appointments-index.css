@@ -356,13 +356,13 @@
         border-color: #9fc0ff;
     }
 
-    .ah-btn--primary {
+    .portal-body a.ah-btn--primary {
         color: white;
         background: var(--ah-blue);
         border-color: var(--ah-blue);
     }
 
-    .ah-btn--primary:hover {
+    .portal-body a.ah-btn--primary:hover {
         color: white;
         background: var(--ah-dark);
         border-color: var(--ah-dark);

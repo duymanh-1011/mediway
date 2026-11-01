@@ -31,6 +31,7 @@
 
         <section class="portal-page-head">
             <div class="portal-shell">
+                <a class="appointment-back" href="{{ route('patient.appointments') }}">← Quay lại lịch khám</a>
                 <p class="portal-eyebrow">
                     LỊCH KHÁM CỦA BẠN
                 </p>

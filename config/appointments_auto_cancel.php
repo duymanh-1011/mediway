@@ -2,7 +2,7 @@
 
 return [
     'enabled' => filter_var(
-        env('APPOINTMENTS_AUTO_CANCEL_ENABLED', false),
+        env('APPOINTMENTS_AUTO_CANCEL_ENABLED', true),
         FILTER_VALIDATE_BOOLEAN
     ),
 
@@ -12,7 +12,7 @@ return [
             1440,
             (int) env(
                 'APPOINTMENTS_NO_SHOW_GRACE_MINUTES',
-                30
+                0
             )
         )
     ),

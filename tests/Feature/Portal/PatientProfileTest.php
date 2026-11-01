@@ -20,6 +20,17 @@ class PatientProfileTest extends TestCase
         $this->withoutVite();
     }
 
+    public function test_profile_validation_matches_booking_requirements_before_identity_is_locked(): void
+    {
+        $user = User::where('business_code', 'BN000001')->firstOrFail();
+        DB::table('patients')->where('id', $user->patient->id)->update(['date_of_birth' => null]);
+        $this->actingAs($user->fresh())->put(route('patient.profile.update'), [
+            'full_name' => '1', 'date_of_birth' => today()->subYears(121)->toDateString(),
+            'current_address' => '123', 'emergency_contact_name' => '1',
+        ])->assertSessionHasErrors(['full_name', 'date_of_birth', 'current_address', 'emergency_contact_name']);
+        $this->assertNull($user->patient->fresh()->date_of_birth);
+    }
+
     public function test_update_only_own_allowed_fields_and_preserves_omitted_fields(): void
     {
         $a = User::where('business_code', 'BN000001')->firstOrFail();
@@ -85,7 +96,43 @@ class PatientProfileTest extends TestCase
     {
         $this->get(route('patient.profile.phone'))->assertRedirect(route('patient.login'));
         $user = User::where('business_code', 'BN000001')->firstOrFail();
-        $this->actingAs($user)->get(route('patient.profile.phone'))->assertOk()->assertSee('chưa khả dụng')->assertSee($user->phone);
+        $this->actingAs($user)->get(route('patient.profile.phone'))->assertOk()->assertSee('Số điện thoại mới')->assertSee($user->phone);
+    }
+
+    public function test_patient_can_change_own_phone_with_password_and_invalidates_reset_challenge(): void
+    {
+        $user = User::where('business_code', 'BN000001')->firstOrFail();
+        $other = User::where('business_code', 'BN000002')->firstOrFail();
+        $oldPhone = $user->phone;
+        $otherPhone = $other->phone;
+        $challenge = \App\Models\PatientPasswordResetChallenge::create(['user_id' => $user->id, 'otp_hash' => 'test-hash', 'attempts' => 0, 'expires_at' => now()->addMinutes(10)]);
+        $this->actingAs($user)->put(route('patient.profile.phone.update'), [
+            'phone' => '0981234567', 'phone_confirmation' => '0981234567', 'current_password' => 'Mediway@123', 'user_id' => $other->id,
+        ])->assertRedirect(route('patient.profile.show'))->assertSessionHasNoErrors();
+        $this->assertSame('0981234567', $user->fresh()->phone);
+        $this->assertSame($otherPhone, $other->fresh()->phone);
+        $this->assertNotNull($challenge->fresh()->used_at);
+        $this->assertTrue($challenge->fresh()->expires_at->isPast());
+        $this->assertDatabaseHas('audit_logs', ['entity_id' => $user->id, 'entity_type' => 'users', 'description' => 'Bệnh nhân đổi số điện thoại đăng nhập.']);
+        $this->post(route('patient.logout'));
+        $this->post(route('patient.login.store'), ['phone' => $oldPhone, 'password' => 'Mediway@123'])->assertSessionHasErrors();
+        $this->post(route('patient.login.store'), ['phone' => '0981234567', 'password' => 'Mediway@123'])->assertRedirect(route('patient.home'));
+    }
+
+    public function test_phone_change_requires_valid_patient_password_and_unique_confirmed_number(): void
+    {
+        $url = route('patient.profile.phone.update');
+        $payload = ['phone' => '0981234567', 'phone_confirmation' => '0981234567', 'current_password' => 'Mediway@123'];
+        $this->put($url, $payload)->assertRedirect(route('patient.login'));
+        $admin = User::where('business_code', 'QT000001')->firstOrFail();
+        $this->actingAs($admin)->put($url, $payload)->assertRedirect(route('patient.login'));
+        $user = User::where('business_code', 'BN000001')->firstOrFail();
+        $old = $user->phone;
+        $this->actingAs($user)->put($url, array_replace($payload, ['current_password' => 'incorrect']))->assertSessionHasErrors('current_password');
+        $this->put($url, array_replace($payload, ['phone' => '0902000002', 'phone_confirmation' => '0902000002']))->assertSessionHasErrors('phone');
+        $this->put($url, array_replace($payload, ['phone' => '123', 'phone_confirmation' => '123']))->assertSessionHasErrors('phone');
+        $this->put($url, array_replace($payload, ['phone_confirmation' => '0987654321']))->assertSessionHasErrors('phone');
+        $this->assertSame($old, $user->fresh()->phone);
     }
 
     public function test_validation_error_preserves_the_entered_values(): void

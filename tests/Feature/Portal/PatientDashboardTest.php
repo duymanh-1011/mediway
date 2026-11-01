@@ -60,10 +60,14 @@ class PatientDashboardTest extends TestCase
         $response = $this->actingAs($user->fresh())->get(route('patient.home'));
         $response->assertOk()->assertSee('hoàn thiện thông tin hồ sơ')->assertDontSee('Thông tin khoản cần thanh toán đang được cập nhật')
             ->assertDontSee('href="#"', false)->assertSee(route('patient.notifications'))->assertSee(route('public.support'));
-        foreach (['patient.doctors.index', 'patient.appointments.index', 'patient.queues.index', 'patient.payments.index'] as $route) {
+        foreach (['patient.appointments', 'patient.profile.show', 'patient.health-history', 'patient.results', 'patient.prescriptions', 'patient.payments.index'] as $route) {
             $response->assertSee('href="'.route($route).'"', false);
         }
-        $this->get(route('patient.appointments'))->assertOk()->assertSee('Bạn chưa có lịch khám sắp tới')->assertDontSee('Lượt khám hiện tại');
+        $this->assertSame(6, substr_count($response->getContent(), 'class="patient-service-card"'));
+        $response->assertDontSee('href="'.route('patient.queues.index').'"', false)
+            ->assertDontSee('href="'.route('patient.doctors.index').'"', false)
+            ->assertDontSee('href="'.route('patient.appointments.index').'"', false);
+        $this->get(route('patient.appointments'))->assertOk()->assertSee('Bạn chưa có lịch khám sắp tới')->assertDontSee('Lượt khám hiện tại')->assertSee('href="'.route('patient.doctors.index').'"', false)->assertSee('href="'.route('patient.appointments.index').'"', false);
         foreach (['Lịch khám', 'Hồ sơ cá nhân', 'Hồ sơ sức khỏe', 'Kết quả khám bệnh', 'Đơn thuốc', 'Thanh toán'] as $card) {
             $response->assertSee($card);
         }

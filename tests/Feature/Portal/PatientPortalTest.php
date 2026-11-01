@@ -29,8 +29,8 @@ class PatientPortalTest extends TestCase
         $this->get(route('public.about'))->assertOk();
         $this->get(route('public.care-process'))->assertOk();
         $this->get(route('public.support'))->assertOk();
-        $this->get(route('public.news'))->assertOk()->assertSee('Nội dung mẫu');
-        $this->get(route('public.news.show', 'kham-suc-khoe-dinh-ky'))->assertOk()->assertSee('Nội dung mẫu');
+        $this->get(route('public.news'))->assertOk()->assertSee('Hướng dẫn và thông tin')->assertDontSee('Nội dung mẫu');
+        $this->get(route('public.news.show', 'kham-suc-khoe-dinh-ky'))->assertOk()->assertSee('Trước buổi khám')->assertDontSee('Nội dung mẫu');
         $this->get(route('public.news.show', 'not-a-news'))->assertNotFound();
     }
 

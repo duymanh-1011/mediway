@@ -51,6 +51,21 @@ class PaymentReadOnlyTest extends TestCase
             );
     }
 
+    public function test_unknown_payment_status_is_not_assumed_to_be_unpaid(): void
+    {
+        $user = $this->patientUser();
+        $payable = Payable::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $user->patient->id))->firstOrFail();
+        $statusId = \Illuminate\Support\Facades\DB::table('payment_statuses')->insertGetId([
+            'name' => 'UNRECOGNIZED', 'description' => 'Chưa xác định', 'allows_service_execution' => false,
+            'process_order' => 99, 'is_active' => true,
+        ]);
+        $payable->update(['payment_status_id' => $statusId, 'amount' => 123456]);
+        $this->actingAs($user)->get(route('patient.payments.index'))->assertOk()
+            ->assertSee('Có khoản thu chưa xác định được trạng thái')
+            ->assertViewHas('summary', fn ($summary) => $summary['unknown_status_count'] === 1
+                && $summary['outstanding_amount'] == 0);
+    }
+
     public function test_patient_only_sees_own_payables(): void
     {
         $user =

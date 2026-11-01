@@ -68,13 +68,13 @@ class PaymentController extends Controller
         $outstandingPayables =
             $payables->filter(
                 fn(Payable $payable) =>
-                ! in_array(
+                in_array(
                     $payable
                         ->paymentStatus
                         ?->name,
                     [
-                        'PAID',
-                        'CANCELLED',
+                        'UNPAID',
+                        'PENDING',
                     ],
                     true
                 )
@@ -99,6 +99,9 @@ class PaymentController extends Controller
             ->count();
 
         $summary = [
+            'unknown_status_count' => $payables->filter(fn (Payable $payable) => ! in_array(
+                $payable->paymentStatus?->name, ['UNPAID', 'PENDING', 'PAID', 'CANCELLED'], true
+            ))->count(),
             'payable_count' =>
             $payables->count(),
 

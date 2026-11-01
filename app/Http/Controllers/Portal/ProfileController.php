@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\UpdateProfileRequest;
 use Illuminate\Http\Request;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -54,6 +55,49 @@ class ProfileController extends Controller
         abort_unless($user && $user->canAccessPortal(), 403);
 
         return response()->view('portal.profile.phone', compact('user'))->header('Cache-Control', 'private, no-store');
+    }
+
+    public function updatePhone(Request $request)
+    {
+        abort_unless($request->user()?->canAccessPortal(), 403);
+        $data = $request->validate([
+            'phone' => ['required', 'string', 'regex:/^0[0-9]{9}$/', 'confirmed', 'unique:users,phone'],
+            'current_password' => ['required', 'string', 'current_password'],
+        ], [
+            'phone.required' => 'Vui lòng nhập số điện thoại mới.',
+            'phone.regex' => 'Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0.',
+            'phone.unique' => 'Số điện thoại này đã được sử dụng hoặc trùng số hiện tại.',
+            'phone.confirmed' => 'Số điện thoại nhập lại chưa khớp.',
+            'current_password.required' => 'Vui lòng nhập mật khẩu hiện tại.',
+            'current_password.current_password' => 'Mật khẩu hiện tại không đúng.',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $data) {
+                $user = \App\Models\User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+                abort_unless($user->canAccessPortal(), 403);
+                // Xác minh lại sau khi khóa để tránh dùng mật khẩu đã bị thay đổi đồng thời.
+                if (! \Illuminate\Support\Facades\Hash::check($data['current_password'], $user->password)) {
+                    throw ValidationException::withMessages(['current_password' => 'Mật khẩu hiện tại không đúng.']);
+                }
+                $user->update(['phone' => $data['phone']]);
+                \App\Models\PatientPasswordResetChallenge::where('user_id', $user->id)
+                    ->update(['used_at' => now(), 'expires_at' => now()->subSecond()]);
+                \App\Models\AuditLog::create([
+                    'user_id' => $user->id, 'role_name_snapshot' => 'Patient', 'action' => 'UPDATE',
+                    'entity_type' => 'users', 'entity_id' => $user->id, 'entity_business_code' => $user->business_code,
+                    'old_values' => [], 'new_values' => ['phone_changed' => true],
+                    'description' => 'Bệnh nhân đổi số điện thoại đăng nhập.',
+                    'ip_address' => $request->ip(), 'user_agent' => mb_substr((string) $request->userAgent(), 0, 500),
+                    'performed_at' => now(),
+                ]);
+            });
+        } catch (UniqueConstraintViolationException) {
+            throw ValidationException::withMessages(['phone' => 'Số điện thoại này đã được sử dụng.']);
+        }
+
+        $request->session()->regenerate();
+        return redirect()->route('patient.profile.show')->with('success', 'Đã đổi số điện thoại. Hãy dùng số mới cho lần đăng nhập tiếp theo.');
     }
 
     public function update(UpdateProfileRequest $request)

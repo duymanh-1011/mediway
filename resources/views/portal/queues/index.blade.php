@@ -12,6 +12,7 @@
     <div class="patient-queue-page">
         <section class="portal-page-head">
             <div class="portal-shell">
+                <a class="appointment-back" href="{{ route('patient.home') }}">← Quay lại tài khoản</a>
                 <p class="portal-eyebrow">
                     PATIENT PORTAL
                 </p>

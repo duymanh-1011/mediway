@@ -34,12 +34,19 @@ class ClinicalRecordsController extends Controller
             })
             ->with(['serviceOrderItem.medicalService', 'serviceOrderItem.serviceOrder.medicalVisit.doctor'])
             ->orderByDesc('resulted_at')
-            ->paginate(10);
+            ->paginate(10, ['*'], 'services_page')->withQueryString();
+
+        // Kết luận được ghi nhận theo lượt khám, độc lập với kết quả dịch vụ.
+        $visitResults = $patient->medicalVisits()
+            ->whereHas('conclusion', fn ($query) => $query->whereNotNull('professional_conclusion'))
+            ->with(['doctor:id,full_name', 'specialty:id,name', 'conclusion', 'diagnoses.disease:id,name'])
+            ->orderByDesc('checked_in_at')
+            ->paginate(10, ['*'], 'visits_page')->withQueryString();
 
         // Lấy tài liệu cá nhân để hiển thị cùng trang kết quả khám.
         $documents = app(PatientDocumentController::class)->documentsFor($patient);
 
-        return view('portal.clinical.results', compact('results', 'documents'));
+        return view('portal.clinical.results', compact('results', 'visitResults', 'documents'));
     }
 
     // Lấy đơn thuốc của bệnh nhân qua mối liên hệ với lượt khám.

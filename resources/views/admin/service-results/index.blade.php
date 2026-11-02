@@ -108,7 +108,7 @@
                                         ===
                                         (string) $verifier->id
                                     )>
-                                        {{ $verifier->business_code }}
+                                        {{ $verifier->doctor?->doctor_code ?? $verifier->business_code }} - {{ $verifier->doctor?->full_name ?? 'Chưa cập nhật tên' }}
                                     </option>
 
                                 @endforeach
@@ -358,7 +358,7 @@
                                                     @if ($result->verifier)
 
                                                         <span class="result-verifier">
-                                                            @include('admin.layouts.partials.record-code', ['code' => $result->verifier->business_code])
+                                                            {{ $result->verifier->doctor?->full_name ?? 'Chưa cập nhật tên' }}
                                                         </span>
 
                                                     @else

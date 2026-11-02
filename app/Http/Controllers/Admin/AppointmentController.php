@@ -15,6 +15,8 @@ use App\Models\ExaminationRoom;
 use App\Models\ExaminationRoomQueue;
 use App\Models\MedicalVisit;
 use App\Models\Patient;
+use App\Models\Payable;
+use App\Models\PaymentStatus;
 use App\Models\QueueStatus;
 use App\Models\Specialty;
 use App\Models\VisitStatus;
@@ -746,35 +748,20 @@ class AppointmentController extends Controller
                     'examination_slip_pdf_path' => null,
                 ]);
 
-            /*
-            |--------------------------------------------------------------------------
-            | Tạo hàng đợi khám ban đầu
-            |--------------------------------------------------------------------------
-            */
-
-            ExaminationRoomQueue::create([
+            // Phí khám được tạo cùng lượt tiếp nhận; chỉ cấp số sau khi đã thu tiền.
+            $unpaid = PaymentStatus::where('name', 'UNPAID')->where('is_active', true)->first();
+            if (! $unpaid) {
+                throw ValidationException::withMessages(['appointment' => 'Chưa cấu hình trạng thái chưa thanh toán.']);
+            }
+            Payable::create([
+                'payable_code' => 'PT'.strtoupper(Str::random(20)),
                 'medical_visit_id' => $medicalVisit->id,
-
-                'queue_status_id' => $waitingQueueStatus->id,
-
-                'queue_number' => $this->nextQueueNumber(
-                    (int) $lockedAppointment
-                        ->examination_room_id
-                ),
-
-                'queue_type' => 'INITIAL_EXAM',
-
-                'queued_at' => now(),
-
-                'called_at' => null,
-
-                'service_started_at' => null,
-
-                'completed_at' => null,
-
-                'call_count' => 0,
-
-                'notes' => null,
+                'service_order_item_id' => null,
+                'payment_type' => 'EXAMINATION_FEE',
+                'description' => 'Phí khám bệnh',
+                'amount' => config('patient_appointments.examination_fee'),
+                'payment_status_id' => $unpaid->id,
+                'generated_at' => now(),
             ]);
 
             /*
@@ -829,7 +816,7 @@ class AppointmentController extends Controller
             )
             ->with(
                 'success',
-                'Tiếp nhận thành công. Đã tạo lượt khám và đưa bệnh nhân vào hàng đợi.'
+                'Tiếp nhận thành công. Vui lòng thanh toán phí khám để được xếp vào hàng đợi.'
             );
     }
 

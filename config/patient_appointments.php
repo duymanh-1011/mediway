@@ -1,5 +1,6 @@
 <?php
 return [
+    'examination_fee' => 300000,
     'self_service_approved' =>
         env('APP_ENV', 'production') !== 'testing'
         && filter_var(

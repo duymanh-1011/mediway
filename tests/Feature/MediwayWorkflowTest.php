@@ -67,6 +67,8 @@ class MediwayWorkflowTest extends TestCase
         $this->travelTo(today()->setTime(9, 0));
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
         $visit = $appointment->fresh()->medicalVisit;
+        $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
         $this->assertSame('WAITING', $visit->status->name);
         $queue = $visit->queues()->sole();
         $this->assertSame('INITIAL_EXAM', $queue->queue_type);
@@ -98,16 +100,22 @@ class MediwayWorkflowTest extends TestCase
             $this->assertSame('COMPLETED', $item->fresh()->serviceStatus->name);
             if ($index === 0) {
                 $this->assertFalse($visit->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')->exists());
+                $this->assertSame('WAITING_FOR_SERVICE', $visit->fresh()->displayStatus());
             }
         }
         $this->assertSame('COMPLETED', $order->fresh()->status);
         $returnQueue = $visit->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')->sole();
         $this->assertSame('WAITING', $returnQueue->status->name);
         $this->assertSame('WAITING_FOR_SERVICE', $visit->fresh()->status->name);
+        $this->assertSame('WAITING_FOR_RETURN', $visit->fresh()->displayStatus());
+        $this->get(route('admin.visits.show', $visit))->assertOk()->assertSee('Chờ khám lại')
+            ->assertSee('Bệnh nhân đang chờ quay lại bác sĩ')->assertDontSee('Lượt khám không còn trạng thái tiếp theo.');
+        $this->get(route('admin.visits.index'))->assertOk()->assertSee('Chờ khám lại');
         $this->post(route('admin.service-order-items.complete', $order->items->last()))->assertSessionHasNoErrors();
         $this->assertSame(1, $visit->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')->count());
         $this->post(route('admin.queues.call', $returnQueue))->assertSessionHasNoErrors();
         $this->assertSame('WAITING_FOR_SERVICE', $visit->fresh()->status->name);
+        $this->assertSame('WAITING_FOR_RETURN', $visit->fresh()->displayStatus());
         $this->post(route('admin.queues.start-service', $returnQueue))->assertSessionHasNoErrors();
         $this->assertSame('RETURNING', $visit->fresh()->status->name);
         $this->post(route('admin.queues.complete', $returnQueue))->assertSessionHasNoErrors();
@@ -122,6 +130,8 @@ class MediwayWorkflowTest extends TestCase
         $this->travelTo(today()->setTime(9, 0));
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
         $visit = $appointment->fresh()->medicalVisit;
+        $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
         $this->patch(route('admin.visits.update-status', $visit), ['visit_status_id' => VisitStatus::where('name', 'IN_EXAMINATION')->value('id')])->assertSessionHasNoErrors();
         $queue = $visit->queues()->sole();
         $this->post(route('admin.queues.call', $queue))->assertSessionHasNoErrors();

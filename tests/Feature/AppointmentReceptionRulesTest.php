@@ -130,7 +130,8 @@ class AppointmentReceptionRulesTest extends TestCase
         $this->get(route('admin.appointments.show', $appointment))->assertOk()->assertSee('action="'.route('admin.appointments.check-in', $appointment).'"', false);
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
         $this->assertSame(1, $appointment->medicalVisit()->count());
-        $this->assertSame(1, $appointment->medicalVisit->queues()->count());
+        $this->assertSame(0, $appointment->medicalVisit->queues()->count());
+        $this->assertSame('300000.00', $appointment->medicalVisit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole()->amount);
     }
 
     public function test_check_in_cannot_start_before_doctor_shift_even_within_thirty_minutes(): void

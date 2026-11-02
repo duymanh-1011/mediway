@@ -54,7 +54,30 @@ class PatientTeamIntegrationTest extends TestCase
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
         $visit = $appointment->fresh()->medicalVisit;
         $this->assertNotNull($visit);
+        $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
+        $this->assertSame('300000.00', $fee->amount);
+        $this->assertSame(0, $visit->queues()->count());
+        $this->get(route('admin.visits.show', $visit))->assertOk()->assertSee('Chờ thanh toán phí khám');
+        $this->patch(route('admin.visits.update-status', $visit), [
+            'visit_status_id' => \App\Models\VisitStatus::where('name', 'IN_EXAMINATION')->value('id'),
+        ])->assertSessionHasErrors('visit');
+        $this->assertSame('WAITING', $visit->fresh()->status->name);
+        $this->patch(route('admin.payables.cancel', $fee), ['confirm_cancel' => 1, 'cancel_reason' => 'Test huy phi'])
+            ->assertSessionHasErrors('cancel_reason');
+        $this->actingAs($patient)->get(route('patient.payments.index'))->assertOk()->assertSee($fee->payable_code)->assertSee('300.000');
+        $this->get(route('patient.queues.index'))->assertOk()->assertSee('Vui lòng thanh toán phí khám tại quầy');
+        $this->actingAs($admin);
+        $queueStatus = \App\Models\QueueStatus::where('name', 'WAITING')->firstOrFail();
+        $queueStatus->update(['is_active' => false]);
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasErrors('payment_method');
+        $this->assertSame('UNPAID', $fee->fresh()->paymentStatus->name);
+        $this->assertSame(0, $fee->transactions()->count());
+        $this->assertSame(0, $visit->queues()->count());
+        $queueStatus->update(['is_active' => true]);
+        $this->actingAs($admin)->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
         $queue = $visit->queues()->sole();
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1]);
+        $this->assertSame(1, $visit->queues()->count());
         $this->actingAs($patient)->get(route('patient.queues.index'))->assertOk()
             ->assertSee($appointment->appointment_code)->assertSee($visit->visit_code)->assertSeeText($queue->status->description);
         $this->actingAs($other)->get(route('patient.queues.index'))->assertOk()->assertDontSee($visit->visit_code);

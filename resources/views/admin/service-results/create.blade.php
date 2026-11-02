@@ -287,7 +287,7 @@
                                             (string) $verifier->id
                                         )
                                     >
-                                        {{ $verifier->business_code }}
+                                        {{ $verifier->doctor?->doctor_code ?? $verifier->business_code }} - {{ $verifier->doctor?->full_name ?? 'Chưa cập nhật tên' }}
                                     </option>
 
                                 @endforeach

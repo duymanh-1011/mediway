@@ -41,6 +41,7 @@ class ServiceResultController extends Controller
                 'serviceOrderItem.medicalService:id,service_code,name',
                 'serviceOrderItem.serviceStatus:id,name',
                 'verifier:id,business_code',
+                'verifier.doctor:id,user_id,doctor_code,full_name',
             ]);
 
         if ($request->filled('q')) {
@@ -103,7 +104,11 @@ class ServiceResultController extends Controller
                                 '%'.$keyword.'%'
                             );
                         }
-                    );
+                    )
+                    ->orWhereHas('verifier.doctor', function ($doctorQuery) use ($keyword) {
+                        $doctorQuery->where('full_name', 'like', '%'.$keyword.'%')
+                            ->orWhere('doctor_code', 'like', '%'.$keyword.'%');
+                    });
             });
         }
 
@@ -130,7 +135,7 @@ class ServiceResultController extends Controller
             );
         }
 
-        $verifiers = DB::table('users')
+        $verifiers = User::query()->with('doctor:id,user_id,doctor_code,full_name')
             ->whereIn(
                 'id',
                 ServiceResult::query()
@@ -204,7 +209,7 @@ class ServiceResultController extends Controller
                 );
         }
 
-        $verifiers = User::eligibleResultVerifier()->orderBy('business_code')->get(['id', 'business_code']);
+        $verifiers = User::eligibleResultVerifier()->with('doctor:id,user_id,doctor_code,full_name')->orderBy('business_code')->get(['id', 'business_code']);
 
         return view(
             'admin.service-results.create',
@@ -432,6 +437,7 @@ class ServiceResultController extends Controller
                 'serviceOrderItem.serviceStatus',
                 'serviceOrderItem.performer',
                 'verifier:id,business_code',
+                'verifier.doctor:id,user_id,doctor_code,full_name',
             ])
             ->findOrFail($id);
 
@@ -455,13 +461,14 @@ class ServiceResultController extends Controller
                 'serviceOrderItem.serviceStatus',
                 'serviceOrderItem.performer',
                 'verifier:id,business_code',
+                'verifier.doctor:id,user_id,doctor_code,full_name',
             ])
             ->findOrFail($id);
 
         abort_if($result->serviceOrderItem->serviceOrder->medicalVisit->status?->name === 'COMPLETED',
             403, 'Lượt khám đã hoàn tất, không thể sửa trực tiếp kết quả dịch vụ.');
 
-        $verifiers = User::eligibleResultVerifier()->orderBy('business_code')->get(['id', 'business_code']);
+        $verifiers = User::eligibleResultVerifier()->with('doctor:id,user_id,doctor_code,full_name')->orderBy('business_code')->get(['id', 'business_code']);
 
         return view(
             'admin.service-results.edit',

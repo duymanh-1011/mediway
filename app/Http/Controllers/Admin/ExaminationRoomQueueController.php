@@ -276,6 +276,9 @@ class ExaminationRoomQueueController extends Controller
             $calledStatus
         ) {
             $queue = $this->lockQueue($queue, ['WAITING', 'CALLED', 'SKIPPED']);
+            if ($queue->queue_type === 'INITIAL_EXAM' && ! $queue->medicalVisit->examination_started_at) {
+                $queue->medicalVisit->assertExaminationFeePaid();
+            }
             $queue->update([
                 'queue_status_id' => $calledStatus->id,
 

@@ -4,18 +4,77 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdatePrescriptionRequest;
+use App\Http\Requests\Admin\StorePrescriptionRequest;
 use App\Models\ClinicalDocument;
 use App\Models\ClinicalTimeline;
 use App\Models\MedicalVisit;
 use App\Models\Prescription;
+use App\Models\Medicine;
+use App\Models\Doctor;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PrescriptionController extends Controller
 {
+    public function create(MedicalVisit $visit)
+    {
+        $visit->load(['status', 'patient', 'doctor', 'appointment']);
+        if (! $visit->canRecordClinicalData()) {
+            return redirect()->route('admin.visits.show', $visit)->with('error', 'Chỉ có thể kê đơn khi bác sĩ đang khám hoặc khám lại.');
+        }
+        if ($visit->prescription()->exists()) {
+            return redirect()->route('admin.visits.show', $visit)->with('error', 'Lượt khám này đã có đơn thuốc.');
+        }
+        $medicines = Medicine::where('status', 'ACTIVE')->orderBy('name')->get(['id', 'medicine_code', 'name', 'strength', 'unit']);
+
+        return view('admin.prescriptions.create', compact('visit', 'medicines'));
+    }
+
+    public function store(StorePrescriptionRequest $request, MedicalVisit $visit)
+    {
+        $data = $request->validated();
+        $prescription = DB::transaction(function () use ($visit, $data, $request) {
+            $lockedVisit = $visit->lockForClinicalWrite();
+            ClinicalTimeline::assertEventTime(now()->format('Y-m-d H:i:s'), $lockedVisit->examination_started_at ?? $lockedVisit->checked_in_at, 'prescription', 'Thời điểm kê đơn');
+            if ($lockedVisit->prescription()->exists()) {
+                throw ValidationException::withMessages(['prescription' => 'Lượt khám này đã có đơn thuốc.']);
+            }
+            $doctor = Doctor::whereKey($lockedVisit->doctor_id)->lockForUpdate()->first();
+            if (! $doctor || $doctor->status !== 'ACTIVE') {
+                throw ValidationException::withMessages(['prescription' => 'Bác sĩ của lượt khám không còn hoạt động. Vui lòng kiểm tra lại.']);
+            }
+            $ids = collect($data['items'])->pluck('medicine_id')->map(fn ($id) => (int) $id);
+            $medicines = Medicine::whereIn('id', $ids)->where('status', 'ACTIVE')->orderBy('id')->lockForUpdate()->get();
+            if ($medicines->count() !== $ids->count()) {
+                throw ValidationException::withMessages(['items' => 'Có thuốc vừa ngừng hoạt động. Vui lòng chọn lại.']);
+            }
+            do {
+                $code = 'DT'.now()->format('ymdHis').Str::upper(Str::random(6));
+            } while (Prescription::where('prescription_code', $code)->exists());
+            $prescription = Prescription::create([
+                'prescription_code' => $code, 'medical_visit_id' => $lockedVisit->id,
+                'doctor_id' => $lockedVisit->doctor_id, 'prescribed_at' => now(), 'status' => 'ACTIVE',
+                'general_instructions' => $data['general_instructions'] ?? null, 'doctor_notes' => $data['doctor_notes'] ?? null,
+            ]);
+            $prescription->items()->createMany($data['items']);
+            AuditLog::create([
+                'user_id' => $request->user()->id, 'role_name_snapshot' => 'Administrator', 'action' => 'CREATE',
+                'entity_type' => 'prescriptions', 'entity_id' => $prescription->id, 'entity_business_code' => $code,
+                'old_values' => [], 'new_values' => ['medical_visit_id' => $lockedVisit->id, 'medicine_count' => $ids->count()],
+                'description' => 'Tạo đơn thuốc '.$code.'.', 'ip_address' => $request->ip(),
+                'user_agent' => mb_substr((string) $request->userAgent(), 0, 500), 'performed_at' => now(),
+            ]);
+            return $prescription;
+        }, 3);
+
+        return redirect()->route('admin.prescriptions.show', $prescription)->with('success', 'Tạo đơn thuốc thành công.');
+    }
+
     public function document(int $id): StreamedResponse
     {
         $prescription = Prescription::findOrFail($id);

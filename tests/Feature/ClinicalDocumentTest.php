@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\MedicalVisit;
+use App\Models\Doctor;
 use App\Models\Prescription;
 use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
@@ -78,6 +79,35 @@ class ClinicalDocumentTest extends TestCase
     private function prescriptionData(): array
     {
         return ['prescribed_at' => now()->format('Y-m-d H:i:s'), 'status' => 'ACTIVE', 'confirm_update' => 1];
+    }
+
+    public function test_verifier_options_use_active_doctors_from_database_and_detail_shows_name(): void
+    {
+        $item = $this->item();
+        $doctor = Doctor::where('doctor_code', 'BS000001')->firstOrFail();
+        $inactive = Doctor::where('doctor_code', 'BS000002')->firstOrFail();
+        $inactive->update(['status' => 'INACTIVE']);
+        $this->get(route('admin.service-order-items.service-results.create', $item))->assertOk()
+            ->assertSee($doctor->doctor_code.' - '.$doctor->full_name)
+            ->assertDontSee($inactive->doctor_code.' - '.$inactive->full_name);
+        $this->post(route('admin.service-order-items.service-results.store', $item), [
+            'result_summary' => 'Kết quả kiểm thử', 'verified_by_user_id' => $doctor->user_id, 'confirm_create' => 1,
+        ])->assertSessionHasNoErrors()->assertSessionMissing('error');
+        $result = $item->result()->sole();
+        $this->assertSame($doctor->user_id, $result->verified_by_user_id);
+        $this->get(route('admin.service-results.index', ['q' => $doctor->full_name]))->assertOk()
+            ->assertSee('Kết quả kiểm thử')->assertSee($doctor->doctor_code.' - '.$doctor->full_name);
+        $this->get(route('admin.service-results.edit', $result))->assertOk()->assertSee($doctor->doctor_code.' - '.$doctor->full_name);
+        $html = $this->get(route('admin.service-orders.show', $item->service_order_id))->assertOk()->getContent();
+        $document = new \DOMDocument;
+        $previous = libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NONET);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+        $rows = (new \DOMXPath($document))->query('//div[contains(@class,"related-row")][span[normalize-space()="Bác sĩ xác nhận"]]/strong');
+        $this->assertCount(1, $rows);
+        $this->assertSame($doctor->full_name, trim($rows->item(0)->textContent));
+        $this->get(route('admin.service-results.show', $result))->assertOk()->assertSee($doctor->full_name);
     }
 
     public function test_arbitrary_paths_and_urls_cannot_satisfy_or_overwrite_a_result(): void

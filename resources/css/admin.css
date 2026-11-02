@@ -3208,6 +3208,10 @@ body.admin-ui .admin-content table :is(th, td).admin-row-number { width: 4rem; m
 .admin-filter-panel-header { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
 .admin-filter-panel-header h2 { margin: 0 0 4px; color: #0f172a; font-size: 16px; font-weight: 650; line-height: 1.5; }
 .admin-filter-panel-header p { margin: 0; color: #64748b; font-size: var(--admin-font-body); line-height: 1.6; }
+.prescription-medicine { min-width: 0; margin: 0 0 18px; padding: 18px; border: 1px solid #dbe3ed; border-radius: 8px; }
+.prescription-medicine legend { padding: 0 6px; color: #334155; font-weight: 600; }
+.prescription-medicine label { display: block; margin-bottom: 6px; font-weight: 600; }
+.prescription-medicine button:disabled { opacity: .55; cursor: not-allowed; }
 .admin-filter-panel { container-type: inline-size; }
 .admin-content form.admin-filter-form { --admin-filter-columns: 3; --admin-filter-gap: 16px; display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--admin-filter-gap); align-items: start; margin: 0; }
 .admin-content form.admin-filter-form[data-filter-fields="2"] { --admin-filter-columns: 2; }

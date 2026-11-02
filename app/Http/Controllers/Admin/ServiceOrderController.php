@@ -530,6 +530,7 @@ class ServiceOrderController extends Controller
                 'items.result',
 
                 'items.result.verifier:id,business_code',
+                'items.result.verifier.doctor:id,user_id,doctor_code,full_name',
             ])
             ->findOrFail($id);
 

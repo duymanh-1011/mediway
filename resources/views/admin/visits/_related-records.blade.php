@@ -24,6 +24,11 @@
         </div>
     @else
         <p class="form-help">Lượt khám này chưa có đơn thuốc.</p>
+        @if ($medicalVisit->canRecordClinicalData())
+            <a href="{{ route('admin.visits.prescription.create', $medicalVisit) }}" class="admin-btn admin-btn-primary">Thêm đơn thuốc</a>
+        @else
+            <p class="form-help">Có thể kê đơn khi bác sĩ bắt đầu khám hoặc khám lại.</p>
+        @endif
     @endif
 </section>
 
@@ -49,7 +54,7 @@
                         <td>{{ number_format((float) $payable->amount, 0, ',', '.') }} đ</td>
                         <td>@include('admin.layouts.partials.status-badge', ['badgeCode' => $payable->paymentStatus?->name, 'badgeContext' => 'payment'])</td>
                         <td>{{ $payable->transactions_count }}</td>
-                        <td><div class="admin-actions admin-table-actions"><a href="{{ route('admin.payables.show', $payable) }}" class="admin-btn admin-btn-detail">Chi tiết</a></div></td>
+                        <td><div class="admin-actions admin-table-actions"><a href="{{ route('admin.payables.show', $payable) }}" class="admin-btn admin-btn-detail">Chi tiết</a>@if ($payable->payment_type === 'EXAMINATION_FEE' && in_array($payable->paymentStatus?->name, ['UNPAID', 'PENDING'], true)) <a href="{{ route('admin.payables.payment-transactions.create', $payable) }}" class="admin-btn admin-btn-primary">Thanh toán</a>@endif</div></td>
                     </tr>
                 @empty
                     <tr><td colspan="7" class="admin-empty">Lượt khám này chưa có khoản phải thanh toán.</td></tr>

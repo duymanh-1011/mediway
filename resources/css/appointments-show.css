@@ -1,0 +1,891 @@
+/* MEDIWAY_PORTAL_EXTRACTED_FROM: resources/views/portal/appointments/show.blade.php */
+/* =======================================
+           MEDIWAY - PHIEU HEN KHAM BENH
+           NEN XANH XAM THEO GIAO DIEN GOC
+           ======================================= */
+
+        .mw-paper-page {
+            --mw-background: #f1f5fb;
+            --mw-border: #dce5f0;
+            --mw-blue: #2563eb;
+            --mw-ink: #18263d;
+            --mw-muted: #617187;
+
+            background: var(--mw-background);
+            min-height: 75vh;
+            padding: 28px 16px 70px;
+            color: var(--mw-ink);
+        }
+
+        .mw-paper-page * {
+            box-sizing: border-box;
+        }
+
+        .mw-paper-wrap {
+            width: min(100%, 790px);
+            margin-inline: auto;
+        }
+
+        .mw-paper-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #2459be;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            margin-bottom: 18px;
+        }
+
+        .mw-paper-back:hover {
+            text-decoration: underline;
+        }
+
+        /* Phieu hen */
+        .mw-paper {
+            background: #ffffff;
+            border: 1px solid var(--mw-border);
+            border-radius: 18px;
+            box-shadow: 0 12px 34px rgba(25, 54, 101, .075);
+            overflow: hidden;
+        }
+
+        .mw-paper-head {
+            padding: 25px 28px 22px;
+            border-bottom: 1px solid var(--mw-border);
+            background: #ffffff;
+        }
+
+        .mw-paper-brand {
+            color: #2459be;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .085em;
+            margin: 0 0 8px;
+        }
+
+        .mw-paper-head h1 {
+            font-size: clamp(24px, 4vw, 30px);
+            font-weight: 800;
+            color: #172b4d;
+            margin: 0 0 8px;
+            line-height: 1.25;
+        }
+
+        .mw-paper-head p:last-child {
+            font-size: 14px;
+            color: var(--mw-muted);
+            margin: 0;
+        }
+
+        .mw-paper-body {
+            padding: 27px 28px 30px;
+        }
+
+        /* Ma lich va trang thai */
+        .mw-paper-topline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 23px;
+        }
+
+        .mw-paper-label {
+            display: block;
+            font-size: 12px;
+            color: var(--mw-muted);
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .mw-paper-code {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--mw-ink);
+            overflow-wrap: anywhere;
+        }
+
+        .mw-paper-status {
+            display: inline-flex;
+            border-radius: 999px;
+            padding: 9px 15px;
+            font-size: 13px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .mw-paper-status.booked,
+        .mw-paper-status.completed {
+            background: #e7effc;
+            color: #2459be;
+        }
+
+        .mw-paper-status.ongoing {
+            background: #fff0d8;
+            color: #8e5b05;
+        }
+
+        .mw-paper-status.cancelled {
+            background: #fee8e8;
+            color: #a03232;
+        }
+
+        .mw-paper-status.unknown {
+            background: #eef2f7;
+            color: #526378;
+        }
+
+        /* =======================================
+           THONG TIN BENH NHAN
+           ======================================= */
+
+        .mw-patient-panel {
+            padding: 19px 20px;
+            background: var(--mw-background);
+            border: 1px solid #d8e3f0;
+            border-radius: 13px;
+            margin-bottom: 25px;
+        }
+
+        .mw-patient-title {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 0 0 17px;
+            color: #2459be;
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        .mw-patient-title svg {
+            width: 21px;
+            height: 21px;
+            flex: 0 0 auto;
+        }
+
+        .mw-patient-facts {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px 24px;
+        }
+
+        .mw-fact {
+            min-width: 0;
+        }
+
+        .mw-fact small {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: var(--mw-muted);
+        }
+
+        .mw-fact strong {
+            display: block;
+            font-size: 15px;
+            color: var(--mw-ink);
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .mw-patient-address {
+            grid-column: 1 / -1;
+            padding-top: 14px;
+            border-top: 1px solid #dce5ee;
+        }
+
+        /* =======================================
+           BAC SI
+           ======================================= */
+
+        .mw-doctor-line {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin: 0 0 20px;
+        }
+
+        .mw-doctor-avatar {
+            width: 64px;
+            height: 64px;
+            flex: 0 0 64px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: #2876ce;
+            background: #e6f0ff;
+        }
+
+        .mw-doctor-avatar svg {
+            width: 34px;
+            height: 34px;
+        }
+
+        .mw-doctor-line h2 {
+            font-size: 21px;
+            font-weight: 800;
+            margin: 0 0 5px;
+            color: #1e2e44;
+        }
+
+        .mw-doctor-line p {
+            font-size: 14px;
+            color: var(--mw-muted);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* Phong kham */
+        .mw-room {
+            display: flex;
+            align-items: flex-start;
+            gap: 13px;
+            border-radius: 12px;
+            background: #f1f5f9;
+            padding: 17px 18px;
+            margin-bottom: 24px;
+        }
+
+        .mw-room svg {
+            color: #2876ce;
+            width: 23px;
+            height: 23px;
+            flex: 0 0 23px;
+        }
+
+        .mw-room strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #27374c;
+            font-size: 16px;
+        }
+
+        .mw-room span {
+            display: block;
+            color: var(--mw-muted);
+            line-height: 1.5;
+            font-size: 13px;
+        }
+
+        /* Ngay gio kham */
+        .mw-visit-facts {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            border-bottom: 1px solid #e4ebf4;
+            padding: 4px 0 23px;
+            margin-bottom: 20px;
+        }
+
+        .mw-visit-fact {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .mw-visit-fact svg {
+            width: 22px;
+            height: 22px;
+            flex: 0 0 22px;
+            color: #2876ce;
+            margin-top: 4px;
+        }
+
+        .mw-visit-fact small {
+            display: block;
+            color: #71829a;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .mw-visit-fact strong {
+            display: block;
+            color: #22334c;
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
+        /* =======================================
+           LY DO KHAM / TRIEU CHUNG
+           ======================================= */
+
+        .mw-reason {
+            background: #fff3dd;
+            border: 1px solid #efd39e;
+            border-radius: 12px;
+            padding: 19px;
+            margin-bottom: 18px;
+        }
+
+        .mw-reason h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #a96d13;
+            font-size: 17px;
+            font-weight: 800;
+            margin: 0 0 11px;
+        }
+
+        .mw-reason h2 svg {
+            width: 21px;
+            height: 21px;
+            flex-shrink: 0;
+        }
+
+        .mw-reason p {
+            margin: 0;
+            color: #3b4655;
+            line-height: 1.7;
+            white-space: pre-line;
+            overflow-wrap: anywhere;
+        }
+
+        /* Ghi chu */
+        .mw-paper-notes {
+            font-size: 13px;
+            color: #607087;
+            border-bottom: 1px dashed #dbe4ef;
+            padding: 0 0 15px;
+            line-height: 1.65;
+        }
+
+        .mw-paper-notes p {
+            margin: 7px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .mw-paper-notes strong {
+            color: #35465d;
+        }
+
+        /* Thong bao da huy */
+        .mw-cancel-box,
+        .mw-info-box {
+            padding: 18px;
+            margin-top: 20px;
+            border-radius: 12px;
+            border: 1px solid #edcccc;
+            background: #fff4f4;
+        }
+
+        .mw-cancel-box h3 {
+            margin: 0 0 8px;
+            color: #a03232;
+            font-size: 17px;
+        }
+
+        .mw-cancel-box p,
+        .mw-info-box p {
+            margin: 7px 0 0;
+            line-height: 1.65;
+            font-size: 14px;
+            color: #6d4242;
+            overflow-wrap: anywhere;
+        }
+
+        .mw-info-box {
+            background: #f1f5fb;
+            border-color: #d8e3f0;
+        }
+
+        .mw-info-box p {
+            color: #53647a;
+        }
+
+        /* =======================================
+           CAC NUT CHUC NANG
+           ======================================= */
+
+        .mw-paper-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 23px;
+        }
+
+        .mw-paper-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            text-align: center;
+            min-height: 49px;
+            padding: 12px 19px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 750;
+            border: 1px solid #d5e2f2;
+            background: var(--mw-background);
+            color: #2459be;
+        }
+
+        .mw-paper-button:hover {
+            background: #e4edfb;
+        }
+
+        .mw-paper-button.primary {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+        }
+
+        .mw-paper-button.primary:hover {
+            background: #1d4ed8;
+        }
+
+        .mw-paper-button.danger {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: #ffffff;
+        }
+
+        .mw-paper-button.danger:hover {
+            background: #bb2838;
+        }
+
+        .mw-paper-button.main {
+            flex: 1 1 170px;
+        }
+
+        .mw-paper-button.full {
+            flex: 1 1 100%;
+        }
+
+        .mw-paper-button.disabled {
+            background: #edf1f6;
+            border-color: #dce5f0;
+            color: #8794a7;
+            cursor: not-allowed;
+        }
+
+        .mw-paper-back:focus-visible,
+        .mw-paper-button:focus-visible {
+            outline: 3px solid #79a7ff;
+            outline-offset: 3px;
+        }
+
+        .mw-paper-footer {
+            background: var(--mw-background);
+            color: #66788e;
+            border-top: 1px solid var(--mw-border);
+            padding: 17px;
+            font-size: 12px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* =======================================
+           RESPONSIVE DIEN THOAI
+           ======================================= */
+
+        @media (max-width: 620px) {
+            .mw-paper-page {
+                padding: 16px 10px 36px;
+            }
+
+            .mw-paper-head {
+                padding: 20px 18px;
+            }
+
+            .mw-paper-body {
+                padding: 20px 17px 24px;
+            }
+
+            .mw-paper-code {
+                font-size: 17px;
+            }
+
+            .mw-patient-panel {
+                padding: 17px 15px;
+            }
+
+            .mw-doctor-avatar {
+                width: 54px;
+                height: 54px;
+                flex-basis: 54px;
+            }
+
+            .mw-doctor-line h2 {
+                font-size: 18px;
+            }
+
+            .mw-visit-fact strong {
+                font-size: 16px;
+            }
+
+            .mw-paper-button {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 380px) {
+
+            .mw-patient-facts,
+            .mw-visit-facts {
+                grid-template-columns: 1fr;
+            }
+        }
+
+/* MEDIWAY_ALIGN_V2_START */
+.mw-paper-page {
+    --mw-background: #f1f5fb;
+    --mw-border: #dce6f3;
+    --mw-ink: #172b4d;
+    --mw-muted: #64748b;
+    background: #f1f5fb;
+    padding: 30px 0 70px;
+    min-height: 75vh;
+}
+/*
+ CAN CHINH XAC THEO PORTAL-SHELL CUA HEADER:
+ 1160PX VA LE 16PX MOI BEN.
+*/
+.mw-paper-page .mw-paper-wrap {
+    width: min(calc(100% - 32px), 1160px);
+    max-width: none;
+    margin-inline: auto;
+    padding: 0;
+}
+.mw-paper-page *,
+.mw-paper-page *::before,
+.mw-paper-page *::after {
+    box-sizing: border-box;
+}
+.mw-paper-back {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 17px;
+    color: #2459be;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.mw-paper {
+    width: 100%;
+    border: 1px solid #dbe5f2;
+    border-radius: 17px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(31, 65, 112, .055);
+    overflow: hidden;
+}
+/* DAU PHIEU */
+.mw-paper-head {
+    padding: 24px 28px 22px;
+    background: #fff;
+    border-bottom: 1px solid #e4ebf5;
+}
+.mw-paper-brand {
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .085em;
+}
+.mw-paper-head h1 {
+    margin: 8px 0;
+    font-size: clamp(25px, 2.7vw, 33px);
+    font-weight: 850;
+    letter-spacing: -.025em;
+    line-height: 1.25;
+}
+.mw-paper-head p:last-child {
+    color: #64748b;
+    font-size: 14px;
+}
+/*
+ BO CUC PHIEU 2 COT:
+ TRAI: BENH NHAN
+ PHAI: BAC SI, PHONG KHAM, GIO KHAM
+ PHIA DUOI: LY DO, GHI CHU, HUY/DOI LICH
+*/
+.mw-paper-body {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1.05fr)
+        minmax(0, .95fr);
+    column-gap: 18px;
+    row-gap: 16px;
+    align-items: stretch;
+    padding: 25px 28px 28px;
+}
+.mw-paper-body > * {
+    min-width: 0;
+}
+.mw-paper-topline {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 0;
+    padding: 0 0 19px;
+    border-bottom: 1px solid #e6edf6;
+}
+.mw-paper-label {
+    color: #72839a;
+    font-size: 12px;
+}
+.mw-paper-code {
+    color: #172b4d;
+    font-size: 20px;
+    font-weight: 800;
+}
+.mw-paper-status {
+    padding: 8px 13px;
+    font-size: 12px;
+    font-weight: 800;
+}
+/* THONG TIN BENH NHAN */
+.mw-patient-panel {
+    grid-column: 1;
+    grid-row: 2 / span 3;
+    margin: 0;
+    padding: 20px 21px;
+    background: #f2f6fc;
+    border: 1px solid #dce6f5;
+    border-radius: 13px;
+}
+.mw-patient-title {
+    margin-bottom: 18px;
+    padding-bottom: 13px;
+    border-bottom: 1px solid #dce5f2;
+    color: #2459be;
+    font-size: 17px;
+    font-weight: 800;
+}
+.mw-patient-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 20px;
+}
+.mw-fact {
+    min-width: 0;
+}
+.mw-fact small {
+    color: #74859b;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+.mw-fact strong {
+    color: #1c304d;
+    font-size: 14px;
+    font-weight: 750;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+.mw-patient-address {
+    border-top: 1px solid #dce5f1;
+    padding-top: 14px;
+}
+/* BAC SI */
+.mw-doctor-line {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 0;
+    padding: 17px 19px;
+    background: #f8fbff;
+    border: 1px solid #e0e9f5;
+    border-radius: 12px;
+}
+.mw-doctor-avatar {
+    flex: 0 0 55px;
+    width: 55px;
+    height: 55px;
+    background: #e6f0ff;
+    color: #2563eb;
+}
+.mw-doctor-line h2 {
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0 0 4px;
+}
+.mw-doctor-line p {
+    font-size: 13px;
+    color: #64748b;
+}
+/* PHONG KHAM */
+.mw-room {
+    grid-column: 2;
+    grid-row: 3;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 0;
+    padding: 17px 19px;
+    background: #f3f7fc;
+    border: 1px solid #e0e9f5;
+    border-radius: 12px;
+}
+.mw-room strong {
+    color: #1d3554;
+    font-size: 15px;
+    line-height: 1.4;
+}
+.mw-room span {
+    font-size: 12px;
+    line-height: 1.6;
+}
+/* NGAY VA GIO KHAM */
+.mw-visit-facts {
+    grid-column: 2;
+    grid-row: 4;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 16px 17px;
+    background: #f8fbff;
+    border: 1px solid #e0e9f5;
+    border-radius: 12px;
+}
+.mw-visit-fact {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    min-width: 0;
+}
+.mw-visit-fact strong {
+    font-size: 15px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.mw-visit-fact small {
+    font-size: 12px;
+}
+/* LY DO KHAM */
+.mw-reason {
+    grid-column: 1 / -1;
+    grid-row: 5;
+    margin: 0;
+    padding: 20px 22px;
+    background: #fff7e9;
+    border: 1px solid #f3dfb7;
+    border-radius: 12px;
+}
+.mw-reason h2 {
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+.mw-reason p {
+    font-size: 14px;
+    line-height: 1.75;
+}
+/* GHI CHU */
+.mw-paper-notes {
+    grid-column: 1 / -1;
+    grid-row: 6;
+    padding: 12px 0 14px;
+    border-bottom: 1px dashed #dce6f1;
+    font-size: 13px;
+}
+/* TRANG THAI HUY / KHONG DU DIEU KIEN */
+.mw-cancel-box,
+.mw-info-box {
+    grid-column: 1 / -1;
+    margin: 0;
+    border-radius: 12px;
+}
+/* NUT DOI LICH, HUY LICH */
+.mw-paper-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding-top: 7px;
+}
+.mw-paper-button {
+    flex: 0 1 auto;
+    width: auto;
+    min-height: 45px;
+    padding: 10px 17px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 750;
+}
+.mw-paper-button.main,
+.mw-paper-button.full {
+    flex: 0 1 auto;
+}
+.mw-paper-button.primary {
+    background: #2563eb;
+    color: white;
+}
+.mw-paper-button.danger {
+    background: #dc3545;
+    color: white;
+}
+.mw-paper-footer {
+    background: #f6f9fd;
+    border-top: 1px solid #e4eaf3;
+    color: #72849b;
+    padding: 16px;
+}
+/* TABLET VA MOBILE */
+@media (max-width: 900px) {
+    .mw-paper-body {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+    }
+    .mw-paper-body > * {
+        grid-column: 1 / -1 !important;
+        grid-row: auto !important;
+    }
+    .mw-patient-panel,
+    .mw-doctor-line,
+    .mw-room,
+    .mw-visit-facts,
+    .mw-reason {
+        margin: 0;
+    }
+}
+@media (max-width: 600px) {
+    .mw-paper-page {
+        padding: 17px 0 40px;
+    }
+    .mw-paper-head {
+        padding: 20px 17px;
+    }
+    .mw-paper-body {
+        padding: 19px 16px;
+    }
+    .mw-paper-head h1 {
+        font-size: 25px;
+    }
+    .mw-patient-panel {
+        padding: 17px 15px;
+    }
+    .mw-patient-facts {
+        gap: 14px;
+    }
+    .mw-visit-facts {
+        padding: 14px;
+    }
+    .mw-paper-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+    .mw-paper-button,
+    .mw-paper-button.main,
+    .mw-paper-button.full {
+        width: 100%;
+    }
+}
+@media (max-width: 374px) {
+    .mw-paper-page .mw-paper-wrap {
+        width: calc(100% - 24px);
+    }
+    .mw-patient-facts,
+    .mw-visit-facts {
+        grid-template-columns: 1fr;
+    }
+}
+/* MEDIWAY_ALIGN_V2_END */

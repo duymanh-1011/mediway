@@ -29,8 +29,8 @@ class PatientPortalTest extends TestCase
         $this->get(route('public.about'))->assertOk();
         $this->get(route('public.care-process'))->assertOk();
         $this->get(route('public.support'))->assertOk();
-        $this->get(route('public.news'))->assertOk()->assertSee('Nội dung mẫu');
-        $this->get(route('public.news.show', 'kham-suc-khoe-dinh-ky'))->assertOk()->assertSee('Nội dung mẫu');
+        $this->get(route('public.news'))->assertOk()->assertSee('Hướng dẫn và thông tin')->assertDontSee('Nội dung mẫu');
+        $this->get(route('public.news.show', 'kham-suc-khoe-dinh-ky'))->assertOk()->assertSee('Trước buổi khám')->assertDontSee('Nội dung mẫu');
         $this->get(route('public.news.show', 'not-a-news'))->assertNotFound();
     }
 
@@ -65,7 +65,7 @@ class PatientPortalTest extends TestCase
     {
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
         $this->post(route('patient.login.store'), ['phone' => $patient->phone, 'password' => 'Mediway@123'])->assertRedirect(route('patient.home'));
-        $this->get(route('patient.home'))->assertOk()->assertSee('Kết quả khám bệnh')->assertSee($patient->patient->full_name)->assertSee('Đăng xuất')->assertSee('Thông báo')->assertSee(route('patient.notifications'))->assertSee('href="#"', false)->assertDontSee('Dashboard')->assertDontSee('Sắp ra mắt');
+        $this->get(route('patient.home'))->assertOk()->assertSee('Kết quả khám bệnh')->assertSee($patient->patient->full_name)->assertSee('Đăng xuất')->assertSee('Thông báo')->assertSee(route('patient.notifications'))->assertDontSee('href="#"', false)->assertDontSee('Dashboard')->assertDontSee('Sắp ra mắt');
         $this->get(route('patient.notifications', ['danh-muc' => 'lich-hen']))->assertOk()->assertSee('Lịch hẹn')->assertSee('Thanh toán');
 
         $this->post(route('patient.logout'))->assertRedirect(route('public.home'));

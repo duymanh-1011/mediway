@@ -1,0 +1,40 @@
+
+@import './appointments-actions.css';
+
+/* MEDIWAY - CANCEL APPOINTMENT */
+
+.mw-appointment-action--cancel .mw-action-icon {
+    background: #ffedf0;
+    color: #ba2b40;
+}
+
+.mw-appointment-action--cancel .mw-action-panel-heading {
+    padding-bottom: 20px;
+    border-bottom: 1px solid #edf1f6;
+}
+
+.mw-appointment-action--cancel
+.mw-action-buttons
+.mw-action-button--danger {
+    border: 1px solid #c53245;
+    background: #c53245;
+    color: #fff;
+    box-shadow: 0 5px 16px rgba(197, 50, 69, .14);
+}
+
+.mw-appointment-action--cancel
+.mw-action-buttons
+.mw-action-button--danger:hover:not([disabled]) {
+    border-color: #a72536;
+    background: #a72536;
+    color: #fff;
+}
+
+.mw-appointment-action--cancel .mw-action-tip {
+    background: #fff7f5;
+    border-color: #f6dddb;
+}
+
+.mw-appointment-action--cancel .mw-action-tip strong {
+    color: #ad3d42;
+}

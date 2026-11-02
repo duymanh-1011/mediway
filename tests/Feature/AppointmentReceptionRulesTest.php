@@ -222,6 +222,16 @@ class AppointmentReceptionRulesTest extends TestCase
         $this->get(route('admin.appointments.index', ['reception_timing' => 'late_today']))->assertOk()->assertDontSee($appointment->appointment_code);
     }
 
+    public function test_patient_and_admin_see_the_same_late_status(): void
+    {
+        $appointment = $this->book($this->slot());
+        $this->travelTo(today()->setTime(9, 30));
+        $this->get(route('admin.appointments.show', $appointment))->assertOk()->assertSee('Trễ giờ hẹn');
+        $this->actingAs($appointment->patient->user)->get(route('patient.appointments.index'))
+            ->assertOk()->assertSee('Trễ giờ hẹn')->assertDontSee('chưa được hệ thống xử lý hủy tự động');
+        $this->get(route('patient.appointments.show', $appointment))->assertOk()->assertSee('Trễ giờ hẹn');
+    }
+
     public function test_past_day_label_and_filter_do_not_allow_check_in(): void
     {
         $appointment = $this->book($this->slot());

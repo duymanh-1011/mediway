@@ -1,0 +1,142 @@
+/* MEDIWAY_PORTAL_EXTRACTED_FROM: resources/views/portal/specialties/show.blade.php */
+.specialty-page {
+            background: #f7fafc;
+        }
+
+        .specialty-page .portal-page-head {
+            padding: 40px 0;
+            background: #f1f6fd;
+            border-bottom: 1px solid #dde8f2;
+        }
+
+        .specialty-back {
+            display: inline-flex;
+            margin-bottom: 14px;
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .specialty-page h1 {
+            margin: 0 0 10px;
+            color: #0f172a;
+            font-size: clamp(30px, 4vw, 48px);
+        }
+
+        .specialty-page-head-description {
+            max-width: 800px;
+            margin: 0;
+            color: #64748b;
+            line-height: 1.7;
+        }
+
+        .specialty-content {
+            padding: 36px 0 64px;
+        }
+
+        .specialty-section {
+            margin-bottom: 30px;
+        }
+
+        .specialty-section h2 {
+            margin: 0 0 16px;
+            color: #0f172a;
+            font-size: 24px;
+        }
+
+        .specialty-notice {
+            margin-bottom: 28px;
+            padding: 18px;
+            background: #eef7fb;
+            border: 1px solid #d8eaf3;
+            border-radius: 14px;
+            color: #475569;
+            line-height: 1.7;
+        }
+
+        .specialty-doctors {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .specialty-doctor-card {
+            padding: 18px;
+            background: #fff;
+            border: 1px solid #dce6ef;
+            border-radius: 14px;
+        }
+
+        .specialty-doctor-card a {
+            color: #0f172a;
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .specialty-schedules {
+            display: grid;
+            gap: 14px;
+        }
+
+        .specialty-schedule-card {
+            padding: 18px;
+            background: #fff;
+            border: 1px solid #dce6ef;
+            border-radius: 16px;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, .04);
+        }
+
+        .specialty-schedule-title {
+            margin-bottom: 12px;
+            color: #0f172a;
+            font-weight: 800;
+        }
+
+        .specialty-slot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 0;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .specialty-slot:first-of-type {
+            border-top: 0;
+        }
+
+        .specialty-slot a {
+            padding: 8px 13px;
+            border-radius: 9px;
+            background: #2563eb;
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .specialty-empty {
+            color: #64748b;
+        }
+
+        @media (max-width: 850px) {
+            .specialty-doctors {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .specialty-doctors {
+                grid-template-columns: 1fr;
+            }
+
+            .specialty-slot {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .specialty-slot a {
+                text-align: center;
+            }
+        }

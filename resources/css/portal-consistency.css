@@ -1,0 +1,88 @@
+/* Typography and shared controls match the existing admin design system. */
+body.portal-body,
+body.portal-body :is(button, input, select, textarea) {
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+body.portal-body .portal-main :is(h1, h2, h3, h4, h5, h6) {
+    font-family: inherit;
+    color: #172033;
+    letter-spacing: normal;
+}
+body.portal-body .portal-main h1 { font-size: 26px; font-weight: 750; line-height: 1.25; }
+body.portal-body .portal-main h2,
+body.portal-body .portal-main h3 { font-size: 18px; font-weight: 650; line-height: 1.5; }
+body.portal-body .portal-main h4,
+body.portal-body .portal-main h5,
+body.portal-body .portal-main h6 { font-size: 15px; font-weight: 650; line-height: 1.5; }
+body.portal-body .portal-main :is(strong, b) { font-weight: 600; }
+
+body.portal-body .portal-main :is(.portal-btn, .ah-btn, .mw-paper-button, .mw-book-button, .mw-btn),
+body.portal-body .portal-header__actions .portal-btn {
+    min-height: 40px;
+    padding: 8px 13px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none;
+}
+body.portal-body .portal-main :is(a, button):is(.portal-btn--primary, .ah-btn--primary, .mw-paper-button.primary, .mw-book-button.primary, .mw-btn--primary, .mw-action-button--primary),
+body.portal-body .portal-header__actions :is(a, button).portal-btn--primary {
+    color: #fff;
+    background: #2563eb;
+    border-color: #2563eb;
+}
+body.portal-body .portal-main :is(a, button):is(.portal-btn--primary, .ah-btn--primary, .mw-paper-button.primary, .mw-book-button.primary, .mw-btn--primary, .mw-action-button--primary):hover,
+body.portal-body .portal-header__actions :is(a, button).portal-btn--primary:hover {
+    color: #fff;
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+body.portal-body .portal-main :is(a, button):is(.portal-btn--secondary, .mw-paper-button:not(.primary, .danger, .disabled), .mw-book-button:not(.primary), .ah-btn:not(.ah-btn--primary, .ah-btn--danger)),
+body.portal-body .portal-header__actions :is(a, button).portal-btn--secondary {
+    color: #334155 !important;
+    background: #fff;
+    border-color: #cbd5e1;
+}
+body.portal-body .portal-main :is(a, button):is(.portal-btn--secondary, .mw-paper-button:not(.primary, .danger, .disabled), .mw-book-button:not(.primary), .ah-btn:not(.ah-btn--primary, .ah-btn--danger)):hover,
+body.portal-body .portal-header__actions :is(a, button).portal-btn--secondary:hover {
+    color: #1e293b !important;
+    background: #f1f5f9;
+}
+body.portal-body .portal-main :is(a, button):is(.ah-btn--danger, .mw-paper-button.danger, .mw-action-button--danger) {
+    color: #be123c;
+    background: #fff1f2;
+    border-color: #fecdd3;
+}
+body.portal-body .portal-main :is(a, button):is(.ah-btn--danger, .mw-paper-button.danger, .mw-action-button--danger):hover {
+    color: #9f1239;
+    background: #ffe4e6;
+    border-color: #fda4af;
+}
+
+/* All links that return to a previous section have the same appearance. */
+body.portal-body .portal-main a:is(.appointment-back, .profile-back, .notification-page__back, .medical-nav__back, .doctor-profile-back, .specialty-back, .mw-paper-back, .mw-book-back, .portal-back) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 8px 13px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #334155 !important;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none;
+}
+body.portal-body .portal-main a:is(.appointment-back, .profile-back, .notification-page__back, .medical-nav__back, .doctor-profile-back, .specialty-back, .mw-paper-back, .mw-book-back, .portal-back):hover {
+    background: #f1f5f9;
+    color: #1e293b !important;
+}
+body.portal-body .portal-main :is(a, button):focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }

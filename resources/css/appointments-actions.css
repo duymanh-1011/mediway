@@ -1,0 +1,621 @@
+
+/* MEDIWAY - APPOINTMENT ACTIONS UI */
+
+.mw-appointment-action {
+    --mw-a-ink: #172640;
+    --mw-a-muted: #687a94;
+    --mw-a-line: #e0e8f4;
+    --mw-a-blue: #245fe7;
+    --mw-a-danger: #c53245;
+    --mw-a-canvas: #f6f8fd;
+
+    background: var(--mw-a-canvas);
+    min-height: 70vh;
+    color: var(--mw-a-ink);
+}
+
+.mw-appointment-action *,
+.mw-appointment-action *::before,
+.mw-appointment-action *::after {
+    box-sizing: border-box;
+}
+
+.mw-appointment-action .portal-shell {
+    width: min(calc(100% - 48px), 1120px);
+    margin-inline: auto;
+}
+
+/* HERO */
+
+.mw-appointment-action .mw-action-hero {
+    position: relative;
+    padding: 40px 0 45px;
+    border-bottom: 1px solid #e2eafa;
+
+    background: linear-gradient(
+        118deg,
+        #edf4ff 0%,
+        #f5f8ff 60%,
+        #edf7ff 100%
+    );
+}
+
+.mw-appointment-action .mw-action-breadcrumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    color: #5c7295;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.mw-appointment-action .mw-action-breadcrumbs a {
+    color: #245fe7;
+    text-decoration: none;
+}
+
+.mw-appointment-action .mw-action-breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+.mw-appointment-action .mw-separator {
+    color: #a4b3ca;
+}
+
+.mw-appointment-action .mw-action-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    margin: 21px 0 9px;
+
+    color: #295fce;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .065em;
+    text-transform: uppercase;
+}
+
+.mw-appointment-action .mw-action-eyebrow::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #2671e8;
+}
+
+.mw-appointment-action .mw-action-hero h1 {
+    max-width: 800px;
+    margin: 0;
+
+    color: #14233d;
+    font-size: clamp(31px, 3.4vw, 45px);
+    font-weight: 800;
+    line-height: 1.17;
+    letter-spacing: -.042em;
+    text-wrap: balance;
+}
+
+.mw-appointment-action .mw-action-intro {
+    max-width: 690px;
+    margin: 13px 0 0;
+
+    color: #677994;
+    font-size: 15px;
+    line-height: 1.65;
+}
+
+/* LAYOUT */
+
+.mw-appointment-action .mw-action-body {
+    padding: 36px 0 84px;
+}
+
+.mw-appointment-action .mw-action-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.48fr) minmax(280px, .82fr);
+    align-items: start;
+    gap: 22px;
+}
+
+.mw-appointment-action .mw-action-panel,
+.mw-appointment-action .mw-action-summary,
+.mw-appointment-action .mw-action-tip {
+    min-width: 0;
+    border: 1px solid var(--mw-a-line);
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 7px 28px rgba(22, 57, 106, .045);
+}
+
+/* MAIN CARD */
+
+.mw-appointment-action .mw-action-panel {
+    padding: 30px;
+}
+
+.mw-appointment-action .mw-action-panel-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 26px;
+}
+
+.mw-appointment-action .mw-action-icon {
+    flex: 0 0 45px;
+
+    display: grid;
+    place-items: center;
+
+    width: 45px;
+    height: 45px;
+    border-radius: 14px;
+
+    font-size: 26px;
+    font-weight: 650;
+}
+
+.mw-appointment-action .mw-action-panel-heading h2 {
+    margin: 0 0 6px;
+
+    color: #182946;
+    font-size: 21px;
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: -.025em;
+}
+
+.mw-appointment-action .mw-action-panel-heading p {
+    max-width: 470px;
+    margin: 0;
+
+    color: #70809b;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* ALERTS */
+
+.mw-appointment-action .mw-alert {
+    display: grid;
+    gap: 5px;
+
+    margin-bottom: 21px;
+    padding: 15px 17px;
+
+    border: 1px solid #f3d4a1;
+    border-radius: 12px;
+
+    background: #fff9ec;
+    color: #87560f;
+
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+.mw-appointment-action .mw-alert strong {
+    font-weight: 800;
+}
+
+.mw-appointment-action .mw-alert p {
+    margin: 0;
+}
+
+.mw-appointment-action .mw-alert--error {
+    border-color: #ffc9cd;
+    background: #fff2f3;
+    color: #a8273a;
+}
+
+/* FORM */
+
+.mw-appointment-action .mw-action-form {
+    display: grid;
+    gap: 14px;
+}
+
+.mw-appointment-action .mw-form-label {
+    display: block;
+    color: #253654;
+
+    font-size: 14px;
+    line-height: 1.55;
+    font-weight: 750;
+}
+
+.mw-appointment-action .mw-form-required {
+    color: #c53245;
+}
+
+.mw-appointment-action .mw-textarea {
+    display: block;
+    width: 100%;
+    min-height: 158px;
+    resize: vertical;
+
+    padding: 15px 16px;
+
+    border: 1px solid #cad7ec;
+    border-radius: 12px;
+
+    outline: none;
+    background: #fbfcff;
+    color: #23314b;
+
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.7;
+
+    transition:
+        border-color .18s ease,
+        box-shadow .18s ease;
+}
+
+.mw-appointment-action .mw-textarea::placeholder {
+    color: #8795ad;
+}
+
+.mw-appointment-action .mw-textarea:focus {
+    border-color: #4179ed;
+    box-shadow: 0 0 0 4px rgba(45, 105, 229, .105);
+    background: #fff;
+}
+
+.mw-appointment-action .mw-textarea:disabled {
+    background: #f2f4f8;
+    cursor: not-allowed;
+    opacity: .85;
+}
+
+.mw-appointment-action .mw-form-helper-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.mw-appointment-action .mw-form-help {
+    color: #7b89a0;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.mw-appointment-action .mw-form-counter {
+    margin-left: auto;
+    color: #637794;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* BUTTONS */
+
+.mw-appointment-action .mw-action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 11px;
+
+    margin: 13px 0 0;
+    padding-top: 20px;
+
+    border-top: 1px solid #edf0f6;
+}
+
+.mw-appointment-action .mw-action-buttons .portal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    min-height: 45px;
+    padding: 11px 18px;
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 750;
+    line-height: 1.3;
+    text-decoration: none;
+}
+
+.mw-appointment-action .mw-action-buttons .portal-btn--secondary {
+    color: #354e74;
+    background: #fff;
+    border: 1px solid #d2ddef;
+}
+
+.mw-appointment-action .mw-action-buttons .portal-btn--secondary:hover {
+    color: #245fe7;
+    border-color: #96b5f1;
+    background: #f4f8ff;
+}
+
+.mw-appointment-action .mw-action-buttons .portal-btn[disabled] {
+    cursor: not-allowed;
+    opacity: .52;
+}
+
+/* SIDEBAR */
+
+.mw-appointment-action .mw-action-side {
+    display: grid;
+    gap: 16px;
+}
+
+.mw-appointment-action .mw-action-summary {
+    padding: 23px;
+}
+
+.mw-appointment-action .mw-side-eyebrow {
+    color: #2b67d8;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+
+.mw-appointment-action .mw-action-summary h2 {
+    margin: 7px 0 19px;
+
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: -.02em;
+}
+
+.mw-appointment-action .mw-appointment-code {
+    display: inline-flex;
+    padding: 8px 12px;
+
+    border: 1px solid #d9e7fd;
+    border-radius: 9px;
+
+    background: #eff6ff;
+    color: #2256c4;
+
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.mw-appointment-action .mw-summary-list {
+    display: grid;
+    margin: 16px 0 0;
+}
+
+.mw-appointment-action .mw-summary-row {
+    padding: 13px 0;
+    border-top: 1px solid #edf1f6;
+}
+
+.mw-appointment-action .mw-summary-row dt {
+    margin: 0 0 6px;
+
+    color: #7a8aa3;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.mw-appointment-action .mw-summary-row dd {
+    margin: 0;
+
+    color: #283d5c;
+    font-size: 14px;
+    font-weight: 750;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+/* INFO NOTE */
+
+.mw-appointment-action .mw-action-tip {
+    display: grid;
+    gap: 8px;
+
+    padding: 20px 22px;
+
+    background: #eff6ff;
+    border-color: #d9e6ff;
+}
+
+.mw-appointment-action .mw-action-tip strong {
+    color: #2452a4;
+    font-size: 14px;
+}
+
+.mw-appointment-action .mw-action-tip p {
+    margin: 0;
+
+    color: #647794;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+/* FOCUS */
+
+.mw-appointment-action a:focus-visible,
+.mw-appointment-action input:focus-visible,
+.mw-appointment-action button:focus-visible {
+    outline: 3px solid #7baeff;
+    outline-offset: 3px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 840px) {
+    .mw-appointment-action .mw-action-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .mw-appointment-action .mw-action-side {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .mw-appointment-action .portal-shell {
+        width: min(calc(100% - 28px), 1120px);
+    }
+
+    .mw-appointment-action .mw-action-hero {
+        padding: 30px 0 33px;
+    }
+
+    .mw-appointment-action .mw-action-hero h1 {
+        font-size: 31px;
+    }
+
+    .mw-appointment-action .mw-action-body {
+        padding: 21px 0 55px;
+    }
+
+    .mw-appointment-action .mw-action-panel {
+        padding: 20px 17px;
+        border-radius: 16px;
+    }
+
+    .mw-appointment-action .mw-action-summary,
+    .mw-appointment-action .mw-action-tip {
+        border-radius: 16px;
+    }
+
+    .mw-appointment-action .mw-action-side {
+        grid-template-columns: 1fr;
+    }
+
+    .mw-appointment-action .mw-action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .mw-appointment-action .mw-action-buttons .portal-btn {
+        width: 100%;
+    }
+
+    .mw-appointment-action .mw-action-panel-heading h2 {
+        font-size: 19px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mw-appointment-action .mw-textarea {
+        transition: none;
+    }
+}
+
+/* ============================================
+   MEDIWAY - MODERN INLINE VALIDATION
+   ============================================ */
+
+.mw-appointment-action .mw-validation-summary,
+.mw-appointment-action .mw-validation-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    padding: 12px 15px;
+
+    border: 1px solid #fecaca;
+    border-radius: 11px;
+
+    background: #fff1f2;
+    color: #b42335;
+
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.6;
+
+    overflow-wrap: anywhere;
+}
+
+.mw-appointment-action .mw-validation-summary[hidden],
+.mw-appointment-action .mw-validation-message[hidden] {
+    display: none !important;
+}
+
+.mw-appointment-action .mw-validation-summary::before,
+.mw-appointment-action .mw-validation-message::before {
+    content: "!";
+    display: grid;
+    place-items: center;
+    flex: 0 0 18px;
+
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+
+    border-radius: 50%;
+    background: #dc3545;
+    color: white;
+
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.mw-appointment-action .mw-validation-summary {
+    margin-bottom: 8px;
+}
+
+/* Lỗi dưới ô nhập lý do hủy */
+
+.mw-appointment-action .mw-textarea.mw-is-invalid {
+    border: 1.5px solid #e5484d;
+    background: #fffafa;
+
+    box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.08);
+}
+
+.mw-appointment-action .mw-textarea.mw-is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+}
+
+/* Lỗi lựa chọn khung giờ */
+
+.mw-appointment-action .mw-slot-fieldset.mw-is-invalid
+.mw-slot-card {
+    border-color: #f1a3a8;
+    background: #fffafa;
+}
+
+.mw-appointment-action .mw-slot-fieldset.mw-is-invalid
+.mw-slot-card:focus-within {
+    outline: 3px solid rgba(220, 53, 69, 0.15);
+    outline-offset: 2px;
+}
+
+/* Thông báo nằm ngay dưới khung giờ */
+
+.mw-appointment-action
+.mw-slot-fieldset + .mw-validation-message {
+    margin-top: 12px;
+}
+
+@media (max-width: 620px) {
+    .mw-appointment-action .mw-validation-summary,
+    .mw-appointment-action .mw-validation-message {
+        font-size: 12px;
+        padding: 11px 12px;
+        border-radius: 9px;
+    }
+}
+/* Chỉ hiện một thông báo validation tại trường bị lỗi */
+
+/* Ẩn thông báo tổng bị trùng */
+.mw-appointment-action .mw-validation-summary {
+    display: none !important;
+}
+
+/* Giữ thông báo chi tiết dưới trường nhập */
+.mw-appointment-action .mw-validation-message:not([hidden]) {
+    display: flex;
+}
+
+/* Không hiện thông báo nếu đã hết lỗi */
+.mw-appointment-action .mw-validation-message[hidden] {
+    display: none !important;
+}

@@ -64,11 +64,59 @@ class MedicalVisit extends Model
             && ! $this->appointment?->isScheduledInFuture();
     }
 
+    /** Display the handoff separately from the actual start of a return consultation. */
+    public function scopeWithServiceProgress(Builder $query): Builder
+    {
+        return $query->withExists([
+            'serviceOrders as has_service_items' => fn ($orders) => $orders->whereHas('items'),
+            'serviceOrders as has_unresolved_service_items' => fn ($orders) => $orders->whereHas('items', fn ($items) => $items->unresolved()),
+            'queues as has_return_queue' => fn ($queues) => $queues->where('queue_type', 'RETURN_AFTER_SERVICE')
+                ->whereHas('status', fn ($status) => $status->whereIn('name', ['WAITING', 'CALLED', 'SKIPPED'])),
+        ]);
+    }
+
+    public function displayStatus(): ?string
+    {
+        $status = $this->status?->name;
+        if ($status === 'WAITING' && $this->hasUnpaidExaminationFee()) {
+            return 'WAITING_FOR_PAYMENT';
+        }
+        if ($status !== 'WAITING_FOR_SERVICE') {
+            return $status;
+        }
+        $hasItems = $this->getAttribute('has_service_items') ?? $this->serviceOrders()->whereHas('items')->exists();
+        $unresolved = $this->getAttribute('has_unresolved_service_items') ?? $this->serviceOrders()->whereHas('items', fn ($items) => $items->unresolved())->exists();
+        if (! $hasItems || $unresolved) {
+            return $status;
+        }
+        $queued = $this->getAttribute('has_return_queue') ?? $this->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')
+            ->whereHas('status', fn ($query) => $query->whereIn('name', ['WAITING', 'CALLED', 'SKIPPED']))->exists();
+
+        return $queued ? 'WAITING_FOR_RETURN' : 'SERVICES_RESOLVED';
+    }
+
     public function assertCanBeginExamination(): void
     {
+        if (! $this->examination_started_at) {
+            $this->assertExaminationFeePaid();
+        }
         if ($this->appointment && ($this->appointment->isScheduledInFuture()
             || (! $this->examination_started_at && ! $this->appointment->isScheduledForToday()))) {
             throw ValidationException::withMessages(['visit' => 'Chỉ được bắt đầu khám vào đúng ngày hẹn của bệnh nhân.']);
+        }
+    }
+
+    /** Historical visits without a fee are left unchanged. New receptions always have one. */
+    public function hasUnpaidExaminationFee(): bool
+    {
+        return $this->payables()->where('payment_type', 'EXAMINATION_FEE')
+            ->whereDoesntHave('paymentStatus', fn ($q) => $q->where('name', 'PAID'))->exists();
+    }
+
+    public function assertExaminationFeePaid(): void
+    {
+        if ($this->hasUnpaidExaminationFee()) {
+            throw ValidationException::withMessages(['visit' => 'Vui lòng thanh toán phí khám trước khi vào khám.']);
         }
     }
 

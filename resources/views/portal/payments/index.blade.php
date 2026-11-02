@@ -23,7 +23,7 @@
 
                 <p class="portal-lead">
                     Theo dõi các khoản phải thanh toán và lịch sử giao dịch đã được Mediway ghi nhận.
-                    Trang này chỉ cung cấp thông tin, chưa thực hiện thanh toán trực tuyến.
+                    Vui lòng thanh toán phí khám tại quầy sau khi tiếp nhận; số thứ tự được cấp sau khi ghi nhận thanh toán. Trang này chưa hỗ trợ thanh toán trực tuyến.
                 </p>
             </div>
         </section>

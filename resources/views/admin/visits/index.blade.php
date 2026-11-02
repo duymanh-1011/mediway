@@ -82,7 +82,7 @@
                                     (string) $status->id
                                 )
                             >
-                                {{ \App\Models\AdminDisplay::label($status->name) }}
+                                {{ \App\Models\AdminDisplay::label($status->name) }}{{ $status->name === 'WAITING_FOR_SERVICE' ? ' (bao gồm chờ khám lại)' : '' }}
                             </option>
 
                         @endforeach
@@ -369,7 +369,7 @@
 
                                 @if ($visit->status)
 
-                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $visit->status->name])
+                                    @include('admin.layouts.partials.status-badge', ['badgeCode' => $visit->displayStatus()])
 
                                 @else
 

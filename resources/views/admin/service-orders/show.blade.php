@@ -789,6 +789,11 @@
 
                                     </div>
 
+                                    <div class="related-row">
+                                        <span>Bác sĩ xác nhận</span>
+                                        <strong>{{ $item->result->verified_by_user_id ? ($item->result->verifier?->doctor?->full_name ?? 'Không tìm thấy thông tin bác sĩ') : 'Chưa xác nhận' }}</strong>
+                                    </div>
+
 
                                     @if (
                                         Route::has(

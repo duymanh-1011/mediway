@@ -217,6 +217,10 @@
                                                 </div>
                                             </div>
 
+                                            @if ($appointment->medicalVisit?->payables->contains(fn ($fee) => $fee->payment_type === 'EXAMINATION_FEE' && $fee->paymentStatus?->name !== 'PAID'))
+                                                <p>Vui lòng thanh toán phí khám tại quầy để được cấp số thứ tự.</p>
+                                                <a href="{{ route('patient.payments.index') }}" class="queue-detail-link">Xem khoản thanh toán</a>
+                                            @endif
                                             <div class="queue-actions">
                                                 <a href="{{ route('patient.appointments.show', $appointment) }}" class="queue-detail-link">
                                                     Xem chi tiết lịch hẹn

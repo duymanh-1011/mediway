@@ -21,6 +21,7 @@
 
     @php
         $currentStatus = $medicalVisit->status?->name;
+        $displayStatus = $medicalVisit->displayStatus();
 
         $completedStatus = $allowedVisitStatuses
             ->firstWhere('name', 'COMPLETED');
@@ -82,12 +83,12 @@
                 Hiện tại:
             </span>
 
-            <strong class="status-badge">@include('admin.layouts.partials.status-badge', ['badgeCode' => $currentStatus ?? '—'])</strong>
+            <strong class="status-badge">@include('admin.layouts.partials.status-badge', ['badgeCode' => $displayStatus ?? '—'])</strong>
 
         </div>
 
 
-        @if ($allowedVisitStatuses->isNotEmpty())
+        @if ($allowedVisitStatuses->isNotEmpty() && $displayStatus !== 'WAITING_FOR_PAYMENT')
 
             <div class="status-actions">
 
@@ -186,7 +187,17 @@
         @else
 
             <p class="muted-text">
-                Lượt khám không còn trạng thái tiếp theo.
+                @if ($displayStatus === 'WAITING_FOR_PAYMENT')
+                    Vui lòng ghi nhận thanh toán phí khám trong danh sách khoản thu bên dưới để cấp số thứ tự.
+                @elseif ($displayStatus === 'WAITING_FOR_RETURN')
+                    Dịch vụ đã được xử lý. Bệnh nhân đang chờ quay lại bác sĩ; hãy gọi và bắt đầu phục vụ trong hàng đợi phòng khám.
+                @elseif ($displayStatus === 'SERVICES_RESOLVED')
+                    Không còn dịch vụ cần chờ. Vui lòng kiểm tra hàng đợi quay lại bác sĩ.
+                @elseif ($currentStatus === 'WAITING_FOR_SERVICE')
+                    Lượt khám còn dịch vụ cần xử lý trước khi quay lại bác sĩ.
+                @else
+                    Lượt khám không còn trạng thái tiếp theo.
+                @endif
             </p>
 
         @endif

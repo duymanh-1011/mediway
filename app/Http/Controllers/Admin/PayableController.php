@@ -331,11 +331,14 @@ class PayableController extends Controller
         $reason = trim($request->validated()['cancel_reason']);
         try {
             DB::transaction(function () use ($request, $payable, $reason): void {
-                MedicalVisit::whereKey($payable->medical_visit_id)->lockForUpdate()->firstOrFail();
+                $visit = MedicalVisit::with('status')->whereKey($payable->medical_visit_id)->lockForUpdate()->firstOrFail();
                 $item = $payable->service_order_item_id
                     ? ServiceOrderItem::with(['serviceStatus', 'serviceOrder'])->whereKey($payable->service_order_item_id)->lockForUpdate()->firstOrFail()
                     : null;
                 $lockedPayable = Payable::with('paymentStatus')->whereKey($payable->id)->lockForUpdate()->firstOrFail();
+                if ($lockedPayable->payment_type === 'EXAMINATION_FEE' && $visit->appointment_id && $visit->status?->name === 'WAITING' && ! $visit->queues()->exists()) {
+                    throw ValidationException::withMessages(['cancel_reason' => 'Không thể hủy phí khám khi lượt khám đang chờ thanh toán.']);
+                }
                 if ($item) {
                     $currentServiceStatus = ServiceStatus::whereKey($item->service_status_id)->lockForUpdate()->firstOrFail();
                     $item->setRelation('serviceStatus', $currentServiceStatus);

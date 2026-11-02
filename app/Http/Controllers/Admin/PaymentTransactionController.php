@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePaymentTransactionRequest;
 use App\Models\MedicalVisit;
+use App\Models\ExaminationRoom;
+use App\Models\ExaminationRoomQueue;
+use App\Models\QueueStatus;
 use App\Models\Payable;
 use App\Models\PaymentStatus;
 use App\Models\PaymentTransaction;
@@ -302,7 +305,7 @@ class PaymentTransactionController extends Controller
                     | Khóa payable trong lúc thanh toán
                     |--------------------------------------------------------------------------
                     */
-                    MedicalVisit::whereKey($payable->medical_visit_id)->lockForUpdate()->firstOrFail();
+                    $visit = MedicalVisit::with(['status', 'appointment'])->whereKey($payable->medical_visit_id)->lockForUpdate()->firstOrFail();
                     $item = $payable->service_order_item_id
                         ? ServiceOrderItem::with(['serviceStatus', 'serviceOrder'])->whereKey($payable->service_order_item_id)->lockForUpdate()->firstOrFail()
                         : null;
@@ -445,6 +448,30 @@ class PaymentTransactionController extends Controller
 
                         'paid_at' => $now,
                     ]);
+
+                    // Tiếp nhận từ lịch hẹn chỉ vào hàng đợi sau khi phí khám được thu.
+                    // Lượt khám cũ đã có hàng đợi hoặc đã bắt đầu không bị tạo trùng.
+                    if ($lockedPayable->payment_type === 'EXAMINATION_FEE' && $visit->appointment_id
+                        && $visit->status?->name === 'WAITING'
+                        && ! $visit->queues()->where('queue_type', 'INITIAL_EXAM')->exists()) {
+                        $visit->assertExaminationFeePaid();
+                        if (! $visit->appointment?->isScheduledForToday()) {
+                            throw ValidationException::withMessages(['payment_method' => 'Không thể xếp hàng cho lịch khám khác ngày. Vui lòng kiểm tra lại lịch hẹn trước khi thu phí.']);
+                        }
+                        $waiting = QueueStatus::where('name', 'WAITING')->where('is_active', true)->first();
+                        if (! $waiting) {
+                            throw ValidationException::withMessages(['payment_method' => 'Chưa cấu hình trạng thái hàng đợi đang chờ.']);
+                        }
+                        ExaminationRoom::whereKey($visit->examination_room_id)->lockForUpdate()->firstOrFail();
+                        $lastNumber = ExaminationRoomQueue::whereDate('queued_at', now()->toDateString())
+                            ->whereHas('medicalVisit', fn ($q) => $q->where('examination_room_id', $visit->examination_room_id))
+                            ->max('queue_number');
+                        ExaminationRoomQueue::create([
+                            'medical_visit_id' => $visit->id, 'queue_status_id' => $waiting->id,
+                            'queue_number' => ((int) $lastNumber) + 1, 'queue_type' => 'INITIAL_EXAM',
+                            'queued_at' => now(), 'call_count' => 0,
+                        ]);
+                    }
 
                     /*
                     |--------------------------------------------------------------------------

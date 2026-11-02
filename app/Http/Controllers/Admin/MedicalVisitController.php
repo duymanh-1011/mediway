@@ -22,7 +22,7 @@ class MedicalVisitController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = MedicalVisit::query()
+        $query = MedicalVisit::query()->withServiceProgress()
             ->with([
                 'appointment',
                 'patient',

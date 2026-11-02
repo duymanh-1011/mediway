@@ -136,8 +136,8 @@
 
                 <p class="checkin-description">
                     Xác nhận bệnh nhân đã đến bệnh viện.
-                    Hệ thống sẽ tạo lượt khám và đưa bệnh nhân
-                    vào hàng đợi phòng khám.
+                    Hệ thống sẽ tạo lượt khám và khoản phí {{ number_format(config('patient_appointments.examination_fee'), 0, ',', '.') }} đ.
+                    Sau khi thanh toán, bệnh nhân được xếp vào hàng đợi phòng khám.
                 </p>
 
             </div>

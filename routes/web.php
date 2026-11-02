@@ -926,6 +926,11 @@ Route::prefix('admin')
             |--------------------------------------------------------------------------
             */
 
+            Route::get('/visits/{visit}/prescription/create', [PrescriptionController::class, 'create'])
+                ->name('visits.prescription.create');
+            Route::post('/visits/{visit}/prescription', [PrescriptionController::class, 'store'])
+                ->name('visits.prescription.store');
+
             Route::get(
                 '/prescriptions',
                 [PrescriptionController::class, 'index']

@@ -35,7 +35,7 @@ class QueueController extends Controller
                 'examinationRoom',
                 'appointmentTimeSlot',
                 'appointmentStatus',
-                'medicalVisit',
+                'medicalVisit.payables.paymentStatus',
             ])
             ->orderByDesc(
                 'appointment_date'

@@ -147,7 +147,7 @@
                                 (string) $item->id
                             )
                         >
-                            {{ \App\Models\AdminDisplay::label($item->name) }}
+                            {{ \App\Models\AdminDisplay::label($item->name) }}{{ $item->name === 'BOOKED' ? ' (gồm trễ hẹn)' : '' }}
                         </option>
 
                     @endforeach
@@ -155,6 +155,15 @@
                 </select>
 @error('appointment_status_id')<div class="field-error">{{ $message }}</div>@enderror
 
+            </div>
+
+            <div class="filter-group admin-filter-field">
+                <label for="reception-timing">Tình trạng thời gian</label>
+                <select id="reception-timing" name="reception_timing" class="form-control">
+                    <option value="">Tất cả</option>
+                    <option value="late_today" @selected($receptionTiming === 'late_today')>Trễ giờ hẹn</option>
+                    <option value="past_day" @selected($receptionTiming === 'past_day')>Quá ngày hẹn</option>
+                </select>
             </div>
 
 
@@ -377,7 +386,7 @@
 
                         <td>
 
-                            @include('admin.layouts.partials.status-badge', ['badgeCode' => $appointment->appointmentStatus?->name ?? '—'])
+                            @include('admin.layouts.partials.status-badge', ['badgeCode' => $appointment->displayStatus() ?? '—'])
 
                         </td>
 

@@ -367,7 +367,7 @@
                                 class="
                                     calendar-event
 
-                                    {{ $schedule->status
+                                    {{ $schedule->effectiveStatus()
                                         === 'INACTIVE'
                                         ? 'inactive'
                                         : '' }}

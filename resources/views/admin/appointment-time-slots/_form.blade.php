@@ -142,7 +142,7 @@
             for="status"
             class="form-label"
         >
-            Trạng thái
+            Trạng thái quản trị
             <span class="required">*</span>
         </label>
 
@@ -178,6 +178,8 @@
             </option>
 
         </select>
+
+        <p class="muted">Khung giờ hết hạn sẽ hiển thị ngừng hoạt động, kể cả khi trạng thái quản trị đang bật.</p>
 
         @error('status')
             <div class="field-error">

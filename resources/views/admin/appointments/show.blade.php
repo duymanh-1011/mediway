@@ -378,7 +378,7 @@
                     Trạng thái
                 </span>
 
-                <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $statusName ?? '—'])</strong>
+                <strong>@include('admin.layouts.partials.status-badge', ['badgeCode' => $appointment->displayStatus() ?? '—'])</strong>
 
             </div>
 

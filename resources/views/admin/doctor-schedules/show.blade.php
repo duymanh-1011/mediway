@@ -217,7 +217,7 @@
 
                 <div class="detail-value">
 
-                    @if ($doctorSchedule->status === 'ACTIVE')
+                    @if ($doctorSchedule->effectiveStatus() === 'ACTIVE')
 
                         @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 
@@ -343,7 +343,7 @@
 
                             <td>
 
-                                @if ($slot->status === 'ACTIVE')
+                                @if ($slot->effectiveStatus() === 'ACTIVE')
 
                                     @include('admin.layouts.partials.status-badge', ['badgeCode' => 'ACTIVE'])
 

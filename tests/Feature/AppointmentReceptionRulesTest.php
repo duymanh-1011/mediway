@@ -165,6 +165,76 @@ class AppointmentReceptionRulesTest extends TestCase
         $this->assertSame(1, $appointment->medicalVisit()->count());
     }
 
+    public function test_expired_slot_appears_inactive_but_late_patient_can_check_in_during_shift(): void
+    {
+        $slot = $this->slot();
+        $appointment = $this->book($slot);
+        $schedule = $slot->doctorSchedule;
+        $this->travelTo(today()->setTime(9, 29, 59));
+        $this->assertSame('ACTIVE', $slot->fresh()->effectiveStatus());
+        $this->travelTo(today()->setTime(9, 30));
+        $this->assertSame('INACTIVE', $slot->fresh()->effectiveStatus());
+        $this->assertSame('ACTIVE', $schedule->fresh()->effectiveStatus());
+        $this->get(route('admin.doctor-schedules.show', $schedule))->assertOk()->assertSee('Ngừng hoạt động');
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
+        $this->assertSame(1, $appointment->medicalVisit()->count());
+        $this->assertSame('ACTIVE', $slot->fresh()->status);
+    }
+
+    public function test_expired_schedule_is_inactive_in_detail_list_filter_and_count(): void
+    {
+        $slot = $this->slot();
+        $schedule = $slot->doctorSchedule;
+        $this->travelTo(today()->setTime(10, 59, 59));
+        $this->assertSame('ACTIVE', $schedule->fresh()->effectiveStatus());
+        $this->travelTo(today()->setTime(11, 0));
+        $this->assertSame('INACTIVE', $schedule->fresh()->effectiveStatus());
+        $this->assertSame('INACTIVE', $slot->fresh()->effectiveStatus());
+        $this->get(route('admin.doctor-schedules.show', $schedule))->assertOk()->assertSee('Ngừng hoạt động');
+        $this->get(route('admin.doctor-schedules.index', ['status' => 'INACTIVE', 'work_date' => today()->toDateString()]))
+            ->assertOk()->assertViewHas('doctorSchedules', fn ($schedules) => $schedules->contains('id', $schedule->id));
+        $this->get(route('admin.doctor-schedules.index', ['status' => 'ACTIVE', 'work_date' => today()->toDateString()]))
+            ->assertOk()->assertViewHas('doctorSchedules', fn ($schedules) => ! $schedules->contains('id', $schedule->id));
+        $this->assertSame('ACTIVE', $schedule->fresh()->status);
+    }
+
+    public function test_manually_disabled_slot_still_blocks_late_check_in(): void
+    {
+        $slot = $this->slot();
+        $appointment = $this->book($slot);
+        $slot->update(['status' => 'INACTIVE']);
+        $this->travelTo(today()->setTime(9, 45));
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasErrors('appointment');
+        $this->assertFalse($appointment->medicalVisit()->exists());
+    }
+
+    public function test_late_label_and_filter_still_allow_same_day_check_in_during_shift(): void
+    {
+        $appointment = $this->book($this->slot());
+        $this->travelTo(today()->setTime(9, 29, 59));
+        $this->assertSame('BOOKED', $appointment->fresh()->displayStatus());
+        $this->travelTo(today()->setTime(9, 30));
+        $this->assertSame('APPOINTMENT_LATE', $appointment->fresh()->displayStatus());
+        $this->get(route('admin.appointments.show', $appointment))->assertOk()->assertSee('Trễ giờ hẹn');
+        $this->get(route('admin.appointments.index', ['reception_timing' => 'late_today']))->assertOk()->assertSee($appointment->appointment_code);
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
+        $this->assertSame('CHECKED_IN', $appointment->fresh()->displayStatus());
+        $this->get(route('admin.appointments.index', ['reception_timing' => 'late_today']))->assertOk()->assertDontSee($appointment->appointment_code);
+    }
+
+    public function test_past_day_label_and_filter_do_not_allow_check_in(): void
+    {
+        $appointment = $this->book($this->slot());
+        $this->travelTo(today()->addDay()->setTime(9, 0));
+        $this->assertSame('APPOINTMENT_PAST_DAY', $appointment->fresh()->displayStatus());
+        $this->get(route('admin.appointments.show', $appointment))->assertOk()->assertSee('Quá ngày hẹn')
+            ->assertDontSee('action="'.route('admin.appointments.check-in', $appointment).'"', false);
+        $this->get(route('admin.appointments.index', ['reception_timing' => 'past_day']))->assertOk()->assertSee($appointment->appointment_code);
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasErrors('appointment');
+        $this->assertFalse($appointment->medicalVisit()->exists());
+        $this->assertSame('BOOKED', $appointment->fresh()->appointmentStatus->name);
+    }
+
     public function test_legacy_future_visit_cannot_start_examination_or_write_clinical_data(): void
     {
         $appointment = $this->book($this->slot(1));

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\CarbonImmutable;
 
 class AppointmentTimeSlot extends Model
 {
@@ -18,6 +19,19 @@ class AppointmentTimeSlot extends Model
     protected $casts = [
         'max_patients' => 'integer',
     ];
+
+    public function hasEnded(): bool
+    {
+        $date = $this->doctorSchedule?->work_date;
+        return $date && $this->end_time
+            && now()->greaterThanOrEqualTo(CarbonImmutable::parse($date->format('Y-m-d').' '.$this->end_time, config('app.timezone')));
+    }
+
+    public function effectiveStatus(): string
+    {
+        return $this->status === 'ACTIVE' && $this->doctorSchedule?->effectiveStatus() === 'ACTIVE' && ! $this->hasEnded()
+            ? 'ACTIVE' : 'INACTIVE';
+    }
 
     public function doctorSchedule()
     {

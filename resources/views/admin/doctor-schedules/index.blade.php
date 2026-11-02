@@ -410,7 +410,7 @@
                         <td>
 
                             @if (
-                                $schedule->status
+                                $schedule->effectiveStatus()
                                 === 'ACTIVE'
                             )
 

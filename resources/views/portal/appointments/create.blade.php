@@ -77,7 +77,7 @@
                 class="mw-book-back"
                 href="{{ route('patient.doctors.index') }}"
             >
-                ← Chọn lịch khám khác
+                ← Quay lại tra cứu bác sĩ
             </a>
 
             <article class="mw-book-sheet">

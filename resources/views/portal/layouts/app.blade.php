@@ -8,6 +8,7 @@
     <title>@yield('title', 'Mediway')</title>
     @vite(['resources/css/portal.css', 'resources/js/portal.js'])
     @stack('portal_page_styles')
+    @vite('resources/css/portal-consistency.css')
 </head>
 
 <body class="portal-body">

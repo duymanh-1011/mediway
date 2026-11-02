@@ -14,7 +14,7 @@
             <div class="portal-shell">
                 <a class="appointment-back" href="{{ route('patient.home') }}">← Quay lại tài khoản</a>
                 <p class="portal-eyebrow">
-                    PATIENT PORTAL
+                    TÀI KHOẢN BỆNH NHÂN
                 </p>
 
                 <h1>

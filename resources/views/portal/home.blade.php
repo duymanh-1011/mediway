@@ -45,7 +45,7 @@
             <section class="patient-notifications" aria-labelledby="patient-notifications-title">
                 <div class="patient-notifications__heading">
                     <span class="patient-notifications__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-2 7-2 9h16c0-2-2-2-2-9M10 20h4"/></svg></span>
-                    <div><h2 id="patient-notifications-title">Thông báo</h2><p>Tính năng thông báo đang được cập nhật.</p></div>
+                    <div><h2 id="patient-notifications-title">Thông báo</h2><p>Theo dõi thông tin khám và chăm sóc sức khỏe của bạn.</p></div>
                     <a class="patient-notifications__link" href="{{ route('patient.notifications') }}">Xem thông báo <span aria-hidden="true">→</span></a>
                 </div>
             </section>

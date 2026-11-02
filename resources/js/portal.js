@@ -1,8 +1,8 @@
+import { installPortalHistoryReload } from './portal-history.js';
+
 const menu = document.querySelector('[data-portal-menu]');
 const navigation = document.querySelector('.portal-nav');
-window.addEventListener('pageshow', (event) => {
-    if (event.persisted) window.location.reload();
-});
+installPortalHistoryReload(window);
 menu?.addEventListener('click', () => {
     const open = navigation.classList.toggle('is-open');
     menu.setAttribute('aria-expanded', String(open));

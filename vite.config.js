@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/css/portal.css', 'resources/js/portal.js',
+            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/css/portal.css', 'resources/css/portal-consistency.css', 'resources/js/portal.js',
             'resources/css/doctors-index.css',
             'resources/css/doctors-show.css',
             'resources/css/specialties-show.css',

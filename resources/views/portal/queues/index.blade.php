@@ -14,7 +14,7 @@
             <div class="portal-shell">
                 <a class="appointment-back" href="{{ route('patient.home') }}">← Quay lại tài khoản</a>
                 <p class="portal-eyebrow">
-                    PATIENT PORTAL
+                    TÀI KHOẢN BỆNH NHÂN
                 </p>
 
                 <h1>
@@ -23,7 +23,6 @@
 
                 <p class="portal-lead">
                     Theo dõi lịch khám, trạng thái tiếp nhận và hàng đợi của bạn.
-                    Patient Portal chỉ hiển thị thông tin và không thay đổi quy trình tiếp nhận.
                 </p>
             </div>
         </section>

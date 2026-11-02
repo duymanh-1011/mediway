@@ -60,6 +60,11 @@ class PatientTeamIntegrationTest extends TestCase
         $this->actingAs($other)->get(route('patient.queues.index'))->assertOk()->assertDontSee($visit->visit_code);
 
         $this->actingAs($admin)->post(route('admin.queues.call', $queue))->assertSessionHasNoErrors();
+        $this->actingAs($patient)->get(route('patient.notifications', ['danh-muc' => 'kham-benh']))
+            ->assertOk()->assertSee('Đã đến lượt khám');
+        $this->actingAs($other)->get(route('patient.notifications', ['danh-muc' => 'kham-benh']))
+            ->assertOk()->assertDontSee('Đã đến lượt khám');
+        $this->actingAs($admin);
         $this->post(route('admin.queues.start-service', $queue))->assertSessionHasNoErrors();
         $this->actingAs($patient)->get(route('patient.queues.index'))->assertOk()
             ->assertSeeText($queue->fresh()->status->description);
@@ -68,10 +73,13 @@ class PatientTeamIntegrationTest extends TestCase
         $this->actingAs($admin)->post(route('admin.visits.service-orders.store', $visit), ['medical_service_ids' => [$service->id]])->assertSessionHasNoErrors();
         $payable = ServiceOrder::where('medical_visit_id', $visit->id)->sole()->items()->firstOrFail()->payable;
         $this->actingAs($patient)->get(route('patient.payments.index'))->assertOk()->assertSee($payable->payable_code)->assertSeeText('Chưa thanh toán');
+        $this->get(route('patient.notifications', ['danh-muc' => 'thanh-toan']))->assertOk()->assertSee($payable->payable_code);
+        $this->actingAs($other)->get(route('patient.notifications', ['danh-muc' => 'thanh-toan']))->assertOk()->assertDontSee($payable->payable_code);
         $this->actingAs($other)->get(route('patient.payments.index'))->assertOk()->assertDontSee($payable->payable_code);
         $this->actingAs($admin)->post(route('admin.payables.payment-transactions.store', $payable), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
         $transaction = $payable->fresh()->transactions()->where('transaction_result', 'SUCCESS')->sole();
         $this->actingAs($patient)->get(route('patient.payments.index'))->assertOk()
             ->assertSee($payable->payable_code)->assertSee($transaction->transaction_code)->assertSeeText('Đã thanh toán');
+        $this->get(route('patient.notifications', ['danh-muc' => 'thanh-toan']))->assertOk()->assertDontSee($payable->payable_code);
     }
 }

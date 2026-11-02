@@ -41,6 +41,10 @@
                 ?: ($status?->name ?: 'Chưa cập nhật'),
         };
 
+        if ($statusCode === 'BOOKED') {
+            $statusLabel = \App\Models\AdminDisplay::label($appointment->displayStatus());
+        }
+
         $statusTone = match ($statusCode) {
             'BOOKED' => 'booked',
             'CHECKED_IN', 'IN_EXAMINATION' => 'ongoing',

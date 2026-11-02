@@ -129,11 +129,18 @@ class AppointmentController extends Controller
         */
 
         if (! empty($statusId)) {
+            $query->where('appointment_status_id', $statusId);
+        }
 
-            $query->where(
-                'appointment_status_id',
-                $statusId
-            );
+        $receptionTiming = $request->get('reception_timing');
+        if (in_array($receptionTiming, ['late_today', 'past_day'], true)) {
+            $query->whereHas('appointmentStatus', fn ($status) => $status->where('name', 'BOOKED'));
+            if ($receptionTiming === 'past_day') {
+                $query->whereDate('appointment_date', '<', today()->toDateString());
+            } else {
+                $query->whereDate('appointment_date', today()->toDateString())
+                    ->whereHas('appointmentTimeSlot', fn ($slot) => $slot->where('end_time', '<=', now()->format('H:i:s')));
+            }
         }
 
         if (! empty($doctorId)) {
@@ -247,6 +254,7 @@ class AppointmentController extends Controller
                 'examinationRooms',
                 'keyword',
                 'statusId',
+                'receptionTiming',
                 'doctorId',
                 'specialtyId',
                 'roomId',

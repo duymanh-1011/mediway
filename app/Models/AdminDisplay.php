@@ -22,6 +22,7 @@ final class AdminDisplay
         'RETURN_AFTER_SERVICE' => 'Quay lại sau dịch vụ', 'INITIAL_EXAM' => 'Khám ban đầu',
         'IN_EXAMINATION' => 'Đang khám', 'WAITING_FOR_SERVICE' => 'Chờ thực hiện dịch vụ', 'RETURNING' => 'Quay lại bác sĩ',
         'BOOKED' => 'Đã đặt lịch', 'CHECKED_IN' => 'Đã tiếp nhận',
+        'APPOINTMENT_LATE' => 'Trễ giờ hẹn', 'APPOINTMENT_PAST_DAY' => 'Quá ngày hẹn',
         'Administrator' => 'Quản trị viên', 'Doctor' => 'Bác sĩ', 'Employee' => 'Nhân viên', 'Patient' => 'Bệnh nhân',
         'MALE' => 'Nam', 'FEMALE' => 'Nữ', 'OTHER' => 'Khác',
         'EXAMINATION_FEE' => 'Phí khám', 'SERVICE_FEE' => 'Phí dịch vụ', 'MEDICINE_FEE' => 'Tiền thuốc',
@@ -79,9 +80,9 @@ final class AdminDisplay
     {
         return match ($code) {
             'ACTIVE', 'PAID', 'SUCCESS', 'COMPLETED', 'ALLOWED', 'YES', 'VERIFIED', 'LINKED', 'CREATE' => 'success',
-            'INACTIVE', 'LOCKED', 'FAILED', 'CANCELLED', 'DELETE', 'CANCEL' => 'danger',
+            'INACTIVE', 'LOCKED', 'FAILED', 'CANCELLED', 'DELETE', 'CANCEL', 'APPOINTMENT_PAST_DAY' => 'danger',
             'PROCESSING', 'IN_SERVICE', 'IN_EXAMINATION', 'RETURNING', 'CALLED', 'CHECKED_IN', 'UPDATE', 'STATUS_CHANGE' => 'info',
-            'PENDING', 'WAITING', 'UNPAID', 'WAITING_FOR_SERVICE', 'BOOKED', 'SKIPPED', 'UNVERIFIED' => 'warning',
+            'PENDING', 'WAITING', 'UNPAID', 'WAITING_FOR_SERVICE', 'BOOKED', 'SKIPPED', 'UNVERIFIED', 'APPOINTMENT_LATE' => 'warning',
             default => 'neutral',
         };
     }

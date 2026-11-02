@@ -56,7 +56,7 @@ class AutoCancelNoShowTest extends TestCase
         return $appointment->fresh();
     }
 
-    public function test_no_show_is_cancelled_after_slot_end_when_grace_is_zero(): void
+    public function test_no_show_is_not_cancelled_on_appointment_day_even_after_slot_end(): void
     {
         config()->set('appointments_auto_cancel.grace_minutes', 0);
         $appointment = $this->bookedFixture();
@@ -66,7 +66,11 @@ class AutoCancelNoShowTest extends TestCase
         $this->artisan('appointments:expire-unattended')->assertExitCode(0);
         $this->assertSame('BOOKED', $appointment->fresh()->appointmentStatus->name);
 
-        $this->travelTo($end->copy()->addSecond());
+        $this->travelTo($end->copy()->endOfDay());
+        $this->artisan('appointments:expire-unattended')->assertExitCode(0);
+        $this->assertSame('BOOKED', $appointment->fresh()->appointmentStatus->name);
+
+        $this->travelTo($end->copy()->addDay()->startOfDay());
         $this->artisan('appointments:expire-unattended')->assertExitCode(0);
         $this->assertSame('CANCELLED', $appointment->fresh()->appointmentStatus->name);
     }

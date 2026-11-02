@@ -47,6 +47,25 @@ class Appointment extends Model
             || $this->appointmentTimeSlot?->doctorSchedule?->work_date?->isAfter(today());
     }
 
+    /** A time-based label; BOOKED remains unchanged until a real workflow action occurs. */
+    public function displayStatus(): ?string
+    {
+        $status = $this->appointmentStatus?->name;
+        if ($status !== 'BOOKED' || ! $this->appointment_date) {
+            return $status;
+        }
+
+        if ($this->appointment_date->isBefore(today())) {
+            return 'APPOINTMENT_PAST_DAY';
+        }
+        if ($this->appointment_date->isToday() && $this->appointmentTimeSlot?->end_time
+            && now()->format('H:i:s') >= $this->appointmentTimeSlot->end_time) {
+            return 'APPOINTMENT_LATE';
+        }
+
+        return $status;
+    }
+
     public function assertReceptionDate(): void
     {
         if (! $this->isScheduledForToday()) {

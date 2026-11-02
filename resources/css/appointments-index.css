@@ -368,15 +368,16 @@
         border-color: var(--ah-dark);
     }
 
-    .ah-btn--danger {
-        color: #b42318;
-        background: #fff5f5;
-        border-color: #f2cccc;
+    .portal-body a.ah-btn--danger {
+        color: #fff;
+        background: #dc3545;
+        border-color: #dc3545;
     }
 
-    .ah-btn--danger:hover {
-        background: #ffe9e9;
-        border-color: #e9b4b4;
+    .portal-body a.ah-btn--danger:hover {
+        color: #fff;
+        background: #bb2d3b;
+        border-color: #bb2d3b;
     }
 
     /* EMPTY STATE */

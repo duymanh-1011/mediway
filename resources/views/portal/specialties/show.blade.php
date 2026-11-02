@@ -13,7 +13,7 @@
         <section class="portal-page-head">
             <div class="portal-shell">
                 <a href="{{ route('patient.doctors.index') }}" class="specialty-back">
-                    ← Quay lại tra cứu
+                    ← Quay lại tra cứu bác sĩ
                 </a>
 
                 <h1>

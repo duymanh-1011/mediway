@@ -27,7 +27,7 @@ Artisan::command('inspire', function () {
 |--------------------------------------------------------------------------
 |
 | Chỉ hủy lịch hẹn BOOKED khi:
-| - Khung giờ đã kết thúc quá thời gian chờ.
+| - Ngày hẹn đã qua và khung giờ đã kết thúc quá thời gian chờ.
 | - Bệnh nhân chưa được tiếp nhận.
 | - Chưa có lượt khám liên kết.
 |

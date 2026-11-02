@@ -13,16 +13,6 @@
             ? $appointments->total()
             : $appointments->count();
 
-        $graceMinutes = max(
-            0,
-            min(
-                1440,
-                (int) config(
-                    'appointments_auto_cancel.grace_minutes',
-                    30
-                )
-            )
-        );
     @endphp
 
 
@@ -138,10 +128,7 @@
                                         $isOverduePending =
                                             $statusName === 'BOOKED'
                                             && !$hasMedicalVisit
-                                            && $endsAt !== null
-                                            && $endsAt->copy()
-                                                ->addMinutes($graceMinutes)
-                                                ->lessThanOrEqualTo(now());
+                                            && in_array($appointment->displayStatus(), ['APPOINTMENT_LATE', 'APPOINTMENT_PAST_DAY'], true);
 
                                         $hasStarted =
                                             $statusName === 'BOOKED'
@@ -156,7 +143,7 @@
                                         if ($isAutoNoShow) {
                                             $statusLabel = 'Tự động hủy · Vắng khám';
                                         } elseif ($isOverduePending) {
-                                            $statusLabel = 'Quá hạn · Chờ xử lý';
+                                            $statusLabel = \App\Models\AdminDisplay::label($appointment->displayStatus());
                                             $tone = 'overdue';
                                         }
 
@@ -346,16 +333,12 @@
                                                 class="ah-notice ah-notice--overdue"
                                                 role="status"
                                             >
-                                                <strong>Lịch khám đã quá hạn</strong>
+                                                <strong>{{ $statusLabel }}</strong>
 
-                                                Lịch đã qua giờ kết thúc và thời gian
-                                                chờ {{ $graceMinutes }} phút nhưng chưa
-                                                được hệ thống xử lý hủy tự động.
+                                                Lịch khám chưa được tiếp nhận.
 
                                                 <div>
-                                                    Nếu bạn đã tới bệnh viện và được
-                                                    tiếp nhận, vui lòng liên hệ quầy
-                                                    tiếp nhận để kiểm tra lại.
+                                                    Vui lòng liên hệ quầy tiếp nhận để được hướng dẫn.
                                                 </div>
                                             </div>
                                         @endif
@@ -371,7 +354,7 @@
                                                     hủy hoặc đổi lịch.
 
                                                 @elseif ($isOverduePending)
-                                                    Đang chờ hệ thống xử lý lịch quá hạn.
+                                                    Vui lòng liên hệ quầy tiếp nhận để được hướng dẫn.
 
                                                 @elseif ($hasStarted)
                                                     Giờ khám đã bắt đầu.
@@ -401,7 +384,7 @@
 
                                                 @if ($canRequestChange)
                                                     <a
-                                                        class="ah-btn"
+                                                        class="ah-btn ah-btn--primary"
                                                         href="{{ route('patient.appointments.reschedule.form', $appointment) }}"
                                                     >
                                                         Đổi lịch

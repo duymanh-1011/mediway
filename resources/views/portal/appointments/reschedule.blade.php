@@ -145,7 +145,7 @@
                             :href="route('patient.appointments.show', $appointment)"
                             variant="secondary"
                         >
-                            Quay lại chi tiết
+                            Quay lại chi tiết lịch hẹn
                         </x-portal.button>
 
                     </div>

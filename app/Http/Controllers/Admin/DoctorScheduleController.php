@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreDoctorScheduleRequest;
 use App\Http\Requests\Admin\UpdateDoctorScheduleRequest;
 use App\Models\Doctor;
 use App\Models\DoctorSchedule;
+use App\Models\AppointmentTimeSlot;
 use App\Models\ExaminationRoom;
 use App\Models\Specialty;
 use Carbon\Carbon;
@@ -152,10 +153,7 @@ class DoctorScheduleController extends Controller
                 true
             )
         ) {
-            $query->where(
-                'status',
-                $status
-            );
+            $status === 'ACTIVE' ? $query->effectiveActive() : $query->effectiveInactive();
         }
 
         /*
@@ -212,11 +210,7 @@ class DoctorScheduleController extends Controller
         $totalSchedules =
             DoctorSchedule::count();
 
-        $activeSchedules =
-            DoctorSchedule::where(
-                'status',
-                'ACTIVE'
-            )->count();
+        $activeSchedules = DoctorSchedule::effectiveActive()->count();
 
         $todaySchedules =
             DoctorSchedule::whereDate(
@@ -564,47 +558,9 @@ class DoctorScheduleController extends Controller
             'examinationRoom',
         ]);
 
-        $timeSlots =
-            DB::table(
-                'appointment_time_slots as slots'
-            )
-                ->leftJoin(
-                    'appointments',
-                    'appointments.appointment_time_slot_id',
-                    '=',
-                    'slots.id'
-                )
-                ->where(
-                    'slots.doctor_schedule_id',
-                    $doctorSchedule->id
-                )
-                ->groupBy(
-                    'slots.id',
-                    'slots.start_time',
-                    'slots.end_time',
-                    'slots.max_patients',
-                    'slots.status',
-                    'slots.notes',
-                    'slots.created_at',
-                    'slots.updated_at'
-                )
-                ->select([
-                    'slots.id',
-                    'slots.start_time',
-                    'slots.end_time',
-                    'slots.max_patients',
-                    'slots.status',
-                    'slots.notes',
-                    'slots.created_at',
-                    'slots.updated_at',
-                ])
-                ->selectRaw(
-                    'COUNT(appointments.id) as appointments_count'
-                )
-                ->orderBy(
-                    'slots.start_time'
-                )
-                ->get();
+        $timeSlots = AppointmentTimeSlot::where('doctor_schedule_id', $doctorSchedule->id)
+            ->withCount('appointments')->orderBy('start_time')->get();
+        $timeSlots->each(fn (AppointmentTimeSlot $slot) => $slot->setRelation('doctorSchedule', $doctorSchedule));
 
         $totalSlots =
             $timeSlots->count();

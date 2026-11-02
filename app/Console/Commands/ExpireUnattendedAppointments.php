@@ -16,7 +16,7 @@ class ExpireUnattendedAppointments extends Command
         {--dry-run : Chỉ liệt kê số ứng viên, không ghi dữ liệu}
         {--limit=200 : Số lịch tối đa trong một lượt}';
 
-    protected $description = 'Tự hủy lịch BOOKED quá giờ, chưa được tiếp nhận (có audit).';
+    protected $description = 'Tự hủy lịch BOOKED từ ngày trước, chưa được tiếp nhận (có audit).';
 
     public function handle(): int
     {
@@ -118,6 +118,7 @@ class ExpireUnattendedAppointments extends Command
                         'a.id'
                     );
             })
+            ->whereDate('a.appointment_date', '<', today()->toDateString())
             ->where(function ($query) use ($cutoff) {
                 $query
                     ->whereDate(
@@ -223,6 +224,7 @@ class ExpireUnattendedAppointments extends Command
                         || (int) $appointment->appointment_time_slot_id
                         !== (int) $slot->id
                         || ! $appointment->appointment_date
+                        || ! $appointment->appointment_date->isBefore(today())
                         || $appointment->appointment_date
                         ->format('Y-m-d')
                         !== $schedule->work_date

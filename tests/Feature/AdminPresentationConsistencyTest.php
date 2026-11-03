@@ -192,12 +192,13 @@ class AdminPresentationConsistencyTest extends TestCase
         $rows = $xpath->query('//table[contains(@class,"admin-prescription-table")]/tbody/tr');
         $this->assertCount($prescription->items->count(), $rows);
         foreach ($rows as $row) {
-            $this->assertCount(9, $xpath->query('./td', $row));
+            $this->assertCount(11, $xpath->query('./td', $row));
         }
         foreach ($prescription->items as $item) {
             $response->assertSee($item->medicine->name)->assertSee($item->dose_per_use)->assertSee($item->usage_method);
         }
-        $response->assertSee('Hoạt chất:')->assertSee('Hàm lượng:')->assertSee('Đường dùng:');
+        $response->assertSee('Hoạt chất:')->assertSee('Hàm lượng:')->assertSee('Đường dùng:')
+            ->assertSee('Đơn giá')->assertSee('Thành tiền');
     }
 
     public function test_status_configuration_header_reflects_the_actual_active_flag(): void

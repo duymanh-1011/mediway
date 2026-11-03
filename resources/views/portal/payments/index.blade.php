@@ -86,7 +86,7 @@
                     </h2>
 
                     <p>
-                        Chỉ hiển thị dữ liệu thuộc các lượt khám của tài khoản bệnh nhân hiện tại.
+                        Xem chi tiết các khoản thu và giao dịch của bạn.
                     </p>
                 </div>
 
@@ -291,10 +291,6 @@
                                 @endif
                             </div>
 
-                            <div class="payment-readonly-notice">
-                                Patient Portal chỉ hiển thị thông tin.
-                                Bạn không thể thay đổi số tiền, trạng thái khoản thu hoặc tạo giao dịch thanh toán từ trang này.
-                            </div>
                         </article>
                     @empty
                         <div class="payment-empty">

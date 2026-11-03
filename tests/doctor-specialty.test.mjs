@@ -35,7 +35,7 @@ function pair(method = 'post') {
     const form = new EventTarget();
     form.dataset = {};
     form.method = method;
-    form.querySelector = selector => selector.includes('doctor_id') ? doctor : specialty;
+    form.querySelector = selector => selector.includes('doctor_id') ? doctor : selector.includes('specialty_id') ? specialty : null;
     initializeDoctorSpecialtyPairs({querySelectorAll: () => [form]});
     return {doctor, specialty};
 }
@@ -74,4 +74,21 @@ test('history filters do not silently add a specialty when selecting only a doct
     doctor.choose('d2');
     assert.equal(specialty.value, '');
     assert.deepEqual(specialty.visible, ['s2']);
+});
+
+
+test('schedule room choices follow selected specialty and clear stale selections', () => {
+    const doctor = new Select([{value:'d1', dataset:{specialtyId:'s1', isGeneral:'0'}}, {value:'dg', dataset:{specialtyId:'s1', isGeneral:'1'}}]);
+    const specialty = new Select([{value:'s1', dataset:{}}, {value:'s2', dataset:{}}]);
+    const room = new Select([{value:'r1', dataset:{specialtyId:'s1'}}, {value:'r2', dataset:{specialtyId:'s2'}}, {value:'unassigned', dataset:{specialtyId:''}}]);
+    const form = new EventTarget(); form.dataset = {}; form.method = 'post';
+    form.querySelector = selector => selector.includes('doctor_id') ? doctor : selector.includes('specialty_id') ? specialty : selector.includes('data-schedule-room') ? room : null;
+    initializeDoctorSpecialtyPairs({querySelectorAll: () => [form]});
+    assert.deepEqual(room.visible, []);
+    doctor.choose('d1');
+    assert.deepEqual(room.visible, ['r1']);
+    room.choose('r1');
+    doctor.choose('dg'); specialty.choose('s2');
+    assert.equal(room.value, '');
+    assert.deepEqual(room.visible, ['r2']);
 });

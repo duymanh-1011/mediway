@@ -128,6 +128,7 @@
         <select
             id="examination_room_id"
             name="examination_room_id"
+            data-schedule-room data-lookup-native
             class="form-control"
             required
         >
@@ -143,6 +144,7 @@
 
                 <option
                     value="{{ $room->id }}"
+                    data-specialty-id="{{ $room->specialty_id }}"
                     @selected(
                         (string) old(
                             'examination_room_id',
@@ -165,6 +167,7 @@
 
         </select>
 
+        <p class="form-help" data-room-specialty-help>Chọn chuyên khoa để xem phòng phù hợp. Phòng chưa gán chuyên khoa cần được cập nhật trong danh mục phòng khám.</p>
         @error('examination_room_id')
             <div class="field-error">
                 {{ \App\Models\AdminDisplay::text($message) }}

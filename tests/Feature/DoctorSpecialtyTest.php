@@ -100,7 +100,10 @@ class DoctorSpecialtyTest extends TestCase
     {
         $this->doctor()->update(['specialty_id' => $this->specialty('CKDK')->id]);
         foreach (Specialty::all() as $index => $specialty) {
+            $room = ExaminationRoom::create(['room_code' => 'TESTROOM'.($index + 1), 'name' => 'Phòng kiểm thử',
+                'specialty_id' => $specialty->id, 'status' => 'ACTIVE']);
             $this->post(route('admin.doctor-schedules.store'), [...$this->scheduleData($specialty->id),
+                'examination_room_id' => $room->id,
                 'work_date' => today()->addDays($index + 1)->toDateString()])->assertSessionHasNoErrors();
         }
         $this->assertSame(Specialty::count(), DoctorSchedule::where('doctor_id', $this->doctor()->id)->whereDate('work_date', '>', today())->count());

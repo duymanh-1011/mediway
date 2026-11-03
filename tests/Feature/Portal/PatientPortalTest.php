@@ -20,6 +20,7 @@ class PatientPortalTest extends TestCase
     {
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
+        config(['portal.demo_otp_phone' => '0902000001', 'portal.esms.enabled' => false]);
         $this->withoutVite();
     }
 

@@ -9,19 +9,12 @@
         <article class="public-guide__card"><span class="public-guide__number" aria-hidden="true">02</span><h3>Lịch khám</h3><p>Tìm bác sĩ, chọn thời gian và theo dõi trạng thái lịch hẹn của bạn.</p><a class="portal-text-link" href="{{ route('patient.appointments') }}">Xem lịch khám →</a></article>
         <article class="public-guide__card"><span class="public-guide__number" aria-hidden="true">03</span><h3>Thông tin sau khám</h3><p>Xem kết quả, đơn thuốc và khoản thanh toán khi thông tin đã có trong tài khoản.</p><a class="portal-text-link" href="{{ route('patient.results') }}">Xem kết quả khám →</a></article>
     </div>
-    <div class="public-guide__section public-feature"><img src="{{ asset('images/public/support-desk.png') }}" alt="Nhân viên hỗ trợ trao đổi với người bệnh tại quầy" loading="lazy"><div><p class="portal-eyebrow">TÌM CÂU TRẢ LỜI</p><h2>Bắt đầu từ thông tin bạn đang cần</h2><p>Nếu gặp khó khăn khi sử dụng cổng, hãy kiểm tra bạn đã đăng nhập đúng tài khoản và mở đúng mục liên quan. Với lịch hẹn, xem thêm trạng thái và thông báo trong trang chi tiết; với hồ sơ sau khám, dữ liệu chỉ xuất hiện khi đã được cập nhật phù hợp.</p><p>Khi trao đổi với cơ sở khám, hãy chuẩn bị thông tin cần thiết như thời điểm đặt hẹn hoặc lần khám liên quan. Không cung cấp mật khẩu hay mã xác thực cho người khác.</p></div></div>
+    <div class="public-guide__section public-feature"><img src="{{ asset('images/public/support-desk.webp') }}" alt="Nhân viên hỗ trợ trao đổi với người bệnh tại quầy" loading="lazy"><div><p class="portal-eyebrow">TÌM CÂU TRẢ LỜI</p><h2>Bắt đầu từ thông tin bạn đang cần</h2><p>Nếu gặp khó khăn khi sử dụng cổng, hãy kiểm tra bạn đã đăng nhập đúng tài khoản và mở đúng mục liên quan. Với lịch hẹn, xem thêm trạng thái và thông báo trong trang chi tiết; với hồ sơ sau khám, dữ liệu chỉ xuất hiện khi đã được cập nhật phù hợp.</p><p>Khi trao đổi với cơ sở khám, hãy chuẩn bị thông tin cần thiết như thời điểm đặt hẹn hoặc lần khám liên quan. Không cung cấp mật khẩu hay mã xác thực cho người khác.</p></div></div>
     <div class="public-guide__section"><div class="public-guide__intro"><p class="portal-eyebrow">HƯỚNG DẪN TỪNG BƯỚC</p><h2>Xử lý một số tình huống thường gặp</h2></div><div class="public-guide__grid public-guide__grid--3">
         <article class="public-guide__card"><h3>Không tìm thấy lịch hẹn</h3><p>Kiểm tra bạn đã đăng nhập đúng tài khoản, sau đó mở danh sách tất cả lịch hẹn. Xem lại trạng thái xác nhận và ngày khám; nếu vẫn chưa rõ, ghi lại thông tin để trao đổi với cơ sở khám.</p></article>
         <article class="public-guide__card"><h3>Chưa hoàn thiện hồ sơ</h3><p>Mở Hồ sơ cá nhân và kiểm tra thông báo về các trường còn thiếu. Cập nhật những thông tin được phép, lưu lại và quay về thao tác đang thực hiện.</p></article>
         <article class="public-guide__card"><h3>Cần giải thích kết quả</h3><p>Ghi lại tên kết quả, đơn thuốc hoặc lần khám liên quan và hỏi bác sĩ. Nhân viên y tế là người phù hợp để giải thích ý nghĩa và hướng dẫn chăm sóc tiếp theo.</p></article>
     </div></div>
-    <div class="public-guide__section"><div class="public-guide__intro"><p class="portal-eyebrow">THÔNG TIN LIÊN HỆ</p><h2>Liên hệ hỗ trợ</h2><p>Thông tin dưới đây chỉ là dữ liệu minh họa cho bản demo, chưa phải kênh hỗ trợ thực tế.</p></div>
-        <div class="public-guide__grid public-guide__grid--3">
-            <article class="public-guide__card"><h3>Điện thoại</h3><p>Chưa cấu hình số điện thoại chính thức.</p></article>
-            <article class="public-guide__card"><h3>Email minh họa</h3><p>hotro@mediway.example</p></article>
-            <article class="public-guide__card"><h3>Địa chỉ</h3><p>Chưa cấu hình địa chỉ chính thức.</p></article>
-        </div>
-    </div>
     <div class="public-guide__section"><div class="public-guide__intro"><p class="portal-eyebrow">CÂU HỎI THƯỜNG GẶP</p><h2>Giải đáp nhanh</h2></div><div class="public-guide__faq">
         <details>
             <summary>Tôi cần chuẩn bị gì trước buổi khám?</summary>

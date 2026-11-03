@@ -1,6 +1,18 @@
 <div class="form-grid">
 
     <div class="form-group">
+        <label for="specialty_id" class="form-label">Chuyên khoa phụ trách</label>
+        <select id="specialty_id" name="specialty_id" class="form-control">
+            <option value="">-- Chưa gán chuyên khoa --</option>
+            @foreach ($specialties as $specialty)
+                <option value="{{ $specialty->id }}" @selected((string) old('specialty_id', $examinationRoom->specialty_id ?? '') === (string) $specialty->id)>{{ $specialty->specialty_code }} - {{ $specialty->name }}{{ $specialty->status === 'INACTIVE' ? ' (Ngừng hoạt động)' : '' }}</option>
+            @endforeach
+        </select>
+        <p class="form-help">Gán chuyên khoa để phòng xuất hiện khi phân lịch bác sĩ.</p>
+        @error('specialty_id')<div class="field-error">{{ $message }}</div>@enderror
+    </div>
+
+    <div class="form-group">
 
         <label
             for="room_code"

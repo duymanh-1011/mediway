@@ -11,7 +11,7 @@
         <article class="patient-record">
             <div class="patient-record__header"><div><span class="patient-record__label">{{ $visit->visit_code }}</span><h3>{{ $visit->specialty?->name ?? 'Lượt khám' }}</h3></div></div>
             <div class="patient-record__meta"><span>Ngày khám: <strong>{{ $visit->checked_in_at?->format('d/m/Y H:i') ?? 'Chưa cập nhật' }}</strong></span><span>Bác sĩ: <strong>{{ $visit->doctor?->full_name ?? 'Chưa cập nhật' }}</strong></span></div>
-            @if ($visit->diagnoses->isNotEmpty())<div class="patient-record__content"><h4>Chẩn đoán</h4>@foreach ($visit->diagnoses as $diagnosis)<p>{{ $diagnosis->disease?->name ?? 'Chẩn đoán' }}@if ($diagnosis->diagnosis_description) — {{ $diagnosis->diagnosis_description }}@endif</p>@endforeach</div>@endif
+            @if ($visit->diagnoses->isNotEmpty())<div class="patient-record__content"><h4>Chẩn đoán</h4>@foreach ($visit->diagnoses as $diagnosis) @php($diseaseName = trim((string) $diagnosis->disease?->name)) @php($description = trim((string) $diagnosis->diagnosis_description)) <p>{{ $diseaseName ?: 'Chẩn đoán' }}@if ($description !== '' && mb_strtolower($description, 'UTF-8') !== mb_strtolower($diseaseName, 'UTF-8')) — {{ $description }}@endif</p>@endforeach</div>@endif
             @foreach (['professional_conclusion' => 'Kết luận', 'disposition' => 'Hướng xử trí', 'treatment_plan' => 'Kế hoạch điều trị', 'instructions' => 'Hướng dẫn'] as $field => $label)
                 @if ($visit->conclusion->{$field})<div class="patient-record__content"><h4>{{ $label }}</h4><p>{{ $field === 'disposition' ? \App\Models\AdminDisplay::label($visit->conclusion->{$field}) : $visit->conclusion->{$field} }}</p></div>@endif
             @endforeach

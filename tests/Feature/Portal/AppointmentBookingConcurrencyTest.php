@@ -81,6 +81,8 @@ class AppointmentBookingConcurrencyTest extends TestCase
             ]
         )->assertExitCode(0);
 
+        DB::table('patient_details')->whereIn('patient_id', Patient::whereIn('patient_code', ['BN000001', 'BN000002'])->select('id'))->update(['current_address' => 'Địa chỉ kiểm thử']);
+
         /*
         |--------------------------------------------------------------------------
         | Lấy dữ liệu chuẩn từ Seeder
@@ -191,6 +193,8 @@ class AppointmentBookingConcurrencyTest extends TestCase
 
                 'reason_for_visit' =>
                 'Đau họng và ho nhiều.',
+
+                'confirmed_information' => '1',
             ],
 
             'pause' =>
@@ -226,6 +230,8 @@ class AppointmentBookingConcurrencyTest extends TestCase
 
                 'reason_for_visit' =>
                 'Đau đầu kéo dài.',
+
+                'confirmed_information' => '1',
             ],
 
             'pause' =>

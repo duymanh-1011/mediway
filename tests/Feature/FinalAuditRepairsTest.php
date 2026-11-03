@@ -71,7 +71,12 @@ class FinalAuditRepairsTest extends TestCase
         $this->travelTo(today()->setTime(9, 0));
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors()->assertSessionMissing('error');
 
-        return $appointment->medicalVisit()->sole();
+        $visit = $appointment->medicalVisit()->sole();
+        $this->assertSame(0, $visit->queues()->count());
+        $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])
+            ->assertSessionHasNoErrors()->assertSessionMissing('error');
+        return $visit;
     }
 
     private function begin(MedicalVisit $visit): ExaminationRoomQueue

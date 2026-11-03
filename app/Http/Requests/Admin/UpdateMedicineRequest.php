@@ -53,6 +53,9 @@ class UpdateMedicineRequest extends FormRequest
                 'max:100',
             ],
 
+            'price_per_unit' => ['nullable', 'integer', 'min:1', 'max:99999999'],
+            'price_per_blister' => ['nullable', 'integer', 'min:1', 'max:99999999'],
+            'price_per_box' => ['nullable', 'integer', 'min:1', 'max:99999999'],
             'unit' => [
                 'nullable',
                 'string',
@@ -117,6 +120,21 @@ class UpdateMedicineRequest extends FormRequest
                 'string',
             ],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $unitInput = $this->input('unit');
+            $unit = is_string($unitInput) ? mb_strtolower(trim($unitInput)) : '';
+            if ($this->filled('price_per_unit') && $unit === '') {
+                $validator->errors()->add('unit', 'Cần nhập đơn vị cơ bản khi thiết lập giá cho đơn vị này.');
+            }
+            if (($unit === 'vỉ' && $this->filled('price_per_unit') && $this->filled('price_per_blister'))
+                || ($unit === 'hộp' && $this->filled('price_per_unit') && $this->filled('price_per_box'))) {
+                $validator->errors()->add('unit', 'Đơn vị cơ bản trùng với đơn vị đóng gói; chỉ nhập giá tương ứng một lần.');
+            }
+        });
     }
 
     public function messages(): array

@@ -3,7 +3,7 @@
 @section('content')
 <section class="portal-page-head"><div class="portal-shell public-article__content"><a class="appointment-back" href="{{ route('public.news') }}">← Quay lại tin tức</a><p class="portal-eyebrow">{{ $article['category'] }}</p><h1>{{ $article['title'] }}</h1><p class="portal-lead">{{ $article['excerpt'] }}</p></div></section>
 <article class="public-guide"><div class="portal-shell public-article__content">
-    <figure class="public-article__figure"><img src="{{ asset($article['image']) }}" alt="{{ $article['image_alt'] }}"><figcaption>Hình minh họa cho hướng dẫn dành cho người bệnh.</figcaption></figure>
+    <figure class="public-article__figure"><img src="{{ asset($article['detail_image'] ?? $article['image']) }}" alt="{{ $article['detail_image_alt'] ?? $article['image_alt'] }}"><figcaption>Hình minh họa cho hướng dẫn dành cho người bệnh.</figcaption></figure>
     @foreach ($article['body'] as $section)<section class="public-article__section"><h2>{{ $section['title'] }}</h2><p>{{ $section['text'] }}</p></section>@endforeach
     @if (!empty($article['sources']))
     <aside class="public-article__sources" aria-label="Nguồn tham khảo"><h2>Nguồn tham khảo</h2><ul>@foreach ($article['sources'] as $source)<li><a href="{{ $source['url'] }}" target="_blank" rel="noopener noreferrer">{{ $source['name'] }} ↗</a></li>@endforeach</ul></aside>

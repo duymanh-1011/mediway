@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Prescription extends Model
 {
@@ -65,5 +66,17 @@ class Prescription extends Model
             PrescriptionItem::class,
             'prescription_id'
         );
+    }
+    public function payable(): HasOne
+    {
+        return $this->hasOne(Payable::class)->latestOfMany();
+    }
+
+    public function pricedTotal(): ?string
+    {
+        $items = $this->items;
+        if ($items->isEmpty() || $items->contains(fn ($item) => $item->line_total === null)) return null;
+        $cents = $items->sum(fn ($item) => (int) str_replace('.', '', $item->line_total));
+        return intdiv($cents, 100).'.'.str_pad((string) ($cents % 100), 2, '0', STR_PAD_LEFT);
     }
 }

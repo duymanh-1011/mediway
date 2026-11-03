@@ -13,6 +13,8 @@ class PrescriptionItem extends Model
         'prescription_id',
         'medicine_id',
         'quantity',
+        'unit_price',
+        'line_total',
         'usage_unit',
         'dose_per_use',
         'times_per_day',
@@ -25,6 +27,8 @@ class PrescriptionItem extends Model
 
     protected $casts = [
         'quantity' => 'decimal:2',
+        'unit_price' => 'decimal:2',
+        'line_total' => 'decimal:2',
         'times_per_day' => 'decimal:2',
         'duration_days' => 'integer',
     ];

@@ -18,12 +18,16 @@
                 @forelse ($prescription->items as $item)
                     <li><div class="medical-medicine__title"><span class="medical-medicine__icon" aria-hidden="true">✚</span><strong>{{ $item->medicine?->name ?? 'Thuốc' }} @if ($item->medicine?->strength)<small>{{ $item->medicine->strength }}</small>@endif</strong></div><div class="medical-medicine__facts">
                         @if ($item->quantity !== null)<span>Số lượng <strong>{{ $item->quantity }} {{ $item->usage_unit }}</strong></span>@endif
+                        @if ($item->unit_price !== null)<span>Đơn giá <strong>{{ number_format((float) $item->unit_price, 0, ',', '.') }} đ / {{ $item->usage_unit }}</strong></span><span>Thành tiền <strong>{{ number_format((float) $item->line_total, 0, ',', '.') }} đ</strong></span>@endif
                         @if ($item->dose_per_use)<span>Liều dùng <strong>{{ $item->dose_per_use }}</strong></span>@endif
                         @if ($item->times_per_day !== null)<span>Số lần <strong>{{ $item->times_per_day }} lần/ngày</strong></span>@endif
                         @if ($item->duration_days !== null)<span>Thời gian <strong>{{ $item->duration_days }} ngày</strong></span>@endif
                     </div>@if ($item->administration_time || $item->usage_method || $item->usage_instructions)<p class="medical-medicine__instructions">{{ $item->administration_time }} {{ $item->usage_method }} {{ $item->usage_instructions }}</p>@endif</li>
                 @empty<li>Chưa có chi tiết thuốc.</li>@endforelse
             </ul></div>
+            <div class="patient-record__content"><h4>Tổng tiền thuốc</h4><p>{{ $prescription->pricedTotal() === null ? 'Chưa có đủ thông tin giá' : number_format((float) $prescription->pricedTotal(), 0, ',', '.').' đ' }}</p>
+                @if ($prescription->payable && $prescription->payable->paymentStatus?->name !== 'CANCELLED')<a href="{{ route('patient.payments.index') }}">Xem khoản thanh toán</a>@else<p>Giá tham khảo theo đơn; khoản thanh toán được tạo khi xác nhận mua thuốc.</p>@endif
+            </div>
             {{-- Chỉ hiện nút PDF khi tệp đơn thuốc có thể mở. --}}
             @if ($prescription->hasPdf())<div class="patient-record__links"><a href="{{ route('patient.prescriptions.document', $prescription->id) }}">Xem đơn thuốc PDF <span aria-hidden="true">↗</span></a></div>@endif
         </article>

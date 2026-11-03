@@ -207,6 +207,7 @@
                         <th>Hàm lượng</th>
                         <th>Dạng</th>
                         <th>Đường dùng</th>
+                        <th>Giá cơ bản</th>
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
                     </tr>
@@ -250,6 +251,8 @@
                                 ->route_of_administration
                                 ?? '—' }}
                         </td>
+
+                        <td>{{ $medicine->price_per_unit === null ? 'Chưa thiết lập' : number_format((float) $medicine->price_per_unit, 0, ',', '.').' đ / '.($medicine->unit ?: 'đơn vị') }}</td>
 
                         <td>
 
@@ -301,7 +304,7 @@
                     <tr>
 
                         <td
-                            colspan="9"
+                            colspan="10"
                             class="empty-state"
                         >
                             Không tìm thấy thuốc phù hợp.

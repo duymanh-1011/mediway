@@ -13,7 +13,9 @@ class PatientMiddleware
     {
         app()->setLocale('vi');
         if (! Auth::check()) {
-            return redirect()->route('patient.login');
+            return $request->isMethod('GET')
+                ? redirect()->guest(route('patient.login'))
+                : redirect()->route('patient.login');
         }
 
         if (! Auth::user()->canAccessPortal()) {

@@ -113,6 +113,7 @@
                             $paymentTypeLabel = match ($payable->payment_type) {
                                 'EXAMINATION_FEE' => 'Phí khám',
                                 'SERVICE_FEE' => 'Phí dịch vụ',
+                                'MEDICINE_FEE' => 'Tiền thuốc',
                                 default => $payable->payment_type ?: 'Chưa cập nhật',
                             };
                         @endphp

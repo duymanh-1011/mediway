@@ -938,6 +938,8 @@ Route::prefix('admin')
                 'prescriptions.index'
             );
 
+            Route::post('/prescriptions/{prescription}/payable', [PrescriptionController::class, 'createPayable'])->name('prescriptions.payable.store');
+
             Route::get('/prescriptions/{id}/document', [PrescriptionController::class, 'document'])
                 ->name('prescriptions.document');
 

@@ -167,6 +167,15 @@
 
     </div>
 
+    @foreach (['price_per_unit' => 'Giá cho 1 đơn vị cơ bản (đ)', 'price_per_blister' => 'Giá 1 vỉ (đ)', 'price_per_box' => 'Giá 1 hộp (đ)'] as $priceField => $priceLabel)
+        <div class="form-group">
+            <label class="form-label" for="{{ $priceField }}">{{ $priceLabel }}</label>
+            <input class="form-control" type="number" min="1" max="99999999" step="1" id="{{ $priceField }}" name="{{ $priceField }}" value="{{ old($priceField, $medicine->$priceField ?? '') }}">
+            @error($priceField)<div class="field-error">{{ $message }}</div>@enderror
+            <p class="form-help">Nhập số nguyên theo đồng; để trống nếu chưa có giá hoặc không bán theo đơn vị này.</p>
+        </div>
+    @endforeach
+
     <div class="form-group">
 
         <label

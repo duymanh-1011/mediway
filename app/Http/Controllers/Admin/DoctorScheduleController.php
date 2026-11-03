@@ -627,7 +627,8 @@ class DoctorScheduleController extends Controller
             $doctorSchedule = DoctorSchedule::whereKey($doctorSchedule->id)->lockForUpdate()->firstOrFail();
             $allowLegacyDeactivation = $data['status'] === 'INACTIVE'
                 && (int) $doctorSchedule->doctor_id === (int) $data['doctor_id']
-                && (int) $doctorSchedule->specialty_id === (int) $data['specialty_id'];
+                && (int) $doctorSchedule->specialty_id === (int) $data['specialty_id']
+                && (int) $doctorSchedule->examination_room_id === (int) $data['examination_room_id'];
             $this->lockActiveScheduleParents($data, $allowLegacyDeactivation);
 
             if ($data['status'] === 'ACTIVE') {
@@ -807,14 +808,19 @@ class DoctorScheduleController extends Controller
     private function lockActiveScheduleParents(array $data, bool $allowLegacyDeactivation = false): void
     {
         $doctor = null;
+        $room = null;
         foreach (['doctor_id' => Doctor::class, 'specialty_id' => Specialty::class, 'examination_room_id' => ExaminationRoom::class] as $field => $model) {
             $parent = $model::whereKey($data[$field])->lockForUpdate()->firstOrFail();
             if ($field === 'doctor_id') {
                 $doctor = $parent;
             }
+            if ($field === 'examination_room_id') $room = $parent;
             if ($data['status'] === 'ACTIVE' && $parent->status !== 'ACTIVE') {
                 throw ValidationException::withMessages([$field => 'Không thể tạo hoặc kích hoạt lịch với bác sĩ, chuyên khoa hoặc phòng đã ngừng hoạt động.']);
             }
+        }
+        if (! $allowLegacyDeactivation && (int) $room->specialty_id !== (int) $data['specialty_id']) {
+            throw ValidationException::withMessages(['examination_room_id' => 'Phòng chưa được gán hoặc không thuộc chuyên khoa đã chọn. Vui lòng cập nhật chuyên khoa của phòng.']);
         }
         if (! $allowLegacyDeactivation && ! $doctor->canPracticeSpecialty((int) $data['specialty_id'])) {
             throw ValidationException::withMessages(['doctor_id' => 'Bác sĩ không thuộc chuyên khoa đã chọn. Vui lòng chọn lại bác sĩ hoặc chuyên khoa.']);

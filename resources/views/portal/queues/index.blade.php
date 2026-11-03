@@ -248,7 +248,7 @@
                         </h2>
 
                         <p>
-                            Theo dõi số thứ tự và trạng thái của các lượt đã được tiếp nhận.
+                            Theo dõi số thứ tự và trạng thái do nhân viên y tế cập nhật.
                         </p>
                     </div>
 
@@ -488,11 +488,6 @@
                                                 </div>
                                             </div>
 
-                                            <div class="queue-notice">
-                                                Trạng thái hàng đợi được cập nhật bởi nhân viên y tế.
-                                                Patient Portal không cho phép tự gọi số, bỏ qua lượt,
-                                                check-in, bắt đầu phục vụ hoặc thay đổi trạng thái.
-                                            </div>
                                         </article>
                         @empty
                             <div class="queue-empty">

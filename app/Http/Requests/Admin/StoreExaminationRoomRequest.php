@@ -18,6 +18,7 @@ class StoreExaminationRoomRequest extends FormRequest
                 'exclude',
             ],
 
+            'specialty_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('specialties', 'id')->where('status', 'ACTIVE')],
             'name' => [
                 'required',
                 'string',

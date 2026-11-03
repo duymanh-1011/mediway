@@ -144,6 +144,8 @@
 
             </div>
 
+            <div class="detail-row"><div class="detail-label">Chuyên khoa phụ trách</div><div class="detail-value">{{ $examinationRoom->specialty?->name ?? 'Chưa gán chuyên khoa' }}</div></div>
+
             <div class="detail-row">
 
                 <div class="detail-label">

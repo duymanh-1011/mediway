@@ -29,6 +29,7 @@ class UpdateExaminationRoomRequest extends FormRequest
                 )->ignore($examinationRoom->id),
             ],
 
+            'specialty_id' => ['nullable', 'integer', Rule::exists('specialties', 'id')->where(fn ($query) => (int) $this->input('specialty_id') === (int) $examinationRoom->specialty_id ? $query : $query->where('status', 'ACTIVE'))],
             'name' => [
                 'required',
                 'string',

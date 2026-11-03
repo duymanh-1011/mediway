@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreExaminationRoomRequest;
 use App\Http\Requests\Admin\UpdateExaminationRoomRequest;
 use App\Models\ExaminationRoom;
+use App\Models\Specialty;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -177,7 +179,8 @@ class ExaminationRoomController extends Controller
     public function create()
     {
         return view(
-            'admin.examination-rooms.create'
+            'admin.examination-rooms.create',
+            ['specialties' => Specialty::where('status', 'ACTIVE')->orderBy('name')->get()]
         );
     }
 
@@ -379,7 +382,7 @@ class ExaminationRoomController extends Controller
     ) {
         return view(
             'admin.examination-rooms.edit',
-            compact('examinationRoom')
+            ['examinationRoom' => $examinationRoom, 'specialties' => Specialty::where(fn ($query) => $query->where('status', 'ACTIVE')->orWhere('id', $examinationRoom->specialty_id))->orderBy('name')->get()]
         );
     }
 
@@ -387,9 +390,20 @@ class ExaminationRoomController extends Controller
         UpdateExaminationRoomRequest $request,
         ExaminationRoom $examinationRoom
     ) {
-        $examinationRoom->update(
-            $request->validated()
-        );
+        DB::transaction(function () use ($request, $examinationRoom): void {
+            $data = $request->validated();
+            $room = ExaminationRoom::whereKey($examinationRoom->id)->lockForUpdate()->firstOrFail();
+            if (array_key_exists('specialty_id', $data) && (int) $room->specialty_id !== (int) $data['specialty_id']) {
+                $conflict = DB::table('doctor_schedules')->where('examination_room_id', $room->id)
+                    ->where('status', 'ACTIVE')->whereDate('work_date', '>=', today())
+                    ->when($data['specialty_id'] ?? null, fn ($q, $id) => $q->where('specialty_id', '!=', $id))
+                    ->exists();
+                if ($conflict) {
+                    throw ValidationException::withMessages(['specialty_id' => 'Phòng còn lịch hoạt động hôm nay hoặc tương lai thuộc chuyên khoa khác. Vui lòng xử lý các lịch đó trước khi đổi chuyên khoa.']);
+                }
+            }
+            $room->update($data);
+        }, 3);
 
         return redirect()
             ->route(

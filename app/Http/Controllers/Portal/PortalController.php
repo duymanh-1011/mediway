@@ -31,9 +31,12 @@ class PortalController extends Controller
             $appointment = $patient->appointments()
                 ->select('appointments.*')
                 ->join('appointment_time_slots', 'appointment_time_slots.id', '=', 'appointments.appointment_time_slot_id')
+                ->join('doctor_schedules', 'doctor_schedules.id', '=', 'appointment_time_slots.doctor_schedule_id')
                 ->whereHas('appointmentStatus', fn ($q) => $q->whereIn('name', ['BOOKED', 'CHECKED_IN', 'IN_EXAMINATION']))
                 ->where(fn ($q) => $q->whereDate('appointment_date', '>', today())
-                    ->orWhere(fn ($q) => $q->whereDate('appointment_date', today())->where('appointment_time_slots.end_time', '>=', now()->format('H:i:s'))))
+                    ->orWhere(fn ($q) => $q->whereDate('appointment_date', today())->where(fn ($q) => $q
+                        ->whereHas('appointmentStatus', fn ($status) => $status->whereIn('name', ['CHECKED_IN', 'IN_EXAMINATION']))
+                        ->orWhere('doctor_schedules.end_time', '>', now()->format('H:i:s')))))
                 ->orderBy('appointment_date')->orderBy('appointment_time_slots.start_time')->orderBy('appointments.id')
                 ->with(['appointmentStatus', 'appointmentTimeSlot', 'doctor', 'specialty', 'examinationRoom'])->first();
         } catch (QueryException $e) {

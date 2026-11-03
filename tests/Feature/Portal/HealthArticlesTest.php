@@ -21,8 +21,8 @@ class HealthArticlesTest extends TestCase
                 ->assertOk()
                 ->assertSee($article['title'])
                 ->assertSee($article['body'][0]['title'])
-                ->assertSee($article['image'])
-                ->assertSee($article['sources'][0]['url']);
+                ->assertSee($article['detail_image'] ?? $article['image'])
+                ->assertDontSee($article['sources'][0]['url']);
         }
     }
 

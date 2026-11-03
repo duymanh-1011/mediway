@@ -15,7 +15,7 @@
             <div class="appointment-layout">
                 <section class="appointment-panel" aria-labelledby="upcoming-title">
                     <div class="appointment-panel__header">
-                        <div class="appointment-panel__title"><span class="appointment-panel__icon" aria-hidden="true">▦</span><div><h2 id="upcoming-title">Lịch khám sắp tới</h2><p>Thông tin lịch hẹn gần nhất của bạn</p></div></div>
+                        <div class="appointment-panel__title"><span class="appointment-panel__icon" aria-hidden="true">▦</span><div><h2 id="upcoming-title">Lịch khám gần nhất</h2><p>Thông tin lịch hẹn trong ngày hoặc sắp tới của bạn</p></div></div>
                         @if ($appointment)<x-portal.badge type="info">{{ ['BOOKED' => 'Đã đặt lịch', 'CHECKED_IN' => 'Đã tiếp nhận', 'IN_EXAMINATION' => 'Đang khám'][$appointment->appointmentStatus?->name] ?? 'Chưa có thông tin' }}</x-portal.badge>@endif
                     </div>
                     @if ($appointment)

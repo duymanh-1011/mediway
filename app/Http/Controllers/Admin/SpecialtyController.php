@@ -422,6 +422,7 @@ class SpecialtyController extends Controller
             $hasSchedules
             || $hasAppointments
             || $hasVisits
+            || DB::table('examination_rooms')->where('specialty_id', $specialty->id)->exists()
             || $specialty->doctors()->exists()
             || $specialty->is_general
         ) {

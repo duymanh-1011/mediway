@@ -3,9 +3,9 @@
 // Educational articles are general information and do not replace individual medical advice.
 return [
     [
-        'slug' => 'bua-an-can-doi-moi-ngay', 'detail_image' => 'images/public/article-bua-an-can-doi-moi-ngay.png', 'detail_image_alt' => 'Bữa ăn với cơm, cá, rau và trái cây', 'title' => 'Xây dựng bữa ăn cân đối mỗi ngày',
+        'slug' => 'bua-an-can-doi-moi-ngay', 'detail_image' => 'images/public/article-bua-an-can-doi-moi-ngay.webp', 'detail_image_alt' => 'Bữa ăn với cơm, cá, rau và trái cây', 'title' => 'Xây dựng bữa ăn cân đối mỗi ngày',
         'excerpt' => 'Gợi ý kết hợp các nhóm thực phẩm quen thuộc để bữa ăn đa dạng và phù hợp hơn với nhu cầu của bạn.',
-        'category' => 'Dinh dưỡng', 'image' => 'images/public/nutrition.png', 'image_alt' => 'Bữa ăn đa dạng với rau, ngũ cốc và thực phẩm giàu đạm',
+        'category' => 'Dinh dưỡng', 'image' => 'images/public/nutrition.webp', 'image_alt' => 'Bữa ăn đa dạng với rau, ngũ cốc và thực phẩm giàu đạm',
         'sources' => [['name' => 'Tổ chức Y tế Thế giới (WHO): Chế độ ăn lành mạnh', 'url' => 'https://www.who.int/news-room/fact-sheets/detail/healthy-diet']],
         'body' => [
             ['title' => 'Bắt đầu từ sự đa dạng', 'text' => 'Một chế độ ăn phù hợp không nhất thiết phải cầu kỳ hay dựa vào một loại thực phẩm đặc biệt. Hãy thay đổi rau, trái cây, ngũ cốc và nguồn chất đạm trong tuần; chọn những thực phẩm sẵn có, hợp khẩu vị và điều kiện của gia đình. Sự đa dạng giúp bữa ăn cung cấp nhiều loại dưỡng chất hơn.'],
@@ -15,21 +15,21 @@ return [
         ],
     ],
     [
-        'slug' => 'them-rau-cu-trai-cay', 'detail_image' => 'images/public/article-them-rau-cu-trai-cay.png', 'detail_image_alt' => 'Người phụ nữ chuẩn bị rau củ và trái cây trong bếp', 'title' => 'Thêm rau củ và trái cây vào bữa ăn',
+        'slug' => 'them-rau-cu-trai-cay', 'detail_image' => 'images/public/article-them-rau-cu-trai-cay.webp', 'detail_image_alt' => 'Người phụ nữ chuẩn bị rau củ và trái cây trong bếp', 'title' => 'Thêm rau củ và trái cây vào bữa ăn',
         'excerpt' => 'Những cách đơn giản để bổ sung sự đa dạng và chất xơ từ thực phẩm thực vật trong ngày.',
-        'category' => 'Dinh dưỡng', 'image' => 'images/public/vegetables.png', 'image_alt' => 'Người phụ nữ chuẩn bị rau củ tươi trong bếp',
+        'category' => 'Dinh dưỡng', 'image' => 'images/public/vegetables.webp', 'image_alt' => 'Người phụ nữ chuẩn bị rau củ tươi trong bếp',
         'sources' => [['name' => 'WHO: Chế độ ăn lành mạnh', 'url' => 'https://www.who.int/news-room/fact-sheets/detail/healthy-diet']],
         'body' => [
             ['title' => 'Vì sao nên ăn đa dạng?', 'text' => 'Rau củ, trái cây, các loại đậu và ngũ cốc nguyên hạt cung cấp chất xơ cùng nhiều vitamin, khoáng chất. Mỗi loại có đặc điểm dinh dưỡng khác nhau, vì vậy hãy luân phiên những loại phù hợp thay vì chỉ ăn một món quen thuộc.'],
             ['title' => 'Thêm từng chút vào bữa ăn', 'text' => 'Bạn có thể thêm rau vào canh, món xào hoặc ăn kèm bữa chính; chuẩn bị trái cây đã rửa sạch để dùng trong bữa phụ. Chọn thực phẩm theo mùa giúp thay đổi thực đơn và phù hợp với điều kiện gia đình. Rau củ đông lạnh hoặc đóng hộp cũng có thể là lựa chọn, hãy xem lượng đường và muối thêm vào.'],
             ['title' => 'Ưu tiên trái cây nguyên quả', 'text' => 'Trái cây nguyên quả là một cách thuận tiện để bổ sung chất xơ. Nước ép có thể chứa lượng đường tự do đáng kể, kể cả khi không thêm đường, nên không cần dùng nước ép để thay thế toàn bộ trái cây. Rửa sạch và bảo quản thực phẩm đúng cách trước khi sử dụng.'],
-            ['title' => 'Mục tiêu chỉ là điểm khởi đầu', 'text' => 'WHO khuyến nghị người trên 10 tuổi hướng tới ít nhất 400 g rau và trái cây mỗi ngày; nhu cầu ở trẻ nhỏ khác theo độ tuổi. Nếu chế độ ăn hiện tại còn ít rau, hãy tăng dần theo khả năng. Người cần hạn chế một số thực phẩm vì bệnh lý nên hỏi nhân viên y tế về lựa chọn phù hợp.'],
+            ['title' => 'Mục tiêu chỉ là điểm khởi đầu', 'text' => 'Người trên 10 tuổi có thể hướng tới ít nhất 400 g rau và trái cây mỗi ngày; nhu cầu ở trẻ nhỏ khác theo độ tuổi. Nếu chế độ ăn hiện tại còn ít rau, hãy tăng dần theo khả năng. Người cần hạn chế một số thực phẩm vì bệnh lý nên hỏi nhân viên y tế về lựa chọn phù hợp.'],
         ],
     ],
     [
-        'slug' => 'uong-nuoc-lanh-manh', 'detail_image' => 'images/public/article-uong-nuoc-lanh-manh.png', 'detail_image_alt' => 'Người phụ nữ uống nước tại bàn làm việc', 'title' => 'Tạo thói quen uống nước hợp lý',
+        'slug' => 'uong-nuoc-lanh-manh', 'detail_image' => 'images/public/article-uong-nuoc-lanh-manh.webp', 'detail_image_alt' => 'Người phụ nữ uống nước tại bàn làm việc', 'title' => 'Tạo thói quen uống nước hợp lý',
         'excerpt' => 'Nhận biết những cách bổ sung nước đơn giản và lựa chọn đồ uống ít đường hơn.',
-        'category' => 'Thói quen lành mạnh', 'image' => 'images/public/hydration.png', 'image_alt' => 'Người phụ nữ lấy cốc nước uống tại bàn làm việc',
+        'category' => 'Thói quen lành mạnh', 'image' => 'images/public/hydration.webp', 'image_alt' => 'Người phụ nữ lấy cốc nước uống tại bàn làm việc',
         'sources' => [['name' => 'CDC: Nước và lựa chọn đồ uống lành mạnh', 'url' => 'https://www.cdc.gov/healthy-weight-growth/water-healthy-drinks/']],
         'body' => [
             ['title' => 'Nước có vai trò gì?', 'text' => 'Nước hỗ trợ nhiều hoạt động bình thường của cơ thể. Nhu cầu chất lỏng thay đổi theo thời tiết, hoạt động, độ tuổi và tình trạng sức khỏe; không có một con số duy nhất phù hợp cho tất cả mọi người. Ngoài đồ uống, thực phẩm cũng góp phần cung cấp nước.'],
@@ -39,33 +39,33 @@ return [
         ],
     ],
     [
-        'slug' => 'van-dong-deu-dan', 'detail_image' => 'images/public/article-van-dong-deu-dan.png', 'detail_image_alt' => 'Hai người đi bộ trong công viên', 'title' => 'Vận động đều đặn từ những bước nhỏ',
+        'slug' => 'van-dong-deu-dan', 'detail_image' => 'images/public/article-van-dong-deu-dan.webp', 'detail_image_alt' => 'Hai người đi bộ trong công viên', 'title' => 'Vận động đều đặn từ những bước nhỏ',
         'excerpt' => 'Biến đi bộ, vận động nhẹ và thời gian nghỉ giữa giờ thành một phần của lịch sinh hoạt.',
-        'category' => 'Vận động', 'image' => 'images/public/activity.png', 'image_alt' => 'Người trưởng thành đi bộ trong công viên',
+        'category' => 'Vận động', 'image' => 'images/public/activity.webp', 'image_alt' => 'Người trưởng thành đi bộ trong công viên',
         'sources' => [['name' => 'WHO: Hoạt động thể chất', 'url' => 'https://www.who.int/initiatives/behealthy/physical-activity/']],
         'body' => [
             ['title' => 'Mọi chuyển động đều có ý nghĩa', 'text' => 'Đi bộ, đạp xe, làm việc nhà hay tập luyện đều có thể góp phần tăng vận động. Nếu bạn đang ít vận động, hãy bắt đầu bằng thời gian ngắn và tăng dần theo khả năng. Chọn hoạt động mình thích sẽ giúp bạn dễ duy trì hơn.'],
-            ['title' => 'Tham khảo mục tiêu cho người trưởng thành', 'text' => 'WHO khuyến nghị người trưởng thành thực hiện ít nhất 150 phút hoạt động thể lực cường độ vừa mỗi tuần, hoặc 75 phút cường độ mạnh, hay kết hợp tương đương. Các hoạt động tăng sức mạnh cho các nhóm cơ lớn được khuyến nghị từ hai ngày mỗi tuần. Bạn có thể chia thời gian thành nhiều buổi phù hợp với lịch cá nhân.'],
+            ['title' => 'Tham khảo mục tiêu cho người trưởng thành', 'text' => 'Người trưởng thành có thể hướng tới ít nhất 150 phút hoạt động thể lực cường độ vừa mỗi tuần, hoặc 75 phút cường độ mạnh, hay kết hợp tương đương. Các hoạt động tăng sức mạnh cho các nhóm cơ lớn được khuyến nghị từ hai ngày mỗi tuần. Bạn có thể chia thời gian thành nhiều buổi phù hợp với lịch cá nhân.'],
             ['title' => 'Giảm thời gian ngồi kéo dài', 'text' => 'Trong ngày làm việc, thỉnh thoảng đứng dậy, đi lại hoặc vận động nhẹ khi có thể. Thử đi bộ một đoạn ngắn sau khi hoàn thành công việc, dùng cầu thang nếu phù hợp hoặc rủ người thân cùng vận động. Việc tạo nhịp đều đặn thường hữu ích hơn đặt mục tiêu quá sức ngay từ đầu.'],
             ['title' => 'Lắng nghe cơ thể', 'text' => 'Chọn cường độ phù hợp với sức khỏe, chuẩn bị trang phục thuận tiện và dành thời gian khởi động. Nếu có bệnh nền, hạn chế vận động, đang hồi phục sau chấn thương hoặc không chắc hoạt động nào an toàn, hãy hỏi bác sĩ trước khi thay đổi đáng kể chế độ tập.'],
         ],
     ],
     [
-        'slug' => 'giac-ngu-chat-luong', 'detail_image' => 'images/public/article-giac-ngu-chat-luong.png', 'detail_image_alt' => 'Phòng ngủ yên tĩnh với ánh sáng dịu', 'title' => 'Chăm sóc giấc ngủ bằng thói quen hằng ngày',
+        'slug' => 'giac-ngu-chat-luong', 'detail_image' => 'images/public/article-giac-ngu-chat-luong.webp', 'detail_image_alt' => 'Phòng ngủ yên tĩnh với ánh sáng dịu', 'title' => 'Chăm sóc giấc ngủ bằng thói quen hằng ngày',
         'excerpt' => 'Thiết lập giờ ngủ, không gian nghỉ ngơi và những thói quen giúp cơ thể thư giãn.',
-        'category' => 'Giấc ngủ', 'image' => 'images/public/sleep.png', 'image_alt' => 'Không gian phòng ngủ yên tĩnh với ánh sáng dịu',
+        'category' => 'Giấc ngủ', 'image' => 'images/public/sleep.webp', 'image_alt' => 'Không gian phòng ngủ yên tĩnh với ánh sáng dịu',
         'sources' => [['name' => 'CDC: Giấc ngủ', 'url' => 'https://www.cdc.gov/sleep/about/']],
         'body' => [
-            ['title' => 'Dành đủ thời gian để nghỉ ngơi', 'text' => 'Giấc ngủ là một phần quan trọng của sức khỏe. CDC cho biết người trưởng thành từ 18 đến 60 tuổi thường cần ngủ từ 7 giờ mỗi đêm; nhu cầu thay đổi theo độ tuổi và từng người. Hãy quan sát cả thời lượng ngủ lẫn cảm giác nghỉ ngơi của bản thân vào ban ngày.'],
+            ['title' => 'Dành đủ thời gian để nghỉ ngơi', 'text' => 'Giấc ngủ là một phần quan trọng của sức khỏe. Người trưởng thành từ 18 đến 60 tuổi thường cần ngủ từ 7 giờ mỗi đêm; nhu cầu thay đổi theo độ tuổi và từng người. Hãy quan sát cả thời lượng ngủ lẫn cảm giác nghỉ ngơi của bản thân vào ban ngày.'],
             ['title' => 'Giữ lịch sinh hoạt ổn định', 'text' => 'Cố gắng đi ngủ và thức dậy vào những giờ tương đối đều đặn, kể cả ngày nghỉ. Dành một khoảng thời gian để thư giãn trước khi lên giường, chẳng hạn đọc sách nhẹ nhàng hoặc chuẩn bị cho ngày hôm sau. Điều chỉnh từng chút nếu lịch hiện tại chưa phù hợp.'],
             ['title' => 'Chuẩn bị không gian dễ ngủ', 'text' => 'Giữ phòng ngủ yên tĩnh, thoải mái và hạn chế ánh sáng gây khó chịu. Cân nhắc giảm sử dụng màn hình trước giờ ngủ, đồng thời chú ý thời điểm dùng cà phê hoặc đồ uống chứa caffeine nếu chúng khiến bạn khó ngủ. Thói quen ban ngày, bao gồm vận động, cũng có thể ảnh hưởng đến giấc ngủ.'],
             ['title' => 'Khi nào nên trao đổi với nhân viên y tế?', 'text' => 'Nếu thường xuyên khó ngủ, ngủ không thấy hồi phục hoặc buồn ngủ ảnh hưởng đến sinh hoạt, hãy trao đổi với bác sĩ. Ghi lại lịch ngủ và những thay đổi gần đây có thể giúp cuộc trao đổi cụ thể hơn. Không tự dùng thuốc ngủ kéo dài khi chưa được tư vấn.'],
         ],
     ],
     [
-        'slug' => 'thoi-quen-lanh-manh-ben-vung', 'detail_image' => 'images/public/article-thoi-quen-lanh-manh-ben-vung.png', 'detail_image_alt' => 'Người đàn ông ghi chép kế hoạch vận động và chăm sóc sức khỏe', 'title' => 'Duy trì thói quen lành mạnh theo cách của bạn',
+        'slug' => 'thoi-quen-lanh-manh-ben-vung', 'detail_image' => 'images/public/article-thoi-quen-lanh-manh-ben-vung.webp', 'detail_image_alt' => 'Người đàn ông ghi chép kế hoạch vận động và chăm sóc sức khỏe', 'title' => 'Duy trì thói quen lành mạnh theo cách của bạn',
         'excerpt' => 'Cách đặt mục tiêu vừa sức, theo dõi tiến bộ và điều chỉnh khi lịch sinh hoạt thay đổi.',
-        'category' => 'Thói quen lành mạnh', 'image' => 'images/public/healthy-habits.png', 'image_alt' => 'Người phụ nữ ghi lại kế hoạch chăm sóc sức khỏe hằng ngày',
+        'category' => 'Thói quen lành mạnh', 'image' => 'images/public/healthy-habits.webp', 'image_alt' => 'Người phụ nữ ghi lại kế hoạch chăm sóc sức khỏe hằng ngày',
         'sources' => [['name' => 'CDC: Chăm sóc cơ thể', 'url' => 'https://www.cdc.gov/howrightnow/taking-care/index.html'], ['name' => 'WHO: Hoạt động thể chất', 'url' => 'https://www.who.int/initiatives/behealthy/physical-activity/']],
         'body' => [
             ['title' => 'Chọn một thay đổi cụ thể', 'text' => 'Thay vì cố thay đổi toàn bộ lịch sinh hoạt cùng lúc, hãy chọn một việc nhỏ có thể thực hiện trong tuần: chuẩn bị thêm rau cho một bữa, đi bộ sau giờ làm hoặc lên giường sớm hơn. Mục tiêu rõ ràng và vừa sức giúp bạn dễ nhận ra điều gì phù hợp.'],

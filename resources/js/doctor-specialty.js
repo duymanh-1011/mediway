@@ -8,6 +8,7 @@ export function initializeDoctorSpecialtyPairs(root = document) {
         const specialty = form.querySelector('select[name="specialty_id"]');
         if (!doctor || !specialty || form.dataset.specialtyPairReady) return;
         form.dataset.specialtyPairReady = 'true';
+        const room = form.querySelector('select[data-schedule-room]');
         let syncing = false;
         const selectedDoctor = () => doctor.selectedOptions[0]?.value ? doctor.selectedOptions[0].dataset : null;
         const refresh = (changed = '') => {
@@ -33,6 +34,16 @@ export function initializeDoctorSpecialtyPairs(root = document) {
                 option.hidden = !!blocked && option.value !== specialty.value;
                 option.disabled = option.hidden;
             });
+            if (room) {
+                const selected = room.selectedOptions[0];
+                if (changed && selected?.value && (!specialty.value || selected.dataset.specialtyId !== specialty.value)) room.value = '';
+                [...room.options].forEach((option) => {
+                    if (!option.value) return;
+                    const blocked = !specialty.value || option.dataset.specialtyId !== specialty.value;
+                    option.hidden = blocked && option.value !== room.value;
+                    option.disabled = option.hidden;
+                });
+            }
             doctor.dispatchEvent(new Event('admin:options-changed'));
             specialty.dispatchEvent(new Event('admin:options-changed'));
             syncing = false;

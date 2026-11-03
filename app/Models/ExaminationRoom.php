@@ -8,6 +8,7 @@ class ExaminationRoom extends Model
 {
     protected $fillable = [
         'room_code',
+        'specialty_id',
         'name',
         'room_number',
         'floor',
@@ -17,4 +18,8 @@ class ExaminationRoom extends Model
         'status',
         'notes',
     ];
+    public function specialty()
+    {
+        return $this->belongsTo(Specialty::class);
+    }
 }

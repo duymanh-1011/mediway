@@ -29,6 +29,18 @@ class PatientResultsVisibilityTest extends TestCase
         $this->get(route('patient.prescriptions.document', $otherPrescription->id))->assertNotFound();
     }
 
+    public function test_prescription_quantities_are_easy_to_read_without_losing_decimals(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->withoutVite();
+        $patient = User::where('business_code', 'BN000001')->firstOrFail();
+        $prescription = Prescription::whereHas('medicalVisit', fn ($query) => $query->where('patient_id', $patient->patient->id))->with('items')->firstOrFail();
+        $prescription->items->first()->update(['quantity' => 10, 'times_per_day' => 2.5]);
+
+        $this->actingAs($patient)->get(route('patient.prescriptions'))->assertOk()
+            ->assertSee('10 viên')->assertSee('2,5 lần/ngày')->assertDontSee('10.00 viên');
+    }
+
     public function test_patient_sees_own_service_and_visit_results_as_soon_as_they_exist(): void
     {
         $this->seed(DatabaseSeeder::class);

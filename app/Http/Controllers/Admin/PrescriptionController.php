@@ -10,6 +10,8 @@ use App\Models\ClinicalTimeline;
 use App\Models\MedicalVisit;
 use App\Models\Prescription;
 use App\Models\Medicine;
+use App\Models\Payable;
+use App\Models\PaymentStatus;
 use App\Models\Doctor;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
@@ -30,9 +32,10 @@ class PrescriptionController extends Controller
         if ($visit->prescription()->exists()) {
             return redirect()->route('admin.visits.show', $visit)->with('error', 'Lượt khám này đã có đơn thuốc.');
         }
-        $medicines = Medicine::where('status', 'ACTIVE')->orderBy('name')->get(['id', 'medicine_code', 'name', 'strength', 'unit']);
+        $medicines = Medicine::where('status', 'ACTIVE')->orderBy('name')->get(['id', 'medicine_code', 'name', 'strength', 'unit', 'price_per_unit', 'price_per_blister', 'price_per_box']);
+        $saleUnits = $medicines->flatMap(fn ($medicine) => array_keys($medicine->salePrices()))->unique()->values();
 
-        return view('admin.prescriptions.create', compact('visit', 'medicines'));
+        return view('admin.prescriptions.create', compact('visit', 'medicines', 'saleUnits'));
     }
 
     public function store(StorePrescriptionRequest $request, MedicalVisit $visit)
@@ -53,6 +56,29 @@ class PrescriptionController extends Controller
             if ($medicines->count() !== $ids->count()) {
                 throw ValidationException::withMessages(['items' => 'Có thuốc vừa ngừng hoạt động. Vui lòng chọn lại.']);
             }
+            $items = [];
+            $totalCents = 0;
+            foreach ($data['items'] as $index => $item) {
+                $medicine = $medicines->firstWhere('id', (int) $item['medicine_id']);
+                $price = $medicine->salePrices()[$item['usage_unit']] ?? null;
+                if ($price === null) {
+                    throw ValidationException::withMessages(["items.$index.usage_unit" => 'Thuốc chưa có giá cho đơn vị đã chọn. Vui lòng kiểm tra danh mục thuốc.']);
+                }
+                // Decimal arithmetic in integer hundredths avoids floating-point billing errors.
+                $priceCents = (int) str_replace('.', '', number_format((float) $price, 2, '.', ''));
+                $quantityHundredths = (int) str_replace('.', '', number_format((float) $item['quantity'], 2, '.', ''));
+                if ($priceCents > intdiv(99999999999900, $quantityHundredths)) {
+                    throw ValidationException::withMessages(["items.$index.quantity" => 'Thành tiền vượt giới hạn cho phép.']);
+                }
+                $lineCents = intdiv($priceCents * $quantityHundredths + 5000, 10000) * 100;
+                $totalCents += $lineCents;
+                if ($totalCents > 999999999999) {
+                    throw ValidationException::withMessages(['items' => 'Tổng tiền đơn thuốc vượt giới hạn cho phép.']);
+                }
+                $item['unit_price'] = intdiv($priceCents, 100).'.'.str_pad((string) ($priceCents % 100), 2, '0', STR_PAD_LEFT);
+                $item['line_total'] = intdiv($lineCents, 100).'.'.str_pad((string) ($lineCents % 100), 2, '0', STR_PAD_LEFT);
+                $items[] = $item;
+            }
             do {
                 $code = 'DT'.now()->format('ymdHis').Str::upper(Str::random(6));
             } while (Prescription::where('prescription_code', $code)->exists());
@@ -61,7 +87,7 @@ class PrescriptionController extends Controller
                 'doctor_id' => $lockedVisit->doctor_id, 'prescribed_at' => now(), 'status' => 'ACTIVE',
                 'general_instructions' => $data['general_instructions'] ?? null, 'doctor_notes' => $data['doctor_notes'] ?? null,
             ]);
-            $prescription->items()->createMany($data['items']);
+            $prescription->items()->createMany($items);
             AuditLog::create([
                 'user_id' => $request->user()->id, 'role_name_snapshot' => 'Administrator', 'action' => 'CREATE',
                 'entity_type' => 'prescriptions', 'entity_id' => $prescription->id, 'entity_business_code' => $code,
@@ -73,6 +99,44 @@ class PrescriptionController extends Controller
         }, 3);
 
         return redirect()->route('admin.prescriptions.show', $prescription)->with('success', 'Tạo đơn thuốc thành công.');
+    }
+
+    public function createPayable(Request $request, Prescription $prescription)
+    {
+        $request->validate(['confirm_purchase' => ['accepted']]);
+        $payable = DB::transaction(function () use ($prescription, $request) {
+            MedicalVisit::whereKey($prescription->medical_visit_id)->lockForUpdate()->firstOrFail();
+            $prescription = Prescription::with('items')->whereKey($prescription->id)->lockForUpdate()->firstOrFail();
+            if ($prescription->status !== 'ACTIVE') {
+                throw ValidationException::withMessages(['confirm_purchase' => 'Chỉ có thể tạo khoản thu cho đơn thuốc đang hiệu lực.']);
+            }
+            if (Payable::where('prescription_id', $prescription->id)->whereDoesntHave('paymentStatus', fn ($q) => $q->where('name', 'CANCELLED'))->exists()) {
+                throw ValidationException::withMessages(['confirm_purchase' => 'Đơn thuốc này đã có khoản thu. Vui lòng kiểm tra khoản thu hiện có.']);
+            }
+            $total = $prescription->pricedTotal();
+            if ($total === null || (float) $total <= 0) {
+                throw ValidationException::withMessages(['confirm_purchase' => 'Đơn thuốc chưa có đủ giá hợp lệ; cần đối chiếu trước khi thu tiền.']);
+            }
+            $unpaid = PaymentStatus::where('name', 'UNPAID')->where('is_active', true)->first();
+            if (! $unpaid) throw ValidationException::withMessages(['confirm_purchase' => 'Chưa cấu hình trạng thái chưa thanh toán.']);
+            do { $code = 'PT'.strtoupper(Str::random(20)); } while (Payable::where('payable_code', $code)->exists());
+            $payable = Payable::create([
+                'payable_code' => $code, 'medical_visit_id' => $prescription->medical_visit_id,
+                'prescription_id' => $prescription->id, 'payment_type' => 'MEDICINE_FEE',
+                'description' => 'Tiền thuốc - '.$prescription->prescription_code,
+                'amount' => $total, 'payment_status_id' => $unpaid->id, 'generated_at' => now(),
+            ]);
+            AuditLog::create([
+                'user_id' => $request->user()->id, 'role_name_snapshot' => $request->user()->role?->name,
+                'action' => 'CREATE', 'entity_type' => 'payables', 'entity_id' => $payable->id,
+                'entity_business_code' => $code, 'old_values' => [],
+                'new_values' => ['prescription_id' => $prescription->id, 'amount' => $total],
+                'description' => 'Tạo khoản thu tiền thuốc cho đơn '.$prescription->prescription_code.'.',
+                'ip_address' => $request->ip(), 'user_agent' => mb_substr((string) $request->userAgent(), 0, 500), 'performed_at' => now(),
+            ]);
+            return $payable;
+        }, 3);
+        return redirect()->route('admin.payables.show', $payable)->with('success', 'Đã tạo khoản thu tiền thuốc.');
     }
 
     public function document(int $id): StreamedResponse
@@ -453,6 +517,9 @@ class PrescriptionController extends Controller
             ClinicalTimeline::assertEventTime($updateData['prescribed_at'], $visit->examination_started_at ?? $visit->checked_in_at,
                 'prescribed_at', 'Thời điểm kê đơn');
             $prescription = Prescription::whereKey($prescription->id)->lockForUpdate()->firstOrFail();
+            if ($updateData['status'] !== $prescription->status && Payable::where('prescription_id', $prescription->id)->whereDoesntHave('paymentStatus', fn ($q) => $q->where('name', 'CANCELLED'))->exists()) {
+                throw ValidationException::withMessages(['status' => 'Đơn thuốc đã có khoản thu. Vui lòng đối chiếu khoản thu trước khi thay đổi trạng thái đơn.']);
+            }
             $oldValues = $prescription->only(['general_instructions', 'doctor_notes', 'status', 'prescription_pdf_path']);
             $oldValues['prescribed_at'] = $prescription->prescribed_at?->format('Y-m-d H:i:s');
             $updateData = array_merge($updateData, $documents->store($request, 'prescriptions/'.$prescription->id, ['prescription_pdf' => 'prescription_pdf_path']));

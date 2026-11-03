@@ -15,6 +15,7 @@
         $typeLabel = match ($payable->payment_type) {
             'EXAMINATION_FEE' => 'Phí khám',
             'SERVICE_FEE' => 'Phí dịch vụ',
+            'MEDICINE_FEE' => 'Tiền thuốc',
             default => $payable->payment_type,
         };
 
@@ -316,6 +317,12 @@
 
         </div>
 
+
+        @if ($payable->prescription_id)
+            <div class="payable-card"><div class="payable-card-header"><h3>Đơn thuốc liên quan</h3></div>
+                <a class="admin-btn admin-btn-detail" href="{{ route('admin.prescriptions.show', $payable->prescription_id) }}">Xem chi tiết đơn thuốc</a>
+            </div>
+        @endif
 
         @if ($payable->payment_type === 'SERVICE_FEE')
 

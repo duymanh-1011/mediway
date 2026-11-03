@@ -20,6 +20,7 @@ class PrescriptionCreationTest extends TestCase
     {
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
+        Medicine::where('status', 'ACTIVE')->where('unit', 'viên')->update(['price_per_unit' => 2000, 'price_per_blister' => 18000, 'price_per_box' => 150000]);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
     }
@@ -114,5 +115,82 @@ class PrescriptionCreationTest extends TestCase
         $this->actingAs($patient)->get(route('admin.visits.prescription.create', $visit))->assertRedirect(route('admin.login'));
         $this->actingAs($patient)->post(route('admin.visits.prescription.store', $visit), ['items' => [$item], 'confirm_create' => 1])->assertRedirect(route('admin.login'));
         $this->assertFalse($visit->prescription()->exists());
+    }
+
+    public function test_price_is_snapshotted_and_purchase_requires_confirmation(): void
+    {
+        $visit = $this->visit();
+        $medicine = Medicine::where('unit', 'viên')->where('status', 'ACTIVE')->firstOrFail();
+        $item = [...$this->item($medicine), 'quantity' => '1.25', 'usage_unit' => 'vỉ', 'unit_price' => 1, 'line_total' => 1];
+        $this->post(route('admin.visits.prescription.store', $visit), ['items' => [$item], 'confirm_create' => 1])->assertSessionHasNoErrors();
+        $prescription = $visit->prescription()->sole();
+        $line = $prescription->items()->sole();
+        $this->assertSame('18000.00', $line->unit_price);
+        $this->assertSame('22500.00', $line->line_total);
+        $this->assertNull($prescription->payable);
+        $medicine->update(['price_per_blister' => 100]);
+        $this->assertSame('22500.00', $prescription->fresh()->pricedTotal());
+        $this->get(route('admin.prescriptions.show', $prescription))->assertOk()->assertSee('22.500')->assertSee('Tạo khoản thu tiền thuốc');
+        $this->post(route('admin.prescriptions.payable.store', $prescription), [])->assertSessionHasErrors('confirm_purchase');
+        $this->assertNull($prescription->fresh()->payable);
+        $this->post(route('admin.prescriptions.payable.store', $prescription), ['confirm_purchase' => 1, 'amount' => 1])->assertSessionHasNoErrors();
+        $fee = $prescription->fresh()->payable;
+        $this->assertSame('22500.00', $fee->amount);
+        $this->assertSame('MEDICINE_FEE', $fee->payment_type);
+        $this->assertSame('UNPAID', $fee->paymentStatus->name);
+        $this->post(route('admin.prescriptions.payable.store', $prescription), ['confirm_purchase' => 1])->assertSessionHasErrors('confirm_purchase');
+        $this->get(route('admin.payables.show', $fee))->assertOk()->assertSee('Tiền thuốc')->assertSee($prescription->prescription_code);
+        $patient = $visit->patient->user;
+        $this->actingAs($patient)->get(route('patient.prescriptions'))->assertOk()->assertSee('22.500')->assertSee($prescription->prescription_code);
+        $this->get(route('patient.payments.index'))->assertOk()->assertSee($fee->payable_code)->assertSee('Tiền thuốc');
+        $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail())
+            ->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
+        $this->assertSame('PAID', $fee->fresh()->paymentStatus->name);
+        $this->assertSame('22500.00', $fee->fresh()->transactions()->sole()->amount);
+    }
+
+    public function test_missing_or_wrong_unit_price_cannot_create_prescription(): void
+    {
+        $visit = $this->visit();
+        $medicine = Medicine::where('unit', 'viên')->firstOrFail();
+        $medicine->update(['price_per_box' => null]);
+        $this->post(route('admin.visits.prescription.store', $visit), [
+            'items' => [[...$this->item($medicine), 'usage_unit' => 'hộp']], 'confirm_create' => 1,
+        ])->assertSessionHasErrors('items.0.usage_unit');
+        $this->assertFalse($visit->prescription()->exists());
+    }
+
+    public function test_cancelled_purchase_can_be_recreated_without_erasing_history(): void
+    {
+        $visit = $this->visit();
+        $medicine = Medicine::where('unit', 'viên')->firstOrFail();
+        $this->post(route('admin.visits.prescription.store', $visit), ['items' => [$this->item($medicine)], 'confirm_create' => 1])->assertSessionHasNoErrors();
+        $prescription = $visit->prescription()->sole();
+        $this->post(route('admin.prescriptions.payable.store', $prescription), ['confirm_purchase' => 1])->assertSessionHasNoErrors();
+        $first = $prescription->fresh()->payable;
+        $this->patch(route('admin.payables.cancel', $first), ['confirm_cancel' => 1, 'cancel_reason' => 'Bệnh nhân chưa mua'])->assertSessionHasNoErrors();
+        $this->assertSame('CANCELLED', $first->fresh()->paymentStatus->name);
+        $this->post(route('admin.prescriptions.payable.store', $prescription), ['confirm_purchase' => 1])->assertSessionHasNoErrors();
+        $this->assertNotEquals($first->id, $prescription->fresh()->payable->id);
+        $this->assertSame(2, \App\Models\Payable::where('prescription_id', $prescription->id)->count());
+    }
+
+    public function test_price_management_validates_units_and_patient_cannot_create_charge(): void
+    {
+        $medicine = Medicine::where('unit', 'viên')->firstOrFail();
+        $data = ['medicine_code' => $medicine->medicine_code, 'name' => $medicine->name, 'unit' => '',
+            'price_per_unit' => 2000, 'status' => 'ACTIVE'];
+        $this->put(route('admin.medicines.update', $medicine), $data)->assertSessionHasErrors('unit');
+        $data['unit'] = 'vỉ';
+        $data['price_per_blister'] = 18000;
+        $this->put(route('admin.medicines.update', $medicine), $data)->assertSessionHasErrors('unit');
+        $data['unit'] = 'viên';
+        $data['price_per_unit'] = '12.5';
+        $this->put(route('admin.medicines.update', $medicine), $data)->assertSessionHasErrors('price_per_unit');
+        $visit = $this->visit();
+        $this->post(route('admin.visits.prescription.store', $visit), ['items' => [$this->item($medicine)], 'confirm_create' => 1])->assertSessionHasNoErrors();
+        $prescription = $visit->prescription()->sole();
+        $this->actingAs($visit->patient->user)->post(route('admin.prescriptions.payable.store', $prescription), ['confirm_purchase' => 1])->assertRedirect(route('admin.login'));
+        $this->assertNull($prescription->fresh()->payable);
     }
 }

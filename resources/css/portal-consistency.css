@@ -86,3 +86,8 @@ body.portal-body .portal-main a:is(.appointment-back, .profile-back, .notificati
     color: #1e293b !important;
 }
 body.portal-body .portal-main :is(a, button):focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+
+/* Thẻ tiện ích là liên kết đầy đủ, có trạng thái bàn phím rõ ràng. */
+.portal-body .portal-utility-card { display: block; color: inherit; text-decoration: none; }
+.portal-body .portal-utility-card:hover { border-color: #94b8ef; box-shadow: 0 7px 20px rgb(37 99 235 / 10%); }
+.portal-body .portal-utility-card:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }

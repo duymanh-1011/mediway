@@ -35,13 +35,19 @@ class AuthController extends Controller
         }
         $request->session()->regenerate();
         $user = Auth::user();
+        if ($user instanceof User && $user->canAccessAdmin()) {
+            RateLimiter::clear($key);
+            // Không dùng URL đang chờ của bệnh nhân để chuyển tài khoản quản trị.
+            $request->session()->forget('url.intended');
+            return redirect()->route('admin.dashboard')->with('success', 'Đăng nhập thành công.');
+        }
         if (! $user instanceof User || ! $user->canAccessPortal()) {
             RateLimiter::hit($key, 60);
             RateLimiter::hit($ipKey, 60);
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
-            return back()->withErrors(['phone' => 'Tài khoản không có quyền truy cập khu vực bệnh nhân.'])->onlyInput('phone');
+            return back()->withErrors(['phone' => 'Tài khoản chưa có khu vực làm việc phù hợp hoặc không còn hoạt động.'])->onlyInput('phone');
         }
         RateLimiter::clear($key);
         return redirect()->intended(route('patient.home'))->with('success', 'Đăng nhập thành công.');

@@ -59,7 +59,7 @@ class ClinicalRecordsController extends Controller
         $prescriptions = Prescription::query()
             ->whereHas('medicalVisit', fn ($visit) => $visit
                 ->where('patient_id', $patient->id))
-            ->with(['doctor', 'medicalVisit.doctor', 'items.medicine'])
+            ->with(['doctor', 'medicalVisit.doctor', 'items.medicine', 'payable.paymentStatus'])
             ->orderByDesc('prescribed_at')
             ->paginate(10);
 

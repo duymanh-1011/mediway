@@ -26,10 +26,35 @@
         add.focus();
         refresh();
     });
+    function updatePrice(row, resetUnit = false) {
+        const medicine = row.querySelector('select[name$="[medicine_id]"]');
+        const unit = row.querySelector('select[name$="[usage_unit]"]');
+        const display = row.querySelector('[data-unit-price]');
+        const total = row.querySelector('[data-line-total]');
+        const quantity = Number(row.querySelector('input[name$="[quantity]"]')?.value);
+        let prices = {};
+        try { prices = JSON.parse(medicine.selectedOptions[0]?.dataset.prices || '{}'); } catch (_) {}
+        if (resetUnit) unit.value = '';
+        for (const option of unit.options) {
+            if (option.value) option.disabled = !Object.hasOwn(prices, option.value);
+        }
+        if (unit.value && !Object.hasOwn(prices, unit.value)) unit.value = '';
+        display.textContent = unit.value && Object.hasOwn(prices, unit.value)
+            ? 'Đơn giá: ' + new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(Number(prices[unit.value])) + ' đ / ' + unit.value
+            : 'Chọn thuốc và đơn vị đã có giá. Nếu thiếu giá, hãy cập nhật danh mục thuốc.';
+        total.textContent = unit.value && Number.isFinite(quantity) && quantity > 0 && Object.hasOwn(prices, unit.value)
+            ? 'Thành tiền dự kiến: ' + new Intl.NumberFormat('vi-VN').format(Math.round(Number(prices[unit.value]) * quantity)) + ' đ'
+            : '';
+    }
     container.addEventListener('change', (event) => {
-        if (!event.target.matches('select[name$="[medicine_id]"]')) return;
-        const unit = event.target.closest('[data-prescription-item]').querySelector('input[name$="[usage_unit]"]');
-        if (unit && !unit.value.trim()) unit.value = event.target.selectedOptions[0]?.dataset.unit ?? '';
+        const row = event.target.closest('[data-prescription-item]');
+        if (!row) return;
+        if (event.target.matches('select[name$="[medicine_id]"]')) updatePrice(row, true);
+        if (event.target.matches('select[name$="[usage_unit]"]')) updatePrice(row);
     });
+    container.addEventListener('input', (event) => {
+        if (event.target.matches('input[name$="[quantity]"]')) updatePrice(event.target.closest('[data-prescription-item]'));
+    });
+    container.querySelectorAll('[data-prescription-item]').forEach((row) => updatePrice(row));
     refresh();
 })();

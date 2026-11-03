@@ -3,7 +3,7 @@
 // Educational articles are general information and do not replace individual medical advice.
 return [
     [
-        'slug' => 'bua-an-can-doi-moi-ngay', 'title' => 'Xây dựng bữa ăn cân đối mỗi ngày',
+        'slug' => 'bua-an-can-doi-moi-ngay', 'detail_image' => 'images/public/article-bua-an-can-doi-moi-ngay.png', 'detail_image_alt' => 'Bữa ăn với cơm, cá, rau và trái cây', 'title' => 'Xây dựng bữa ăn cân đối mỗi ngày',
         'excerpt' => 'Gợi ý kết hợp các nhóm thực phẩm quen thuộc để bữa ăn đa dạng và phù hợp hơn với nhu cầu của bạn.',
         'category' => 'Dinh dưỡng', 'image' => 'images/public/nutrition.png', 'image_alt' => 'Bữa ăn đa dạng với rau, ngũ cốc và thực phẩm giàu đạm',
         'sources' => [['name' => 'Tổ chức Y tế Thế giới (WHO): Chế độ ăn lành mạnh', 'url' => 'https://www.who.int/news-room/fact-sheets/detail/healthy-diet']],
@@ -15,9 +15,9 @@ return [
         ],
     ],
     [
-        'slug' => 'them-rau-cu-trai-cay', 'title' => 'Thêm rau củ và trái cây vào bữa ăn',
+        'slug' => 'them-rau-cu-trai-cay', 'detail_image' => 'images/public/article-them-rau-cu-trai-cay.png', 'detail_image_alt' => 'Người phụ nữ chuẩn bị rau củ và trái cây trong bếp', 'title' => 'Thêm rau củ và trái cây vào bữa ăn',
         'excerpt' => 'Những cách đơn giản để bổ sung sự đa dạng và chất xơ từ thực phẩm thực vật trong ngày.',
-        'category' => 'Dinh dưỡng', 'image' => 'images/public/nutrition.png', 'image_alt' => 'Rau củ nhiều màu sắc trong bữa ăn',
+        'category' => 'Dinh dưỡng', 'image' => 'images/public/vegetables.png', 'image_alt' => 'Người phụ nữ chuẩn bị rau củ tươi trong bếp',
         'sources' => [['name' => 'WHO: Chế độ ăn lành mạnh', 'url' => 'https://www.who.int/news-room/fact-sheets/detail/healthy-diet']],
         'body' => [
             ['title' => 'Vì sao nên ăn đa dạng?', 'text' => 'Rau củ, trái cây, các loại đậu và ngũ cốc nguyên hạt cung cấp chất xơ cùng nhiều vitamin, khoáng chất. Mỗi loại có đặc điểm dinh dưỡng khác nhau, vì vậy hãy luân phiên những loại phù hợp thay vì chỉ ăn một món quen thuộc.'],
@@ -27,9 +27,9 @@ return [
         ],
     ],
     [
-        'slug' => 'uong-nuoc-lanh-manh', 'title' => 'Tạo thói quen uống nước hợp lý',
+        'slug' => 'uong-nuoc-lanh-manh', 'detail_image' => 'images/public/article-uong-nuoc-lanh-manh.png', 'detail_image_alt' => 'Người phụ nữ uống nước tại bàn làm việc', 'title' => 'Tạo thói quen uống nước hợp lý',
         'excerpt' => 'Nhận biết những cách bổ sung nước đơn giản và lựa chọn đồ uống ít đường hơn.',
-        'category' => 'Thói quen lành mạnh', 'image' => 'images/public/sleep.png', 'image_alt' => 'Cốc nước trên bàn trong không gian nghỉ ngơi',
+        'category' => 'Thói quen lành mạnh', 'image' => 'images/public/hydration.png', 'image_alt' => 'Người phụ nữ lấy cốc nước uống tại bàn làm việc',
         'sources' => [['name' => 'CDC: Nước và lựa chọn đồ uống lành mạnh', 'url' => 'https://www.cdc.gov/healthy-weight-growth/water-healthy-drinks/']],
         'body' => [
             ['title' => 'Nước có vai trò gì?', 'text' => 'Nước hỗ trợ nhiều hoạt động bình thường của cơ thể. Nhu cầu chất lỏng thay đổi theo thời tiết, hoạt động, độ tuổi và tình trạng sức khỏe; không có một con số duy nhất phù hợp cho tất cả mọi người. Ngoài đồ uống, thực phẩm cũng góp phần cung cấp nước.'],
@@ -39,7 +39,7 @@ return [
         ],
     ],
     [
-        'slug' => 'van-dong-deu-dan', 'title' => 'Vận động đều đặn từ những bước nhỏ',
+        'slug' => 'van-dong-deu-dan', 'detail_image' => 'images/public/article-van-dong-deu-dan.png', 'detail_image_alt' => 'Hai người đi bộ trong công viên', 'title' => 'Vận động đều đặn từ những bước nhỏ',
         'excerpt' => 'Biến đi bộ, vận động nhẹ và thời gian nghỉ giữa giờ thành một phần của lịch sinh hoạt.',
         'category' => 'Vận động', 'image' => 'images/public/activity.png', 'image_alt' => 'Người trưởng thành đi bộ trong công viên',
         'sources' => [['name' => 'WHO: Hoạt động thể chất', 'url' => 'https://www.who.int/initiatives/behealthy/physical-activity/']],
@@ -51,7 +51,7 @@ return [
         ],
     ],
     [
-        'slug' => 'giac-ngu-chat-luong', 'title' => 'Chăm sóc giấc ngủ bằng thói quen hằng ngày',
+        'slug' => 'giac-ngu-chat-luong', 'detail_image' => 'images/public/article-giac-ngu-chat-luong.png', 'detail_image_alt' => 'Phòng ngủ yên tĩnh với ánh sáng dịu', 'title' => 'Chăm sóc giấc ngủ bằng thói quen hằng ngày',
         'excerpt' => 'Thiết lập giờ ngủ, không gian nghỉ ngơi và những thói quen giúp cơ thể thư giãn.',
         'category' => 'Giấc ngủ', 'image' => 'images/public/sleep.png', 'image_alt' => 'Không gian phòng ngủ yên tĩnh với ánh sáng dịu',
         'sources' => [['name' => 'CDC: Giấc ngủ', 'url' => 'https://www.cdc.gov/sleep/about/']],
@@ -63,9 +63,9 @@ return [
         ],
     ],
     [
-        'slug' => 'thoi-quen-lanh-manh-ben-vung', 'title' => 'Duy trì thói quen lành mạnh theo cách của bạn',
+        'slug' => 'thoi-quen-lanh-manh-ben-vung', 'detail_image' => 'images/public/article-thoi-quen-lanh-manh-ben-vung.png', 'detail_image_alt' => 'Người đàn ông ghi chép kế hoạch vận động và chăm sóc sức khỏe', 'title' => 'Duy trì thói quen lành mạnh theo cách của bạn',
         'excerpt' => 'Cách đặt mục tiêu vừa sức, theo dõi tiến bộ và điều chỉnh khi lịch sinh hoạt thay đổi.',
-        'category' => 'Thói quen lành mạnh', 'image' => 'images/public/activity.png', 'image_alt' => 'Đi bộ ngoài trời trong không gian xanh',
+        'category' => 'Thói quen lành mạnh', 'image' => 'images/public/healthy-habits.png', 'image_alt' => 'Người phụ nữ ghi lại kế hoạch chăm sóc sức khỏe hằng ngày',
         'sources' => [['name' => 'CDC: Chăm sóc cơ thể', 'url' => 'https://www.cdc.gov/howrightnow/taking-care/index.html'], ['name' => 'WHO: Hoạt động thể chất', 'url' => 'https://www.who.int/initiatives/behealthy/physical-activity/']],
         'body' => [
             ['title' => 'Chọn một thay đổi cụ thể', 'text' => 'Thay vì cố thay đổi toàn bộ lịch sinh hoạt cùng lúc, hãy chọn một việc nhỏ có thể thực hiện trong tuần: chuẩn bị thêm rau cho một bữa, đi bộ sau giờ làm hoặc lên giường sớm hơn. Mục tiêu rõ ràng và vừa sức giúp bạn dễ nhận ra điều gì phù hợp.'],

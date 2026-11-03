@@ -5,15 +5,24 @@
         <select id="medicine-{{ $index }}" name="items[{{ $index }}][medicine_id]" class="form-control" required>
             <option value="">Chọn thuốc</option>
             @foreach ($medicines as $medicine)
-                <option value="{{ $medicine->id }}" data-unit="{{ $medicine->unit }}" @selected(is_scalar($item['medicine_id'] ?? null) && (string) $item['medicine_id'] === (string) $medicine->id)>{{ $medicine->medicine_code }} - {{ $medicine->name }}{{ $medicine->strength ? ' · '.$medicine->strength : '' }}</option>
+                <option value="{{ $medicine->id }}" data-prices="{{ json_encode($medicine->salePrices(), JSON_UNESCAPED_UNICODE) }}" @selected(is_scalar($item['medicine_id'] ?? null) && (string) $item['medicine_id'] === (string) $medicine->id)>{{ $medicine->medicine_code }} - {{ $medicine->name }}{{ $medicine->strength ? ' · '.$medicine->strength : '' }}</option>
             @endforeach
         </select>
         @error("items.$index.medicine_id")<p class="field-error">{{ $message }}</p>@enderror
     </div>
+    <div class="form-group">
+        <label for="usage_unit-{{ $index }}">Đơn vị tính <span aria-hidden="true">*</span></label>
+        <select id="usage_unit-{{ $index }}" name="items[{{ $index }}][usage_unit]" class="form-control" required>
+            <option value="">Chọn đơn vị đã có giá</option>
+            @foreach ($saleUnits as $unit)<option value="{{ $unit }}" @selected(($item['usage_unit'] ?? null) === $unit)>{{ $unit }}</option>@endforeach
+        </select>
+        <p class="form-help" data-unit-price>Chọn thuốc và đơn vị để xem giá.</p>
+        <p class="form-help" data-line-total aria-live="polite"></p>
+        @error("items.$index.usage_unit")<p class="field-error">{{ $message }}</p>@enderror
+    </div>
     <div class="form-grid">
         @foreach ([
             ['quantity', 'Số lượng', 'number', true, '0.01', '0.01'],
-            ['usage_unit', 'Đơn vị tính', 'text', true, null, null],
             ['dose_per_use', 'Liều mỗi lần', 'text', true, null, null],
             ['times_per_day', 'Số lần mỗi ngày', 'number', true, '0.01', '0.01'],
             ['duration_days', 'Số ngày dùng', 'number', true, '1', '1'],

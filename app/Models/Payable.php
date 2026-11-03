@@ -13,6 +13,7 @@ class Payable extends Model
     protected $fillable = [
         'payable_code',
         'medical_visit_id',
+        'prescription_id',
         'service_order_item_id',
         'payment_type',
         'description',

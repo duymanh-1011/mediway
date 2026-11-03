@@ -184,6 +184,10 @@
 
             </div>
 
+            @foreach (['price_per_unit' => 'Giá đơn vị cơ bản', 'price_per_blister' => 'Giá 1 vỉ', 'price_per_box' => 'Giá 1 hộp'] as $priceField => $priceLabel)
+                <div class="detail-row"><div class="detail-label">{{ $priceLabel }}</div><div class="detail-value">{{ $medicine->$priceField === null ? 'Chưa thiết lập' : number_format((float) $medicine->$priceField, 0, ',', '.').' đ' }}</div></div>
+            @endforeach
+
             <div class="detail-row">
 
                 <div class="detail-label">

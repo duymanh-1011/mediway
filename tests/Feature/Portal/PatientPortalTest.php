@@ -34,6 +34,55 @@ class PatientPortalTest extends TestCase
         $this->get(route('public.news.show', 'not-a-news'))->assertNotFound();
     }
 
+    public function test_public_article_images_are_unique_per_placement_and_files_exist(): void
+    {
+        $all = [];
+        foreach (config('portal.news') as $article) {
+            foreach (['image', 'detail_image', 'home_image'] as $key) {
+                if (! isset($article[$key])) continue;
+                $this->assertFileExists(public_path($article[$key]));
+                $this->assertNotContains($article[$key], $all);
+                $all[] = $article[$key];
+            }
+            $this->get(route('public.news.show', $article['slug']))->assertOk()
+                ->assertSee(asset($article['detail_image']), false);
+        }
+        $this->get(route('public.home'))->assertOk()->assertSee(asset(config('portal.news.0.home_image')), false);
+        $this->get(route('public.news'))->assertOk()->assertSee(asset(config('portal.news.0.image')), false);
+    }
+
+    public function test_home_utilities_lead_to_protected_pages_and_resume_after_patient_login(): void
+    {
+        $routes = ['patient.doctors.index', 'patient.appointments.index', 'patient.health-history'];
+        $home = $this->get(route('public.home'))->assertOk();
+        foreach ($routes as $name) $home->assertSee('href="'.route($name).'"', false);
+        $patient = User::where('business_code', 'BN000001')->firstOrFail();
+        foreach ($routes as $name) {
+            $this->get(route($name))->assertRedirect(route('patient.login'));
+            $this->post(route('patient.login.store'), ['phone' => $patient->phone, 'password' => 'Mediway@123'])
+                ->assertRedirect(route($name));
+            $this->get(route($name))->assertOk();
+            $this->post(route('patient.logout'));
+        }
+    }
+
+    public function test_common_login_dispatches_admin_but_does_not_grant_unimplemented_roles(): void
+    {
+        $login = $this->get(route('patient.login'))->assertOk()->assertSee('Đăng nhập - Mediway')
+            ->assertDontSee('CỔNG BỆNH NHÂN');
+        $this->get(route('patient.appointments.index'))->assertRedirect(route('patient.login'));
+        $admin = User::where('business_code', 'QT000001')->firstOrFail();
+        $this->post(route('patient.login.store'), ['phone' => $admin->phone, 'password' => 'Mediway@123'])
+            ->assertRedirect(route('admin.dashboard'));
+        $this->get(route('admin.dashboard'))->assertOk();
+        $this->post(route('admin.logout'));
+        foreach (['BS000001', 'NV000001'] as $code) {
+            $user = User::where('business_code', $code)->firstOrFail();
+            $this->post(route('patient.login.store'), ['phone' => $user->phone, 'password' => 'Mediway@123'])->assertSessionHasErrors('phone');
+            $this->assertGuest();
+        }
+    }
+
     public function test_registration_creates_linked_active_patient_without_accepting_privileged_fields(): void
     {
         $this->post(route('patient.register.store'), [
@@ -71,7 +120,7 @@ class PatientPortalTest extends TestCase
         $this->post(route('patient.logout'))->assertRedirect(route('public.home'));
         $this->get(route('patient.notifications'))->assertRedirect(route('patient.login'));
         $admin = User::where('business_code', 'QT000001')->firstOrFail();
-        $this->post(route('patient.login.store'), ['phone' => $admin->phone, 'password' => 'Mediway@123'])->assertSessionHasErrors('phone');
+        $this->post(route('patient.login.store'), ['phone' => $admin->phone, 'password' => 'Mediway@123'])->assertRedirect(route('admin.dashboard'));
         $this->actingAs($admin)->get(route('patient.home'))->assertRedirect(route('patient.login'));
         $this->actingAs($admin)->get(route('patient.notifications'))->assertRedirect(route('patient.login'));
         $this->actingAs($patient)->get(route('admin.dashboard'))->assertRedirect(route('admin.login'));

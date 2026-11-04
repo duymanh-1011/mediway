@@ -47,8 +47,16 @@
         >
             @csrf
             @method('PUT')
+            <input type="hidden" name="expected_employee_type" value="{{ old('expected_employee_type', $employee->detail?->employee_type ?? '') }}">
 
             @include('admin.employees._form')
+
+            <div class="em-field">
+                <label for="employee_type_change_reason">Lý do đổi loại nhân viên</label>
+                <textarea id="employee_type_change_reason" name="employee_type_change_reason" maxlength="500" rows="3" aria-describedby="employee-type-reason-help">{{ old('employee_type_change_reason') }}</textarea>
+                <small id="employee-type-reason-help" class="em-help">Bắt buộc khi thay đổi loại nhân viên; thông tin được ghi vào nhật ký hoạt động.</small>
+                @error('employee_type_change_reason')<small class="em-error">{{ $message }}</small>@enderror
+            </div>
 
             <div class="em-note">
                 Khi chỉnh sửa, mã nhân viên và tài khoản liên kết

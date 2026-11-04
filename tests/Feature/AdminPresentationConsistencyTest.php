@@ -190,9 +190,11 @@ class AdminPresentationConsistencyTest extends TestCase
         $response = $this->get(route('admin.prescriptions.show', $prescription))->assertOk();
         $xpath = $this->xpath($response->getContent());
         $rows = $xpath->query('//table[contains(@class,"admin-prescription-table")]/tbody/tr');
+        $headers = $xpath->query('//table[contains(@class,"admin-prescription-table")]/thead/tr/th');
+        $this->assertCount(13, $headers);
         $this->assertCount($prescription->items->count(), $rows);
         foreach ($rows as $row) {
-            $this->assertCount(11, $xpath->query('./td', $row));
+            $this->assertCount($headers->length, $xpath->query('./td', $row));
         }
         foreach ($prescription->items as $item) {
             $response->assertSee($item->medicine->name)->assertSee($item->dose_per_use)->assertSee($item->usage_method);

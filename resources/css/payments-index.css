@@ -223,7 +223,7 @@
         .transaction-item {
             display: grid;
             grid-template-columns:
-                minmax(120px, 1.1fr) minmax(110px, 1fr) minmax(110px, 1fr) minmax(110px, 1fr) minmax(150px, 1.2fr);
+                repeat(6, minmax(0, 1fr));
             gap: 12px;
             align-items: center;
             padding: 14px;

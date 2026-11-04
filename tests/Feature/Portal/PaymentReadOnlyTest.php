@@ -3,6 +3,7 @@
 namespace Tests\Feature\Portal;
 
 use App\Models\Payable;
+use App\Models\Employee;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -194,6 +195,40 @@ class PaymentReadOnlyTest extends TestCase
                 $otherTransaction
                     ->transaction_code
             );
+    }
+
+    public function test_collectors_belong_to_each_transaction_and_summary_uses_latest_success(): void
+    {
+        $user = $this->patientUser();
+        $payable = Payable::whereHas('medicalVisit', fn ($query) => $query->where('patient_id', $user->patient->id))
+            ->whereHas('transactions')->with('transactions')->firstOrFail();
+        $collectors = Employee::orderBy('id')->take(2)->get();
+        $this->assertCount(2, $collectors);
+
+        $success = $payable->transactions->first();
+        $success->update(['transaction_result' => 'SUCCESS', 'collected_by_employee_id' => $collectors[0]->id, 'confirmed_at' => now()]);
+        $failed = $success->replicate();
+        $failed->fill(['transaction_code' => 'GD-TEST-FAILED', 'transaction_result' => 'FAILED', 'collected_by_employee_id' => $collectors[1]->id, 'confirmed_at' => now()->addMinute()])->save();
+
+        $response = $this->actingAs($user)->get(route('patient.payments.index'))->assertOk()
+            ->assertDontSee('Hạn thanh toán')
+            ->assertSee('Nhân viên thu tiền gần nhất')
+            ->assertSee($collectors[0]->full_name)
+            ->assertSee($collectors[1]->full_name);
+
+        $response->assertSeeInOrder(['Nhân viên thu tiền gần nhất', $collectors[0]->full_name, 'GD-TEST-FAILED', $collectors[1]->full_name]);
+    }
+
+    public function test_missing_collector_is_displayed_without_guessing(): void
+    {
+        $user = $this->patientUser();
+        $payable = Payable::whereHas('medicalVisit', fn ($query) => $query->where('patient_id', $user->patient->id))
+            ->whereHas('transactions')->with('transactions')->firstOrFail();
+        $payable->transactions()->update(['collected_by_employee_id' => null]);
+
+        $this->actingAs($user)->get(route('patient.payments.index'))->assertOk()
+            ->assertSee('Nhân viên thu tiền gần nhất')
+            ->assertSee('Chưa có thông tin');
     }
 
     public function test_opening_payment_page_does_not_change_amount_or_status(): void

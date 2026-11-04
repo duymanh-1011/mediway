@@ -35,6 +35,7 @@ class PaymentController extends Controller
             ->with([
                 'medicalVisit',
                 'paymentStatus',
+                'transactions.collector:id,full_name',
                 'transactions' => function ($query) {
                     $query
                         ->orderByDesc(

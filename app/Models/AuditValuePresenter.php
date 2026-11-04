@@ -10,6 +10,7 @@ class AuditValuePresenter
     private const LABELS = [
         'id' => 'Số tham chiếu', 'items' => 'Danh sách dịch vụ', 'service_items' => 'Dịch vụ',
         'credential_changed' => 'Đã đặt lại mật khẩu', 'documents_changed' => 'Thay đổi tài liệu',
+        'employee_type_change_reason' => 'Lý do đổi loại nhân viên',
         'blood_glucose' => 'Đường huyết (mmol/L)',
         'service_order_id' => 'Phiếu chỉ định', 'service_order_item_id' => 'Dịch vụ được chỉ định',
         'medical_visit_id' => 'Lượt khám', 'appointment_id' => 'Lịch hẹn',

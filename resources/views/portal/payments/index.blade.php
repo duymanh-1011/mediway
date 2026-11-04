@@ -116,6 +116,11 @@
                                 'MEDICINE_FEE' => 'Tiền thuốc',
                                 default => $payable->payment_type ?: 'Chưa cập nhật',
                             };
+
+                            $latestSuccessfulTransaction = $payable->transactions
+                                ->where('transaction_result', 'SUCCESS')
+                                ->sortByDesc(fn ($transaction) => ($transaction->confirmed_at ?? $transaction->paid_at ?? $transaction->started_at)?->timestamp ?? 0)
+                                ->first();
                         @endphp
 
                         <article class="payment-card">
@@ -178,11 +183,11 @@
 
                                 <div class="payment-info-item">
                                     <span class="payment-info-label">
-                                        Hạn thanh toán
+                                        Nhân viên thu tiền gần nhất
                                     </span>
 
                                     <span class="payment-info-value">
-                                        {{ $payable->due_at?->format('H:i d/m/Y') ?? 'Không quy định' }}
+                                        {{ $latestSuccessfulTransaction?->collector?->full_name ?? 'Chưa có thông tin' }}
                                     </span>
                                 </div>
 
@@ -261,6 +266,11 @@
                                                                 <span class="transaction-value">
                                                                     {{ $resultLabel }}
                                                                 </span>
+                                                            </div>
+
+                                                            <div class="transaction-cell">
+                                                                <span class="transaction-label">Nhân viên thu tiền</span>
+                                                                <span class="transaction-value">{{ $transaction->collector?->full_name ?? 'Chưa có thông tin' }}</span>
                                                             </div>
 
                                                             <div class="transaction-cell">

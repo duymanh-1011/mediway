@@ -16,6 +16,15 @@ class UpdateEmployeeRequest extends StoreEmployeeRequest
             ? $employee->getKey()
             : $employee;
 
+        // Existing nurse records remain editable until assigned a supported type.
+        $types = array_keys(\App\Support\EmployeeAccess::TYPES);
+        if (is_object($employee) && $employee->detail?->employee_type === 'NURSE') {
+            $types[] = 'NURSE';
+        }
+        $rules['employee_type'] = ['required', 'string', Rule::exists('employee_types', 'code'), Rule::in($types)];
+        $rules['expected_employee_type'] = ['nullable', 'string', 'max:80'];
+        $rules['employee_type_change_reason'] = ['nullable', 'string', 'max:500'];
+
         /*
          * Không cho thay đổi tài khoản liên kết
          * qua form sửa hồ sơ nhân viên.

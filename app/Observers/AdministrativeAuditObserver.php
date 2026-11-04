@@ -46,6 +46,10 @@ class AdministrativeAuditObserver
         $description = $credentialChanged ? 'Đặt lại mật khẩu tài khoản '.$code.'.'
             : AdminDisplay::label($action).' '.mb_strtolower(AdminDisplay::label($record->getTable())).($code ? ' '.$code : '').'.';
         $newValues = $this->sanitize($after);
+        if ($record->getTable() === 'employee_details' && array_key_exists('employee_type', $after)
+            && $request->routeIs('admin.employees.update')) {
+            $newValues['employee_type_change_reason'] = trim((string) $request->input('employee_type_change_reason'));
+        }
         if ($credentialChanged) {
             $newValues['credential_changed'] = true;
         }

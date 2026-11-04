@@ -63,9 +63,10 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
         foreach (['admin.employees.create' => [], 'admin.employees.edit' => [Employee::firstOrFail()]] as $route => $parameters) {
             $xpath = $this->xpath($this->get(route($route, $parameters))->assertOk()->getContent());
             $this->assertCount(1, $xpath->query('//select[@name="employee_type" and @required]'));
-            $this->assertCount(6, $xpath->query('//select[@name="employee_type"]/option'));
+            $this->assertCount($route === 'admin.employees.create' ? 5 : 6, $xpath->query('//select[@name="employee_type"]/option'));
             $this->assertCount(0, $xpath->query('//input[@name="employee_type"]|//datalist[@id="employee-type-suggestions"]'));
         }
+        $this->post(route('admin.employees.store'), [...$this->employeeData(), 'employee_type' => 'NURSE'])->assertSessionHasErrors('employee_type');
         $this->get(route('admin.employees.index'))->assertOk()->assertSee('Nhân viên tiếp đón');
         $response = $this->get(route('admin.employees.index', ['employee_type' => 'NURSE']))->assertOk();
         $this->assertSame(['NV000001'], $response->viewData('employees')->pluck('employee_code')->all());
@@ -79,7 +80,7 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
         $this->assertSame('RECEPTIONIST', $employee->detail->employee_type);
         $this->assertSame('Employee', $employee->user->role->name);
         $this->assertSame('RECEPTIONIST', $employee->detail->type->code);
-        $this->put(route('admin.employees.update', $employee), ['full_name' => $employee->full_name, 'status' => 'ACTIVE', 'employee_type' => ' lab_technician '])->assertSessionHasNoErrors();
+        $this->put(route('admin.employees.update', $employee), ['full_name' => $employee->full_name, 'status' => 'ACTIVE', 'employee_type' => ' lab_technician ', 'expected_employee_type' => 'RECEPTIONIST', 'employee_type_change_reason' => 'Điều chuyển công tác'])->assertSessionHasNoErrors();
         $this->assertSame('LAB_TECHNICIAN', $employee->detail->fresh()->employee_type);
     }
 

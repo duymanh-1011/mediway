@@ -17,6 +17,9 @@
                         <a href="{{ route('patient.notifications') }}">Thông báo <span data-notification-mobile-count></span></a>
                         <a href="{{ route('patient.home') }}">Bệnh nhân · {{ auth()->user()->patient->full_name }}</a>
                         <form method="post" action="{{ route('patient.logout') }}">@csrf<button class="portal-nav__logout" type="submit">Đăng xuất</button></form>
+                    @elseif (app(\App\Support\EmployeeAccess::class)->employee(auth()->user()))
+                        <a href="{{ route('employee.home') }}">Khu vực nhân viên</a>
+                        <form method="post" action="{{ route('employee.logout') }}">@csrf<button class="portal-nav__logout" type="submit">Đăng xuất</button></form>
                     @elseif (auth()->user()->canAccessAdmin())
                         <a href="{{ route('admin.dashboard') }}">Quản trị</a>
                     @endif
@@ -38,6 +41,9 @@
                         <span class="portal-account__name"><small>Bệnh nhân</small><strong>{{ auth()->user()->patient->full_name }}</strong></span>
                     </a>
                     <form class="portal-header__logout" method="post" action="{{ route('patient.logout') }}">@csrf<x-portal.button type="submit" variant="secondary">Đăng xuất</x-portal.button></form>
+                @elseif (app(\App\Support\EmployeeAccess::class)->employee(auth()->user()))
+                    <x-portal.button variant="secondary" :href="route('employee.home')">Khu vực nhân viên</x-portal.button>
+                    <form class="portal-header__logout" method="post" action="{{ route('employee.logout') }}">@csrf<x-portal.button type="submit" variant="secondary">Đăng xuất</x-portal.button></form>
                 @elseif (auth()->user()->canAccessAdmin())
                     <x-portal.button variant="ghost" :href="route('admin.dashboard')">Quản trị</x-portal.button>
                 @endif

@@ -71,6 +71,15 @@ Route::get('/ho-tro', [PublicController::class, 'support'])->name('public.suppor
 Route::get('/tin-tuc', [PublicController::class, 'news'])->name('public.news');
 Route::get('/tin-tuc/{slug}', [PublicController::class, 'article'])->name('public.news.show');
 
+Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\EmployeeMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function () {
+    Route::get('/', [\App\Http\Controllers\Employee\WorkspaceController::class, 'home'])->name('home');
+    Route::get('/ho-so', [\App\Http\Controllers\Employee\WorkspaceController::class, 'profile'])->name('profile');
+    Route::get('/ho-so/chinh-sua', [\App\Http\Controllers\Employee\WorkspaceController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/ho-so', [\App\Http\Controllers\Employee\WorkspaceController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/mat-khau', [\App\Http\Controllers\Employee\WorkspaceController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.update');
+    Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->name('logout');
+});
+
 Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::middleware('guest')->group(function () {
         Route::get('/dang-nhap', [PortalAuthController::class, 'create'])->name('login');

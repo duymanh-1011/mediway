@@ -15,7 +15,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->redirectGuestsTo(fn () => route('patient.login'));
+        $middleware->redirectUsersTo(function (Request $request) {
+            $user = $request->user();
+            if ($user?->canAccessAdmin()) return route('admin.dashboard');
+            if ($user && app(\App\Support\EmployeeAccess::class)->employee($user)) return route('employee.home');
+            if ($user?->canAccessPortal()) return route('patient.home');
+            if ($user && Route::has('doctor.home')) {
+                $user->load(['role', 'doctor']);
+                if ($user->status === 'ACTIVE' && $user->role?->name === 'Doctor'
+                    && $user->role?->status === 'ACTIVE' && $user->doctor?->status === 'ACTIVE') {
+                    return route('doctor.home');
+                }
+            }
+            return route('public.home');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash(['otp']);

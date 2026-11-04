@@ -162,6 +162,7 @@ class StoreEmployeeRequest extends FormRequest
                 'string',
                 'max:80',
                 Rule::exists('employee_types', 'code'),
+                Rule::in(array_keys(\App\Support\EmployeeAccess::TYPES)),
             ],
 
             'hire_date' => [

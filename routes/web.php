@@ -79,6 +79,20 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::get('/ho-so/chinh-sua', [\App\Http\Controllers\Employee\WorkspaceController::class, 'editProfile'])->name('profile.edit');
     Route::put('/ho-so', [\App\Http\Controllers\Employee\WorkspaceController::class, 'updateProfile'])->name('profile.update');
     Route::put('/mat-khau', [\App\Http\Controllers\Employee\WorkspaceController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.update');
+    // Mỗi nhóm chỉ định có quyền riêng; kiểm tra ở máy chủ cho từng yêu cầu.
+    foreach (['xet-nghiem' => ['laboratory', 'laboratory'], 'chan-doan-hinh-anh' => ['imaging', 'imaging']] as $path => [$routeName, $capability]) {
+        Route::prefix($path)->name($routeName.'.')->group(function () use ($capability) {
+            $controller = \App\Http\Controllers\Employee\TechnicalServiceController::class;
+            $viewPermission = \App\Http\Middleware\EmployeeMiddleware::class.':'.$capability.'.view';
+            $processPermission = \App\Http\Middleware\EmployeeMiddleware::class.':'.$capability.'.process';
+            Route::get('/', [$controller, 'index'])->middleware($viewPermission)->name('index');
+            Route::get('/{item}', [$controller, 'show'])->whereNumber('item')->middleware($viewPermission)->name('show');
+            Route::get('/{item}/tep/{type}', [$controller, 'document'])->whereNumber('item')->where('type', 'pdf|image')->middleware($viewPermission)->name('document');
+            Route::post('/{item}/bat-dau', [$controller, 'start'])->whereNumber('item')->middleware($processPermission)->name('start');
+            Route::post('/{item}/ket-qua', [$controller, 'save'])->whereNumber('item')->middleware($processPermission)->name('save');
+            Route::post('/{item}/hoan-tat', [$controller, 'complete'])->whereNumber('item')->middleware($processPermission)->name('complete');
+        });
+    }
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->name('logout');
 });
 

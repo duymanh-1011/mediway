@@ -78,6 +78,11 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::put('/ho-so', [\App\Http\Controllers\Employee\WorkspaceController::class, 'updateProfile'])->name('profile.update');
     Route::put('/mat-khau', [\App\Http\Controllers\Employee\WorkspaceController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.update');
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->name('logout');
+
+    Route::get('/thanh-toan', [\App\Http\Controllers\Employee\PayableController::class, 'index'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.index');
+    Route::get('/thanh-toan/{payable}/ghi-nhan', [\App\Http\Controllers\Employee\PaymentCollectionController::class, 'create'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.collect')->name('payments.collect.create');
+    Route::post('/thanh-toan/{payable}/ghi-nhan', [\App\Http\Controllers\Employee\PaymentCollectionController::class, 'store'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.collect')->name('payments.collect.store');
+    Route::get('/thanh-toan/{payable}', [\App\Http\Controllers\Employee\PayableController::class, 'show'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.show');
 });
 
 Route::prefix('tai-khoan')->name('patient.')->group(function () {

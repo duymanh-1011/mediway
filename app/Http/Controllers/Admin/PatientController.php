@@ -151,7 +151,7 @@ class PatientController extends Controller
                         ]);
                     }
                 } else {
-                    $patientCode = $this->nextPatientCode();
+                    $patientCode = app(\App\Services\PatientCodeService::class)->next();
                 }
 
                 $patient = Patient::create([
@@ -493,43 +493,6 @@ class PatientController extends Controller
         }
 
         return $user;
-    }
-
-    private function nextPatientCode(): string
-    {
-        $lastPatientCode = Patient::query()
-            ->where('patient_code', 'like', 'BN%')
-            ->orderByDesc('patient_code')
-            ->value('patient_code');
-
-        $lastUserCode = User::query()
-            ->where('business_code', 'like', 'BN%')
-            ->orderByDesc('business_code')
-            ->value('business_code');
-
-        $lastNumber = max(
-            $this->codeNumber($lastPatientCode),
-            $this->codeNumber($lastUserCode)
-        );
-
-        return 'BN'.str_pad(
-            (string) ($lastNumber + 1),
-            6,
-            '0',
-            STR_PAD_LEFT
-        );
-    }
-
-    private function codeNumber(?string $code): int
-    {
-        if (
-            $code !== null
-            && preg_match('/^BN([0-9]+)$/', $code, $matches)
-        ) {
-            return (int) $matches[1];
-        }
-
-        return 0;
     }
 
     private function detailData(array $data): array

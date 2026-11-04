@@ -454,11 +454,12 @@ class PaymentTransactionController extends Controller
 
                     // Tiếp nhận từ lịch hẹn chỉ vào hàng đợi sau khi phí khám được thu.
                     // Lượt khám cũ đã có hàng đợi hoặc đã bắt đầu không bị tạo trùng.
-                    if ($lockedPayable->payment_type === 'EXAMINATION_FEE' && $visit->appointment_id
+                    if ($lockedPayable->payment_type === 'EXAMINATION_FEE' && ($visit->appointment_id || $visit->reception_source === 'WALK_IN')
                         && $visit->status?->name === 'WAITING'
                         && ! $visit->queues()->where('queue_type', 'INITIAL_EXAM')->exists()) {
                         $visit->assertExaminationFeePaid();
-                        if (! $visit->appointment?->isScheduledForToday()) {
+                        if (($visit->appointment_id && ! $visit->appointment?->isScheduledForToday())
+                            || (! $visit->appointment_id && ! $visit->checked_in_at?->isToday())) {
                             throw ValidationException::withMessages(['payment_method' => 'Không thể xếp hàng cho lịch khám khác ngày. Vui lòng kiểm tra lại lịch hẹn trước khi thu phí.']);
                         }
                         $waiting = QueueStatus::where('name', 'WAITING')->where('is_active', true)->first();

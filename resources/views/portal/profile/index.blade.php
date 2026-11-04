@@ -30,5 +30,11 @@
             <div><dt>Số điện thoại đăng nhập</dt><dd>{{ $user->phone }}</dd></div><div><dt>Trạng thái tài khoản</dt><dd>Đang hoạt động</dd></div>
         </dl><p class="profile-card__note">Số điện thoại đăng nhập được quản lý riêng. <a href="{{ route('patient.profile.phone') }}">Đổi số điện thoại</a></p></section>
     </div>
+    @if ($documents->isNotEmpty())
+        <section class="profile-card profile-personal-documents" aria-labelledby="profile-documents">
+            <div class="profile-card__head"><span class="profile-card__icon" aria-hidden="true">▤</span><div><h2 id="profile-documents">Giấy tờ cá nhân</h2><p>Tài liệu được lưu trong hồ sơ cá nhân của bạn.</p></div></div>
+            <div class="patient-document-grid">@foreach ($documents as $document)<a class="patient-document" href="{{ route('patient.documents.show', $document['key']) }}"><span class="patient-document__icon" aria-hidden="true">▤</span><span><strong>{{ $document['label'] }}</strong><small>Mở tài liệu</small></span><span aria-hidden="true">↗</span></a>@endforeach</div>
+        </section>
+    @endif
 </div></section>
 @endsection

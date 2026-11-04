@@ -135,6 +135,8 @@ body.portal-body{font-family:"Segoe UI",Arial,Helvetica,sans-serif;font-size:15p
 /* Patient navigation and public guidance pages */
 .portal-body :is(a.medical-nav__back,a.profile-back,a.appointment-back,a.notification-page__back,a.mw-paper-back,a.mw-book-back,a.doctor-profile-back,a.specialty-back){display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:9px 14px;border:1px solid #d6e2ef;border-radius:10px;background:#fff;color:#34516f!important;font-size:14px;font-weight:650;text-decoration:none;box-shadow:0 2px 7px rgb(15 23 42 / 3%)}
 .portal-page-head .appointment-back{margin-bottom:20px}
+.clinical-visit-card{scroll-margin-top:90px}.clinical-progress{margin-top:20px;padding:16px;border:1px solid #dfeaf6;border-radius:12px;background:#f6faff}.clinical-progress>div:first-child{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px}.clinical-progress>div:first-child span{color:#1d4ed8;font-weight:700}.clinical-progress__bar{height:7px;margin:12px 0;border-radius:9px;background:#dce9fa;overflow:hidden}.clinical-progress__bar span{display:block;height:100%;background:#2563eb}.clinical-progress__counts{display:flex;flex-wrap:wrap;gap:8px 16px;color:#526175;font-size:13px}.clinical-visit-details{margin-top:18px;border:1px solid #dbe6f4;border-radius:12px;overflow:hidden}.clinical-visit-details summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#f3f7ff;color:#1d4ed8;font-weight:700;cursor:pointer;list-style:none}.clinical-visit-details summary::-webkit-details-marker{display:none}.clinical-visit-details summary:focus-visible{outline:3px solid #93b7ff;outline-offset:-3px}.clinical-visit-details__body{padding:18px;display:grid;gap:22px}.clinical-visit-details__body>section>h4{margin:0 0 14px;font-size:16px}.clinical-visit-details__body>section>p{color:#526175}.clinical-service{padding:16px;border:1px solid #e1eaf5;border-radius:11px;background:#fff}.clinical-service+.clinical-service{margin-top:10px}.clinical-service__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.clinical-service__head div{display:grid;gap:3px}.clinical-service__head small,.clinical-service__verification{color:#64748b;font-size:12px}.clinical-service p{overflow-wrap:anywhere;color:#44556b}.clinical-filter-note{padding:14px 16px;border:1px solid #cbdff7;border-radius:10px;background:#edf4ff;color:#34445a}.clinical-filter-note a{color:#1d4ed8;font-weight:700}
+.clinical-service-group+.clinical-service-group{margin-top:10px}.clinical-visit-details .clinical-service-group>summary{border:1px solid #dfe8f3;border-radius:10px;background:#f8fbff;color:#172033}.clinical-service-group>summary span{font-size:12px;color:#526175;font-weight:600}.clinical-service-group__body{padding:12px 0 0}
 .portal-body :is(a.medical-nav__back,a.profile-back,a.appointment-back,a.notification-page__back,a.mw-paper-back,a.mw-book-back,a.doctor-profile-back,a.specialty-back):hover{border-color:#9ebcf0;background:#f0f6ff;color:#1d4ed8!important}
 .portal-body :is(a.medical-nav__back,a.profile-back,a.appointment-back,a.notification-page__back,a.mw-paper-back,a.mw-book-back,a.doctor-profile-back,a.specialty-back):focus-visible{outline:3px solid #93b7ff;outline-offset:3px}
 .medical-nav{border-bottom:0}
@@ -150,3 +152,22 @@ body.portal-body{font-family:"Segoe UI",Arial,Helvetica,sans-serif;font-size:15p
 .portal-hero__visual--photo{display:block;min-height:0;padding:0;overflow:hidden}.portal-hero__visual--photo img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover}
 
 .public-guide__faq details .portal-btn{margin-top:16px;color:var(--portal-primary)}
+
+/* Navigation spacing and patient notification indicators. */
+@media (min-width: 1201px) {
+    .portal-header__inner > .portal-nav { margin-left: clamp(20px, 4vw, 56px); }
+    .portal-header__actions { margin-left: auto; }
+}
+.portal-notification-link, .portal-menu-toggle { position: relative; }
+.portal-notification-count { position: absolute; top: -6px; right: -6px; display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border: 2px solid #fff; border-radius: 999px; background: #dc2626; color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }
+.portal-notification-count[hidden], .portal-call-alert[hidden] { display: none; }
+.portal-call-alert { position: sticky; top: 72px; z-index: 19; padding: 10px 0; background: #eaf2ff; color: #173b70; border-bottom: 1px solid #cbdfff; }
+.portal-call-alert__inner { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.portal-call-alert a { color: #1d4ed8; font-weight: 700; }
+.portal-body button.notification-item { display: flex; width: 100%; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 22px; border: 0; border-bottom: 1px solid var(--portal-line); background: transparent; color: var(--portal-ink); text-align: left; cursor: pointer; }
+.portal-body button.notification-item:hover { background: var(--portal-accent); }
+.portal-body button.notification-item:focus-visible { outline: 3px solid #93b7ff; outline-offset: -3px; }
+@media (max-width: 480px) { .portal-body button.notification-item { flex-direction: column; gap: 8px; padding: 16px; } }
+.portal-call-alert form { margin: 0; }
+.portal-call-alert button { padding: 0; border: 0; background: transparent; color: #1d4ed8; font-weight: 700; cursor: pointer; }
+.portal-call-alert button:hover { text-decoration: underline; }

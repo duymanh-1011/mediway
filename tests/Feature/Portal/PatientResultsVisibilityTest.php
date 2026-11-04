@@ -27,6 +27,8 @@ class PatientResultsVisibilityTest extends TestCase
             ->assertSee($own->prescription_code)->assertDontSee($otherPrescription->prescription_code);
         $response->assertSee($own->items->first()->medicine->name);
         $this->get(route('patient.prescriptions.document', $otherPrescription->id))->assertNotFound();
+        $this->get(route('patient.prescriptions', ['visit' => $otherPrescription->medical_visit_id]))->assertNotFound();
+        $this->get(route('patient.prescriptions', ['visit' => $own->medical_visit_id]))->assertOk()->assertSee($own->prescription_code);
     }
 
     public function test_prescription_quantities_are_easy_to_read_without_losing_decimals(): void

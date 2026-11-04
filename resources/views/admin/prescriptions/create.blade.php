@@ -12,7 +12,7 @@
 @if ($medicines->isEmpty())
     <div class="alert alert-error">Chưa có thuốc đang hoạt động. Vui lòng kiểm tra danh mục thuốc.</div>
 @else
-    <form method="POST" action="{{ route('admin.visits.prescription.store', $visit) }}" novalidate data-prescription-form>@csrf
+    <form method="POST" action="{{ route('admin.visits.prescription.store', $visit) }}" novalidate data-prescription-form data-whole-units="{{ json_encode(\App\Models\Medicine::WHOLE_QUANTITY_UNITS, JSON_UNESCAPED_UNICODE) }}">@csrf
         <div class="card section-spacing"><h2 class="section-title">Thuốc trong đơn</h2><p class="form-help">Nhập chỉ định và chọn đơn vị đã có giá trong danh mục thuốc. Giá được lưu tại thời điểm kê đơn; khoản thu chỉ tạo khi bệnh nhân xác nhận mua. Các mục có dấu * là bắt buộc.</p>
             <div data-prescription-items>
                 @php($oldItems = old('items'))

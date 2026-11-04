@@ -1051,7 +1051,7 @@
 
         @if ($medicalVisit->conclusion)
 
-            <div class="clinical-grid">
+            <div class="clinical-grid clinical-grid--conclusion">
 
                 <div class="clinical-item">
                     <strong>

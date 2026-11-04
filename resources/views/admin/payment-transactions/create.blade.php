@@ -323,6 +323,19 @@
         </div>
 
 
+        <div class="form-group">
+            <label for="collected_by_employee_id">Nhân viên thu ngân xác nhận giao dịch <span class="required">*</span></label>
+            <select id="collected_by_employee_id" name="collected_by_employee_id" class="form-control" required>
+                <option value="">-- Chọn nhân viên thu ngân --</option>
+                @foreach ($employees as $employee)
+                    <option value="{{ $employee->id }}" @selected((string) old('collected_by_employee_id') === (string) $employee->id)>{{ $employee->employee_code }} - {{ $employee->full_name }}</option>
+                @endforeach
+            </select>
+            <div class="form-help">Chọn nhân viên thu ngân thực tế xác nhận việc thu tiền. Tài khoản đang thao tác cũng được ghi vào nhật ký.</div>
+            @if ($employees->isEmpty())<div class="field-error">Chưa có nhân viên thu ngân đang hoạt động để xác nhận giao dịch.</div>@endif
+            @error('collected_by_employee_id')<div class="field-error">{{ $message }}</div>@enderror
+        </div>
+
         <div class="form-group section-field">
 
             <label for="provider_transaction_code">

@@ -31,7 +31,8 @@
         ] as [$field, $label, $type, $required, $min, $step])
             <div class="form-group">
                 <label for="{{ $field }}-{{ $index }}">{{ $label }} @if ($required)<span aria-hidden="true">*</span>@endif</label>
-                <input id="{{ $field }}-{{ $index }}" name="items[{{ $index }}][{{ $field }}]" type="{{ $type }}" class="form-control" value="{{ is_scalar($item[$field] ?? null) ? $item[$field] : '' }}" @if ($required) required @endif @if ($min) min="{{ $min }}" @endif @if ($step) step="{{ $step }}" @endif>
+                <input id="{{ $field }}-{{ $index }}" name="items[{{ $index }}][{{ $field }}]" type="{{ $type }}" class="form-control" value="{{ is_scalar($item[$field] ?? null) ? $item[$field] : '' }}" @if ($required) required @endif @if ($min) min="{{ $min }}" @endif @if ($step) step="{{ $step }}" @endif @if ($field === 'quantity') aria-describedby="quantity-help-{{ $index }}" @endif>
+                @if ($field === 'quantity')<p id="quantity-help-{{ $index }}" class="form-help" data-quantity-help aria-live="polite">Số lượng cấp phát tính theo đơn vị đã chọn.</p>@endif
                 @error("items.$index.$field")<p class="field-error">{{ $message }}</p>@enderror
             </div>
         @endforeach

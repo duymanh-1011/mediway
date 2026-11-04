@@ -6,6 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Medicine extends Model
 {
+    /** Đơn vị cấp phát đếm theo vật phẩm nguyên; không áp dụng cho liều mỗi lần. */
+    public const WHOLE_QUANTITY_UNITS = ['viên', 'vỉ', 'hộp', 'chai', 'lọ', 'gói', 'ống', 'tuýp', 'túi', 'miếng', 'ống tiêm', 'bình'];
+
+    public static function requiresWholeQuantity(?string $unit): bool
+    {
+        return in_array(mb_strtolower(trim((string) $unit), 'UTF-8'), self::WHOLE_QUANTITY_UNITS, true);
+    }
+
     protected $fillable = [
         'medicine_code',
         'name',

@@ -307,7 +307,7 @@
                     </h2>
 
                     <p>
-                        Bác sĩ xác nhận và thời gian trả kết quả.
+                        Người xác nhận và thời gian trả kết quả.
                     </p>
 
                 </div>
@@ -320,7 +320,7 @@
                         <div class="result-form-group">
 
                             <label for="verified_by_user_id">
-                                Bác sĩ xác nhận
+                                Kỹ thuật viên xác nhận
                             </label>
 
                             <select
@@ -346,7 +346,7 @@
                                             (string) $verifier->id
                                         )
                                     >
-                                        {{ $verifier->doctor?->doctor_code ?? $verifier->business_code }} - {{ $verifier->doctor?->full_name ?? 'Chưa cập nhật tên' }}
+                                        {{ $verifier->employee?->employee_code ?? $verifier->doctor?->doctor_code ?? $verifier->business_code }} - {{ $verifier->employee?->full_name ?? $verifier->doctor?->full_name ?? 'Chưa cập nhật tên' }}
                                     </option>
 
                                 @endforeach

@@ -7,6 +7,15 @@ use Illuminate\Validation\Rule;
 
 class StoreVisitDiagnosisRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('severity'))) {
+            $severity = trim($this->input('severity'));
+            $this->merge(['severity' => match (mb_strtolower($severity, 'UTF-8')) {
+                'nhẹ' => 'MILD', 'trung bình' => 'MODERATE', 'nặng' => 'SEVERE', default => $severity,
+            }]);
+        }
+    }
     public function authorize(): bool
     {
         return true;

@@ -74,7 +74,7 @@ class FinalAuditRepairsTest extends TestCase
         $visit = $appointment->medicalVisit()->sole();
         $this->assertSame(0, $visit->queues()->count());
         $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
-        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])
             ->assertSessionHasNoErrors()->assertSessionMissing('error');
         return $visit;
     }
@@ -100,7 +100,7 @@ class FinalAuditRepairsTest extends TestCase
     private function finish(ServiceOrder $order): void
     {
         $item = $order->items()->sole();
-        $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors()->assertSessionMissing('error');
+        $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.start', $item))->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.service-results.store', $item), ['result_summary' => 'Kết quả kiểm thử', 'confirm_create' => 1])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.complete', $item))->assertSessionHasNoErrors()->assertSessionMissing('error');

@@ -12,6 +12,7 @@ use App\Models\Payable;
 use App\Models\PaymentStatus;
 use App\Models\PaymentTransaction;
 use App\Models\ServiceOrderItem;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -207,10 +208,12 @@ class PaymentTransactionController extends Controller
                 );
         }
 
+        $employees = Employee::activeCashiers()->orderBy('full_name')->get(['id', 'employee_code', 'full_name']);
+
         return view(
             'admin.payment-transactions.create',
             compact(
-                'payable'
+                'payable', 'employees'
             )
         );
     }
@@ -306,6 +309,11 @@ class PaymentTransactionController extends Controller
                     |--------------------------------------------------------------------------
                     */
                     $visit = MedicalVisit::with(['status', 'appointment'])->whereKey($payable->medical_visit_id)->lockForUpdate()->firstOrFail();
+                    $collector = Employee::whereKey($validated['collected_by_employee_id'])->where('status', 'ACTIVE')->lockForUpdate()->first();
+                    $detail = $collector?->detail()->lockForUpdate()->first();
+                    if (! $collector || $detail?->employee_type !== 'CASHIER') {
+                        throw ValidationException::withMessages(['collected_by_employee_id' => 'Nhân viên thu ngân không còn hợp lệ hoặc không hoạt động. Vui lòng chọn lại.']);
+                    }
                     $item = $payable->service_order_item_id
                         ? ServiceOrderItem::with(['serviceStatus', 'serviceOrder'])->whereKey($payable->service_order_item_id)->lockForUpdate()->firstOrFail()
                         : null;
@@ -420,12 +428,7 @@ class PaymentTransactionController extends Controller
 
                             'confirmed_at' => $now,
 
-                            /*
-                            | Hiện chức năng này thao tác trong khu vực Admin.
-                            | Chưa ánh xạ tài khoản Admin sang employee,
-                            | nên không tự gán sai employee_id.
-                            */
-                            'collected_by_employee_id' => null,
+                            'collected_by_employee_id' => $collector->id,
 
                             'payment_content' => $validated[
                                     'payment_content'
@@ -619,6 +622,8 @@ class PaymentTransactionController extends Controller
 
             'transaction_result' => $transaction
                 ->transaction_result,
+
+            'collected_by_employee_id' => $transaction->collected_by_employee_id,
 
             'provider_transaction_code' => $transaction
                 ->provider_transaction_code,

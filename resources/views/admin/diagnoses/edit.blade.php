@@ -124,25 +124,12 @@
                         Loại chẩn đoán
                     </label>
 
-                    <input class="admin-u-419e8d7e"
-                        type="text"
-                        id="diagnosis_type"
-                        name="diagnosis_type"
-                        list="diagnosis-type-options"
-                        value="{{ old(
-                            'diagnosis_type',
-                            $diagnosis->diagnosis_type
-                        ) }}"
-
-                    >
-
-                    <datalist id="diagnosis-type-options">
-
-                        @foreach ($diagnosisTypes as $type)
-                            <option value="{{ $type }}">
+                    <select class="admin-u-419e8d7e" id="diagnosis_type" name="diagnosis_type" required>
+                        <option value="">-- Chọn loại chẩn đoán --</option>
+                        @foreach (['PRIMARY', 'SECONDARY', 'PRELIMINARY', 'CONFIRMED'] as $type)
+                            <option value="{{ $type }}" @selected(old('diagnosis_type', $diagnosis->diagnosis_type) === $type)>{{ \App\Models\AdminDisplay::label($type) }}</option>
                         @endforeach
-
-                    </datalist>
+                    </select>
 
                     @error('diagnosis_type')
                         <div class="admin-u-6aa3ac13">
@@ -162,24 +149,11 @@
                         Mức độ
                     </label>
 
-                    <input class="admin-u-419e8d7e"
-                        type="text"
-                        id="severity"
-                        name="severity"
-                        list="severity-options"
-                        value="{{ old(
-                            'severity',
-                            $diagnosis->severity
-                        ) }}"
-
-                    >
-
+                    <input class="admin-u-419e8d7e" type="text" id="severity" name="severity" list="severity-options" value="{{ \App\Models\AdminDisplay::label(old('severity', $diagnosis->severity)) === '—' ? '' : \App\Models\AdminDisplay::label(old('severity', $diagnosis->severity)) }}">
                     <datalist id="severity-options">
-
-                        @foreach ($severityLevels as $severity)
-                            <option value="{{ $severity }}">
+                        @foreach (collect(['MILD', 'MODERATE', 'SEVERE'])->merge($severityLevels)->push($diagnosis->severity)->filter()->unique() as $severity)
+                            <option value="{{ \App\Models\AdminDisplay::label($severity) }}"></option>
                         @endforeach
-
                     </datalist>
 
                     @error('severity')

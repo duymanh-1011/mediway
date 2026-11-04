@@ -252,7 +252,7 @@
                                 ?? '—' }}
                         </td>
 
-                        <td>{{ $medicine->price_per_unit === null ? 'Chưa thiết lập' : number_format((float) $medicine->price_per_unit, 0, ',', '.').' đ / '.($medicine->unit ?: 'đơn vị') }}</td>
+                        <td class="medicine-price">{{ $medicine->price_per_unit === null ? 'Chưa thiết lập' : number_format((float) $medicine->price_per_unit, 0, ',', '.').' đ / '.($medicine->unit ?: 'đơn vị') }}</td>
 
                         <td>
 

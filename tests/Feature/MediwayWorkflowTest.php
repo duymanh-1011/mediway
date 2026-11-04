@@ -68,7 +68,7 @@ class MediwayWorkflowTest extends TestCase
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
         $visit = $appointment->fresh()->medicalVisit;
         $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
-        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();
         $this->assertSame('WAITING', $visit->status->name);
         $queue = $visit->queues()->sole();
         $this->assertSame('INITIAL_EXAM', $queue->queue_type);
@@ -90,7 +90,7 @@ class MediwayWorkflowTest extends TestCase
         foreach ($order->items as $index => $item) {
             $this->post(route('admin.service-order-items.start', $item))->assertSessionHas('error');
             $this->assertSame('PENDING', $item->fresh()->serviceStatus->name);
-            $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
+            $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();
             $this->assertTrue($item->payable->fresh()->paymentStatus->allows_service_execution);
             $this->post(route('admin.service-order-items.start', $item))->assertSessionHasNoErrors();
             $this->assertSame('PROCESSING', $item->fresh()->serviceStatus->name);
@@ -131,7 +131,7 @@ class MediwayWorkflowTest extends TestCase
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
         $visit = $appointment->fresh()->medicalVisit;
         $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
-        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();
         $this->patch(route('admin.visits.update-status', $visit), ['visit_status_id' => VisitStatus::where('name', 'IN_EXAMINATION')->value('id')])->assertSessionHasNoErrors();
         $queue = $visit->queues()->sole();
         $this->post(route('admin.queues.call', $queue))->assertSessionHasNoErrors();

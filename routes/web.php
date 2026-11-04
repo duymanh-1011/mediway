@@ -97,6 +97,7 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
         Route::get('/ho-so/anh-dai-dien', [ProfileController::class, 'avatar'])->name('profile.avatar');
     });
     Route::middleware(PatientMiddleware::class)->get('/thong-bao', [PortalController::class, 'notifications'])->name('notifications');
+    Route::middleware(PatientMiddleware::class)->post('/thong-bao/mo', [PortalController::class, 'openNotification'])->name('notifications.open');
     // Các trang hồ sơ và tài liệu yêu cầu tài khoản bệnh nhân hợp lệ.
     Route::middleware(PatientMiddleware::class)->get('/ho-so-suc-khoe', [\App\Http\Controllers\Portal\ClinicalHistoryController::class, 'index'])->name('health-history');
     // Đường dẫn tài liệu cũ chuyển đến trang kết quả, nơi tài liệu được hiển thị.

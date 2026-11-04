@@ -7,8 +7,6 @@ use App\Models\ClinicalTimeline;
 use App\Models\ServiceResult;
 use App\Rules\ActiveResultVerifier;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreServiceResultRequest extends FormRequest
@@ -20,10 +18,6 @@ class StoreServiceResultRequest extends FormRequest
 
     public function rules(): array
     {
-        $doctorRoleId = DB::table('roles')
-            ->where('name', 'Doctor')
-            ->value('id');
-
         return [
             'result_summary' => [
                 'nullable',
@@ -49,14 +43,6 @@ class StoreServiceResultRequest extends FormRequest
                 'nullable',
                 'integer',
                 new ActiveResultVerifier,
-
-                Rule::exists('users', 'id')
-                    ->where(function ($query) use ($doctorRoleId) {
-                        $query->where(
-                            'role_id',
-                            $doctorRoleId
-                        );
-                    }),
             ],
 
             'resulted_at' => [
@@ -99,9 +85,9 @@ class StoreServiceResultRequest extends FormRequest
         return [
             'result_parameters.json' => 'Thông số kết quả phải là JSON hợp lệ.',
 
-            'verified_by_user_id.integer' => 'Vui lòng chọn người xác nhận từ danh sách bác sĩ.',
+            'verified_by_user_id.integer' => 'Vui lòng chọn người xác nhận từ danh sách kỹ thuật viên.',
 
-            'verified_by_user_id.exists' => 'Người xác nhận phải là bác sĩ hợp lệ.',
+            'verified_by_user_id.exists' => 'Người xác nhận phải là kỹ thuật viên hợp lệ.',
 
             'resulted_at.date' => 'Thời điểm trả kết quả chưa hợp lệ. Vui lòng chọn đủ ngày và giờ.',
 

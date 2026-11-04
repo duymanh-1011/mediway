@@ -18,7 +18,7 @@ class PatientDocumentController extends Controller
         'profile-pdf' => ['column' => 'profile_pdf_path', 'label' => 'Hồ sơ bệnh nhân PDF', 'type' => 'pdf'],
     ];
 
-    // Lập danh sách tài liệu có tệp hợp lệ để đưa lên trang kết quả.
+    // Lập danh sách giấy tờ cá nhân có tệp hợp lệ để đưa lên hồ sơ cá nhân.
     public function documentsFor(\App\Models\Patient $patient)
     {
         $patient->loadMissing('detail');

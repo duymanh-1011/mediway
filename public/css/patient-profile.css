@@ -2,6 +2,7 @@
 
 .profile-form-field select{width:100%;min-height:48px;padding:11px 14px;border:1px solid #b9c9d9;border-radius:9px;background:#fff;color:#172033;font:inherit;font-size:15px}.profile-form-field select:focus{border-color:#2563eb;outline:3px solid rgb(37 99 235 / 14%)}.profile-form-field select[aria-invalid=true]{border-color:#ce5149}
 .profile-phone-form{margin-top:18px}
+.profile-personal-documents{margin-top:18px}
 
 /* Căn đều chiều cao các thẻ cùng hàng trên desktop. */
 @media(min-width:900px){.profile-cards{align-items:stretch}}

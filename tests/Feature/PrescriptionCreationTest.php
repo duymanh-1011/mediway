@@ -121,32 +121,87 @@ class PrescriptionCreationTest extends TestCase
     {
         $visit = $this->visit();
         $medicine = Medicine::where('unit', 'viên')->where('status', 'ACTIVE')->firstOrFail();
-        $item = [...$this->item($medicine), 'quantity' => '1.25', 'usage_unit' => 'vỉ', 'unit_price' => 1, 'line_total' => 1];
+        $item = [...$this->item($medicine), 'quantity' => '2', 'usage_unit' => 'vỉ', 'unit_price' => 1, 'line_total' => 1];
         $this->post(route('admin.visits.prescription.store', $visit), ['items' => [$item], 'confirm_create' => 1])->assertSessionHasNoErrors();
         $prescription = $visit->prescription()->sole();
         $line = $prescription->items()->sole();
         $this->assertSame('18000.00', $line->unit_price);
-        $this->assertSame('22500.00', $line->line_total);
+        $this->assertSame('36000.00', $line->line_total);
         $this->assertNull($prescription->payable);
         $medicine->update(['price_per_blister' => 100]);
-        $this->assertSame('22500.00', $prescription->fresh()->pricedTotal());
-        $this->get(route('admin.prescriptions.show', $prescription))->assertOk()->assertSee('22.500')->assertSee('Tạo khoản thu tiền thuốc');
+        $this->assertSame('36000.00', $prescription->fresh()->pricedTotal());
+        $this->get(route('admin.prescriptions.show', $prescription))->assertOk()->assertSee('36.000')->assertSee('Tạo khoản thu tiền thuốc');
         $this->post(route('admin.prescriptions.payable.store', $prescription), [])->assertSessionHasErrors('confirm_purchase');
         $this->assertNull($prescription->fresh()->payable);
         $this->post(route('admin.prescriptions.payable.store', $prescription), ['confirm_purchase' => 1, 'amount' => 1])->assertSessionHasNoErrors();
         $fee = $prescription->fresh()->payable;
-        $this->assertSame('22500.00', $fee->amount);
+        $this->assertSame('36000.00', $fee->amount);
         $this->assertSame('MEDICINE_FEE', $fee->payment_type);
         $this->assertSame('UNPAID', $fee->paymentStatus->name);
+        $paymentUrl = route('admin.payables.payment-transactions.create', $fee);
+        $this->get(route('admin.prescriptions.show', $prescription))->assertOk()->assertSee('href="'.$paymentUrl.'"', false)->assertSee('Thanh toán tiền thuốc');
+        $this->get(route('admin.payables.show', $fee))->assertOk()->assertSee('href="'.$paymentUrl.'"', false)->assertSee('Ghi nhận thanh toán');
+        $cashier = \App\Models\Employee::where('employee_code', 'NV000004')->firstOrFail();
+        $nurse = \App\Models\Employee::where('employee_code', 'NV000001')->firstOrFail();
+        $this->get($paymentUrl)->assertOk()->assertSee($cashier->employee_code)->assertDontSee($nurse->employee_code);
         $this->post(route('admin.prescriptions.payable.store', $prescription), ['confirm_purchase' => 1])->assertSessionHasErrors('confirm_purchase');
         $this->get(route('admin.payables.show', $fee))->assertOk()->assertSee('Tiền thuốc')->assertSee($prescription->prescription_code);
         $patient = $visit->patient->user;
-        $this->actingAs($patient)->get(route('patient.prescriptions'))->assertOk()->assertSee('22.500')->assertSee($prescription->prescription_code);
+        $this->actingAs($patient)->get(route('patient.prescriptions'))->assertOk()->assertSee('36.000')->assertSee($prescription->prescription_code);
         $this->get(route('patient.payments.index'))->assertOk()->assertSee($fee->payable_code)->assertSee('Tiền thuốc');
-        $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail())
-            ->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
+        $admin = User::where('business_code', 'QT000001')->firstOrFail();
+        $this->actingAs($admin)->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasErrors('collected_by_employee_id');
+        $this->assertSame('UNPAID', $fee->fresh()->paymentStatus->name);
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'QR', 'confirm_payment' => 1, 'collected_by_employee_id' => 999999])->assertSessionHasErrors('collected_by_employee_id');
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => $nurse->id])->assertSessionHasErrors('collected_by_employee_id');
+        $this->assertSame('UNPAID', $fee->fresh()->paymentStatus->name);
+        $employee = \App\Models\Employee::where('employee_code', 'NV000004')->firstOrFail();
+        $employee->update(['status' => 'INACTIVE']);
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => $employee->id])->assertSessionHasErrors('collected_by_employee_id');
+        $employee->update(['status' => 'ACTIVE']);
+        $this->actingAs($admin)
+            ->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();
         $this->assertSame('PAID', $fee->fresh()->paymentStatus->name);
-        $this->assertSame('22500.00', $fee->fresh()->transactions()->sole()->amount);
+        $this->assertSame('36000.00', $fee->fresh()->transactions()->sole()->amount);
+        $transaction = $fee->fresh()->transactions()->sole();
+        $this->assertSame($employee->id, $transaction->collected_by_employee_id);
+        $this->assertDatabaseHas('audit_logs', ['entity_type' => 'payment_transactions', 'entity_id' => $transaction->id, 'user_id' => $admin->id]);
+        $this->get(route('admin.payment-transactions.show', $transaction))->assertOk()->assertSee($employee->full_name)->assertSee($employee->employee_code);
+        $this->get(route('admin.prescriptions.show', $prescription))->assertOk()->assertDontSee('href="'.$paymentUrl.'"', false)->assertSee('Tiền thuốc đã được thanh toán.');
+        $this->get(route('admin.payables.show', $fee))->assertOk()->assertDontSee('href="'.$paymentUrl.'"', false);
+    }
+
+    public function test_discrete_units_require_whole_quantities_but_doses_can_be_fractional(): void
+    {
+        $visit = $this->visit();
+        $medicine = Medicine::where('unit', 'viên')->where('status', 'ACTIVE')->firstOrFail();
+        foreach (['viên', 'vỉ', 'hộp'] as $unit) {
+            foreach (['0.01', '1.25'] as $quantity) {
+                $this->post(route('admin.visits.prescription.store', $visit), [
+                    'items' => [[...$this->item($medicine), 'usage_unit' => $unit, 'quantity' => $quantity]], 'confirm_create' => 1,
+                ])->assertSessionHasErrors('items.0.quantity');
+            }
+        }
+        $this->assertFalse($visit->prescription()->exists());
+        $this->post(route('admin.visits.prescription.store', $visit), [
+            'items' => [[...$this->item($medicine), 'quantity' => '2.00', 'dose_per_use' => '0.5 viên']], 'confirm_create' => 1,
+        ])->assertSessionHasNoErrors();
+        $line = $visit->prescription()->sole()->items()->sole();
+        $this->assertSame('2.00', $line->quantity);
+        $this->assertSame('0.5 viên', $line->dose_per_use);
+    }
+
+    public function test_continuous_units_can_have_fractional_quantities_and_correct_totals(): void
+    {
+        $visit = $this->visit();
+        $medicine = Medicine::where('unit', 'viên')->where('status', 'ACTIVE')->firstOrFail();
+        $medicine->update(['unit' => 'ml', 'price_per_unit' => 2000]);
+        $this->post(route('admin.visits.prescription.store', $visit), [
+            'items' => [[...$this->item($medicine), 'usage_unit' => 'ml', 'quantity' => '1.25', 'dose_per_use' => '0.5 ml']], 'confirm_create' => 1,
+        ])->assertSessionHasNoErrors();
+        $line = $visit->prescription()->sole()->items()->sole();
+        $this->assertSame('1.25', $line->quantity);
+        $this->assertSame('2500.00', $line->line_total);
     }
 
     public function test_missing_or_wrong_unit_price_cannot_create_prescription(): void

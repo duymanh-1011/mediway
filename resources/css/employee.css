@@ -55,3 +55,15 @@ body.employee-body .employee-profile .portal-btn{display:inline-flex;align-items
 
 /* Hai nút lọc có cùng chiều cao và thẳng hàng trên máy tính lẫn điện thoại. */
 .tech-filter__actions{display:flex;align-items:center;gap:10px}.tech-filter__actions .portal-btn{min-height:44px;margin:0;white-space:nowrap}.portal-body .tech-filter__actions .tech-filter__reset{color:#1d4ed8;text-decoration:none}@media(max-width:600px){.tech-filter__actions{width:100%;flex-wrap:wrap}.tech-filter__actions .portal-btn{flex:1 1 140px}}
+/* F04–F05: scoped controls and compact administrative records. */
+.reception-work .employee-filter__field :is(input,select) { width:100%; min-height:44px; padding:9px 12px; border:1px solid #cbd8e8; border-radius:8px; background:#fff; color:#17283e; font:inherit; }
+.reception-work .employee-filter__field label { color:#32475f; font-weight:600; }
+.reception-work .reception-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.reception-work .reception-records { display:grid; gap:12px; }
+.reception-work .reception-records .employee-card { padding:18px 20px; }
+.reception-work .reception-records .employee-card h2 { margin:0 0 8px; font-size:16px; }
+.reception-work .reception-records .employee-card p { margin:5px 0; }
+.reception-work .reception-records .employee-card__link { display:inline-flex; margin-top:8px; }
+@media(max-width:600px) { .reception-work .reception-actions { flex-basis:100%; } .reception-work .reception-records .employee-card { padding:17px; } }
+.reception-work .portal-form input[type="radio"], .reception-work .portal-form input[type="checkbox"] { width:auto; min-height:0; margin:0 6px 0 0; padding:0; }
+.reception-work .portal-form label:has(input[type="radio"]), .reception-work .portal-form label:has(input[type="checkbox"]) { display:flex; align-items:center; gap:6px; }

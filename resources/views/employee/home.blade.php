@@ -1,7 +1,53 @@
 @extends('employee.layout')
 @section('title', 'Tổng quan')
 @section('content')
-<section class="employee-intro"><p class="portal-eyebrow">KHU VỰC NHÂN VIÊN</p><h1>Xin chào, {{ $employee->full_name }}</h1><p>Thông tin làm việc và các chức năng của bạn tại Mediway.</p></section><div class="employee-grid"><section class="employee-card"><h2>Thông tin nhân viên</h2><dl class="employee-facts"><div><dt>Mã nhân viên</dt><dd>{{ $employee->employee_code }}</dd></div><div><dt>Vị trí công việc</dt><dd>{{ \App\Support\EmployeeAccess::TYPES[$employee->detail->employee_type] }}</dd></div><div><dt>Trạng thái</dt><dd>Đang hoạt động</dd></div><div><dt>Bộ phận</dt><dd>{{ $employee->detail->department ?: 'Chưa cập nhật' }}</dd></div></dl><a class="portal-btn portal-btn--secondary" href="{{ route('employee.profile') }}">Xem hồ sơ</a></section><section class="employee-card"><h2>Công việc của bạn</h2><p>Truy cập chức năng phù hợp với vị trí công việc.</p>@foreach (['RECEPTIONIST' => ['Tiếp đón và lịch hẹn', 'employee.reception.index'], 'LAB_TECHNICIAN' => ['Xét nghiệm', 'employee.laboratory.index'], 'IMAGING_TECHNICIAN' => ['Chẩn đoán hình ảnh', 'employee.imaging.index'], 'CASHIER' => ['Thu ngân và thanh toán', 'employee.payments.index']] as $type => [$label, $routeName]) @if($employee->detail->employee_type === $type)<div class="employee-module"><strong>{{ $label }}</strong>@if(\Illuminate\Support\Facades\Route::has($routeName))<a class="portal-text-link" href="{{ route($routeName) }}">Mở chức năng</a>@else<span>Chức năng đang được triển khai</span>@endif</div>@endif @endforeach</section></div>
-@if($work)<section class="employee-card employee-services"><h2>Thông tin công việc</h2><div class="employee-module"><strong>{{ $work['count'] }}</strong><span>{{ $work['label'] }}</span></div></section>@endif
-<section class="employee-card employee-services"><h2>Các nhóm chức năng</h2><p>Quyền sử dụng được xác định theo vị trí công việc hiện tại.</p><div class="employee-services__grid">@foreach (['RECEPTIONIST' => ['Tiếp đón', 'employee.reception.index'], 'LAB_TECHNICIAN' => ['Xét nghiệm', 'employee.laboratory.index'], 'IMAGING_TECHNICIAN' => ['Chẩn đoán hình ảnh', 'employee.imaging.index'], 'CASHIER' => ['Thu ngân và thanh toán', 'employee.payments.index']] as $type => [$label, $routeName])<div class="employee-module"><strong>{{ $label }}</strong>@if($employee->detail->employee_type === $type && \Illuminate\Support\Facades\Route::has($routeName))<a class="portal-text-link" href="{{ route($routeName) }}">Mở chức năng</a>@else<span>{{ $employee->detail->employee_type === $type ? 'Chức năng đang được triển khai' : 'Không thuộc quyền của bạn' }}</span>@endif</div>@endforeach</div></section>
+@php
+    $employeeType = $employee->detail->employee_type;
+    $employeeTypeName = \App\Support\EmployeeAccess::TYPES[$employeeType];
+    $groups = [
+        'RECEPTIONIST' => ['Tiếp đón và lịch hẹn', 'Hỗ trợ tiếp nhận và theo dõi lịch hẹn.', 'employee.reception.index', 'reception'],
+        'LAB_TECHNICIAN' => ['Xét nghiệm', 'Theo dõi công việc xét nghiệm được giao.', 'employee.laboratory.index', 'lab'],
+        'IMAGING_TECHNICIAN' => ['Chẩn đoán hình ảnh', 'Theo dõi công việc chẩn đoán hình ảnh.', 'employee.imaging.index', 'image'],
+        'CASHIER' => ['Thu ngân và thanh toán', 'Theo dõi khoản thu và giao dịch.', 'employee.payments.index', 'payment'],
+    ];
+    [$currentTitle, $currentDescription, $currentRoute, $currentIcon] = $groups[$employeeType];
+    $currentAvailable = \Illuminate\Support\Facades\Route::has($currentRoute);
+@endphp
+<section class="employee-welcome">
+    <div class="employee-welcome__copy">
+        <p class="portal-eyebrow">KHU VỰC NHÂN VIÊN</p>
+        <h1>Xin chào, {{ $employee->full_name }}</h1>
+        <p>Chúc bạn một ngày làm việc hiệu quả tại Mediway.</p>
+        <span class="employee-welcome__identity"><x-employee-icon name="shield" /> {{ $employeeTypeName }} <span aria-hidden="true">·</span> {{ $employee->employee_code }}</span>
+    </div>
+    <div class="employee-welcome__art" aria-hidden="true"><div class="employee-welcome__ring"></div><span><x-employee-icon name="reception" /></span><i></i></div>
+</section>
+
+<section class="employee-section" aria-labelledby="employee-overview-title">
+    <div class="employee-section__heading"><div><p class="portal-eyebrow">KHÔNG GIAN LÀM VIỆC</p><h2 id="employee-overview-title">Tổng quan của bạn</h2><p>Thông tin tài khoản và công việc theo vị trí của bạn.</p></div></div>
+    <div class="employee-grid">
+        <section class="employee-card employee-overview-card">
+            <div class="employee-card__heading"><span class="employee-card__icon"><x-employee-icon name="user" /></span><div><h3>Thông tin nhân viên</h3><p>Thông tin hồ sơ của bạn tại Mediway</p></div></div>
+            <dl class="employee-facts"><div><dt>Mã nhân viên</dt><dd>{{ $employee->employee_code }}</dd></div><div><dt>Vị trí công việc</dt><dd>{{ $employeeTypeName }}</dd></div><div><dt>Trạng thái</dt><dd><span class="employee-status"><span aria-hidden="true"></span>Đang hoạt động</span></dd></div><div><dt>Bộ phận</dt><dd>{{ $employee->detail->department ?: 'Chưa cập nhật' }}</dd></div></dl>
+            <a class="employee-card__link" href="{{ route('employee.profile') }}">Xem hồ sơ cá nhân <x-employee-icon name="arrow" /></a>
+        </section>
+        <section class="employee-card employee-overview-card">
+            <div class="employee-card__heading"><span class="employee-card__icon"><x-employee-icon name="calendar" /></span><div><h3>Công việc của bạn</h3><p>Chức năng theo vị trí hiện tại</p></div></div>
+            <div class="employee-work"><span class="employee-work__icon"><x-employee-icon :name="$currentIcon" /></span><div><h4>{{ $currentTitle }}</h4><p>{{ $currentDescription }}</p>@if($currentAvailable)<a class="employee-card__link" href="{{ route($currentRoute) }}">Mở chức năng <x-employee-icon name="arrow" /></a>@else<span class="employee-work__status">Chưa tích hợp</span>@endif</div></div>
+            @if($work)<div class="employee-work__summary"><span>{{ $work['label'] }}</span><strong>{{ $work['count'] }}</strong></div>@endif
+        </section>
+    </div>
+</section>
+
+<section class="employee-section" aria-labelledby="employee-functions-title">
+    <div class="employee-section__heading"><div><p class="portal-eyebrow">CHỨC NĂNG</p><h2 id="employee-functions-title">Các nhóm công việc</h2><p>Truy cập chức năng phù hợp với vị trí của bạn.</p></div></div>
+    <div class="employee-services__grid">
+        @foreach ($groups as $type => [$label, $description, $routeName, $icon])
+            @php($available = $employeeType === $type && \Illuminate\Support\Facades\Route::has($routeName))
+            @if($available)<a class="employee-service" href="{{ route($routeName) }}">@else<div class="employee-service">@endif
+                <span class="employee-service__icon"><x-employee-icon :name="$icon" /></span><h3>{{ $label }}</h3><p>{{ $description }}</p><span class="employee-service__status">{{ $available ? 'Mở chức năng' : ($employeeType === $type ? 'Chưa tích hợp' : 'Không thuộc quyền của bạn') }} @if($available)<x-employee-icon name="arrow" />@endif</span>
+            @if($available)</a>@else</div>@endif
+        @endforeach
+    </div>
+</section>
 @endsection

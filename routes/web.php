@@ -71,6 +71,8 @@ Route::get('/ho-tro', [PublicController::class, 'support'])->name('public.suppor
 Route::get('/tin-tuc', [PublicController::class, 'news'])->name('public.news');
 Route::get('/tin-tuc/{slug}', [PublicController::class, 'article'])->name('public.news.show');
 
+require __DIR__.'/employee-reception.php';
+
 Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\EmployeeMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function () {
     Route::get('/', [\App\Http\Controllers\Employee\WorkspaceController::class, 'home'])->name('home');
     Route::get('/ho-so', [\App\Http\Controllers\Employee\WorkspaceController::class, 'profile'])->name('profile');

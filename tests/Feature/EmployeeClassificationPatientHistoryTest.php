@@ -26,6 +26,8 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
     {
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
+        // Exercise compatibility with a historical NURSE record explicitly.
+        Employee::where('employee_code', 'NV000001')->firstOrFail()->detail()->update(['employee_type' => 'NURSE']);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
     }

@@ -77,11 +77,14 @@ class PatientPortalTest extends TestCase
             ->assertRedirect(route('admin.dashboard'));
         $this->get(route('admin.dashboard'))->assertOk();
         $this->post(route('admin.logout'));
-        foreach (['BS000001', 'NV000001'] as $code) {
+        foreach (['BS000001'] as $code) {
             $user = User::where('business_code', $code)->firstOrFail();
             $this->post(route('patient.login.store'), ['phone' => $user->phone, 'password' => 'Mediway@123'])->assertSessionHasErrors('phone');
             $this->assertGuest();
         }
+        $receptionist = User::where('business_code', 'NV000001')->firstOrFail();
+        $this->post(route('patient.login.store'), ['phone' => $receptionist->phone, 'password' => 'Mediway@123'])
+            ->assertRedirect(route('employee.home'));
     }
 
     public function test_registration_creates_linked_active_patient_without_accepting_privileged_fields(): void

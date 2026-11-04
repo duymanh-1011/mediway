@@ -53,7 +53,7 @@ class PreReleaseAuditTest extends TestCase
         $this->signIn();
         $item = $this->unpaidItem();
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), [
-            'payment_method' => 'CASH', 'confirm_payment' => 1,
+            'payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id'),
         ])->assertSessionHasNoErrors()->assertSessionMissing('error');
         ServiceStatus::where('name', 'PENDING')->update(['allows_transition' => false]);
         $this->post(route('admin.service-order-items.start', $item));
@@ -68,7 +68,7 @@ class PreReleaseAuditTest extends TestCase
         $this->signIn();
         $item = $this->unpaidItem();
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), [
-            'payment_method' => 'CASH', 'confirm_payment' => 1,
+            'payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id'),
         ])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.start', $item))->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.service-results.store', $item), [

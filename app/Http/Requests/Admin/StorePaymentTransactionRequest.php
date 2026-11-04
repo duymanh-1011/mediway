@@ -4,6 +4,8 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Models\Employee;
+use Closure;
 
 class StorePaymentTransactionRequest extends FormRequest
 {
@@ -15,6 +17,11 @@ class StorePaymentTransactionRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'collected_by_employee_id' => ['bail', 'required', 'integer', function (string $attribute, mixed $value, Closure $fail): void {
+                if (! Employee::activeCashiers()->whereKey($value)->exists()) {
+                    $fail('Vui lòng chọn nhân viên thu ngân đang hoạt động.');
+                }
+            }],
             'payment_method' => [
                 'required',
                 Rule::in([
@@ -49,6 +56,7 @@ class StorePaymentTransactionRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'collected_by_employee_id.required' => 'Vui lòng chọn nhân viên thu ngân xác nhận giao dịch.',
             'payment_method.required' => 'Vui lòng chọn phương thức thanh toán.',
 
             'payment_method.in' => 'Vui lòng chọn phương thức thanh toán từ các lựa chọn có sẵn.',

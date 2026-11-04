@@ -5,9 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Builder;
 
 class Employee extends Model
 {
+    public function scopeActiveCashiers(Builder $query): void
+    {
+        $query->where('status', 'ACTIVE')->whereHas('detail', fn (Builder $detail) => $detail->where('employee_type', 'CASHIER'));
+    }
+
     protected $table = 'employees';
 
     protected $fillable = [

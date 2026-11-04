@@ -17,10 +17,14 @@
             </nav>
             <div class="notification-page__content" aria-label="Danh sách thông báo">
                 @forelse ($items as $item)
-                    <a class="notification-item" href="{{ $item['url'] }}">
+                    <form method="POST" action="{{ route('patient.notifications.open') }}">
+                        @csrf
+                        <input type="hidden" name="notification_key" value="{{ $item['key'] }}">
+                    <button class="notification-item" type="submit">
                         <span class="notification-item__body"><span class="notification-item__category">{{ $item['category'] }}</span><strong>{{ $item['title'] }}</strong><span>{{ $item['description'] }}</span></span>
                         @if ($item['time'])<time datetime="{{ $item['time']->toIso8601String() }}">{{ $item['time']->format('H:i d/m/Y') }}</time>@endif
-                    </a>
+                    </button>
+                    </form>
                 @empty
                     <x-portal.empty-state title="Chưa có thông báo" />
                 @endforelse

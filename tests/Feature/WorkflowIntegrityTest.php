@@ -60,7 +60,7 @@ class WorkflowIntegrityTest extends TestCase
         }
         $item->payable->fresh()->update(['payment_status_id' => PaymentStatus::where('name', 'UNPAID')->value('id')]);
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), [
-            'payment_method' => 'CASH', 'confirm_payment' => 1,
+            'payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id'),
         ])->assertSessionHasErrors('payment_method');
         $this->assertSame($transactionCount, $item->payable->transactions()->count());
         $this->assertSame('CANCELLED', $item->fresh()->serviceStatus->name);
@@ -73,7 +73,7 @@ class WorkflowIntegrityTest extends TestCase
             'payment_status_id' => PaymentStatus::where('name', 'PAID')->value('id'), 'confirm_update' => 1,
         ])->assertSessionHasErrors('payment_status_id');
         $this->post(route('admin.payables.payment-transactions.store', $payable), [
-            'payment_method' => 'CASH', 'confirm_payment' => 1,
+            'payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id'),
         ])->assertSessionHasNoErrors();
         $this->patch(route('admin.payables.update-status', $payable), [
             'payment_status_id' => PaymentStatus::where('name', 'UNPAID')->value('id'), 'confirm_update' => 1,

@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             DiseaseGroupSeeder::class,
             DiseaseSeeder::class,
             MedicineSeeder::class,
+            ReferenceMedicinePriceSeeder::class,
             AppointmentStatusSeeder::class,
             DoctorScheduleSeeder::class,
             AppointmentTimeSlotSeeder::class,

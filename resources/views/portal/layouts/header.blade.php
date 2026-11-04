@@ -1,7 +1,7 @@
 <header class="portal-header">
     <div class="portal-shell portal-header__inner">
         <a class="portal-brand" href="{{ route('public.home') }}" aria-label="Mediway về trang chủ"><span aria-hidden="true">✦</span> Mediway</a>
-        <button class="portal-menu-toggle" type="button" data-portal-menu aria-controls="portal-navigation" aria-expanded="false"><span class="sr-only">Mở menu điều hướng</span><span aria-hidden="true">☰</span></button>
+        <button class="portal-menu-toggle" type="button" data-portal-menu aria-controls="portal-navigation" aria-expanded="false"><span class="sr-only">Mở menu điều hướng</span><span aria-hidden="true">☰</span>@auth @if (auth()->user()->canAccessPortal())<span class="portal-notification-count portal-notification-count--menu" data-notification-count hidden></span>@endif @endauth</button>
         <nav id="portal-navigation" class="portal-nav" aria-label="Điều hướng chính">
             <a href="{{ route('public.home') }}" @class(['is-active' => request()->routeIs('public.home')])>Trang chủ</a>
             <a href="{{ route('public.about') }}" @class(['is-active' => request()->routeIs('public.about')])>Về Mediway</a>
@@ -14,7 +14,7 @@
                         <a href="{{ route('patient.health-history') }}">Hồ sơ sức khỏe</a>
                         <a href="{{ route('patient.results') }}">Kết quả khám</a>
                         <a href="{{ route('patient.prescriptions') }}">Đơn thuốc</a>
-                        <a href="{{ route('patient.notifications') }}">Thông báo</a>
+                        <a href="{{ route('patient.notifications') }}">Thông báo <span data-notification-mobile-count></span></a>
                         <a href="{{ route('patient.home') }}">Bệnh nhân · {{ auth()->user()->patient->full_name }}</a>
                         <form method="post" action="{{ route('patient.logout') }}">@csrf<button class="portal-nav__logout" type="submit">Đăng xuất</button></form>
                     @elseif (auth()->user()->canAccessAdmin())
@@ -29,8 +29,9 @@
         <div class="portal-header__actions">
             @auth
                 @if (auth()->user()->canAccessPortal())
-                    <a class="portal-notification-link" href="{{ route('patient.notifications') }}" aria-label="Thông báo">
+                    <a class="portal-notification-link" href="{{ route('patient.notifications') }}" aria-label="Thông báo" data-notification-link data-notification-url="{{ route('patient.notifications') }}">
                         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-2 7-2 9h16c0-2-2-2-2-9M10 20h4"/></svg>
+                        <span class="portal-notification-count" data-notification-count hidden></span>
                     </a>
                     <a class="portal-account" href="{{ route('patient.home') }}" aria-label="Tài khoản của {{ auth()->user()->patient->full_name }}">
                         <span class="portal-account__avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr(trim(auth()->user()->patient->full_name), 0, 1)) }}</span>
@@ -47,3 +48,10 @@
         </div>
     </div>
 </header>
+@auth
+    @if (auth()->user()->canAccessPortal())
+        <div class="portal-call-alert" data-call-alert role="status" hidden>
+            <div class="portal-shell portal-call-alert__inner"><strong data-call-title></strong> <span data-call-message></span> <form method="POST" action="{{ route('patient.notifications.open') }}">@csrf<input type="hidden" name="notification_key" data-call-key><button type="submit">Xem hàng đợi →</button></form></div>
+        </div>
+    @endif
+@endauth

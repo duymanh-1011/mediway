@@ -48,7 +48,7 @@ class CancelledServiceWorkflowTest extends TestCase
 
     private function finish(ServiceOrderItem $item): void
     {
-        $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors()->assertSessionMissing('error');
+        $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.start', $item))->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.service-results.store', $item), ['result_summary' => 'Kết quả bình thường', 'resulted_at' => now()->format('Y-m-d H:i:s'), 'confirm_create' => 1])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.complete', $item))->assertSessionMissing('error');
@@ -154,7 +154,7 @@ class CancelledServiceWorkflowTest extends TestCase
     public function test_paid_payable_cannot_cancel_service_or_refund_transaction(): void
     {
         $item = $this->order()->items()->firstOrFail();
-        $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
+        $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();
         $count = $item->payable->transactions()->count();
         $this->cancel($item->payable)->assertSessionHasErrors('cancel_reason');
         $this->assertSame('PENDING', $item->fresh()->serviceStatus->name);

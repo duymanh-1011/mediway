@@ -190,13 +190,12 @@
                 type="text"
                 class="form-control"
                 list="severity-list"
-                value="{{ old('severity') }}"
+                value="{{ \App\Models\AdminDisplay::label(old('severity')) === '—' ? '' : \App\Models\AdminDisplay::label(old('severity')) }}"
                 placeholder="Chọn hoặc nhập mức độ"
             >
-
             <datalist id="severity-list">
-                @foreach ($severityOptions as $severity)
-                    <option value="{{ $severity }}"></option>
+                @foreach (collect(['MILD', 'MODERATE', 'SEVERE'])->merge($severityOptions)->unique() as $severity)
+                    <option value="{{ \App\Models\AdminDisplay::label($severity) }}"></option>
                 @endforeach
             </datalist>
 

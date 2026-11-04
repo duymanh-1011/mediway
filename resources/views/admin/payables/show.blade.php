@@ -85,6 +85,10 @@
 
             <a href="{{ route('admin.payables.index') }}" class="admin-btn admin-btn-secondary">← Quay lại</a>
 
+            @if (in_array($payable->paymentStatus?->name, ['UNPAID', 'PENDING'], true))
+                <a href="{{ route('admin.payables.payment-transactions.create', $payable) }}" class="admin-btn admin-btn-primary">Ghi nhận thanh toán</a>
+            @endif
+
 
             @if (
                     !in_array(

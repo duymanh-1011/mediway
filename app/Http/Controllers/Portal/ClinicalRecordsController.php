@@ -19,34 +19,16 @@ class ClinicalRecordsController extends Controller
         $patient = $request->user()->patient;
         abort_unless($patient && $patient->status === 'ACTIVE', 404);
 
-        // Chỉ lấy kết quả có nội dung hoặc tệp, thuộc lượt khám của bệnh nhân này.
-        // Dữ liệu được hiển thị mà không kiểm tra trạng thái công bố.
-        $results = ServiceResult::query()
-            ->where(function ($query) {
-                $query->whereNotNull('result_summary')
-                    ->orWhereNotNull('result_conclusion')
-                    ->orWhereNotNull('result_parameters')
-                    ->orWhereNotNull('result_pdf_path')
-                    ->orWhereNotNull('result_image_path');
-            })
-            ->whereHas('serviceOrderItem', function ($item) use ($patient) {
-                $item->whereHas('serviceOrder.medicalVisit', fn ($visit) => $visit->where('patient_id', $patient->id));
-            })
-            ->with(['serviceOrderItem.medicalService', 'serviceOrderItem.serviceOrder.medicalVisit.doctor'])
-            ->orderByDesc('resulted_at')
-            ->paginate(10, ['*'], 'services_page')->withQueryString();
-
-        // Kết luận được ghi nhận theo lượt khám, độc lập với kết quả dịch vụ.
-        $visitResults = $patient->medicalVisits()
-            ->whereHas('conclusion', fn ($query) => $query->whereNotNull('professional_conclusion'))
-            ->with(['doctor:id,full_name', 'specialty:id,name', 'conclusion', 'diagnoses.disease:id,name'])
+        // Từng lượt khám là ranh giới dữ liệu, kể cả khi chỉ một dịch vụ đã có kết quả.
+        $visits = $patient->medicalVisits()
+            ->with(['doctor:id,full_name', 'specialty:id,name', 'status:id,name,description',
+                'conclusion', 'diagnoses.disease:id,name', 'prescription',
+                'serviceOrders.items.medicalService.serviceGroups', 'serviceOrders.items.serviceStatus',
+                'serviceOrders.items.result'])
             ->orderByDesc('checked_in_at')
-            ->paginate(10, ['*'], 'visits_page')->withQueryString();
+            ->orderByDesc('id')->paginate(10)->withQueryString();
 
-        // Lấy tài liệu cá nhân để hiển thị cùng trang kết quả khám.
-        $documents = app(PatientDocumentController::class)->documentsFor($patient);
-
-        return view('portal.clinical.results', compact('results', 'visitResults', 'documents'));
+        return view('portal.clinical.results', compact('visits'));
     }
 
     // Lấy đơn thuốc của bệnh nhân qua mối liên hệ với lượt khám.
@@ -56,14 +38,20 @@ class ClinicalRecordsController extends Controller
         abort_unless($patient && $patient->status === 'ACTIVE', 404);
 
         // Nạp bác sĩ và chi tiết thuốc; sắp xếp đơn mới trước và chia 10 đơn mỗi trang.
+        $visitId = $request->query('visit');
+        if ($visitId !== null) {
+            abort_unless(is_string($visitId) && ctype_digit($visitId) && (int) $visitId > 0, 404);
+            $patient->medicalVisits()->whereKey((int) $visitId)->firstOrFail();
+        }
         $prescriptions = Prescription::query()
             ->whereHas('medicalVisit', fn ($visit) => $visit
                 ->where('patient_id', $patient->id))
+            ->when($visitId !== null, fn ($query) => $query->where('medical_visit_id', (int) $visitId))
             ->with(['doctor', 'medicalVisit.doctor', 'items.medicine', 'payable.paymentStatus'])
             ->orderByDesc('prescribed_at')
-            ->paginate(10);
+            ->paginate(10)->withQueryString();
 
-        return view('portal.clinical.prescriptions', compact('prescriptions'));
+        return view('portal.clinical.prescriptions', compact('prescriptions', 'visitId'));
     }
 
     // Mở PDF hoặc ảnh kết quả sau khi kiểm tra kết quả thuộc bệnh nhân hiện tại.

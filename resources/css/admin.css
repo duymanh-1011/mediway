@@ -408,6 +408,7 @@ span[aria-current] { border-color: var(--primary); background: var(--primary); c
     body[data-admin-page="medicines-index"] .mini-card-value.success { color: #059669; }
     body[data-admin-page="medicines-index"] .mini-card-value.danger { color: #dc2626; }
     body[data-admin-page="medicines-index"] .filter-control:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    body[data-admin-page="medicines-index"] .medicine-price { white-space: nowrap; }
     body[data-admin-page="medicines-index"] .action-group { display: flex; align-items: center; gap: 7px; }
     body[data-admin-page="medicines-index"] .action-group form { margin: 0; }
     body[data-admin-page="medicines-index"] .action-link { padding: 6px 9px; border: none; border-radius: 6px; text-decoration: none; font-family: "Segoe UI", Arial, Helvetica, sans-serif; font-size: var(--admin-font-body); font-weight: 600; cursor: pointer; }
@@ -537,6 +538,10 @@ span[aria-current] { border-color: var(--primary); background: var(--primary); c
     body[data-admin-page="visits-show"] .clinical-grid { display: grid; grid-template-columns: repeat( auto-fit, minmax(250px, 1fr) ); gap: 18px; }
     body[data-admin-page="visits-show"] .clinical-item { padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; }
     body[data-admin-page="visits-show"] .clinical-item p { margin-bottom: 0; line-height: 1.6; white-space: pre-line; }
+    body[data-admin-page="visits-show"] .clinical-grid--conclusion .clinical-item p { white-space: normal; margin-top: 12px; }
+    body[data-admin-page="visits-show"] .clinical-grid--conclusion { grid-template-columns: minmax(0, 1fr); }
+    @media (min-width: 700px) { body[data-admin-page="visits-show"] .clinical-grid--conclusion { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (min-width: 1200px) { body[data-admin-page="visits-show"] .clinical-grid--conclusion { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     body[data-admin-page="visits-show"] .section-link { margin-top: 16px; }
     body[data-admin-page="visits-show"] .muted-text { color: #64748b; }
     body[data-admin-page="visits-show"] .service-orders-table { margin-top: 18px; }

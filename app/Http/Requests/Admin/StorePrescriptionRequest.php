@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Medicine;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StorePrescriptionRequest extends FormRequest
 {
@@ -43,5 +45,22 @@ class StorePrescriptionRequest extends FormRequest
             'items.*.usage_method.required' => 'Vui lòng nhập cách dùng.',
             'confirm_create.accepted' => 'Vui lòng xác nhận thông tin trước khi lưu đơn thuốc.',
         ];
+    }
+
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            $items = $this->input('items');
+            if (! is_array($items)) return;
+            foreach ($items as $index => $item) {
+                if (! is_array($item) || ! is_string($item['usage_unit'] ?? null)
+                    || ! is_scalar($item['quantity'] ?? null) || $validator->errors()->has("items.$index.quantity")) continue;
+                $quantity = (string) $item['quantity'];
+                if (Medicine::requiresWholeQuantity($item['usage_unit'])
+                    && (! preg_match('/^\d+(?:\.0{1,2})?$/D', $quantity) || (float) $quantity < 1)) {
+                    $validator->errors()->add("items.$index.quantity", 'Số lượng theo đơn vị '.$item['usage_unit'].' phải là số nguyên từ 1 trở lên.');
+                }
+            }
+        }];
     }
 }

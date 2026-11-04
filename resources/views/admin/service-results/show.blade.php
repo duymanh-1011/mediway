@@ -339,7 +339,7 @@
                     @if ($result->verifier)
 
                         <span class="result-verifier">
-                            {{ $result->verifier->doctor?->full_name ?? 'Chưa cập nhật tên' }}
+                            {{ $result->verifier->employee?->full_name ?? $result->verifier->doctor?->full_name ?? 'Chưa cập nhật tên' }}
                         </span>
 
                     @else

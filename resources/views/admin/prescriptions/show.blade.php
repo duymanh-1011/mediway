@@ -297,16 +297,16 @@
             <div class="admin-table-scroll">
                 <table class="admin-table admin-prescription-table">
                     <thead>
-                        <tr><th scope="col" class="admin-row-number">STT</th><th>Thuốc</th><th>Liều mỗi lần</th><th>Số lần/ngày</th><th>Số ngày</th><th>Thời điểm dùng</th><th>Cách dùng</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th><th>Hướng dẫn và ghi chú</th></tr>
+                        <tr><th scope="col" class="admin-row-number">STT</th><th>Mã thuốc</th><th>Thuốc</th><th>Liều mỗi lần</th><th>Số lần/ngày</th><th>Số ngày</th><th>Thời điểm dùng</th><th>Cách dùng</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th><th>Hướng dẫn</th><th>Ghi chú</th></tr>
                     </thead>
                     <tbody>
                         @forelse ($prescription->items as $item)
                             @php($medicine = $medicinesById->get($item->medicine_id))
                             <tr>
                                 @include('admin.layouts.partials.row-number', ['rows' => $prescription->items, 'index' => $loop->index])
+                                <td>@include('admin.layouts.partials.record-code', ['code' => $medicine?->medicine_code ?? '—'])</td>
                                 <td class="admin-medicine-info">
                                     <strong>{{ $medicine?->name ?? 'Thuốc không xác định' }}</strong>
-                                    <p>@include('admin.layouts.partials.record-code', ['code' => $medicine?->medicine_code ?? '—'])</p>
                                     <p>Hoạt chất: {{ $medicine?->active_ingredient ?? '—' }}</p>
                                     <p>Hàm lượng: {{ $medicine?->strength ?? '—' }}</p>
                                     <p>Dạng bào chế: {{ $medicine?->dosage_form ?? '—' }}</p>
@@ -320,10 +320,11 @@
                                 <td>{{ rtrim(rtrim(number_format((float) $item->quantity, 2, '.', ''), '0'), '.') }} {{ $item->usage_unit }}</td>
                                 <td>{{ $item->unit_price === null ? 'Chưa có giá' : number_format((float) $item->unit_price, 0, ',', '.').' đ' }}</td>
                                 <td>{{ $item->line_total === null ? 'Chưa có giá' : number_format((float) $item->line_total, 0, ',', '.').' đ' }}</td>
-                                <td><p>Hướng dẫn: {{ $item->usage_instructions ?: 'Chưa có.' }}</p><p>Ghi chú: {{ $item->notes ?: 'Chưa có.' }}</p></td>
+                                <td>{{ $item->usage_instructions ?: 'Chưa có.' }}</td>
+                                <td>{{ $item->notes ?: 'Chưa có.' }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="11" class="empty-state">Chưa có thuốc trong đơn.</td></tr>
+                            <tr><td colspan="13" class="empty-state">Chưa có thuốc trong đơn.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -332,6 +333,11 @@
             <p class="form-help">Tổng tiền thuốc: <strong>{{ $medicineTotal === null ? 'Chưa đủ thông tin giá' : number_format((float) $medicineTotal, 0, ',', '.').' đ' }}</strong></p>
             @if ($prescription->payable)
                 <a class="admin-btn admin-btn-detail" href="{{ route('admin.payables.show', $prescription->payable) }}">Xem khoản thu tiền thuốc</a>
+                @if (in_array($prescription->payable->paymentStatus?->name, ['UNPAID', 'PENDING'], true))
+                    <a class="admin-btn admin-btn-primary" href="{{ route('admin.payables.payment-transactions.create', $prescription->payable) }}">Thanh toán tiền thuốc</a>
+                @elseif ($prescription->payable->paymentStatus?->name === 'PAID')
+                    <p class="form-help">Tiền thuốc đã được thanh toán.</p>
+                @endif
             @endif
             @if ((! $prescription->payable || $prescription->payable->paymentStatus?->name === 'CANCELLED') && $medicineTotal !== null && $prescription->status === 'ACTIVE')
                 <form method="POST" action="{{ route('admin.prescriptions.payable.store', $prescription) }}">
@@ -339,6 +345,7 @@
                     <label><input type="checkbox" name="confirm_purchase" value="1" required> Đã xác nhận bệnh nhân mua thuốc trong đơn</label>
                     @error('confirm_purchase')<p class="field-error">{{ $message }}</p>@enderror
                     <button type="submit" class="admin-btn admin-btn-primary">Tạo khoản thu tiền thuốc</button>
+                    <p class="form-help">Sau khi tạo khoản thu, tiếp tục ghi nhận thanh toán tại quầy.</p>
                 </form>
             @elseif (! $prescription->payable)
                 <p class="form-help">Chưa thể tạo khoản thu vì đơn thuốc chưa có đủ giá hoặc không còn hiệu lực.</p>

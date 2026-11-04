@@ -144,7 +144,7 @@ class AdminNotificationsTest extends TestCase
     {
         $order = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail();
         $item = $order->items()->firstOrFail();
-        $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1])
+        $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])
             ->assertSessionHas('success', 'Đã ghi nhận thanh toán thành công cho khoản thu này.');
         $this->post(route('admin.service-order-items.start', $item))->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.service-results.store', $item), ['result_summary' => 'Kết quả thực tế đã nhập', 'confirm_create' => 1])
@@ -159,7 +159,7 @@ class AdminNotificationsTest extends TestCase
     {
         $order = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail();
         $item = $order->items()->firstOrFail();
-        $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
+        $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();
         ServiceStatus::where('name', 'PROCESSING')->update(['is_active' => false]);
         $this->post(route('admin.service-order-items.start', $item))
             ->assertSessionHas('error', 'Chưa có trạng thái “Đang thực hiện” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái dịch vụ.');

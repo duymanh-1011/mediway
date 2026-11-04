@@ -42,6 +42,7 @@ class ServiceResultController extends Controller
                 'serviceOrderItem.serviceStatus:id,name',
                 'verifier:id,business_code',
                 'verifier.doctor:id,user_id,doctor_code,full_name',
+                'verifier.employee:id,user_id,employee_code,full_name',
             ]);
 
         if ($request->filled('q')) {
@@ -108,6 +109,9 @@ class ServiceResultController extends Controller
                     ->orWhereHas('verifier.doctor', function ($doctorQuery) use ($keyword) {
                         $doctorQuery->where('full_name', 'like', '%'.$keyword.'%')
                             ->orWhere('doctor_code', 'like', '%'.$keyword.'%');
+                    })->orWhereHas('verifier.employee', function ($employeeQuery) use ($keyword) {
+                        $employeeQuery->where('full_name', 'like', '%'.$keyword.'%')
+                            ->orWhere('employee_code', 'like', '%'.$keyword.'%');
                     });
             });
         }
@@ -135,7 +139,7 @@ class ServiceResultController extends Controller
             );
         }
 
-        $verifiers = User::query()->with('doctor:id,user_id,doctor_code,full_name')
+        $verifiers = User::query()->with(['doctor:id,user_id,doctor_code,full_name', 'employee:id,user_id,employee_code,full_name'])
             ->whereIn(
                 'id',
                 ServiceResult::query()
@@ -209,7 +213,7 @@ class ServiceResultController extends Controller
                 );
         }
 
-        $verifiers = User::eligibleResultVerifier()->with('doctor:id,user_id,doctor_code,full_name')->orderBy('business_code')->get(['id', 'business_code']);
+        $verifiers = User::eligibleResultVerifier()->with('employee:id,user_id,employee_code,full_name')->orderBy('business_code')->get(['id', 'business_code']);
 
         return view(
             'admin.service-results.create',
@@ -438,6 +442,7 @@ class ServiceResultController extends Controller
                 'serviceOrderItem.performer',
                 'verifier:id,business_code',
                 'verifier.doctor:id,user_id,doctor_code,full_name',
+                'verifier.employee:id,user_id,employee_code,full_name',
             ])
             ->findOrFail($id);
 
@@ -462,13 +467,17 @@ class ServiceResultController extends Controller
                 'serviceOrderItem.performer',
                 'verifier:id,business_code',
                 'verifier.doctor:id,user_id,doctor_code,full_name',
+                'verifier.employee:id,user_id,employee_code,full_name',
             ])
             ->findOrFail($id);
 
         abort_if($result->serviceOrderItem->serviceOrder->medicalVisit->status?->name === 'COMPLETED',
             403, 'Lượt khám đã hoàn tất, không thể sửa trực tiếp kết quả dịch vụ.');
 
-        $verifiers = User::eligibleResultVerifier()->with('doctor:id,user_id,doctor_code,full_name')->orderBy('business_code')->get(['id', 'business_code']);
+        $verifiers = User::eligibleResultVerifier()->with('employee:id,user_id,employee_code,full_name')->orderBy('business_code')->get(['id', 'business_code']);
+        if ($result->verifier && ! $verifiers->contains('id', $result->verifier->id)) {
+            $verifiers->push($result->verifier); // Giữ người xác nhận lịch sử khi sửa nội dung khác.
+        }
 
         return view(
             'admin.service-results.edit',
@@ -549,10 +558,12 @@ class ServiceResultController extends Controller
                 }
                 $visit->assertServiceDataWritable();
                 $item = ServiceOrderItem::whereKey($result->service_order_item_id)->lockForUpdate()->firstOrFail();
-                User::lockResultVerifier($updateData['verified_by_user_id'] ?? null);
                 ClinicalTimeline::assertEventTime($updateData['resulted_at'] ?? null, $item->started_at, 'resulted_at', 'Thời điểm trả kết quả');
                 $result = ServiceResult::with(['serviceOrderItem.serviceOrder', 'serviceOrderItem.medicalService'])
                     ->whereKey($result->id)->lockForUpdate()->firstOrFail();
+                if ((int) ($updateData['verified_by_user_id'] ?? 0) !== (int) ($result->verified_by_user_id ?? 0)) {
+                    User::lockResultVerifier($updateData['verified_by_user_id'] ?? null);
+                }
                 $oldValues = $result->only(['result_summary', 'result_conclusion', 'result_parameters', 'result_pdf_path', 'result_image_path', 'verified_by_user_id', 'notes']);
                 $oldValues['resulted_at'] = $result->resulted_at?->format('Y-m-d H:i:s');
                 $updateData = array_merge($updateData, $documents->store($request, 'service-results/'.$result->service_order_item_id, ClinicalDocument::RESULT_FILES));

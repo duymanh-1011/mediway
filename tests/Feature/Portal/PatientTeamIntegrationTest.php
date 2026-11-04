@@ -69,14 +69,14 @@ class PatientTeamIntegrationTest extends TestCase
         $this->actingAs($admin);
         $queueStatus = \App\Models\QueueStatus::where('name', 'WAITING')->firstOrFail();
         $queueStatus->update(['is_active' => false]);
-        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasErrors('payment_method');
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasErrors('payment_method');
         $this->assertSame('UNPAID', $fee->fresh()->paymentStatus->name);
         $this->assertSame(0, $fee->transactions()->count());
         $this->assertSame(0, $visit->queues()->count());
         $queueStatus->update(['is_active' => true]);
-        $this->actingAs($admin)->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();
         $queue = $visit->queues()->sole();
-        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1]);
+        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')]);
         $this->assertSame(1, $visit->queues()->count());
         $this->actingAs($patient)->get(route('patient.queues.index'))->assertOk()
             ->assertSee($appointment->appointment_code)->assertSee($visit->visit_code)->assertSeeText($queue->status->description);
@@ -84,13 +84,27 @@ class PatientTeamIntegrationTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.queues.call', $queue))->assertSessionHasNoErrors();
         $this->actingAs($patient)->get(route('patient.notifications', ['danh-muc' => 'kham-benh']))
-            ->assertOk()->assertSee('Đã đến lượt khám');
+            ->assertOk()->assertSee('Đã đến lượt khám')->assertSee($room->name);
+        $this->getJson(route('patient.notifications'))->assertOk()
+            ->assertJsonPath('active_call.message', 'Vui lòng đến '.$room->name.' theo hướng dẫn.')
+            ->assertJsonPath('active_call.url', route('patient.queues.index'))
+            ->assertJsonStructure(['count', 'active_call']);
         $this->actingAs($other)->get(route('patient.notifications', ['danh-muc' => 'kham-benh']))
             ->assertOk()->assertDontSee('Đã đến lượt khám');
+        $this->getJson(route('patient.notifications'))->assertOk()->assertJsonPath('active_call', null);
+        $snapshot = $this->actingAs($patient)->getJson(route('patient.notifications'))->assertOk()->json();
+        $key = $snapshot['active_call']['key'];
+        $this->actingAs($other)->post(route('patient.notifications.open'), ['notification_key' => $key])->assertNotFound();
+        $this->actingAs($patient)->post(route('patient.notifications.open'), ['notification_key' => $key])->assertRedirect(route('patient.queues.index'));
+        $this->getJson(route('patient.notifications'))->assertOk()->assertJsonPath('active_call', null)->assertJsonPath('count', $snapshot['count'] - 1);
+        $this->get(route('patient.notifications', ['danh-muc' => 'kham-benh']))->assertOk()->assertDontSee('Đã đến lượt khám');
+        $this->actingAs($admin)->post(route('admin.queues.call', $queue))->assertSessionHasNoErrors();
+        $this->actingAs($patient)->getJson(route('patient.notifications'))->assertOk()->assertJsonPath('active_call.message', 'Vui lòng đến '.$room->name.' theo hướng dẫn.');
         $this->actingAs($admin);
         $this->post(route('admin.queues.start-service', $queue))->assertSessionHasNoErrors();
         $this->actingAs($patient)->get(route('patient.queues.index'))->assertOk()
             ->assertSeeText($queue->fresh()->status->description);
+        $this->getJson(route('patient.notifications'))->assertOk()->assertJsonPath('active_call', null);
 
         $service = MedicalService::where('service_code', 'DVXN001')->firstOrFail();
         $this->actingAs($admin)->post(route('admin.visits.service-orders.store', $visit), ['medical_service_ids' => [$service->id]])->assertSessionHasNoErrors();
@@ -99,7 +113,7 @@ class PatientTeamIntegrationTest extends TestCase
         $this->get(route('patient.notifications', ['danh-muc' => 'thanh-toan']))->assertOk()->assertSee($payable->payable_code);
         $this->actingAs($other)->get(route('patient.notifications', ['danh-muc' => 'thanh-toan']))->assertOk()->assertDontSee($payable->payable_code);
         $this->actingAs($other)->get(route('patient.payments.index'))->assertOk()->assertDontSee($payable->payable_code);
-        $this->actingAs($admin)->post(route('admin.payables.payment-transactions.store', $payable), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post(route('admin.payables.payment-transactions.store', $payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();
         $transaction = $payable->fresh()->transactions()->where('transaction_result', 'SUCCESS')->sole();
         $this->actingAs($patient)->get(route('patient.payments.index'))->assertOk()
             ->assertSee($payable->payable_code)->assertSee($transaction->transaction_code)->assertSeeText('Đã thanh toán');

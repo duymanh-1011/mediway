@@ -20,8 +20,9 @@ class ProfileController extends Controller
         $patient = $user->patient;
         $patient->load('detail');
         $avatarAvailable = $this->avatarPath($patient) !== null;
+        $documents = app(PatientDocumentController::class)->documentsFor($patient);
 
-        return response()->view('portal.profile.index', compact('user', 'patient', 'avatarAvailable'))
+        return response()->view('portal.profile.index', compact('user', 'patient', 'avatarAvailable', 'documents'))
             ->header('Cache-Control', 'private, no-store');
     }
 

@@ -8,10 +8,12 @@ use Illuminate\Contracts\Validation\ValidationRule;
 
 class ActiveResultVerifier implements ValidationRule
 {
+    public function __construct(private readonly ?int $existingVerifierId = null) {}
+
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (! is_scalar($value) || ! User::eligibleResultVerifier()->whereKey($value)->exists()) {
-            $fail('Vui lòng chọn bác sĩ có tài khoản và hồ sơ đang hoạt động để xác nhận kết quả.');
+        if (! is_scalar($value) || ((string) $value !== (string) $this->existingVerifierId && ! User::eligibleResultVerifier()->whereKey($value)->exists())) {
+            $fail('Vui lòng chọn kỹ thuật viên có tài khoản và hồ sơ đang hoạt động để xác nhận kết quả.');
         }
     }
 }

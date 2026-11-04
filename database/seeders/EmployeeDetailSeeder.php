@@ -12,9 +12,9 @@ class EmployeeDetailSeeder extends Seeder
         $details = [
             [
                 'code' => 'NV000001',
-                'department' => 'Điều dưỡng',
-                'position' => 'Điều dưỡng',
-                'type' => 'NURSE',
+                'department' => 'Lễ tân',
+                'position' => 'Nhân viên tiếp đón',
+                'type' => 'RECEPTIONIST',
             ],
             [
                 'code' => 'NV000002',
@@ -30,7 +30,7 @@ class EmployeeDetailSeeder extends Seeder
             ],
             [
                 'code' => 'NV000004',
-                'department' => 'Thu ngân - Tiếp đón',
+                'department' => 'Thu ngân',
                 'position' => 'Nhân viên thu ngân',
                 'type' => 'CASHIER',
             ],

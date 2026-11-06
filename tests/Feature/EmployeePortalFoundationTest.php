@@ -27,8 +27,19 @@ class EmployeePortalFoundationTest extends TestCase
         $this->get(route('employee.home'))->assertOk()->assertSee($employee->employee->full_name)->assertSee('Kỹ thuật viên xét nghiệm');
         $this->post(route('employee.logout'))->assertRedirect(route('public.home'));
         $nurse = User::where('business_code', 'NV000001')->firstOrFail();
+        $nurse->employee->detail()->update(['employee_type' => 'NURSE']);
         $this->post(route('patient.login.store'), ['phone' => $nurse->phone, 'password' => 'Mediway@123'])->assertSessionHasErrors('phone');
         $this->assertGuest();
+    }
+
+    public function test_sample_receptionist_and_cashier_have_separate_departments(): void
+    {
+        $receptionist = User::where('business_code', 'NV000001')->firstOrFail()->employee->detail;
+        $cashier = User::where('business_code', 'NV000004')->firstOrFail()->employee->detail;
+        $this->assertSame('RECEPTIONIST', $receptionist->employee_type);
+        $this->assertSame('Lễ tân', $receptionist->department);
+        $this->assertSame('CASHIER', $cashier->employee_type);
+        $this->assertSame('Thu ngân', $cashier->department);
     }
 
     public function test_doctor_login_is_only_redirected_when_the_doctor_portal_exists(): void

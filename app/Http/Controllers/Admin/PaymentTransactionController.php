@@ -272,7 +272,6 @@ class PaymentTransactionController extends Controller
         |--------------------------------------------------------------------------
         */
         $transaction = app(\App\Services\PaymentCollectionService::class)->collect($request, $payable, $request->validated());
-
         return redirect()
             ->route(
                 'admin.payment-transactions.show',

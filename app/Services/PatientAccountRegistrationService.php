@@ -19,13 +19,7 @@ final class PatientAccountRegistrationService
                 throw ValidationException::withMessages(['phone' => 'Hệ thống chưa sẵn sàng tiếp nhận đăng ký bệnh nhân. Vui lòng thử lại sau.']);
             }
 
-            DB::table('business_code_sequences')->insertOrIgnore([
-                'scope' => 'patient_account_code', 'last_value' => 0, 'created_at' => now(), 'updated_at' => now(),
-            ]);
-            $sequence = DB::table('business_code_sequences')->where('scope', 'patient_account_code')->lockForUpdate()->firstOrFail();
-            $next = max((int) $sequence->last_value, $this->maximumCode('users', 'business_code'), $this->maximumCode('patients', 'patient_code')) + 1;
-            $code = 'BN'.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
-            DB::table('business_code_sequences')->where('id', $sequence->id)->update(['last_value' => $next, 'updated_at' => now()]);
+            $code = app(PatientCodeService::class)->next();
 
             $user = User::create([
                 'business_code' => $code, 'phone' => $phone, 'password' => $password,
@@ -46,15 +40,4 @@ final class PatientAccountRegistrationService
         }, 3);
     }
 
-    private function maximumCode(string $table, string $column): int
-    {
-        $maximum = 0;
-        DB::table($table)->select($column)->orderBy($column)->each(function ($record) use ($column, &$maximum): void {
-            if (preg_match('/^BN(\d+)$/', (string) $record->{$column}, $matches)) {
-                $maximum = max($maximum, (int) $matches[1]);
-            }
-        });
-
-        return $maximum;
-    }
 }

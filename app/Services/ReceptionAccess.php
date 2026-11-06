@@ -1,0 +1,20 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Employee;
+use App\Models\User;
+
+class ReceptionAccess
+{
+    public function lockAndAuthorize(User $actor): void
+    {
+        $user = User::whereKey($actor->id)->lockForUpdate()->first();
+        $employee = Employee::where('user_id', $actor->id)->lockForUpdate()->first();
+        $detail = $employee?->detail()->lockForUpdate()->first();
+        if (! $user || $user->status !== 'ACTIVE' || $user->role?->name !== 'Employee'
+            || $user->role?->status !== 'ACTIVE' || $employee?->status !== 'ACTIVE' || $detail?->employee_type !== 'RECEPTIONIST') {
+            abort(403, 'Bạn không còn quyền tiếp nhận bệnh nhân.');
+        }
+    }
+}

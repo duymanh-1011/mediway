@@ -208,6 +208,12 @@ class PaymentTransactionController extends Controller
                 );
         }
 
+        if ($reason = app(\App\Services\AppointmentPaymentDateGuard::class)->unavailableReason($payable)) {
+            return redirect()->route('admin.payables.show', $payable->id)
+                ->with('error', $reason)
+                ->withErrors(['payment_date' => $reason]);
+        }
+
         $employees = Employee::activeCashiers()->orderBy('full_name')->get(['id', 'employee_code', 'full_name']);
 
         return view(

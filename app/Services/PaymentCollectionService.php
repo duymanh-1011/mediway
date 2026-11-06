@@ -45,6 +45,7 @@ class PaymentCollectionService
             ]);
         }
 
+        try {
         return DB::transaction(
                 function () use (
                     $request,
@@ -64,10 +65,10 @@ class PaymentCollectionService
                         throw ValidationException::withMessages(['collected_by_employee_id' => 'Nhân viên thu ngân không còn hợp lệ hoặc không hoạt động. Vui lòng chọn lại.']);
                     }
                     $item = $payable->service_order_item_id
-                        ? ServiceOrderItem::with(['serviceStatus', 'serviceOrder'])->whereKey($payable->service_order_item_id)->lockForUpdate()->firstOrFail()
+                        ? ServiceOrderItem::with(['serviceStatus', 'serviceOrder'])->whereKey($payable->service_order_item_id)->lockForUpdate()->first()
                         : null;
                     if ($item && ($item->serviceStatus?->name === 'CANCELLED'
-                        || $item->serviceOrder->medical_visit_id !== $payable->medical_visit_id)) {
+                        || ! $item->serviceOrder || (int) $item->serviceOrder->medical_visit_id !== (int) $payable->medical_visit_id)) {
                         throw ValidationException::withMessages(['payment_method' => 'Không thể thanh toán dịch vụ đã hủy hoặc không khớp lượt khám.']);
                     }
                     $lockedPayable =
@@ -77,6 +78,27 @@ class PaymentCollectionService
                             ->findOrFail(
                                 $payable->id
                             );
+
+                    if ((int) $lockedPayable->medical_visit_id !== (int) $visit->id) {
+                        throw ValidationException::withMessages(['payment_date' => 'Lượt khám của khoản thu đã thay đổi. Vui lòng thử lại.']);
+                    }
+
+                    if ($lockedPayable->payment_type === 'SERVICE_FEE' && (
+                        ! $item || (int) $lockedPayable->service_order_item_id !== (int) $item->id
+                        || ! $item->serviceOrder || (int) $item->serviceOrder->medical_visit_id !== (int) $visit->id
+                        || ! $item->medicalService || $item->price_at_order === null || (float) $item->price_at_order < 0
+                        || (int) round((float) $lockedPayable->amount * 100) !== (int) round((float) $item->price_at_order * 100)
+                    )) {
+                        throw ValidationException::withMessages(['payment_method' => 'Khoản dịch vụ thiếu thông tin chỉ định hoặc giá không khớp. Vui lòng liên hệ bộ phận phụ trách trước khi thu tiền.']);
+                    }
+
+                    // Đọc lại lịch hẹn có khóa sau các khóa hiện hữu; không tin quan hệ đã nạp trước transaction.
+                    if ($visit->appointment_id) {
+                        $visit->setRelation('appointment', \App\Models\Appointment::query()
+                            ->whereKey($visit->appointment_id)->lockForUpdate()->first());
+                    }
+                    $lockedPayable->setRelation('medicalVisit', $visit);
+                    app(AppointmentPaymentDateGuard::class)->assertCanPay($lockedPayable);
 
                     $lockedStatus =
                         $lockedPayable
@@ -207,7 +229,17 @@ class PaymentCollectionService
 
                     return $transaction;
                 }
-            );
+            , 3);
+        } catch (\Throwable $exception) {
+            if (! (new \Illuminate\Database\ConcurrencyErrorDetector())->causedByConcurrencyError($exception)) {
+                throw $exception;
+            }
+
+            report($exception);
+            throw ValidationException::withMessages([
+                'payment_method' => 'Khoản thu đang được xử lý bởi giao dịch khác. Vui lòng kiểm tra lại trạng thái và thử lại.',
+            ]);
+        }
 
     }
 

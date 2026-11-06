@@ -71,6 +71,9 @@ class PayableController extends Controller
         // Lấy dữ liệu khoản thu và quan hệ
         $query = Payable::query()->with([
             'medicalVisit.patient:id,patient_code,full_name',
+            'medicalVisit.appointment',
+            'serviceOrderItem.serviceStatus',
+            'serviceOrderItem.medicalService',
             'transactions' => fn($transaction) =>
             $transaction
                 ->with('collector:id,employee_code,full_name')
@@ -219,8 +222,10 @@ class PayableController extends Controller
         // Lấy dữ liệu bệnh nhân, trạng thái và lịch sử thu
         $payable->load([
             'medicalVisit.patient',
+            'medicalVisit.appointment',
             'paymentStatus',
             'serviceOrderItem.serviceStatus',
+            'serviceOrderItem.medicalService',
             'transactions' => fn($query) => $query
                 ->with('collector:id,employee_code,full_name')
                 ->orderByDesc('id'),

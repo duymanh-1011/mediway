@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Payable extends Model
 {
+    public function displayContent(): string
+    {
+        return match ($this->payment_type) {
+            'EXAMINATION_FEE' => 'Phí khám',
+            'MEDICINE_FEE' => 'Tiền thuốc',
+            'SERVICE_FEE' => $this->serviceOrderItem?->medicalService?->name
+                ? 'Phí dịch vụ '.$this->serviceOrderItem->medicalService->name : 'Phí dịch vụ',
+            default => 'Khoản thu khác',
+        };
+    }
     protected $table = 'payables';
 
     protected $fillable = [
@@ -57,6 +67,11 @@ class Payable extends Model
             ServiceOrderItem::class,
             'service_order_item_id'
         );
+    }
+
+    public function prescription(): BelongsTo
+    {
+        return $this->belongsTo(Prescription::class, 'prescription_id');
     }
 
     /**

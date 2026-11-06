@@ -71,7 +71,7 @@ Route::get('/ho-tro', [PublicController::class, 'support'])->name('public.suppor
 Route::get('/tin-tuc', [PublicController::class, 'news'])->name('public.news');
 Route::get('/tin-tuc/{slug}', [PublicController::class, 'article'])->name('public.news.show');
 
-require __DIR__.'/employee-reception.php';
+require __DIR__ . '/employee-reception.php';
 
 Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\EmployeeMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function () {
     Route::get('/', [\App\Http\Controllers\Employee\WorkspaceController::class, 'home'])->name('home');
@@ -81,10 +81,10 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::put('/mat-khau', [\App\Http\Controllers\Employee\WorkspaceController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.update');
     // Mỗi nhóm chỉ định có quyền riêng; kiểm tra ở máy chủ cho từng yêu cầu.
     foreach (['xet-nghiem' => ['laboratory', 'laboratory'], 'chan-doan-hinh-anh' => ['imaging', 'imaging']] as $path => [$routeName, $capability]) {
-        Route::prefix($path)->name($routeName.'.')->group(function () use ($capability) {
+        Route::prefix($path)->name($routeName . '.')->group(function () use ($capability) {
             $controller = \App\Http\Controllers\Employee\TechnicalServiceController::class;
-            $viewPermission = \App\Http\Middleware\EmployeeMiddleware::class.':'.$capability.'.view';
-            $processPermission = \App\Http\Middleware\EmployeeMiddleware::class.':'.$capability.'.process';
+            $viewPermission = \App\Http\Middleware\EmployeeMiddleware::class . ':' . $capability . '.view';
+            $processPermission = \App\Http\Middleware\EmployeeMiddleware::class . ':' . $capability . '.process';
             Route::get('/', [$controller, 'index'])->middleware($viewPermission)->name('index');
             Route::get('/{item}', [$controller, 'show'])->whereNumber('item')->middleware($viewPermission)->name('show');
             Route::get('/{item}/tep/{type}', [$controller, 'document'])->whereNumber('item')->where('type', 'pdf|image')->middleware($viewPermission)->name('document');
@@ -99,7 +99,9 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::get('/thanh-toan/{payable}/ghi-nhan', [\App\Http\Controllers\Employee\PaymentCollectionController::class, 'create'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.collect')->name('payments.collect.create');
     Route::post('/thanh-toan/{payable}/ghi-nhan', [\App\Http\Controllers\Employee\PaymentCollectionController::class, 'store'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.collect')->name('payments.collect.store');
     Route::get('/thanh-toan/{payable}', [\App\Http\Controllers\Employee\PayableController::class, 'show'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.show');
+    Route::get('/thanh-toan/giao-dich/{transaction}/bien-lai', [\App\Http\Controllers\Employee\PaymentReceiptController::class, 'show',])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.receipt');
 });
+
 
 Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::middleware('guest')->group(function () {

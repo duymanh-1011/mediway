@@ -57,9 +57,9 @@
                         <div class="clinical-service"><div class="clinical-service__head"><div><strong>{{ $item->medicalService?->name ?? 'Dịch vụ' }}</strong><small>{{ $item->medicalService?->serviceGroups->pluck('name')->join(', ') ?: 'Chưa phân nhóm' }}</small></div><span class="patient-record__badge">{{ $item->serviceStatus?->description ?? 'Chưa cập nhật' }}</span></div>
                             @if ($item->result)
                                 <p class="clinical-service__verification">{{ $item->result->verified_by_user_id ? 'Đã xác minh' : 'Chưa xác minh' }}</p>
-                                @if ($item->result->result_summary)<p>{{ $item->result->result_summary }}</p>@endif
+                                @if ($item->result->result_summary !== null && trim($item->result->result_summary) !== '')<p>{{ $item->result->result_summary }}</p>@endif
                                 @if ($item->result->result_conclusion)<p><strong>Kết luận:</strong> {{ $item->result->result_conclusion }}</p>@endif
-                                @if ($item->result->result_parameters)<dl class="patient-record__parameters">@foreach ($item->result->result_parameters as $label => $value)<div><dt>{{ is_string($label) ? $label : 'Thông số' }}</dt><dd>@if (is_scalar($value)){{ $value }}@endif</dd></div>@endforeach</dl>@endif
+                                @if ($item->result->parameterDisplayRows())<dl class="patient-record__parameters">@foreach ($item->result->parameterDisplayRows() as $row)<div><dt>{{ $row['label'] }}</dt><dd>{{ $row['value'] }}</dd></div>@endforeach</dl>@endif
                             @else<p>Chưa có kết quả dịch vụ.</p>@endif
                         </div>
                     @endforeach

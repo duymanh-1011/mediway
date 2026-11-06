@@ -26,7 +26,6 @@ class StorePaymentTransactionRequest extends FormRequest
                 'required',
                 Rule::in([
                     'CASH',
-                    'QR',
                 ]),
             ],
 

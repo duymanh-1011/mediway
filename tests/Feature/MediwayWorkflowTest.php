@@ -59,6 +59,41 @@ class MediwayWorkflowTest extends TestCase
         return Appointment::where('appointment_time_slot_id', $slot->id)->sole();
     }
 
+    public function test_cashier_collects_examination_fee_and_creates_one_initial_queue(): void
+    {
+        $appointment = $this->book($this->slot());
+        $this->travelTo(today()->setTime(9, 0));
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
+        $visit = $appointment->fresh()->medicalVisit;
+        $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
+        $cashier = User::where('business_code', 'NV000004')->firstOrFail();
+        $this->flushSession()->actingAs($cashier);
+        $url = route('employee.payments.collect.store', $fee);
+        $this->post($url, ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
+        $transaction = $fee->transactions()->where('transaction_result', 'SUCCESS')->sole();
+        $this->assertSame($cashier->employee->id, $transaction->collected_by_employee_id);
+        $this->assertDatabaseHas('audit_logs', ['user_id' => $cashier->id, 'entity_type' => 'payment_transactions', 'entity_id' => $transaction->id]);
+        $queue = $visit->queues()->where('queue_type', 'INITIAL_EXAM')->sole();
+        $this->assertSame('WAITING', $queue->status->name);
+        $this->assertSame($appointment->doctor_id, $visit->doctor_id);
+        $this->post($url, ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasErrors();
+        $this->assertSame(1, $visit->queues()->where('queue_type', 'INITIAL_EXAM')->count());
+        $this->assertSame(1, $fee->transactions()->where('transaction_result', 'SUCCESS')->count());
+    }
+
+    public function test_admin_cannot_record_unverified_qr_as_success(): void
+    {
+        $fee = \App\Models\Payable::where('payable_code', 'PT000012')->firstOrFail();
+        $before = $fee->transactions()->count();
+        $this->post(route('admin.payables.payment-transactions.store', $fee), [
+            'payment_method' => 'QR', 'confirm_payment' => 1,
+            'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id'),
+            'provider_transaction_code' => 'unverified-reference',
+        ])->assertSessionHasErrors('payment_method');
+        $this->assertSame($before, $fee->transactions()->count());
+        $this->assertNotSame('PAID', $fee->fresh()->paymentStatus->name);
+    }
+
     public function test_complete_patient_journey_from_booking_through_return_to_doctor(): void
     {
         $slot = $this->slot();

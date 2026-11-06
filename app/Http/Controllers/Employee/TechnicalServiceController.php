@@ -61,7 +61,7 @@ class TechnicalServiceController extends Controller
     public function show(Request $request, int $item)
     {
         [$employee, $group, $title, $routePrefix] = $this->context($request);
-        $record = $this->scopedItems($employee, $group)->with(['medicalService', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'serviceOrder.orderedByDoctor', 'payable.paymentStatus', 'result'])->findOrFail($item);
+        $record = $this->scopedItems($employee, $group)->with(['medicalService', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'performer', 'payable.paymentStatus', 'result'])->findOrFail($item);
         return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record'));
     }
 
@@ -106,22 +106,59 @@ class TechnicalServiceController extends Controller
     {
         [$employee, $group, , $routePrefix] = $this->context($request);
         $data = $request->validate([
+            'result_version' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/'],
             'result_summary' => ['nullable', 'string', 'max:10000'],
+            'parameters_present' => ['sometimes', 'in:1'],
+            'parameters' => ['sometimes', 'array', 'max:30'],
+            'parameters.*' => ['array:name,value,unit'],
+            'parameters.*.name' => ['nullable', 'string', 'max:120'],
+            'parameters.*.value' => ['nullable', function (string $attribute, mixed $value, \Closure $fail): void {
+                // Giá trị có thể là chữ, số hoặc số 0; từ chối cấu trúc phức tạp.
+                if ((! is_string($value) && ! is_int($value) && ! is_float($value)) || mb_strlen((string) $value) > 200) {
+                    $fail('Giá trị chỉ số phải là chữ hoặc số và không quá 200 ký tự.');
+                }
+            }],
+            'parameters.*.unit' => ['nullable', 'string', 'max:60'],
             'result_pdf' => ClinicalDocument::pdfRules(),
             'result_image' => ClinicalDocument::imageRules(),
         ]);
+        // Chỉ kỹ thuật viên xét nghiệm được gửi bảng chỉ số; các dòng phải đủ tên và giá trị.
+        if ($group !== 'XN' && ($request->has('parameters') || $request->has('parameters_present'))) {
+            throw ValidationException::withMessages(['parameters' => 'Chỉ xét nghiệm mới nhập bảng chỉ số.']);
+        }
+        $parameters = [];
+        foreach ($data['parameters'] ?? [] as $index => $row) {
+            $name = trim($row['name'] ?? '');
+            $value = trim((string) ($row['value'] ?? ''));
+            $unit = trim($row['unit'] ?? '');
+            if ($name === '' && $value === '' && $unit === '') continue;
+            if ($name === '' || $value === '') {
+                throw ValidationException::withMessages(['parameters.'.$index => 'Mỗi chỉ số cần có tên và giá trị.']);
+            }
+            $parameters[] = ['name' => $name, 'value' => $value, 'unit' => $unit];
+        }
         // Ghi kết quả và tệp trong một giao dịch; không cho nhân viên tự xác nhận y khoa.
-        ClinicalDocument::transaction(function (ClinicalDocument $documents) use ($request, $item, $employee, $group, $data) {
+        ClinicalDocument::transaction(function (ClinicalDocument $documents) use ($request, $item, $employee, $group, $data, $parameters) {
             $record = $this->lockedItem($request, $item, $group);
             if ($record->serviceStatus?->name !== 'PROCESSING' || (int) $record->performed_by_employee_id !== (int) $employee->id || $record->serviceOrder?->status === 'CANCELLED') {
                 throw ValidationException::withMessages(['service' => 'Chỉ người đang thực hiện mới được nhập kết quả khi dịch vụ đang xử lý.']);
             }
             $result = ServiceResult::where('service_order_item_id', $record->id)->lockForUpdate()->first();
+            // Sau khi khóa chỉ định, từ chối nội dung gửi từ biểu mẫu đã bị thay đổi.
+            if (! hash_equals(ServiceResult::editVersion($result), $data['result_version'])) {
+                throw ValidationException::withMessages(['service' => 'Kết quả đã thay đổi. Vui lòng tải lại trang trước khi lưu.']);
+            }
             if ($result && ($result->verified_by_user_id || $result->patient_publication_status === 'PUBLISHED')) {
                 throw ValidationException::withMessages(['service' => 'Kết quả đã xác minh hoặc đã công bố, không thể sửa trực tiếp.']);
             }
+            // Không ghi đè dữ liệu chỉ số cũ có cấu trúc chưa được nhận diện.
+            if ($request->has('parameters_present') && $result && ServiceResult::editableParameters($result->result_parameters) === null) {
+                throw ValidationException::withMessages(['parameters' => 'Chỉ số cũ có định dạng khác và được giữ nguyên.']);
+            }
             $paths = $documents->store($request, 'service-results/'.$record->id, ClinicalDocument::RESULT_FILES);
-            $values = array_merge(['result_summary' => trim($data['result_summary'] ?? '') ?: null, 'resulted_at' => now()], $paths);
+            $summary = trim($data['result_summary'] ?? '');
+            $values = array_merge(['result_summary' => $summary !== '' ? $summary : null, 'resulted_at' => now()], $paths);
+            if ($request->has('parameters_present')) $values['result_parameters'] = $parameters;
             $content = array_merge($result?->getAttributes() ?? [], $values);
             if (! ServiceResult::hasContentValues($content, $record->id)) {
                 throw ValidationException::withMessages(['result_summary' => 'Nhập nội dung kỹ thuật hoặc tải lên tệp kết quả.']);

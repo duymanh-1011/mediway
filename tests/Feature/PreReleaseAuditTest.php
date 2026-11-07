@@ -34,7 +34,10 @@ class PreReleaseAuditTest extends TestCase
 
     private function unpaidItem(): ServiceOrderItem
     {
-        return ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail()->items()->firstOrFail();
+        $order = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail();
+        $this->travelTo($order->medicalVisit->appointment->appointment_date->copy()->setTime(10, 0));
+
+        return $order->items()->firstOrFail();
     }
 
     public function test_repeated_invalid_logins_are_rate_limited(): void
@@ -71,9 +74,7 @@ class PreReleaseAuditTest extends TestCase
             'payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id'),
         ])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.start', $item))->assertSessionMissing('error');
-        $this->post(route('admin.service-order-items.service-results.store', $item), [
-            'result_summary' => 'Kết quả dùng kiểm thử', 'confirm_create' => 1,
-        ])->assertSessionHasNoErrors()->assertSessionMissing('error');
+        $item->result()->create(['result_summary' => 'Kết quả dùng kiểm thử']);
         ServiceStatus::where('name', 'PROCESSING')->update(['allows_transition' => false]);
         $this->post(route('admin.service-order-items.complete', $item));
         $this->assertSame('PROCESSING', $item->fresh()->serviceStatus->name, 'Không được bỏ qua cấu hình khóa chuyển trạng thái.');

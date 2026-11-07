@@ -64,6 +64,14 @@ class MedicalVisit extends Model
             && ! $this->appointment?->isScheduledInFuture();
     }
 
+    public function canOrderServices(): bool
+    {
+        return $this->doctor_id !== null
+            && in_array($this->status?->name, ['IN_EXAMINATION', 'WAITING_FOR_SERVICE', 'RETURNING'], true)
+            && $this->status->allows_transition
+            && ! $this->appointment?->isScheduledInFuture();
+    }
+
     /** Display the handoff separately from the actual start of a return consultation. */
     public function scopeWithServiceProgress(Builder $query): Builder
     {

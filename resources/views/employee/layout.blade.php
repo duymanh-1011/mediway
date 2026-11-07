@@ -14,14 +14,12 @@
     $navigation = [
         ['Tiếp đón', 'RECEPTIONIST', 'employee.reception.index', 'reception'],
         ['Lịch hẹn và tiếp nhận', 'RECEPTIONIST', 'employee.appointments.index', 'calendar'],
-        ['Hàng đợi hành chính', 'RECEPTIONIST', 'employee.queue.index', 'queue'],
         ['Thực hiện dịch vụ', 'SERVICE_TECHNICIAN', 'employee.services.index', 'services'],
         ['Thu ngân và thanh toán', 'CASHIER', 'employee.payments.index', 'payment'],
     ];
     $sectionPatterns = [
         'employee.reception.index' => 'employee.walk-in.*',
         'employee.appointments.index' => 'employee.appointments.*',
-        'employee.queue.index' => 'employee.queue.*',
         'employee.services.index' => ['employee.services.*', 'employee.laboratory.*', 'employee.imaging.*'],
         'employee.payments.index' => 'employee.payments.*',
     ];

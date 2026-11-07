@@ -207,7 +207,7 @@
                         <th>Hàm lượng</th>
                         <th>Dạng</th>
                         <th>Đường dùng</th>
-                        <th>Giá cơ bản</th>
+                        <th>Đơn giá</th>
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
                     </tr>
@@ -252,7 +252,13 @@
                                 ?? '—' }}
                         </td>
 
-                        <td class="medicine-price">{{ $medicine->price_per_unit === null ? 'Chưa thiết lập' : number_format((float) $medicine->price_per_unit, 0, ',', '.').' đ / '.($medicine->unit ?: 'đơn vị') }}</td>
+                        <td class="medicine-price">
+                            @forelse ($medicine->salePrices() as $unit => $price)
+                                <div>{{ number_format((float) $price, 0, ',', '.') }} đ / {{ $unit }}</div>
+                            @empty
+                                Chưa thiết lập
+                            @endforelse
+                        </td>
 
                         <td>
 

@@ -18,7 +18,7 @@ final class EmployeeAccess
     public const TECHNICIAN_CODES = [self::SERVICE_TECHNICIAN, 'LAB_TECHNICIAN', 'IMAGING_TECHNICIAN'];
 
     private const CAPABILITIES = [
-        'RECEPTIONIST' => ['appointment.view', 'reception.check_in', 'queue.view'],
+        'RECEPTIONIST' => ['appointment.view', 'reception.check_in'],
         'CASHIER' => ['payment.view', 'payment.collect'],
         self::SERVICE_TECHNICIAN => ['services.view', 'services.process'],
     ];

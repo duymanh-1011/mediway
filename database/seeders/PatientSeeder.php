@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class PatientSeeder extends Seeder
 {
-    public function run(): void
+    public function run(bool $includePracticeData = false): void
     {
         $patients = [
             ['code' => 'BN000001', 'name' => 'Nguyễn Minh An', 'dob' => '1998-04-12', 'gender' => 'Nam'],
@@ -16,6 +16,16 @@ class PatientSeeder extends Seeder
             ['code' => 'BN000004', 'name' => 'Phạm Ngọc Mai', 'dob' => '2001-11-18', 'gender' => 'Nữ'],
             ['code' => 'BN000005', 'name' => 'Đỗ Quang Huy', 'dob' => '1990-06-30', 'gender' => 'Nam'],
         ];
+
+        if ($includePracticeData) {
+            $patients = [...$patients,
+                ['code' => 'BN000006', 'name' => 'Hoàng Bảo Ngân', 'dob' => '1994-01-27', 'gender' => 'Nữ'],
+                ['code' => 'BN000007', 'name' => 'Bùi Quốc Dũng', 'dob' => '1968-05-03', 'gender' => 'Nam'],
+                ['code' => 'BN000008', 'name' => 'Võ Minh Châu', 'dob' => '2003-08-16', 'gender' => 'Nữ'],
+                ['code' => 'BN000009', 'name' => 'Ngô Gia Hân', 'dob' => '1999-02-07', 'gender' => 'Nữ'],
+                ['code' => 'BN000010', 'name' => 'Mai Đức Anh', 'dob' => '1982-10-24', 'gender' => 'Nam'],
+            ];
+        }
 
         foreach ($patients as $patient) {
             $userId = DB::table('users')

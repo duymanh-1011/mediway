@@ -1,7 +1,7 @@
-<section class="admin-card">
+<section class="admin-card admin-list-panel">
     @include('admin.layouts.partials.list-heading', ['listTitle' => $listTitle])
-    <div class="admin-table-scroll">
-        <table class="admin-table admin-status-table">
+    <div class="admin-table-scroll admin-list-table-wrap">
+        <table class="admin-table admin-status-table admin-list-table">
             <thead><tr>
                 <th scope="col" class="admin-row-number">STT</th>
                 <th scope="col">Tên trạng thái</th><th scope="col">Mô tả</th>
@@ -29,5 +29,5 @@
             </tbody>
         </table>
     </div>
-    {{ $statusRows->links() }}
-</section>
+        @include('admin.layouts.partials.list-footer', ['rows' => $statusRows])
+    </section>

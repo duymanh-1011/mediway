@@ -5,19 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Khu vực nhân viên') - Mediway</title>
     @vite(['resources/css/portal.css', 'resources/css/portal-consistency.css', 'resources/css/employee.css', 'resources/js/portal.js', 'resources/js/employee.js'])
+    @stack('styles')
 </head>
 <body class="portal-body employee-body">
 @php
-    $employeeType = $employee->detail->employee_type;
+    $employeeType = \App\Support\EmployeeAccess::typeCode($employee->detail->employee_type);
     $employeeTypeName = \App\Support\EmployeeAccess::TYPES[$employeeType];
     $navigation = [
         ['Tiếp đón', 'RECEPTIONIST', 'employee.reception.index', 'reception'],
         ['Lịch hẹn và tiếp nhận', 'RECEPTIONIST', 'employee.appointments.index', 'calendar'],
         ['Hàng đợi hành chính', 'RECEPTIONIST', 'employee.queue.index', 'queue'],
-        ['Xét nghiệm', 'LAB_TECHNICIAN', 'employee.laboratory.index', 'lab'],
-        ['Chẩn đoán hình ảnh', 'IMAGING_TECHNICIAN', 'employee.imaging.index', 'image'],
+        ['Thực hiện dịch vụ', 'SERVICE_TECHNICIAN', 'employee.services.index', 'services'],
         ['Thu ngân và thanh toán', 'CASHIER', 'employee.payments.index', 'payment'],
     ];
+    $sectionPatterns = [
+        'employee.reception.index' => 'employee.walk-in.*',
+        'employee.appointments.index' => 'employee.appointments.*',
+        'employee.queue.index' => 'employee.queue.*',
+        'employee.services.index' => ['employee.services.*', 'employee.laboratory.*', 'employee.imaging.*'],
+        'employee.payments.index' => 'employee.payments.*',
+    ];
+    $activeSection = collect($navigation)->first(
+        fn ($item) => $employeeType === $item[1]
+            && request()->routeIs($item[2], ...(array) $sectionPatterns[$item[2]])
+    );
+    $pageTitle = trim($__env->yieldContent('title'));
 @endphp
 <header class="employee-header">
     <div class="employee-header__inner">
@@ -43,8 +55,8 @@
                 <p class="employee-nav__label">CHỨC NĂNG</p>
                 @foreach ($navigation as [$label, $type, $routeName, $icon])
                     @if ($employeeType === $type && \Illuminate\Support\Facades\Route::has($routeName))
-                        <a class="employee-nav__item {{ request()->routeIs($routeName) ? 'is-active' : '' }}" href="{{ route($routeName) }}" @if(request()->routeIs($routeName)) aria-current="page" @endif><x-employee-icon :name="$icon" /><span>{{ $label }}</span></a>
-                    @else
+                        <a class="employee-nav__item {{ ($activeSection[2] ?? null) === $routeName ? 'is-active' : '' }}" href="{{ route($routeName) }}" @if(request()->routeIs($routeName)) aria-current="page" @elseif(($activeSection[2] ?? null) === $routeName) aria-current="location" @endif><x-employee-icon :name="$icon" /><span>{{ $label }}</span></a>
+                    @elseif ($employeeType !== \App\Support\EmployeeAccess::SERVICE_TECHNICIAN)
                         <div class="employee-nav__item employee-nav__item--disabled" aria-label="{{ $label }}: {{ $employeeType === $type ? 'Chưa tích hợp' : 'Không có quyền' }}"><x-employee-icon :name="$icon" /><span>{{ $label }}<small>{{ $employeeType === $type ? 'Chưa tích hợp' : 'Không có quyền' }}</small></span><x-employee-icon name="lock" /></div>
                     @endif
                 @endforeach
@@ -55,7 +67,28 @@
         <div class="employee-sidebar__help"><x-employee-icon name="help" /><div><strong>Cần hỗ trợ?</strong><p>Thông tin và hướng dẫn sử dụng Mediway.</p><a href="{{ route('public.support') }}">Xem hỗ trợ <span aria-hidden="true">→</span></a></div></div>
     </aside>
     <main class="employee-main" id="main-content">
-        <nav class="employee-breadcrumb" aria-label="Đường dẫn"><ol><li><a href="{{ route('employee.home') }}">Tổng quan</a></li>@if(request()->routeIs('employee.profile*'))<li>@if(request()->routeIs('employee.profile.edit'))<a href="{{ route('employee.profile') }}">Hồ sơ cá nhân</a>@else<span aria-current="page">Hồ sơ cá nhân</span>@endif</li>@endif @if(request()->routeIs('employee.profile.edit'))<li><span aria-current="page">Chỉnh sửa</span></li>@endif</ol></nav>
+        <nav class="employee-breadcrumb" aria-label="Đường dẫn">
+            <ol>
+                @if(request()->routeIs('employee.home'))
+                    <li><span aria-current="page">Tổng quan</span></li>
+                @else
+                    <li><a href="{{ route('employee.home') }}">Tổng quan</a></li>
+                @endif
+                @if(request()->routeIs('employee.profile.edit'))
+                    <li><a href="{{ route('employee.profile') }}">Hồ sơ cá nhân</a></li>
+                    <li><span aria-current="page">Chỉnh sửa</span></li>
+                @elseif(request()->routeIs('employee.profile'))
+                    <li><span aria-current="page">Hồ sơ cá nhân</span></li>
+                @elseif($activeSection)
+                    @if(request()->routeIs($activeSection[2]))
+                        <li><span aria-current="page">{{ $activeSection[0] }}</span></li>
+                    @else
+                        <li><a href="{{ route($activeSection[2]) }}">{{ $activeSection[0] }}</a></li>
+                        <li><span aria-current="page">{{ $pageTitle === $activeSection[0] ? 'Chi tiết' : $pageTitle }}</span></li>
+                    @endif
+                @endif
+            </ol>
+        </nav>
         @if(session('success'))<div class="portal-alert portal-alert--success" role="status">{{ session('success') }}</div>@endif
         @if($errors->any())<div class="portal-alert portal-alert--error" role="alert"><strong>Vui lòng kiểm tra thông tin.</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
         @yield('content')

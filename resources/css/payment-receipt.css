@@ -1,0 +1,56 @@
+/* Shared screen and A4 treatment for all three Mediway receipt types. */
+* { box-sizing: border-box; }
+body { margin: 0; background: #f4f7fb; color: #172033; font: 14px/1.5 "Segoe UI", Arial, Helvetica, sans-serif; }
+button { font: inherit; }
+.screen-wrap { width: min(100% - 24px, 840px); margin: 20px auto; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin-bottom: 16px; }
+.toolbar :is(a, button) { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #334155; font-weight: 600; text-decoration: none; cursor: pointer; }
+.toolbar button { background: #2563eb; color: #fff; border-color: #2563eb; }
+.toolbar a:hover { background: #f1f5f9; }
+.toolbar button:hover { background: #1d4ed8; }
+:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.paper { padding: clamp(14px, 4vw, 36px); border: 1px solid #dbe3ed; border-radius: 12px; background: #fff; overflow-wrap: anywhere; }
+.document-head, .brand-line { display: flex; align-items: start; flex-wrap: wrap; gap: 12px; }
+.document-head { justify-content: space-between; border-bottom: 1px solid #dbe3ed; padding-bottom: 16px; }
+.brand-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 8px; color: #fff; background: #2563eb; font-size: 24px; font-weight: 700; }
+.brand-name, .brand-sub, .document-title :is(h1, p) { margin: 0; }
+.brand-name { font-size: 18px; }
+.brand-sub, .meta-label, .field-label, .receipt-footer { color: #475569; }
+.facility { margin-top: 8px; }
+.document-title { padding: 20px 0 12px; text-align: center; }
+.document-title h1 { font-size: 26px; }
+.status { display: inline-block; margin-top: 8px; padding: 3px 8px; border: 1px solid #9bd1bc; border-radius: 999px; background: #eaf7f1; color: #166044; font-size: 12px; font-weight: 600; }
+.section, .ms-section, .mw-exam, .mw-service, .medicine-info { margin-top: 16px; }
+.section-title, .ms-section-title, .mw-exam-section-heading { margin: 0 0 8px; font-size: 16px; }
+.info-grid, .ms-info-grid, .mw-exam-info, .signature-grid, .medicine-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
+.info-item, .ms-info-row { min-width: 0; }
+.field-value { font-weight: 600; }
+table { width: 100%; border-collapse: collapse; }
+:is(th, td) { border: 1px solid #cbd5e1; padding: 7px; text-align: start; vertical-align: top; }
+th, .group-row, .total-row, .ms-total-row, .medicine-total { background: #f1f5f9; }
+:is(.center, .ms-center, .medicine-center) { text-align: center; }
+:is(.right, .ms-right, .medicine-number) { text-align: end; font-variant-numeric: tabular-nums; }
+.money-words, .medicine-words, .mw-exam-words, .ms-words { margin-block: 12px; }
+.total-box { padding: 10px 12px; border: 1px solid #dbe3ed; border-radius: 8px; }
+.total-value { font-size: 18px; font-weight: 700; }
+.signature-grid { text-align: center; margin-top: 24px; }
+.signature-space { min-height: 34px; }
+.signature-title, .signature-name { font-weight: 600; }
+.receipt-footer { margin-top: 16px; border-top: 1px solid #dbe3ed; padding-top: 8px; }
+:is(.medicine-table-wrap, .ms-table-wrap, .receipt-table-scroll) { max-width: 100%; overflow: auto; }
+@media screen and (max-width: 620px) {
+    .paper table { min-width: 450px; }
+    .paper :is(.info-grid, .ms-info-grid, .mw-exam-info, .medicine-info) { grid-template-columns: minmax(0, 1fr); }
+}
+@page { size: A4; margin: 12mm; }
+@media print {
+    body { background: #fff; color: #000; font-size: 11pt; }
+    .screen-wrap { width: auto; margin: 0; }
+    .toolbar { display: none; }
+    .paper { border: 0; border-radius: 0; padding: 0; }
+    :is(.medicine-table-wrap, .ms-table-wrap, .receipt-table-scroll) { overflow: visible; }
+    thead { display: table-header-group; }
+    tr, .signature-grid { break-inside: avoid; }
+}
+
+.info-grid dd { margin: 2px 0 0; }

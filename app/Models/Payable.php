@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -67,6 +68,13 @@ class Payable extends Model
             ServiceOrderItem::class,
             'service_order_item_id'
         );
+    }
+
+    public function scopeOutstandingForPatient(Builder $query): Builder
+    {
+        return $query->where('amount', '>', 0)
+            ->whereHas('paymentStatus', fn ($status) => $status->whereIn('name', ['UNPAID', 'PENDING']))
+            ->whereDoesntHave('transactions', fn ($transaction) => $transaction->where('transaction_result', 'SUCCESS'));
     }
 
     public function prescription(): BelongsTo

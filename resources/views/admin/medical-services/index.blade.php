@@ -267,7 +267,7 @@
         </form>
     @endcomponent
 
-    <div class="card">
+    <div class="card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách dịch vụ y tế'])
 
 
@@ -276,9 +276,9 @@
              DANH SÁCH
         ====================================================== --}}
 
-        <div class="table-wrapper">
+        <div class="table-wrapper admin-list-table-wrap">
 
-            <table class="admin-table">
+            <table class="admin-table admin-list-table">
 
                 <thead>
 
@@ -458,22 +458,7 @@
             </table>
 
         </div>
-
-
-        {{-- =====================================================
-             PHÂN TRANG
-        ====================================================== --}}
-
-        @if ($medicalServices->hasPages())
-
-            <div class="pagination-wrapper">
-
-                {{ $medicalServices->links() }}
-
-            </div>
-
-        @endif
-
+        @include('admin.layouts.partials.list-footer', ['rows' => $medicalServices])
     </div>
 
 @endsection

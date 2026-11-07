@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\AdminDisplay;
+use App\Support\EmployeeAccess;
 use App\Rules\PasswordByteLimit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -12,7 +13,7 @@ class StoreEmployeeRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         if (is_string($this->input('employee_type'))) {
-            $this->merge(['employee_type' => strtoupper(trim(AdminDisplay::employeeTypeCode($this->input('employee_type'))))]);
+            $this->merge(['employee_type' => EmployeeAccess::typeCode(strtoupper(trim(AdminDisplay::employeeTypeCode($this->input('employee_type')))))]);
         }
     }
 
@@ -162,7 +163,7 @@ class StoreEmployeeRequest extends FormRequest
                 'string',
                 'max:80',
                 Rule::exists('employee_types', 'code'),
-                Rule::in(array_keys(\App\Support\EmployeeAccess::TYPES)),
+                Rule::in(array_keys(EmployeeAccess::TYPES)),
             ],
 
             'hire_date' => [

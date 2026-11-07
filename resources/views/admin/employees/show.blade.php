@@ -36,7 +36,7 @@
     $work = [
         'Phòng ban' => $detail?->department,
         'Chức vụ' => $detail?->position,
-        'Loại nhân viên' => \App\Models\AdminDisplay::label($detail?->employee_type),
+        'Loại nhân viên' => \App\Models\AdminDisplay::label(\App\Support\EmployeeAccess::typeCode($detail?->employee_type)),
         'Ngày tuyển dụng' => $detail?->hire_date?->format('d/m/Y'),
         'Ngày nghỉ việc' => $detail?->termination_date?->format('d/m/Y'),
         'Số năm công tác' => $detail?->years_of_service,
@@ -155,7 +155,7 @@
             <dl class="es-information">
                 <div><dt>Phòng ban</dt><dd>{{ $detail?->department ?: 'Chưa cập nhật' }}</dd></div>
                 <div><dt>Chức vụ</dt><dd>{{ $detail?->position ?: 'Chưa cập nhật' }}</dd></div>
-                <div><dt>Loại nhân viên</dt><dd>{{ \App\Models\AdminDisplay::label($detail?->employee_type) }}</dd></div>
+                <div><dt>Loại nhân viên</dt><dd>{{ \App\Models\AdminDisplay::label(\App\Support\EmployeeAccess::typeCode($detail?->employee_type)) }}</dd></div>
                 <div><dt>Ca làm việc</dt><dd>{{ $detail?->primary_shift ?: 'Chưa cập nhật' }}</dd></div>
             </dl>
         </section>

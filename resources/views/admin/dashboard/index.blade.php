@@ -42,10 +42,10 @@
         <div class="stat-card"><div class="stat-label">Tiền thu đã xác nhận</div><div class="stat-value">{{ number_format($dailyRevenue, 0, ',', '.') }} ₫</div><div class="stat-label">Giao dịch thành công: {{ number_format($dailySuccessfulPayments) }}</div></div>
     </div>
 
-    <div class="admin-card">
+    <div class="admin-card admin-list-panel">
         <h2 class="section-title">Diễn biến 7 ngày</h2>
-        <div class="admin-table-scroll">
-            <table class="admin-table">
+        <div class="admin-table-scroll admin-list-table-wrap">
+            <table class="admin-table admin-list-table">
                 <thead><tr><th scope="col" class="admin-row-number">STT</th><th>Ngày</th><th>Lịch hẹn</th><th>Lượt tiếp nhận</th><th>Dịch vụ được chỉ định</th><th>Dịch vụ hoàn tất</th><th>Tiền thu xác nhận</th></tr></thead>
                 <tbody>
                     @foreach ($dailyRows as $day)
@@ -88,11 +88,11 @@
         @endforeach
     </div>
 
-    <section class="admin-card">
+    <section class="admin-card admin-list-panel">
         <h2 class="section-title">Hoạt động trong ngày</h2>
 
-        <div class="admin-table-scroll">
-            <table class="admin-table">
+        <div class="admin-table-scroll admin-list-table-wrap">
+            <table class="admin-table admin-list-table">
                 <thead><tr><th scope="col" class="admin-row-number">STT</th><th>Người thao tác</th><th>Vai trò</th><th>Hành động</th><th>Đối tượng</th><th>Mã đối tượng</th><th>Mô tả</th><th>Thời gian</th></tr></thead>
                 <tbody>
                     @forelse ($recentAuditLogs as $log)

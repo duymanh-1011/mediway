@@ -60,7 +60,7 @@
 
                 <button type="submit"
                         class="admin-btn admin-btn-primary"
-                        onclick="return confirm('Xác nhận cập nhật các chỉ số của lần đo này?');">Cập nhật</button>
+                        data-confirm="Xác nhận cập nhật các chỉ số của lần đo này?">Cập nhật</button>
             </div>
         </form>
     </div>

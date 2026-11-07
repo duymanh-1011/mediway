@@ -11,6 +11,14 @@ class ServiceOrderItem extends Model
 {
     public const RESOLVED_STATUSES = ['COMPLETED', 'CANCELLED'];
 
+    public const TECHNICAL_STAGES = [
+        'READY' => 'Sẵn sàng thực hiện',
+        'WAITING_PAYMENT' => 'Chờ thanh toán',
+        'PROCESSING' => 'Đang thực hiện',
+        'COMPLETED' => 'Đã hoàn tất',
+        'CANCELLED' => 'Đã hủy',
+    ];
+
     protected $table = 'service_order_items';
 
     protected $fillable = [
@@ -40,6 +48,19 @@ class ServiceOrderItem extends Model
         return in_array($this->serviceStatus?->name, ['PENDING', 'CANCELLED'], true)
             && ($this->serviceStatus?->name === 'CANCELLED' || $this->serviceStatus?->allows_transition)
             && ! $this->started_at && ! $this->result;
+    }
+
+    public function technicalStage(): string
+    {
+        $status = $this->serviceStatus?->name;
+        if ($this->serviceOrder?->status === 'CANCELLED') {
+            return 'CANCELLED';
+        }
+        if ($status === 'PENDING') {
+            return $this->payable?->paymentStatus?->allows_service_execution ? 'READY' : 'WAITING_PAYMENT';
+        }
+
+        return $status ?? '';
     }
 
     /**

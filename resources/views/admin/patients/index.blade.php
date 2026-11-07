@@ -67,12 +67,12 @@
         </form>
     @endcomponent
 
-    <div class="pt-card">
+    <div class="pt-card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách bệnh nhân'])
 
 
-        <div class="pt-table-wrap">
-            <table class="pt-table">
+        <div class="pt-table-wrap admin-list-table-wrap">
+            <table class="pt-table admin-list-table" data-mobile-records>
                 <thead>
                     <tr>
                         <th scope="col" class="admin-row-number">STT</th>
@@ -144,38 +144,7 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="pt-footer">
-            <span>
-                Hiển thị {{ $patients->count() }} /
-                {{ $patients->total() }} bệnh nhân
-            </span>
-
-            <div class="pt-pagination">
-                @if($patients->onFirstPage())
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-                @else
-                    <a class="admin-btn admin-btn-secondary"
-                       href="{{ $patients->previousPageUrl() }}">
-                        Trước
-                    </a>
-                @endif
-
-                <span>
-                    Trang {{ $patients->currentPage() }} /
-                    {{ $patients->lastPage() }}
-                </span>
-
-                @if($patients->hasMorePages())
-                    <a class="admin-btn admin-btn-secondary"
-                       href="{{ $patients->nextPageUrl() }}">
-                        Sau
-                    </a>
-                @else
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-                @endif
-            </div>
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $patients, 'recordLabel' => 'bệnh nhân'])
     </div>
 </div>
 @endsection

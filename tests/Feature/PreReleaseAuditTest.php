@@ -52,6 +52,7 @@ class PreReleaseAuditTest extends TestCase
     {
         $this->signIn();
         $item = $this->unpaidItem();
+        $this->travelTo($item->payable->medicalVisit->appointment->appointment_date->copy()->setTime(10, 0));
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), [
             'payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id'),
         ])->assertSessionHasNoErrors()->assertSessionMissing('error');
@@ -67,6 +68,7 @@ class PreReleaseAuditTest extends TestCase
     {
         $this->signIn();
         $item = $this->unpaidItem();
+        $this->travelTo($item->payable->medicalVisit->appointment->appointment_date->copy()->setTime(10, 0));
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), [
             'payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id'),
         ])->assertSessionHasNoErrors()->assertSessionMissing('error');

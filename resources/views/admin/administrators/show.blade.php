@@ -126,7 +126,7 @@
         @elseif($user && $isActive)
             <form novalidate method="POST"
                   action="{{ route('admin.administrators.update-status', $administrator) }}"
-                  onsubmit="return confirm('Bạn có chắc muốn khóa quản trị viên này?');">
+                  data-confirm="Bạn có chắc muốn khóa quản trị viên này?">
                 @csrf
                 @method('PATCH')
                 <input type="hidden" name="status" value="LOCKED">
@@ -138,7 +138,7 @@
         @elseif($user && $user->status === 'LOCKED' && $administrator->status === 'INACTIVE')
             <form novalidate method="POST"
                   action="{{ route('admin.administrators.update-status', $administrator) }}"
-                  onsubmit="return confirm('Xác nhận mở khóa quản trị viên này?');">
+                  data-confirm="Xác nhận mở khóa quản trị viên này?">
                 @csrf
                 @method('PATCH')
                 <input type="hidden" name="status" value="ACTIVE">

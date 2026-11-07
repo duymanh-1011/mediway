@@ -51,10 +51,10 @@
         </form>
     @endcomponent
 
-    <section class="admin-card">
+    <section class="admin-card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách lượt khám'])
-        <div class="admin-table-scroll">
-            <table class="admin-table patient-medical-history-table">
+        <div class="admin-table-scroll admin-list-table-wrap">
+            <table class="admin-table patient-medical-history-table admin-list-table">
                 <thead>
                     <tr>
                         <th scope="col" class="admin-row-number">STT</th>
@@ -97,6 +97,6 @@
                 </tbody>
             </table>
         </div>
-        {{ $visits->links() }}
+        @include('admin.layouts.partials.list-footer', ['rows' => $visits])
     </section>
 @endsection

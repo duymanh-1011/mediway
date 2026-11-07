@@ -69,7 +69,10 @@ class PortalController extends Controller
         $callItem = $items->first(fn ($item) => isset($item['call']));
         $activeCall = $callItem ? [...$callItem['call'], 'key' => $callItem['key']] : null;
         if ($request->expectsJson()) {
-            return response()->json(['count' => $items->count(), 'active_call' => $activeCall]);
+            return response()->json([
+                'count' => $items->count(), 'active_call' => $activeCall,
+                'unread' => $items->map(fn ($item) => ['key' => $item['key'], 'title' => $item['title'], 'category' => $item['category']]),
+            ])->header('Cache-Control', 'private, no-store');
         }
         return view('portal.notifications', compact('categories', 'category', 'items'));
     }
@@ -121,35 +124,36 @@ class PortalController extends Controller
             $results = ServiceResult::whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))
                 ->where(fn ($q) => $q->whereNotNull('result_summary')->orWhereNotNull('result_conclusion')
                     ->orWhereNotNull('result_parameters')->orWhereNotNull('result_pdf_path')->orWhereNotNull('result_image_path'))
-                ->with('serviceOrderItem.medicalService')->orderByDesc('updated_at')->limit(20)->get();
+                ->with(['serviceOrderItem.medicalService', 'serviceOrderItem.serviceOrder'])->orderByDesc('updated_at')->limit(20)->get();
             foreach ($results as $result) {
                 $items->push(['key' => $this->notificationKey('result', $result->id, $result->updated_at), 'category' => 'Kết quả', 'title' => 'Có kết quả dịch vụ',
                     'description' => $result->serviceOrderItem?->medicalService?->name ?? 'Kết quả khám bệnh',
-                    'time' => $result->resulted_at ?? $result->updated_at, 'url' => route('patient.results')]);
+                    'time' => $result->resulted_at ?? $result->updated_at,
+                    'url' => route('patient.results.visit', ['visit' => $result->serviceOrderItem->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $result->service_order_item_id]).'#dich-vu-'.$result->service_order_item_id]);
             }
             $conclusions = VisitConclusion::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))
                 ->orderByDesc('concluded_at')->limit(20)->get();
             foreach ($conclusions as $conclusion) {
                 $items->push(['key' => $this->notificationKey('conclusion', $conclusion->id, $conclusion->updated_at), 'category' => 'Kết quả', 'title' => 'Có kết luận khám bệnh',
                     'description' => 'Bạn có thể xem kết luận trong kết quả khám bệnh.',
-                    'time' => $conclusion->concluded_at ?? $conclusion->created_at, 'url' => route('patient.results')]);
+                    'time' => $conclusion->concluded_at ?? $conclusion->created_at, 'url' => route('patient.results.visit', $conclusion->medical_visit_id).'#ket-luan']);
             }
             $prescriptions = Prescription::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))
                 ->where('status', 'ACTIVE')->orderByDesc('prescribed_at')->limit(20)->get();
             foreach ($prescriptions as $prescription) {
                 $items->push(['key' => $this->notificationKey('prescription', $prescription->id, $prescription->updated_at), 'category' => 'Kết quả', 'title' => 'Có đơn thuốc',
                     'description' => 'Đơn thuốc '.$prescription->prescription_code,
-                    'time' => $prescription->prescribed_at ?? $prescription->created_at, 'url' => route('patient.prescriptions')]);
+                    'time' => $prescription->prescribed_at ?? $prescription->created_at, 'url' => route('patient.prescriptions.show', $prescription->id)]);
             }
         }
         if (in_array($category, ['tat-ca', 'thanh-toan'], true)) {
             $payables = Payable::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))
-                ->whereHas('paymentStatus', fn ($q) => $q->whereIn('name', ['UNPAID', 'PENDING']))
+                ->outstandingForPatient()
                 ->orderByDesc('generated_at')->limit(20)->get();
             foreach ($payables as $payable) {
                 $items->push(['key' => $this->notificationKey('payable', $payable->id, $payable->updated_at), 'category' => 'Thanh toán', 'title' => 'Khoản cần thanh toán',
                     'description' => $payable->payable_code.' · '.number_format((float) $payable->amount, 0, ',', '.').' đ',
-                    'time' => $payable->generated_at ?? $payable->created_at, 'url' => route('patient.payments.index')]);
+                    'time' => $payable->generated_at ?? $payable->created_at, 'url' => route('patient.payments.index').'#khoan-thu-'.$payable->id]);
             }
         }
 

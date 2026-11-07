@@ -391,12 +391,7 @@ class MedicalVisitController extends Controller
                     ===
                     'COMPLETED'
                 ) {
-                    $updateData[
-                        'examination_ended_at'
-                    ] =
-                        $medicalVisit
-                            ->examination_ended_at
-                        ?? now();
+                    $updateData['examination_ended_at'] = now();
                 }
 
                 $medicalVisit->update(

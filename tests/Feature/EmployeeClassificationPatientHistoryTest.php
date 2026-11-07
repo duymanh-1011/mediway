@@ -61,11 +61,11 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
 
     public function test_catalog_forms_and_filters_use_one_standard_classification(): void
     {
-        $this->assertSame(['RECEPTIONIST', 'NURSE', 'LAB_TECHNICIAN', 'IMAGING_TECHNICIAN', 'CASHIER'], EmployeeType::orderBy('display_order')->pluck('code')->all());
+        $this->assertSame(['RECEPTIONIST', 'NURSE', 'LAB_TECHNICIAN', 'IMAGING_TECHNICIAN', 'CASHIER', 'SERVICE_TECHNICIAN'], EmployeeType::orderBy('display_order')->pluck('code')->all());
         foreach (['admin.employees.create' => [], 'admin.employees.edit' => [Employee::firstOrFail()]] as $route => $parameters) {
             $xpath = $this->xpath($this->get(route($route, $parameters))->assertOk()->getContent());
             $this->assertCount(1, $xpath->query('//select[@name="employee_type" and @required]'));
-            $this->assertCount($route === 'admin.employees.create' ? 5 : 6, $xpath->query('//select[@name="employee_type"]/option'));
+            $this->assertCount($route === 'admin.employees.create' ? 4 : 5, $xpath->query('//select[@name="employee_type"]/option'));
             $this->assertCount(0, $xpath->query('//input[@name="employee_type"]|//datalist[@id="employee-type-suggestions"]'));
         }
         $this->post(route('admin.employees.store'), [...$this->employeeData(), 'employee_type' => 'NURSE'])->assertSessionHasErrors('employee_type');
@@ -73,6 +73,27 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
         $response = $this->get(route('admin.employees.index', ['employee_type' => 'NURSE']))->assertOk();
         $this->assertSame(['NV000001'], $response->viewData('employees')->pluck('employee_code')->all());
         $this->get(route('admin.employees.index', ['employee_type' => 'RECEPTIONIST']))->assertOk()->assertSee('Không tìm thấy nhân viên phù hợp.');
+    }
+
+    public function test_admin_filters_and_edits_both_legacy_technicians_as_the_same_type(): void
+    {
+        $lab = Employee::where('employee_code', 'NV000002')->firstOrFail();
+        $imaging = Employee::where('employee_code', 'NV000003')->firstOrFail();
+        $lab->detail()->update(['employee_type' => 'LAB_TECHNICIAN']);
+        $imaging->detail()->update(['employee_type' => 'IMAGING_TECHNICIAN']);
+
+        $response = $this->get(route('admin.employees.index', ['employee_type' => 'SERVICE_TECHNICIAN']))->assertOk()
+            ->assertSee('Kỹ thuật viên dịch vụ y tế');
+        $this->assertEqualsCanonicalizing(['NV000002', 'NV000003'], $response->viewData('employees')->pluck('employee_code')->all());
+        $form = $this->xpath($this->get(route('admin.employees.edit', $lab))->assertOk()->getContent());
+        $this->assertCount(1, $form->query('//select[@name="employee_type"]/option[@value="SERVICE_TECHNICIAN" and @selected]'));
+        $this->put(route('admin.employees.update', $lab), [
+            'full_name' => $lab->full_name,
+            'status' => 'ACTIVE',
+            'employee_type' => 'SERVICE_TECHNICIAN',
+            'expected_employee_type' => 'LAB_TECHNICIAN',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('LAB_TECHNICIAN', $lab->detail->fresh()->employee_type);
     }
 
     public function test_create_and_update_persist_valid_classification_without_expanding_account_role(): void
@@ -83,7 +104,7 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
         $this->assertSame('Employee', $employee->user->role->name);
         $this->assertSame('RECEPTIONIST', $employee->detail->type->code);
         $this->put(route('admin.employees.update', $employee), ['full_name' => $employee->full_name, 'status' => 'ACTIVE', 'employee_type' => ' lab_technician ', 'expected_employee_type' => 'RECEPTIONIST', 'employee_type_change_reason' => 'Điều chuyển công tác'])->assertSessionHasNoErrors();
-        $this->assertSame('LAB_TECHNICIAN', $employee->detail->fresh()->employee_type);
+        $this->assertSame('SERVICE_TECHNICIAN', $employee->detail->fresh()->employee_type);
     }
 
     public function test_missing_unknown_and_array_types_are_rejected_without_partial_writes(): void
@@ -121,6 +142,7 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
         $ids = DB::table('employee_details')->orderBy('id')->pluck('id');
         DB::table('employee_details')->where('id', $ids[0])->update(['employee_type' => ' Điều dưỡng ']);
         DB::table('employee_details')->where('id', $ids[1])->update(['employee_type' => null]);
+        DB::table('employee_details')->where('id', $ids[2])->update(['employee_type' => 'IMAGING_TECHNICIAN']);
         $before = DB::table('employee_details')->orderBy('id')->get()->map(fn ($row) => (array) $row)->all();
         $migration->up();
         $after = DB::table('employee_details')->orderBy('id')->get()->map(fn ($row) => (array) $row)->all();

@@ -19,14 +19,14 @@ class EmployeeDetailSeeder extends Seeder
             [
                 'code' => 'NV000002',
                 'department' => 'Khoa Xét nghiệm',
-                'position' => 'Kỹ thuật viên xét nghiệm',
-                'type' => 'LAB_TECHNICIAN',
+                'position' => 'Kỹ thuật viên dịch vụ y tế',
+                'type' => 'SERVICE_TECHNICIAN',
             ],
             [
                 'code' => 'NV000003',
                 'department' => 'Chẩn đoán hình ảnh',
-                'position' => 'Kỹ thuật viên CĐHA',
-                'type' => 'IMAGING_TECHNICIAN',
+                'position' => 'Kỹ thuật viên dịch vụ y tế',
+                'type' => 'SERVICE_TECHNICIAN',
             ],
             [
                 'code' => 'NV000004',

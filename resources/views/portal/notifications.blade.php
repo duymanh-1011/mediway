@@ -3,7 +3,7 @@
 @section('content')
 <section class="notification-page">
     <div class="portal-shell">
-        <a class="notification-page__back" href="{{ route('patient.home') }}">← Quay lại tài khoản</a>
+        <a class="notification-page__back portal-back" href="{{ route('patient.home') }}">← Quay lại tài khoản</a>
         <div class="notification-page__heading">
             <p class="portal-eyebrow">TÀI KHOẢN BỆNH NHÂN</p>
             <h1>Thông báo</h1>

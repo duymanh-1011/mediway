@@ -79,12 +79,12 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::get('/ho-so/chinh-sua', [\App\Http\Controllers\Employee\WorkspaceController::class, 'editProfile'])->name('profile.edit');
     Route::put('/ho-so', [\App\Http\Controllers\Employee\WorkspaceController::class, 'updateProfile'])->name('profile.update');
     Route::put('/mat-khau', [\App\Http\Controllers\Employee\WorkspaceController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.update');
-    // Mỗi nhóm chỉ định có quyền riêng; kiểm tra ở máy chủ cho từng yêu cầu.
-    foreach (['xet-nghiem' => ['laboratory', 'laboratory'], 'chan-doan-hinh-anh' => ['imaging', 'imaging']] as $path => [$routeName, $capability]) {
-        Route::prefix($path)->name($routeName . '.')->group(function () use ($capability) {
+    // Các URL cũ là lối tắt theo nhóm cho cùng màn hình thực hiện dịch vụ.
+    foreach (['dich-vu' => 'services', 'xet-nghiem' => 'laboratory', 'chan-doan-hinh-anh' => 'imaging'] as $path => $routeName) {
+        Route::prefix($path)->name($routeName . '.')->group(function () {
             $controller = \App\Http\Controllers\Employee\TechnicalServiceController::class;
-            $viewPermission = \App\Http\Middleware\EmployeeMiddleware::class . ':' . $capability . '.view';
-            $processPermission = \App\Http\Middleware\EmployeeMiddleware::class . ':' . $capability . '.process';
+            $viewPermission = \App\Http\Middleware\EmployeeMiddleware::class . ':services.view';
+            $processPermission = \App\Http\Middleware\EmployeeMiddleware::class . ':services.process';
             Route::get('/', [$controller, 'index'])->middleware($viewPermission)->name('index');
             Route::get('/{item}', [$controller, 'show'])->whereNumber('item')->middleware($viewPermission)->name('show');
             Route::get('/{item}/tep/{type}', [$controller, 'document'])->whereNumber('item')->where('type', 'pdf|image')->middleware($viewPermission)->name('document');
@@ -136,8 +136,11 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::redirect('/tai-lieu', '/tai-khoan/ket-qua')->middleware(PatientMiddleware::class)->name('documents.index');
     Route::middleware(PatientMiddleware::class)->get('/tai-lieu/{type}', [\App\Http\Controllers\Portal\PatientDocumentController::class, 'show'])->where('type', 'avatar|citizen-id-front|citizen-id-back|profile-pdf')->name('documents.show');
     Route::middleware(PatientMiddleware::class)->get('/ket-qua', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'results'])->name('results');
+    Route::middleware(PatientMiddleware::class)->get('/ket-qua/{visit}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'visit'])->whereNumber('visit')->name('results.visit');
+    Route::middleware(PatientMiddleware::class)->get('/ket-qua/{visit}/phieu-thu/{transaction}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'receipt'])->whereNumber(['visit', 'transaction'])->name('results.receipt');
     Route::middleware(PatientMiddleware::class)->get('/ket-qua/{result}/tai-lieu/{type}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'resultDocument'])->where('type', 'result_pdf|result_image')->name('results.document');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptions'])->name('prescriptions');
+    Route::middleware(PatientMiddleware::class)->get('/don-thuoc/{prescription}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescription'])->whereNumber('prescription')->name('prescriptions.show');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc/{prescription}/pdf', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptionDocument'])->name('prescriptions.document');
     Route::middleware(PatientMiddleware::class)->group(function () {
         Route::middleware(PatientMiddleware::class)->group(function () {

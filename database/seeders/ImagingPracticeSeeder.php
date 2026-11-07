@@ -36,8 +36,8 @@ class ImagingPracticeSeeder extends Seeder
             if (! $pending || ! $paid) throw new RuntimeException('Thiếu trạng thái dịch vụ hoặc thanh toán cần thiết.');
             $services = DB::table('medical_services as m')->join('service_group_medical_service as rel', 'rel.medical_service_id', '=', 'm.id')
                 ->join('service_groups as g', 'g.id', '=', 'rel.service_group_id')
-                ->where('g.service_group_code', 'CDHA')->whereIn('m.service_code', ['DVCD001', 'DVCD002', 'DVCD003'])
-                ->select('m.id', 'm.name', 'm.service_code', 'm.price')->get()->keyBy('service_code');
+                ->whereIn('g.service_group_code', ['CDHA', 'SA'])->whereIn('m.service_code', ['DVCD001', 'DVCD002', 'DVCD003'])
+                ->select('m.id', 'm.name', 'm.service_code', 'm.price')->distinct()->get()->keyBy('service_code');
             if ($services->count() !== 3) throw new RuntimeException('Thiếu danh mục ba dịch vụ chẩn đoán hình ảnh mẫu.');
 
             $now = now();

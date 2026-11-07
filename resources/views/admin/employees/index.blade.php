@@ -84,7 +84,7 @@
         </form>
     @endcomponent
 
-    <div class="ei-card">
+    <div class="ei-card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách nhân viên'])
 
 
@@ -96,8 +96,8 @@
             </div>
         @endif
 
-        <div class="ei-table-wrap">
-            <table class="ei-table">
+        <div class="ei-table-wrap admin-list-table-wrap">
+            <table class="ei-table admin-list-table">
                 <thead>
                     <tr>
                         <th scope="col" class="admin-row-number">STT</th>
@@ -118,7 +118,7 @@
                             <td>{{ $employee->full_name }}</td>
                             <td>{{ $employee->user?->phone ?? '-' }}</td>
                             <td>{{ $employee->detail?->department ?: 'Chưa cập nhật' }}</td>
-                            <td>{{ \App\Models\AdminDisplay::label($employee->detail?->employee_type) }}</td>
+                            <td>{{ \App\Models\AdminDisplay::label(\App\Support\EmployeeAccess::typeCode($employee->detail?->employee_type)) }}</td>
                             <td>
                                 @include('admin.layouts.partials.status-badge', ['badgeCode' => $employee->status])
                             </td>
@@ -141,27 +141,7 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="ei-footer">
-            <span>Hiển thị {{ $employees->count() }} / {{ $employees->total() }} nhân viên</span>
-            <div class="ei-pages">
-                @if($employees->onFirstPage())
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-                @else
-                    <a href="{{ $employees->previousPageUrl() }}"
-                       class="admin-btn admin-btn-secondary">Trước</a>
-                @endif
-
-                <span>Trang {{ $employees->currentPage() }} / {{ $employees->lastPage() }}</span>
-
-                @if($employees->hasMorePages())
-                    <a href="{{ $employees->nextPageUrl() }}"
-                       class="admin-btn admin-btn-secondary">Sau</a>
-                @else
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-                @endif
-            </div>
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $employees, 'recordLabel' => 'nhân viên'])
     </div>
 </div>
 @endsection

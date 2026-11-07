@@ -9,21 +9,21 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    public function run(): void
+    public function run(?bool $includePracticeData = null): void
     {
+        $includePracticeData ??= app()->environment('local');
+        $practice = ['includePracticeData' => $includePracticeData];
+
+        $this->call(RoleSeeder::class);
+        $this->callWith(UserSeeder::class, $practice);
+        $this->call(AdministratorSeeder::class);
+        $this->callWith(PatientSeeder::class, $practice);
+        $this->callWith(PatientDetailSeeder::class, $practice);
+        $this->call([PersonalHealthRecordSeeder::class, SpecialtySeeder::class]);
+        $this->callWith(DoctorSeeder::class, $practice);
+        $this->callWith(DoctorDetailSeeder::class, $practice);
+
         $this->call([
-            RoleSeeder::class,
-            UserSeeder::class,
-            AdministratorSeeder::class,
-
-            PatientSeeder::class,
-            PatientDetailSeeder::class,
-            PersonalHealthRecordSeeder::class,
-
-            SpecialtySeeder::class,
-            DoctorSeeder::class,
-            DoctorDetailSeeder::class,
-
             EmployeeSeeder::class,
             EmployeeDetailSeeder::class,
 
@@ -35,8 +35,10 @@ class DatabaseSeeder extends Seeder
             MedicineSeeder::class,
             ReferenceMedicinePriceSeeder::class,
             AppointmentStatusSeeder::class,
-            DoctorScheduleSeeder::class,
-            AppointmentTimeSlotSeeder::class,
+        ]);
+        $this->callWith(DoctorScheduleSeeder::class, $practice);
+        $this->callWith(AppointmentTimeSlotSeeder::class, $practice);
+        $this->call([
             AppointmentSeeder::class,
 
             VisitStatusSeeder::class,
@@ -58,5 +60,9 @@ class DatabaseSeeder extends Seeder
             PaymentTransactionSeeder::class,
             AuditLogSeeder::class,
         ]);
+
+        if ($includePracticeData) {
+            $this->call(TechnicalServicePracticeSeeder::class);
+        }
     }
 }

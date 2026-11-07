@@ -70,7 +70,7 @@
         </form>
     @endcomponent
 
-    <div class="dx-card">
+    <div class="dx-card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách bác sĩ'])
 
 
@@ -82,8 +82,8 @@
             </div>
         @endif
 
-        <div class="dx-table-wrap">
-            <table class="dx-table">
+        <div class="dx-table-wrap admin-list-table-wrap">
+            <table class="dx-table admin-list-table">
                 <thead>
                     <tr>
                         <th scope="col" class="admin-row-number">STT</th>
@@ -134,32 +134,7 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="dx-footer">
-            <span>
-                Hiển thị {{ $doctors->count() }} / {{ $doctors->total() }} bác sĩ
-            </span>
-
-            <div class="dx-pagination">
-                @if($doctors->onFirstPage())
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-                @else
-                    <a href="{{ $doctors->previousPageUrl() }}"
-                       class="admin-btn admin-btn-secondary">Trước</a>
-                @endif
-
-                <span>
-                    Trang {{ $doctors->currentPage() }} / {{ $doctors->lastPage() }}
-                </span>
-
-                @if($doctors->hasMorePages())
-                    <a href="{{ $doctors->nextPageUrl() }}"
-                       class="admin-btn admin-btn-secondary">Sau</a>
-                @else
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-                @endif
-            </div>
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $doctors, 'recordLabel' => 'bác sĩ'])
     </div>
 </div>
 @endsection

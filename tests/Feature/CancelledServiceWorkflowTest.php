@@ -26,7 +26,7 @@ class CancelledServiceWorkflowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->travelTo(now()->setDate(2026, 10, 19)->setTime(9, 0));
+        $this->travelTo(now()->setDate(2026, 10, 15)->setTime(9, 0));
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
@@ -50,8 +50,7 @@ class CancelledServiceWorkflowTest extends TestCase
     {
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.start', $item))->assertSessionMissing('error');
-        $this->post(route('admin.service-order-items.service-results.store', $item), ['result_summary' => 'Kết quả bình thường', 'resulted_at' => now()->format('Y-m-d H:i:s'), 'confirm_create' => 1])->assertSessionHasNoErrors()->assertSessionMissing('error');
-        $this->post(route('admin.service-order-items.complete', $item))->assertSessionMissing('error');
+        $this->post(route('admin.service-order-items.service-results.store', $item), ['result_summary' => 'Kết quả bình thường', 'confirm_create' => 1])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->assertSame('COMPLETED', $item->fresh()->serviceStatus->name);
     }
 

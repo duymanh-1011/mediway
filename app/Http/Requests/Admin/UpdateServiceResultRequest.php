@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\ClinicalDocument;
-use App\Models\ClinicalTimeline;
 use App\Models\ServiceResult;
 use App\Rules\ActiveResultVerifier;
 use Illuminate\Foundation\Http\FormRequest;
@@ -45,11 +44,6 @@ class UpdateServiceResultRequest extends FormRequest
                 new ActiveResultVerifier(ServiceResult::whereKey($this->route('id'))->value('verified_by_user_id')),
             ],
 
-            'resulted_at' => [
-                'nullable',
-                'date',
-            ],
-
             'notes' => [
                 'nullable',
                 'string',
@@ -68,10 +62,8 @@ class UpdateServiceResultRequest extends FormRequest
     {
         return [function (Validator $validator): void {
             $result = ServiceResult::find($this->route('id'));
-            if (! $validator->errors()->has('resulted_at')) {
-                ClinicalTimeline::assertEventTime($this->input('resulted_at'), $result?->serviceOrderItem?->started_at, 'resulted_at', 'Thời điểm trả kết quả');
-            }
             $values = $this->only(['result_summary', 'result_conclusion']);
+            $values['result_parameters'] = $result?->result_parameters;
             $values['result_pdf_path'] = $result?->result_pdf_path;
             $values['result_image_path'] = $result?->result_image_path;
             $hasUpload = collect(array_keys(ClinicalDocument::RESULT_FILES))->contains(
@@ -91,8 +83,6 @@ class UpdateServiceResultRequest extends FormRequest
             'verified_by_user_id.integer' => 'Vui lòng chọn người xác nhận từ danh sách kỹ thuật viên.',
 
             'verified_by_user_id.exists' => 'Người xác nhận phải là kỹ thuật viên hợp lệ.',
-
-            'resulted_at.date' => 'Thời điểm trả kết quả chưa hợp lệ. Vui lòng chọn đủ ngày và giờ.',
 
             'confirm_update.accepted' => 'Vui lòng đánh dấu ô xác nhận nội dung kết quả trước khi cập nhật.',
         ];

@@ -44,6 +44,126 @@ class EmployeeTechnicalParametersTest extends TestCase
         return $item->fresh();
     }
 
+    public static function supportedGroups(): array
+    {
+        return [['XN', 'DVXN001'], ['CDHA', 'DVCD001'], ['TDCN', 'DVTDCN001'], ['TT', 'DVTT001']];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('supportedGroups')]
+    public function test_print_preview_shows_saved_details_without_changing_result(string $group, string $code): void
+    {
+        $item = $this->pendingItem();
+        $item->update(['medical_service_id' => MedicalService::where('service_code', $code)->firstOrFail()->id]);
+        $item->payable->update(['payment_status_id' => PaymentStatus::where('allows_service_execution', true)->firstOrFail()->id]);
+        $this->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
+        $this->post(route('employee.services.start', $item->id))->assertSessionHasNoErrors();
+        $this->get(route('employee.services.print', $item->id))->assertNotFound();
+        $this->get(route('employee.services.show', $item->id))->assertDontSee('Xem và in phiếu kết quả');
+        $this->saveResult('services', $item, ['details_present' => '1', 'details' => [['name' => 'Tên <mục>', 'value' => '0']]])->assertSessionHasNoErrors();
+        $before = $item->fresh()->result->getAttributes();
+        $this->get(route('employee.services.show', $item->id))->assertSee('Xem và in phiếu kết quả')->assertDontSee('Trạng thái xác minh');
+        $response = $this->get(route('employee.services.print', $item->id))->assertOk()
+            ->assertSee('Mediway')->assertSee('Tên &lt;mục&gt;', false)->assertSee('>0<', false)
+            ->assertSee('Mã chỉ định')->assertSee($item->serviceOrder->service_order_code)
+            ->assertSee('Mã lượt khám')->assertSee($item->serviceOrder->medicalVisit->visit_code)
+            ->assertSee('In / Lưu PDF')->assertDontSee('Trạng thái xác minh')->assertDontSee('Chưa xác minh');
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+        $this->assertSame($before, $item->fresh()->result->getAttributes());
+        $this->assertSame('PROCESSING', $item->fresh()->serviceStatus->name);
+
+        $item->update(['performed_by_employee_id' => User::where('business_code', 'NV000003')->firstOrFail()->employee->id]);
+        $this->get(route('employee.services.print', $item->id))->assertNotFound();
+        $this->flushSession();
+        $this->actingAs($item->serviceOrder->medicalVisit->patient->user)->get(route('employee.services.print', $item->id))->assertForbidden();
+    }
+
+    public function test_print_preview_shows_parameters_legacy_and_ambiguous_group_is_blocked(): void
+    {
+        $item = $this->startLaboratory();
+        $this->saveResult('laboratory', $item, ['result_summary' => "Dòng một\nDòng hai", 'parameters_present' => '1', 'parameters' => [['name' => 'Hồng cầu', 'value' => '0', 'unit' => 'mg/L']]])->assertSessionHasNoErrors();
+        $this->get(route('employee.laboratory.print', $item->id))->assertOk()->assertSee('Hồng cầu')->assertSee('mg/L')->assertSee('Dòng hai');
+        $item->fresh()->result->update(['result_parameters' => ['Chỉ số cũ' => 'Giá trị cũ']]);
+        $this->get(route('employee.laboratory.print', $item->id))->assertOk()->assertSee('Chỉ Số Cũ')->assertSee('Giá trị cũ');
+        $item->medicalService->serviceGroups()->attach(\App\Models\ServiceGroup::where('service_group_code', 'TT')->firstOrFail()->id);
+        $this->get(route('employee.laboratory.print', $item->id))->assertNotFound();
+        $this->get(route('employee.laboratory.show', $item->id))->assertDontSee('Xem và in phiếu kết quả');
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('supportedGroups')]
+    public function test_extra_details_can_be_saved_edited_seen_and_completed_for_each_group(string $group, string $code): void
+    {
+        $item = $this->pendingItem();
+        $item->update(['medical_service_id' => MedicalService::where('service_code', $code)->firstOrFail()->id]);
+        $item->payable->update(['payment_status_id' => PaymentStatus::where('allows_service_execution', true)->firstOrFail()->id]);
+        $this->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
+        $this->post(route('employee.services.start', $item->id))->assertSessionHasNoErrors();
+        $page = $this->get(route('employee.services.show', $item->id))->assertOk();
+        $page->assertSee('+ Thêm thông tin')->assertDontSee('name="result_pdf"', false)->assertDontSee('name="result_image"', false);
+        if (in_array($group, ['XN', 'TDCN'], true)) $page->assertSee('+ Thêm chỉ số');
+        else $page->assertDontSee('+ Thêm chỉ số');
+
+        $details = [['name' => 'Thông tin thử nghiệm', 'value' => '0'], ['name' => 'Kỹ thuật', 'value' => 'Giá trị <mẫu>']];
+        $this->saveResult('services', $item, ['details_present' => '1', 'details' => $details])->assertSessionHasNoErrors();
+        $this->assertSame($details, $item->fresh()->result->technical_details);
+        $this->assertTrue($item->fresh()->result->hasContent());
+        $this->get(route('employee.services.show', $item->id))->assertOk()->assertSee('Thông tin thử nghiệm')->assertSee('Giá trị &lt;mẫu&gt;', false);
+
+        $patient = $item->serviceOrder->medicalVisit->patient->user;
+        $visit = $item->serviceOrder->medicalVisit;
+        $this->flushSession();
+        $this->actingAs($patient)->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'dich-vu']))->assertOk()->assertSee('Thông tin thử nghiệm')->assertSee('Giá trị &lt;mẫu&gt;', false);
+        $other = User::where('business_code', 'BN000001')->firstOrFail();
+        if ($other->id === $patient->id) $other = User::where('business_code', 'BN000002')->firstOrFail();
+        $this->flushSession();
+        $this->actingAs($other)->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'dich-vu']))->assertNotFound();
+
+        $this->flushSession();
+        $this->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
+        $this->saveResult('services', $item, ['details_present' => '1', 'details' => [['name' => 'Thay đổi', 'value' => 'Đã lưu']]])->assertSessionHasNoErrors();
+        $this->assertCount(1, $item->fresh()->result->technical_details);
+        $this->post(route('employee.services.complete', $item->id))->assertSessionHasNoErrors();
+        $this->assertSame('COMPLETED', $item->fresh()->serviceStatus->name);
+    }
+
+    public function test_extra_details_validation_and_stale_edits_are_blocked(): void
+    {
+        $item = $this->startLaboratory();
+        $old = ServiceResult::editVersion(null);
+        $this->saveResult('laboratory', $item, ['details_present' => '1', 'details' => [['name' => 'Thiếu', 'value' => '']]])->assertSessionHasErrors('details.0');
+        $this->saveResult('laboratory', $item, ['details_present' => '1', 'details' => array_fill(0, 31, ['name' => 'a', 'value' => 'b'])])->assertSessionHasErrors('details');
+        $this->saveResult('laboratory', $item, ['details_present' => '1', 'details' => [['name' => 'Tên', 'value' => str_repeat('a', 2001)]]])->assertSessionHasErrors('details.0.value');
+        $this->saveResult('laboratory', $item, ['details_present' => '1', 'details' => [['name' => 'Tên', 'value' => '0']]])->assertSessionHasNoErrors();
+        $this->saveResult('laboratory', $item, ['result_version' => $old, 'details_present' => '1', 'details' => [['name' => 'Tên', 'value' => 'Cũ']]])->assertSessionHasErrors('service');
+        $this->assertSame('0', $item->fresh()->result->technical_details[0]['value']);
+    }
+
+    public function test_functional_test_accepts_parameters_and_other_groups_reject_them(): void
+    {
+        $item = $this->pendingItem();
+        $item->update(['medical_service_id' => MedicalService::where('service_code', 'DVTDCN001')->firstOrFail()->id]);
+        $item->payable->update(['payment_status_id' => PaymentStatus::where('allows_service_execution', true)->firstOrFail()->id]);
+        $this->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
+        $this->post(route('employee.services.start', $item->id))->assertSessionHasNoErrors();
+        $this->saveResult('services', $item, ['parameters_present' => '1', 'parameters' => [['name' => 'Nhịp', 'value' => '0', 'unit' => '']]])->assertSessionHasNoErrors();
+        $this->assertTrue($item->fresh()->result->hasContent());
+    }
+
+    public function test_unknown_details_are_preserved_and_ambiguous_group_is_not_guessed(): void
+    {
+        $item = $this->startLaboratory();
+        $result = ServiceResult::create(['service_order_item_id' => $item->id, 'technical_details' => ['legacy' => 'Dữ liệu cũ']]);
+        $this->assertTrue($result->hasContent());
+        $this->saveResult('laboratory', $item, ['result_summary' => 'Nội dung mới'])->assertSessionHasNoErrors();
+        $this->assertSame(['legacy' => 'Dữ liệu cũ'], $result->fresh()->technical_details);
+        $this->saveResult('laboratory', $item, ['details_present' => '1', 'details' => [['name' => 'A', 'value' => 'B']]])->assertSessionHasErrors('details');
+        $this->assertSame(['legacy' => 'Dữ liệu cũ'], $result->fresh()->technical_details);
+
+        $extraGroup = \App\Models\ServiceGroup::where('service_group_code', 'TT')->firstOrFail();
+        $item->medicalService->serviceGroups()->attach($extraGroup->id);
+        $this->get(route('employee.services.show', $item->id))->assertOk()->assertDontSee('+ Thêm thông tin');
+        $this->saveResult('services', $item, ['details_present' => '1', 'details' => [['name' => 'A', 'value' => 'B']]])->assertSessionHasErrors('details');
+    }
+
     public function test_parameters_only_can_be_saved_updated_seen_and_completed(): void
     {
         $item = $this->startLaboratory();
@@ -53,7 +173,7 @@ class EmployeeTechnicalParametersTest extends TestCase
         $result = $item->fresh()->result;
         $this->assertSame($payload['parameters'], $result->result_parameters);
         $this->assertTrue($result->hasContent());
-        $this->get(route('employee.laboratory.show', $item->id))->assertOk()->assertSee('Đường huyết')->assertSee('5,4 mmol/L');
+        $this->get(route('employee.laboratory.show', $item->id))->assertOk()->assertSee('<td>Đường huyết</td><td>5,4</td><td>mmol/L</td>', false);
         $patient = $item->serviceOrder->medicalVisit->patient->user;
         $this->flushSession();
         $resultUrl = route('patient.results.visit', ['visit' => $item->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $item->id]);
@@ -104,7 +224,7 @@ class EmployeeTechnicalParametersTest extends TestCase
         $this->assertSame('Ban đầu', $result->fresh()->result_summary);
     }
 
-    public function test_imaging_service_supports_text_and_files_without_lab_parameters(): void
+    public function test_imaging_service_supports_text_and_existing_files_without_lab_parameters(): void
     {
         Storage::fake('local');
         $item = $this->pendingItem();
@@ -115,7 +235,8 @@ class EmployeeTechnicalParametersTest extends TestCase
         $this->post(route('employee.imaging.start', $item->id))->assertSessionHasNoErrors();
         $this->saveResult('imaging', $item, ['parameters_present' => '1'])->assertSessionHasErrors('parameters');
         $this->saveResult('imaging', $item, ['result_summary' => 'Mô tả hình ảnh'])->assertSessionHasNoErrors();
-        $this->saveResult('imaging', $item, ['result_summary' => 'Mô tả hình ảnh', 'result_image' => UploadedFile::fake()->image('anh.png')])->assertSessionHasNoErrors();
+        $path = UploadedFile::fake()->image('anh.png')->store('service-results/'.$item->id, 'local');
+        $item->fresh()->result->update(['result_image_path' => $path]);
         $this->get(route('employee.imaging.document', [$item->id, 'image']))->assertOk();
         $this->get(route('employee.laboratory.index'))->assertOk();
     }
@@ -212,16 +333,19 @@ class EmployeeTechnicalParametersTest extends TestCase
         $this->assertSame(0, $after->viewData('groups')->firstWhere('code', 'NS')['services']->firstWhere('service_code', 'DVNS001')->current_order_count);
     }
 
-    public function test_text_or_pdf_alone_can_be_saved_and_opened(): void
+    public function test_existing_pdf_can_be_opened_and_new_upload_is_rejected(): void
     {
         Storage::fake('local');
         $item = $this->startLaboratory();
         $this->saveResult('laboratory', $item, ['result_summary' => 'Nội dung xét nghiệm'])->assertSessionHasNoErrors();
         $this->assertTrue($item->fresh()->result->hasContent());
         $pdf = UploadedFile::fake()->createWithContent('phieu.pdf', '%PDF-1.4'."\n".'1 0 obj << >> endobj'."\n".'%%EOF');
-        $this->saveResult('laboratory', $item, ['result_summary' => '', 'result_pdf' => $pdf])->assertSessionHasNoErrors();
+        $this->saveResult('laboratory', $item, ['result_summary' => '', 'result_pdf' => $pdf])->assertSessionHasErrors('service');
+        $path = $pdf->store('service-results/'.$item->id, 'local');
+        $item->fresh()->result->update(['result_summary' => null, 'result_pdf_path' => $path]);
         $this->assertTrue($item->fresh()->result->hasContent());
         $this->get(route('employee.laboratory.document', [$item->id, 'pdf']))->assertOk();
+        $this->get(route('employee.laboratory.print', $item->id))->assertOk()->assertSee('Nội dung kết quả nằm trong tệp đính kèm đã lưu');
     }
 
     public function test_admin_can_read_structured_parameters(): void

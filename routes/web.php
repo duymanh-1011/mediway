@@ -90,6 +90,7 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
                 Route::get('/nhom/{group}/{service}', [$controller, 'orders'])->middleware($viewPermission)->name('orders');
             }
             Route::get('/{item}', [$controller, 'show'])->whereNumber('item')->middleware($viewPermission)->name('show');
+            Route::get('/{item}/phieu-ket-qua', [$controller, 'printResult'])->whereNumber('item')->middleware($viewPermission)->name('print');
             Route::get('/{item}/tep/{type}', [$controller, 'document'])->whereNumber('item')->where('type', 'pdf|image')->middleware($viewPermission)->name('document');
             Route::post('/{item}/bat-dau', [$controller, 'start'])->whereNumber('item')->middleware($processPermission)->name('start');
             Route::post('/{item}/ket-qua', [$controller, 'save'])->whereNumber('item')->middleware($processPermission)->name('save');

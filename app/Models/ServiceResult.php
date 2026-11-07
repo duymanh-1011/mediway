@@ -14,6 +14,7 @@ class ServiceResult extends Model
         'result_summary',
         'result_conclusion',
         'result_parameters',
+        'technical_details',
         'result_pdf_path',
         'result_image_path',
         'verified_by_user_id',
@@ -23,6 +24,7 @@ class ServiceResult extends Model
 
     protected $casts = [
         'result_parameters' => 'array',
+        'technical_details' => 'array',
         'resulted_at' => 'datetime',
     ];
 
@@ -32,7 +34,7 @@ class ServiceResult extends Model
         if (! $result) return hash('sha256', 'no-result');
         return hash('sha256', json_encode([
             $result->id, $result->result_summary, $result->result_conclusion,
-            $result->result_parameters, $result->result_pdf_path, $result->result_image_path,
+            $result->result_parameters, $result->technical_details, $result->result_pdf_path, $result->result_image_path,
             $result->verified_by_user_id, $result->patient_publication_status,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
     }
@@ -67,6 +69,28 @@ class ServiceResult extends Model
         return app(AuditValuePresenter::class)->rows($this->result_parameters, '', true);
     }
 
+    // Chỉ đọc cấu trúc danh sách đã biết; dữ liệu lạ không bị ghi đè.
+    public static function editableTechnicalDetails(mixed $details): ?array
+    {
+        if (is_string($details)) $details = json_decode($details, true);
+        if ($details === null || $details === []) return [];
+        if (! is_array($details) || ! array_is_list($details)) return null;
+        foreach ($details as $row) {
+            if (! is_array($row) || ! isset($row['name'], $row['value'])
+                || ! is_string($row['name']) || ! is_string($row['value'])
+                || array_diff(array_keys($row), ['name', 'value'])) return null;
+        }
+        return $details;
+    }
+
+    public function technicalDetailRows(): array
+    {
+        $rows = self::editableTechnicalDetails($this->technical_details);
+        return $rows === null
+            ? app(AuditValuePresenter::class)->rows($this->technical_details, '', true)
+            : array_map(fn ($row) => ['label' => $row['name'], 'value' => $row['value']], $rows);
+    }
+
     /**
      * @param  array<string, mixed>  $values
      */
@@ -76,6 +100,19 @@ class ServiceResult extends Model
             if (is_string($values[$field] ?? null) && trim($values[$field]) !== '') {
                 return true;
             }
+        }
+
+        // Thông tin kỹ thuật có đủ tên và nội dung cũng là kết quả.
+        $details = self::editableTechnicalDetails($values['technical_details'] ?? null);
+        if ($details !== null) {
+            foreach ($details as $row) {
+                if (trim($row['name']) !== '' && trim($row['value']) !== '') return true;
+            }
+        } else {
+            // Định dạng lạ chỉ đọc và không tự xóa, kể cả khi chưa nhận diện được.
+            $raw = $values['technical_details'] ?? null;
+            if (is_string($raw)) $raw = json_decode($raw, true);
+            if (is_array($raw) && $raw !== []) return true;
         }
 
         // Chỉ số có tên và giá trị hợp lệ cũng được coi là nội dung kết quả.

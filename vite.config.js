@@ -7,6 +7,7 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js', 'resources/css/portal.css', 'resources/css/portal-consistency.css', 'resources/js/portal.js',
             'resources/css/employee.css',
+            'resources/css/technical-result-print.css',
             'resources/js/employee.js',
             'resources/css/employee-payments.css',
             'resources/css/payment-receipt.css',

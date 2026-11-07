@@ -164,7 +164,11 @@ class TechnicalServiceController extends Controller
             ->with(['medicalService.serviceGroups', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.status', 'performer', 'payable.paymentStatus', 'result'])
             ->findOrFail($item);
         $serviceGroups = $record->medicalService?->serviceGroups;
-        $supportsParameters = $serviceGroups?->contains('service_group_code', 'XN') ?? false;
+        // Không tự đoán biểu mẫu khi dịch vụ có nhiều nhóm hoặc chưa có nhóm.
+        $groupCode = $serviceGroups?->count() === 1 ? $serviceGroups->first()->service_group_code : null;
+        $hideUploads = $serviceGroups?->contains(fn ($group) => in_array($group->service_group_code, ['XN', 'CDHA', 'TDCN', 'TT'], true)) ?? false;
+        $supportsDetails = in_array($groupCode, ['XN', 'CDHA', 'TDCN', 'TT'], true);
+        $supportsParameters = in_array($groupCode, ['XN', 'TDCN'], true);
         $isImaging = $serviceGroups?->contains(fn ($group) => in_array($group->service_group_code, ['CDHA', 'SA'], true)) ?? false;
         $listQuery = $this->listQuery($request);
         $shortcutGroups = $this->shortcutGroups($request);
@@ -179,7 +183,34 @@ class TechnicalServiceController extends Controller
             ])
             : route('employee.services.index');
 
-        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'isImaging', 'listQuery', 'backUrl'));
+        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'supportsDetails', 'hideUploads', 'groupCode', 'isImaging', 'listQuery', 'backUrl'));
+    }
+
+    // Chỉ tạo bản xem từ dữ liệu đã lưu trong phạm vi nhân viên được phép xem.
+    public function printResult(Request $request, int $item)
+    {
+        $employee = $this->technician($request->user());
+        $routePrefix = $this->routePrefix($request);
+        $record = $this->scopedItems($employee, $this->shortcutGroups($request))
+            ->with(['medicalService.serviceGroups', 'serviceOrder.medicalVisit.patient', 'performer', 'result'])
+            ->findOrFail($item);
+        $groups = $record->medicalService?->serviceGroups;
+        $group = $groups?->count() === 1 ? $groups->first()->service_group_code : null;
+        $title = match ($group) {
+            'XN' => 'PHIẾU KẾT QUẢ XÉT NGHIỆM',
+            'CDHA' => 'PHIẾU KẾT QUẢ CHẨN ĐOÁN HÌNH ẢNH',
+            'TDCN' => 'PHIẾU KẾT QUẢ THĂM DÒ CHỨC NĂNG',
+            'TT' => 'PHIẾU KẾT QUẢ THỦ THUẬT',
+            default => null,
+        };
+        abort_unless($title && $record->result?->hasContent(), 404);
+        $backUrl = route($routePrefix.'.show', ['item' => $item, ...$this->listQuery($request)]);
+
+        // Không lưu bản sao phiếu vào bộ nhớ đệm chung vì chứa dữ liệu y tế.
+        return response()->view('employee.technical.print-result', compact('record', 'title', 'backUrl'))
+            ->header('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
     // Giữ khóa tài khoản và lượt khám trước khi nhận hoặc ghi kết quả dịch vụ.
@@ -237,6 +268,15 @@ class TechnicalServiceController extends Controller
                 }
             }],
             'parameters.*.unit' => ['nullable', 'string', 'max:60'],
+            'details_present' => ['sometimes', 'in:1'],
+            'details' => ['sometimes', 'array', 'max:30'],
+            'details.*' => ['array:name,value'],
+            'details.*.name' => ['nullable', 'string', 'max:120'],
+            'details.*.value' => ['nullable', function (string $attribute, mixed $value, \Closure $fail): void {
+                if ((! is_string($value) && ! is_int($value) && ! is_float($value)) || mb_strlen((string) $value) > 2000) {
+                    $fail('Nội dung phải là chữ hoặc số và không quá 2000 ký tự.');
+                }
+            }],
             'result_pdf' => ClinicalDocument::pdfRules(),
             'result_image' => ClinicalDocument::imageRules(),
         ]);
@@ -251,15 +291,36 @@ class TechnicalServiceController extends Controller
             }
             $parameters[] = ['name' => $name, 'value' => $value, 'unit' => $unit];
         }
+        // Chuẩn hóa từng mục bổ sung, không tự sinh kết luận hoặc giá trị.
+        $details = [];
+        foreach ($data['details'] ?? [] as $index => $row) {
+            $name = trim($row['name'] ?? '');
+            $value = trim((string) ($row['value'] ?? ''));
+            if ($name === '' && $value === '') continue;
+            if ($name === '' || $value === '') {
+                throw ValidationException::withMessages(['details.'.$index => 'Mỗi thông tin cần có tên và nội dung.']);
+            }
+            $details[] = ['name' => $name, 'value' => $value];
+        }
         // Ghi kết quả và tệp trong một giao dịch; không cho nhân viên tự xác nhận y khoa.
-        ClinicalDocument::transaction(function (ClinicalDocument $documents) use ($request, $item, $data, $parameters) {
+        ClinicalDocument::transaction(function (ClinicalDocument $documents) use ($request, $item, $data, $parameters, $details) {
             [$record, $employee] = $this->lockedItem($request, $item);
             if ($record->serviceStatus?->name !== 'PROCESSING' || (int) $record->performed_by_employee_id !== (int) $employee->id || $record->serviceOrder?->status === 'CANCELLED') {
                 throw ValidationException::withMessages(['service' => 'Chỉ người đang thực hiện mới được nhập kết quả khi dịch vụ đang xử lý.']);
             }
+            // Kiểm tra nhóm từ dữ liệu máy chủ cho mọi yêu cầu, kể cả gửi trực tiếp.
+            $groups = $record->medicalService?->serviceGroups()->pluck('service_group_code') ?? collect();
+            $group = $groups->count() === 1 ? $groups->first() : null;
+            $supportsDetails = in_array($group, ['XN', 'CDHA', 'TDCN', 'TT'], true);
             if (($request->has('parameters') || $request->has('parameters_present'))
-                && ! $record->medicalService?->serviceGroups()->where('service_group_code', 'XN')->exists()) {
-                throw ValidationException::withMessages(['parameters' => 'Chỉ dịch vụ xét nghiệm mới có bảng chỉ số.']);
+                && ! in_array($group, ['XN', 'TDCN'], true)) {
+                throw ValidationException::withMessages(['parameters' => 'Dịch vụ này không hỗ trợ bảng chỉ số.']);
+            }
+            if (($request->has('details') || $request->has('details_present')) && ! $supportsDetails) {
+                throw ValidationException::withMessages(['details' => 'Dịch vụ chưa thuộc một nhóm hỗ trợ thông tin bổ sung.']);
+            }
+            if ($groups->intersect(['XN', 'CDHA', 'TDCN', 'TT'])->isNotEmpty() && ($request->hasFile('result_pdf') || $request->hasFile('result_image'))) {
+                throw ValidationException::withMessages(['service' => 'Dịch vụ này nhập kết quả bằng văn bản, chỉ số hoặc thông tin bổ sung.']);
             }
             $result = ServiceResult::where('service_order_item_id', $record->id)->lockForUpdate()->first();
             // Sau khi khóa chỉ định, từ chối nội dung gửi từ biểu mẫu đã bị thay đổi.
@@ -273,13 +334,17 @@ class TechnicalServiceController extends Controller
             if ($request->has('parameters_present') && $result && ServiceResult::editableParameters($result->result_parameters) === null) {
                 throw ValidationException::withMessages(['parameters' => 'Chỉ số cũ có định dạng khác và được giữ nguyên.']);
             }
+            if ($request->has('details_present') && $result && ServiceResult::editableTechnicalDetails($result->technical_details) === null) {
+                throw ValidationException::withMessages(['details' => 'Thông tin cũ có định dạng khác và được giữ nguyên.']);
+            }
             $paths = $documents->store($request, 'service-results/'.$record->id, ClinicalDocument::RESULT_FILES);
             $summary = trim($data['result_summary'] ?? '');
             $values = array_merge(['result_summary' => $summary !== '' ? $summary : null, 'resulted_at' => now()], $paths);
             if ($request->has('parameters_present')) $values['result_parameters'] = $parameters;
+            if ($request->has('details_present')) $values['technical_details'] = $details;
             $content = array_merge($result?->getAttributes() ?? [], $values);
             if (! ServiceResult::hasContentValues($content, $record->id)) {
-                throw ValidationException::withMessages(['result_summary' => 'Nhập nội dung kỹ thuật hoặc tải lên tệp kết quả.']);
+                throw ValidationException::withMessages(['result_summary' => 'Vui lòng nhập nội dung, chỉ số hoặc thông tin kết quả hợp lệ.']);
             }
             if ($result) {
                 $result->update($values);

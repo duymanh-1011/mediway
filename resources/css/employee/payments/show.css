@@ -1,0 +1,84 @@
+/* Scoped to payable details; loaded after the shared cashier stylesheet. */
+.f08-detail {
+    --detail-primary: #2563eb;
+    --detail-ink: #172b4d;
+    --detail-muted: #64748b;
+    --detail-line: #e2e8f0;
+    min-width: 0;
+    padding-bottom: 24px;
+    color: var(--detail-ink);
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+}
+.f08-detail *, .f08-detail *::before, .f08-detail *::after { box-sizing: border-box; }
+.f08-detail .header {
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    border: 1px solid #dce7f7;
+    border-radius: 16px;
+    background: #edf4ff;
+}
+.f08-detail .header-top { margin-bottom: 18px; gap: 12px; }
+.f08-detail .header-back { padding: 0; min-height: 28px; border: 0; background: transparent; color: #1d4ed8; font-size: 13px; font-weight: 600; gap: 8px; }
+.f08-detail .header-label { color: #52709b; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.f08-detail .header h1 { margin: 0 0 8px; color: #15335c; font-size: clamp(24px, 2.6vw, 30px); font-weight: 700; line-height: 1.25; letter-spacing: -.025em; }
+.f08-detail .header p { margin: 0; color: #536b8b; font-size: 13px; overflow-wrap: anywhere; }
+.f08-detail .actions { margin-bottom: 16px; }
+.f08-detail .f08-payment-state { display: flex; align-items: center; gap: 8px; width: fit-content; margin: 0 0 16px; padding: 5px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+.f08-detail .f08-payment-state.is-success { color: #047857; background: #ecfdf5; }
+.f08-detail .f08-payment-state.is-danger { color: #b91c1c; background: #fef2f2; }
+.f08-detail .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; padding: 0; background: transparent; }
+.f08-detail .amount { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; padding: 20px 22px; border: 1px solid var(--detail-line); border-radius: 12px; background: #fff; }
+.f08-detail .amount-label { color: #52657e; font-size: 13px; font-weight: 600; }
+.f08-detail .amount strong { color: #163761; font-size: clamp(22px, 2.3vw, 28px); line-height: 1.3; font-weight: 700; letter-spacing: -.025em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.f08-detail .amount:nth-child(2) { border-color: #c9e9df; background: #f1faf7; }
+.f08-detail .amount:nth-child(2) strong { color: #047857; }
+.f08-detail .amount:nth-child(3) { border-color: #d8e5fb; background: #f1f6ff; }
+.f08-detail .amount:nth-child(3) strong { color: #1d4ed8; }
+.f08-detail .panel { padding: 24px; margin-bottom: 20px; border: 1px solid var(--detail-line); border-radius: 14px; background: #fff; box-shadow: 0 2px 6px rgb(15 23 42 / 3%); }
+.f08-detail .panel-heading { margin-bottom: 22px; gap: 12px; }
+.f08-detail .panel-heading h2 { color: #18365c; font-size: 18px; font-weight: 700; line-height: 1.4; }
+.f08-detail .status-badge { flex-shrink: 0; padding: 5px 11px; border-radius: 7px; font-size: 12px; font-weight: 600; line-height: 1.5; }
+.f08-detail .status-badge.is-success { color: #047857; background: #e7f7ef; }
+.f08-detail .status-badge.is-warning { color: #92400e; background: #fff7df; }
+.f08-detail .status-badge.is-pending { color: #1d4ed8; background: #eaf1ff; }
+.f08-detail .status-badge.is-danger { color: #b91c1c; background: #fef2f2; }
+.f08-detail .status-badge.is-neutral { color: #475569; background: #f1f5f9; }
+.f08-detail .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; margin: 0; }
+.f08-detail .fact { min-width: 0; padding: 15px 0; border-bottom: 1px solid #eef2f7; background: transparent; border-radius: 0; }
+.f08-detail .fact dt { margin: 0 0 6px; color: var(--detail-muted); font-size: 12px; font-weight: 400; line-height: 1.5; }
+.f08-detail .fact dd { margin: 0; color: var(--detail-ink); font-size: 14px; font-weight: 600; line-height: 1.6; text-align: left; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.f08-detail .subsection { padding-top: 20px; margin-top: 4px; }
+.f08-detail .subsection h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+.f08-detail .subsection p { margin: 0 0 12px; color: #526175; overflow-wrap: anywhere; white-space: pre-line; }
+.f08-detail :is(.receipt-btn, .collect-btn, .back) { gap: 8px; min-height: 42px; padding: 9px 16px; border-radius: 9px; font-size: 13px; font-weight: 600; line-height: 1.5; text-decoration: none; transition: background-color .15s, border-color .15s, color .15s; }
+.f08-detail :is(.receipt-btn, .collect-btn) { border-color: var(--detail-primary); background: var(--detail-primary); color: #fff; }
+.f08-detail :is(.receipt-btn, .collect-btn):hover { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.f08-detail .back { margin-top: 0; background: #fff; color: #334e73; border-color: #cbd5e1; }
+.f08-detail .back:hover { background: #eff6ff; color: #1d4ed8; border-color: #93b4ef; }
+.f08-detail :is(a, summary):focus-visible { outline: 3px solid #60a5fa; outline-offset: 4px; }
+.f08-detail details > summary { cursor: pointer; color: #244c7d; font-size: 15px; font-weight: 600; }
+.f08-detail .history-list { display: grid; gap: 16px; margin-top: 18px; }
+.f08-detail .history-entry { min-width: 0; padding-top: 16px; border-top: 1px solid var(--detail-line); }
+.f08-detail .history-entry p { margin: 4px 0; color: #526175; overflow-wrap: anywhere; }
+.f08-detail .history-entry strong { color: #334155; font-weight: 600; }
+.f08-detail .history-entry .receipt-btn { margin-top: 12px; }
+@media (max-width: 1024px) {
+    .f08-detail .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .f08-detail .amount { padding: 18px 16px; }
+}
+@media (max-width: 600px) {
+    .f08-detail .header { padding: 20px 18px; border-radius: 12px; }
+    .f08-detail .header-label { display: none; }
+    .f08-detail .summary { grid-template-columns: 1fr; gap: 10px; margin-bottom: 18px; }
+    .f08-detail .amount { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; }
+    .f08-detail .amount strong { font-size: 22px; text-align: right; }
+    .f08-detail .panel { padding: 18px; }
+    .f08-detail .panel-heading h2 { font-size: 17px; }
+    .f08-detail .facts { grid-template-columns: 1fr; }
+    .f08-detail :is(.back, .collect-btn) { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .f08-detail a { transition: none; }
+}

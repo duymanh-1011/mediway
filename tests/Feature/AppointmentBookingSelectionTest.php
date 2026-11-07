@@ -108,4 +108,47 @@ class AppointmentBookingSelectionTest extends TestCase
         $this->put(route('admin.appointments.update', $appointment), [...$this->data($slot), 'booking_room_id' => $slot->doctorSchedule->examination_room_id])->assertSessionHasNoErrors();
         $this->assertSame($slot->id, $appointment->fresh()->appointment_time_slot_id);
     }
+
+    public function test_admin_cannot_reschedule_checked_in_appointment_even_without_visit(): void
+    {
+        $original = $this->slot(1);
+        $target = $this->slot(2);
+        $this->post(route('admin.appointments.store'), $this->data($original))->assertSessionHasNoErrors();
+        $appointment = $original->appointments()->sole();
+        $appointment->update(['appointment_status_id' => \App\Models\AppointmentStatus::where('name', 'CHECKED_IN')->value('id')]);
+        $date = $appointment->appointment_date->toDateString();
+
+        foreach (['PUT', 'PATCH'] as $method) {
+            $this->call($method, route('admin.appointments.update', $appointment), [...$this->data($target), 'appointment_date' => '2030-01-01'])
+                ->assertSessionHas('error');
+        }
+        $this->post(route('admin.appointments.update', $appointment), $this->data($target))->assertStatus(405);
+        $this->assertSame($date, $appointment->fresh()->appointment_date->toDateString());
+        $this->assertSame($original->id, $appointment->fresh()->appointment_time_slot_id);
+    }
+
+    public function test_admin_and_employee_cannot_reschedule_an_appointment_with_visit(): void
+    {
+        $original = $this->slot(1);
+        $target = $this->slot(2);
+        $this->post(route('admin.appointments.store'), $this->data($original))->assertSessionHasNoErrors();
+        $appointment = $original->appointments()->sole();
+        $visit = \App\Models\MedicalVisit::query()->firstOrFail()->replicate();
+        $visit->visit_code = 'TEST-ADMIN-VISIT';
+        $visit->appointment_id = $appointment->id;
+        $visit->patient_id = $appointment->patient_id;
+        $visit->save();
+        $date = $appointment->appointment_date->toDateString();
+        $payload = [...$this->data($target), 'appointment_date' => '2030-01-01', 'id' => 1];
+
+        foreach (['PUT', 'PATCH'] as $method) {
+            $this->call($method, route('admin.appointments.update', $appointment), $payload)->assertSessionHas('error');
+        }
+        foreach (['PUT', 'PATCH'] as $method) {
+            $this->actingAs(User::where('business_code', 'NV000004')->firstOrFail());
+            $this->call($method, route('admin.appointments.update', $appointment), $payload)->assertRedirect(route('admin.login'));
+        }
+        $this->assertSame($date, $appointment->fresh()->appointment_date->toDateString());
+        $this->assertSame($original->id, $appointment->fresh()->appointment_time_slot_id);
+    }
 }

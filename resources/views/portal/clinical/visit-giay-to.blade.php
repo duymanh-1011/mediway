@@ -1,7 +1,7 @@
 <section class="patient-record portal-visit-panel">
     <h2>Giấy tờ của lượt khám</h2>
     <div class="portal-visit-rows">
-        @forelse ($payments as $payment)
+        @forelse ($payments->filter(fn ($payment) => $payment['can_print']) as $payment)
             <a class="portal-visit-row" href="{{ route('patient.results.receipt', [$record->id, $payment['transaction']->id]) }}">
                 <span><strong>{{ match ($payment['payable']->payment_type) { 'EXAMINATION_FEE' => 'Phiếu thu phí khám', 'SERVICE_FEE' => 'Phiếu thu dịch vụ', 'MEDICINE_FEE' => 'Phiếu thu tiền thuốc', default => 'Phiếu thu' } }}</strong><small>{{ $payment['transaction']->transaction_code }} @if ($payment['date']) · {{ $payment['date']->format('d/m/Y H:i') }} @endif</small></span>
                 <span class="medical-count">Xem phiếu thu</span>

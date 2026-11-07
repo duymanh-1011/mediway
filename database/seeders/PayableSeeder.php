@@ -52,16 +52,6 @@ class PayableSeeder extends Seeder
                 'paid_at' => null,
             ],
             [
-                'payable_code' => 'PT000005',
-                'visit_code' => 'LK000005',
-                'service_order_code' => null,
-                'service_code' => null,
-                'payment_type' => 'EXAMINATION_FEE',
-                'amount' => 250000,
-                'payment_status' => 'UNPAID',
-                'paid_at' => null,
-            ],
-            [
                 'payable_code' => 'PT000006',
                 'visit_code' => 'LK000001',
                 'service_order_code' => 'CD000001',

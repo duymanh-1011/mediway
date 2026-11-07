@@ -1,0 +1,577 @@
+
+
+        .service-details {
+            margin: 10px 0 16px;
+            color: #182639;
+            font-size: 13px;
+        }
+
+        .service-details h3 {
+            font-size: 12px;
+            color: #173d69;
+            border-bottom: 1px solid #b7c8d8;
+            margin: 14px 0 8px;
+            padding-bottom: 4px;
+        }
+
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 7px 20px;
+        }
+
+        .service-grid>div {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .service-table-wrap {
+            overflow-x: auto;
+        }
+
+        .service-table {
+            width: 100%;
+            min-width: 590px;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 12px;
+        }
+
+        .service-table th,
+        .service-table td {
+            border: 1px solid #99aabd;
+            padding: 7px 6px;
+            overflow-wrap: anywhere;
+        }
+
+        .service-table th {
+            text-align: center;
+            background: #eef3f7;
+        }
+
+        .service-table th:nth-child(1) {
+            width: 8%;
+        }
+
+        .service-table th:nth-child(2) {
+            width: 34%;
+        }
+
+        .service-table th:nth-child(3),
+        .service-table th:nth-child(4) {
+            width: 9%;
+        }
+
+        .service-center {
+            text-align: center;
+        }
+
+        .service-number,
+        .service-total {
+            text-align: right;
+        }
+
+        .service-total {
+            font-weight: bold;
+            background: #f4f7fa;
+        }
+
+        .service-words {
+            font-size: 12px;
+            margin: 9px 0;
+        }
+
+        .service-payment {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            border-top: 1px solid #bacad8;
+            border-bottom: 1px solid #bacad8;
+            padding: 10px 0;
+            font-size: 13px;
+        }
+
+        .service-payment div:last-child {
+            text-align: right;
+        }
+
+        @media print {
+            .service-table-wrap {
+                overflow: visible !important;
+            }
+
+            .service-table {
+                min-width: 0 !important;
+                font-size: 9pt !important;
+            }
+
+            .service-table th,
+            .service-table td {
+                padding: 1.5mm !important;
+            }
+
+            .service-details,
+            .service-payment,
+            .service-words {
+                font-size: 9pt !important;
+            }
+        }
+/*
+    ============================================================
+    MEDIWAY SERVICE INVOICE — HOSPITAL DOCUMENT STYLE
+    ============================================================
+    */
+
+    .mw-service {
+        --ms-ink: #172638;
+        --ms-heading: #112e51;
+        --ms-line: #8ea3b9;
+        --ms-soft-line: #c7d2df;
+        --ms-header-bg: #eef2f6;
+
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+
+        background: #ffffff;
+        color: var(--ms-ink);
+
+        font-family: inherit;
+        font-size: 12px;
+        line-height: 1.55;
+    }
+
+    .mw-service,
+    .mw-service * {
+        box-sizing: border-box;
+    }
+
+    /*
+    ============================================================
+    SECTION HEADING
+    ============================================================
+    */
+
+    .mw-service .ms-section {
+        margin-top: 20px;
+        break-inside: auto;
+    }
+
+    .mw-service .ms-section-title {
+        display: block;
+        width: 100%;
+
+        margin: 0 0 10px;
+        padding: 0 0 6px;
+
+        color: var(--ms-heading);
+        border-bottom: 1px solid var(--ms-line);
+
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.4;
+        letter-spacing: .05px;
+
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    /*
+    ============================================================
+    INFORMATION GRID
+    ============================================================
+    */
+
+    .mw-service .ms-info-grid {
+        display: grid;
+        grid-template-columns:
+            minmax(0, 1fr) minmax(0, 1fr);
+
+        column-gap: 28px;
+        row-gap: 0;
+
+        align-items: start;
+        width: 100%;
+    }
+
+    .mw-service .ms-info-column {
+        min-width: 0;
+    }
+
+    .mw-service .ms-info-row {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 3px;
+
+        margin: 0 0 7px;
+        padding: 0;
+
+        line-height: 1.55;
+        overflow-wrap: anywhere;
+    }
+
+    .mw-service .ms-label {
+        flex: 0 0 auto;
+
+        font-weight: 750;
+        color: #182d45;
+    }
+
+    .mw-service .ms-value {
+        flex: 0 1 auto;
+        min-width: 0;
+
+        font-weight: 400;
+        color: #1a2d43;
+
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .mw-service .ms-info-row--long {
+        align-items: flex-start;
+    }
+
+    .mw-service .ms-info-row--long .ms-label {
+        flex: 0 0 auto;
+    }
+
+    /*
+    ============================================================
+    TITLE III AND PAYMENT METHOD
+    ============================================================
+    */
+
+    .mw-service .ms-service-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 12px;
+        width: 100%;
+
+        margin: 20px 0 10px;
+        padding: 0 0 7px;
+
+        border-bottom: 1px solid var(--ms-line);
+
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    .mw-service .ms-service-heading h3 {
+        flex: 1 1 auto;
+        min-width: 0;
+
+        margin: 0;
+        padding: 0;
+
+        border: none;
+        background: transparent;
+
+        color: var(--ms-heading);
+        font-size: 13px;
+        line-height: 1.4;
+        font-weight: 800;
+    }
+
+    .mw-service .ms-payment-method {
+        display: inline-flex;
+        align-items: baseline;
+        justify-content: flex-end;
+
+        flex: 0 0 auto;
+        gap: 4px;
+
+        color: var(--ms-ink);
+        font-size: 11px;
+        line-height: 1.4;
+
+        white-space: nowrap;
+        text-align: right;
+    }
+
+    .mw-service .ms-payment-method strong {
+        font-weight: 750;
+    }
+
+    /*
+    ============================================================
+    ITEMIZED MEDICAL SERVICE TABLE
+    ============================================================
+    */
+
+    .mw-service .ms-table-wrap {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow: visible;
+    }
+
+    .mw-service .ms-table {
+        width: 100%;
+        max-width: 100%;
+
+        margin: 0;
+        padding: 0;
+
+        border: 1px solid var(--ms-line);
+        border-collapse: collapse;
+        border-spacing: 0;
+
+        table-layout: fixed;
+
+        color: var(--ms-ink);
+        font-size: 10.5px;
+        line-height: 1.4;
+    }
+
+    .mw-service .ms-table th,
+    .mw-service .ms-table td {
+        border: 1px solid var(--ms-line);
+
+        padding: 8px 6px;
+        vertical-align: middle;
+
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+
+    .mw-service .ms-table thead th {
+        background: var(--ms-header-bg);
+        color: var(--ms-heading);
+
+        text-align: center;
+        font-weight: 800;
+        line-height: 1.35;
+    }
+
+    .mw-service .ms-table th:first-child,
+    .mw-service .ms-table td:first-child {
+        text-align: center;
+    }
+
+    .mw-service .ms-table .ms-center {
+        text-align: center;
+    }
+
+    .mw-service .ms-table .ms-right {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow-wrap: normal;
+    }
+
+    .mw-service .ms-service-name {
+        display: block;
+        color: #142a43;
+
+        font-size: 10.8px;
+        font-weight: 700;
+        line-height: 1.5;
+    }
+
+    .mw-service .ms-table .ms-total-row td {
+        background: #f1f4f8;
+        color: var(--ms-heading);
+
+        font-weight: 800;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .mw-service .ms-total-label {
+        text-align: right !important;
+        font-weight: 800;
+        letter-spacing: .1px;
+    }
+
+    /*
+    ============================================================
+    AMOUNT IN WORDS
+    ============================================================
+    */
+
+    .mw-service .ms-words {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        column-gap: 5px;
+
+        margin: 12px 0 0;
+        padding: 0;
+
+        color: #182d43;
+        font-size: 11.5px;
+        line-height: 1.6;
+
+        break-inside: avoid;
+    }
+
+    .mw-service .ms-words strong {
+        font-weight: 750;
+        font-style: normal;
+    }
+
+    .mw-service .ms-words span {
+        font-style: italic;
+        overflow-wrap: anywhere;
+    }
+
+    /*
+    ============================================================
+    DOCUMENT SPACING
+    ============================================================
+    */
+
+    .mw-service .ms-section:first-child {
+        margin-top: 17px;
+    }
+
+    /*
+    ============================================================
+    PRINT — A4
+    ============================================================
+    */
+
+    @media print {
+        .mw-service {
+            width: 100% !important;
+            max-width: 100% !important;
+
+            background: #ffffff !important;
+            color: #111827 !important;
+
+            font-size: 9.5pt;
+            line-height: 1.5;
+
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .mw-service .ms-section {
+            margin-top: 14px;
+        }
+
+        .mw-service .ms-section-title,
+        .mw-service .ms-service-heading h3 {
+            font-size: 10pt;
+        }
+
+        .mw-service .ms-info-grid {
+            grid-template-columns:
+                minmax(0, 1fr) minmax(0, 1fr) !important;
+
+            column-gap: 20px;
+        }
+
+        .mw-service .ms-info-row {
+            margin-bottom: 5px;
+        }
+
+        .mw-service .ms-service-heading {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            flex-wrap: nowrap !important;
+
+            margin-top: 15px;
+        }
+
+        .mw-service .ms-payment-method {
+            font-size: 8.5pt;
+            white-space: nowrap;
+        }
+
+        .mw-service .ms-table-wrap {
+            overflow: visible !important;
+        }
+
+        .mw-service .ms-table {
+            width: 100% !important;
+            table-layout: fixed !important;
+
+            font-size: 8pt;
+        }
+
+        .mw-service .ms-table th,
+        .mw-service .ms-table td {
+            padding: 5px 4px;
+        }
+
+        .mw-service .ms-table thead {
+            display: table-header-group;
+        }
+
+        .mw-service .ms-table tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .mw-service .ms-words {
+            font-size: 9pt;
+        }
+
+        .mw-service .ms-section-title,
+        .mw-service .ms-service-heading {
+            break-after: avoid;
+            page-break-after: avoid;
+        }
+    }
+
+    /*
+    ============================================================
+    RESPONSIVE SCREEN
+    ============================================================
+    */
+
+    @media screen and (max-width: 600px) {
+        .mw-service {
+            font-size: 11px;
+        }
+
+        .mw-service .ms-info-grid {
+            grid-template-columns: 1fr;
+            column-gap: 0;
+        }
+
+        .mw-service .ms-info-row {
+            margin-bottom: 6px;
+        }
+
+        .mw-service .ms-service-heading {
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .mw-service .ms-payment-method {
+            justify-content: flex-start;
+            text-align: left;
+        }
+
+        .mw-service .ms-table {
+            font-size: 9px;
+        }
+
+        .mw-service .ms-table th,
+        .mw-service .ms-table td {
+            padding: 6px 3px;
+        }
+
+        .mw-service .ms-table .ms-service-name {
+            font-size: 9.5px;
+        }
+
+        .mw-service .ms-words {
+            font-size: 11px;
+        }
+    }
+
+.mw-col-8 { width: 8%; }
+.mw-col-34 { width: 34%; }
+.mw-col-11 { width: 11%; }
+.mw-col-19 { width: 19%; }
+.mw-col-20 { width: 20%; }

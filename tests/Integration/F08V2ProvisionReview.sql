@@ -1,0 +1,33 @@
+-- REVIEW ONLY. Every statement is commented out and is NOT an executable setup.
+-- This draft is not an authorization and must not be executed as-is.
+-- Prerequisite: owner separately verifies an independent MySQL service, UUID,
+-- endpoint and data directory; no production credentials or imported data.
+-- 127.0.0.1:3307 is a proposal, not proof of an isolated service.
+-- Review the migration file hashes and F08V2_MIGRATION_MANUAL_REVIEW.md.
+-- Independently verify that metadata visibility is complete. Stop on any
+-- unexpected schema, identity, changed hash, unknown SQL scope or missing grant.
+-- SELECT @@server_uuid, @@port, @@datadir, CURRENT_USER(), CURRENT_ROLE();
+-- SHOW DATABASES;
+-- SHOW GRANTS;
+-- Do not substitute placeholders until the owner approves an exact new schema,
+-- accounts, isolated data plan, complete migration/FK manifest and failure plan.
+--
+-- A separate DBA/provisioner must first confirm absence using a read-only query:
+-- SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = '<approved_unique_schema>';
+-- A returned row blocks setup. Empty results depend on metadata visibility and
+-- must be cross-checked by an account authorized to see all schemas.
+--
+-- PROPOSED, NOT APPROVED:
+-- CREATE DATABASE `<approved_unique_schema>` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Provision three separately scoped accounts without global grants or GRANT OPTION.
+-- Use exact escaped schema names; MySQL 8.0.30 treats unescaped '_' as wildcard
+-- unless partial_revokes changes that behavior. Review actual SHOW GRANTS.
+-- Run reviewed Laravel migrations only against that new schema, without --seed.
+-- Install the reviewed F08V2RegistrySchema.sql using provisioning credentials.
+-- Run post-provisioning identity, grants, metadata, engine, FK and inventory checks.
+-- Review metadata scoped to the approved schema using information_schema:
+-- TABLES, COLUMNS, KEY_COLUMN_USAGE, REFERENTIAL_CONSTRAINTS, STATISTICS,
+-- TRIGGERS, ROUTINES and EVENTS. Confirm account visibility is complete.
+-- Do not infer absent objects from a restricted metadata account.
+-- Do not run fixture or worker while the V2 runner remains blocked.
+-- Failure: stop and preserve the schema and logs; never DROP or clean automatically.

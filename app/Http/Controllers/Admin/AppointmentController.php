@@ -666,6 +666,7 @@ class AppointmentController extends Controller
                     ->appointmentStatus
                     ?->name,
                 [
+                    'CHECKED_IN',
                     'CANCELLED',
                     'COMPLETED',
                 ],
@@ -764,6 +765,7 @@ class AppointmentController extends Controller
                     ->appointmentStatus
                     ?->name,
                 [
+                    'CHECKED_IN',
                     'CANCELLED',
                     'COMPLETED',
                 ],
@@ -872,7 +874,7 @@ class AppointmentController extends Controller
             $this->assertNoDuplicateBooking($patient->id, $slot->id, $appointment->id);
             $appointment = Appointment::whereKey($appointment->id)->lockForUpdate()->firstOrFail();
             $appointment->load('appointmentStatus');
-            if ($appointment->medicalVisit()->exists() || in_array($appointment->appointmentStatus?->name, ['CANCELLED', 'COMPLETED'], true)) {
+            if ($appointment->medicalVisit()->exists() || in_array($appointment->appointmentStatus?->name, ['CHECKED_IN', 'CANCELLED', 'COMPLETED'], true)) {
                 throw ValidationException::withMessages(['appointment_time_slot_id' => 'Lịch hẹn đã được tiếp nhận hoặc kết thúc.']);
             }
             $schedule = $slot->doctorSchedule;

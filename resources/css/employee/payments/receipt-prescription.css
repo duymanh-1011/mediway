@@ -1,0 +1,230 @@
+
+
+        .signature-grid--medicine {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        @media screen and (max-width: 600px) {
+
+            .signature-grid--medicine {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            }
+        }
+
+        @media print {
+
+            .signature-grid--medicine {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                column-gap: 3mm !important;
+            }
+        }
+
+        .medicine-info {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+            gap: 5px 14px;
+            padding: 10px 0;
+            color: #172d48;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .medicine-info>div {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .medicine-info .medicine-wide {
+            grid-column: span 2;
+        }
+
+        .medicine-info .medicine-full {
+            grid-column: 1 / -1;
+        }
+
+        .medicine-table-wrap {
+            overflow-x: auto;
+        }
+
+        .medicine-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            color: #172d48;
+            font-size: 12px;
+        }
+
+        .medicine-table th,
+        .medicine-table td {
+            border: 1px solid #8495a6;
+            padding: 6px;
+            overflow-wrap: anywhere;
+            vertical-align: top;
+        }
+
+        .medicine-table th {
+            background: #eef3f7;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .medicine-col-index {
+            width: 7%;
+        }
+
+        .medicine-col-unit {
+            width: 8%;
+        }
+
+        .medicine-col-quantity {
+            width: 12%;
+        }
+
+        .medicine-col-price {
+            width: 17%;
+        }
+
+        .medicine-center {
+            text-align: center;
+        }
+
+        .medicine-number,
+        .medicine-total td:first-child {
+            text-align: right;
+        }
+
+        .medicine-usage {
+            color: #41566a;
+            margin-top: 3px;
+            white-space: pre-wrap;
+        }
+
+        .medicine-total {
+            font-weight: bold;
+            background: #f4f7fa;
+            break-inside: avoid;
+        }
+
+        .medicine-words {
+            margin: 8px 0 0;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .medicine-guidance,
+        .medicine-doctor-notes {
+            margin-top: 10px;
+            padding: 8px 10px;
+            border: 1px solid #c6d4e0;
+            border-radius: 4px;
+            color: #172d48;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .medicine-guidance {
+            background: #f5f9fc;
+        }
+
+        .medicine-guidance h3,
+        .medicine-doctor-notes h3 {
+            margin: 0 0 4px;
+            font-size: 12px;
+        }
+
+        .medicine-guidance ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .medicine-doctor-notes p {
+            margin: 0;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        @media screen and (max-width: 600px) {
+            .medicine-info {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .medicine-table {
+                min-width: 0;
+            }
+            .medicine-table, .medicine-table tbody, .medicine-table tr, .medicine-table td { display: block; width: 100%; }
+            .medicine-table thead, .medicine-table colgroup { display: none; }
+            .medicine-table tbody tr:not(.medicine-total) { margin-bottom: 10px; }
+            .medicine-table tbody tr:not(.medicine-total) td { display: grid; grid-template-columns: minmax(80px, 0.7fr) minmax(0, 1.3fr); gap: 8px; text-align: left; }
+            .medicine-table tbody tr:not(.medicine-total) td::before { content: attr(data-label); font-weight: 700; }
+            .medicine-table .medicine-total td { text-align: right; }
+        }
+
+        @media print {
+
+            .medicine-info {
+                grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) !important;
+                gap: 1.2mm 3mm !important;
+                font-size: 9pt !important;
+                padding: 2mm 0 !important;
+            }
+
+            .medicine-table-wrap {
+                overflow: visible !important;
+            }
+
+            .medicine-table {
+                width: 100% !important;
+                min-width: 0 !important;
+                font-size: 8.5pt !important;
+            }
+
+            .medicine-table th,
+            .medicine-table td {
+                padding: 1.2mm !important;
+            }
+
+            .medicine-table th {
+                font-size: 8pt !important;
+            }
+
+            .medicine-table tr {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            .medicine-table thead {
+                display: table-header-group;
+            }
+
+            .medicine-words {
+                font-size: 9pt !important;
+                margin-top: 2mm !important;
+            }
+
+            .medicine-guidance,
+            .medicine-doctor-notes {
+                font-size: 8pt !important;
+                line-height: 1.3 !important;
+                margin-top: 2mm !important;
+                padding: 2mm !important;
+            }
+
+            .medicine-guidance h3,
+            .medicine-doctor-notes h3 {
+                font-size: 8.5pt !important;
+                margin-bottom: 1mm !important;
+            }
+
+            .medicine-guidance li {
+                break-inside: avoid;
+            }
+
+            .medicine-approval {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            .medicine-receipt .signature-space {
+                height: 12mm !important;
+            }
+        }

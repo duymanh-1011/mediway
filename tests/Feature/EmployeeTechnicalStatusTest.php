@@ -75,4 +75,34 @@ class EmployeeTechnicalStatusTest extends TestCase
         $this->get(route('employee.imaging.show', $labItem->id))->assertNotFound();
         $this->get(route('employee.laboratory.index'))->assertForbidden();
     }
+    public function test_lab_searches_patient_name_or_code_with_other_filters(): void
+    {
+        $item = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail()->items()->firstOrFail();
+        $patient = $item->serviceOrder->medicalVisit->patient;
+        $otherItem = ServiceOrderItem::whereHas('medicalService.serviceGroups', fn ($q) => $q->where('service_group_code', 'XN'))
+            ->whereHas('serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', '!=', $patient->id))->firstOrFail();
+        $otherPatient = $otherItem->serviceOrder->medicalVisit->patient;
+        $this->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
+        $this->get(route('employee.laboratory.index', ['patient' => $patient->patient_code, 'status' => 'PENDING', 'date' => $item->serviceOrder->ordered_at->format('Y-m-d')]))
+            ->assertOk()->assertSee($patient->full_name)->assertSee($patient->patient_code)->assertDontSee($otherPatient->patient_code);
+        $this->get(route('employee.laboratory.index', ['patient' => $patient->full_name]))->assertOk()->assertSee($patient->patient_code)->assertDontSee($otherPatient->patient_code);
+        $this->get(route('employee.laboratory.index', ['patient' => 'BN-KHONG-TON-TAI']))->assertOk()->assertSee('Không có chỉ định phù hợp');
+        $this->get(route('employee.laboratory.index'))->assertOk()->assertSee($patient->patient_code)->assertSee($otherPatient->patient_code);
+    }
+
+    public function test_imaging_search_stays_in_employee_group_and_assignment(): void
+    {
+        $item = ServiceOrderItem::whereHas('medicalService.serviceGroups', fn ($q) => $q->where('service_group_code', 'CDHA'))
+            ->whereHas('performer', fn ($q) => $q->where('employee_code', 'NV000003'))->firstOrFail();
+        $patient = $item->serviceOrder->medicalVisit->patient;
+        $labItem = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail()->items()->firstOrFail();
+        $labPatient = $labItem->serviceOrder->medicalVisit->patient;
+        $this->actingAs(User::where('business_code', 'NV000003')->firstOrFail());
+        $this->get(route('employee.imaging.index', ['patient' => $patient->patient_code]))->assertOk()->assertSee($patient->full_name)->assertSee($patient->patient_code);
+        $this->get(route('employee.imaging.index', ['patient' => $labPatient->patient_code]))->assertOk()->assertSee('Không có chỉ định phù hợp');
+        $this->get(route('employee.laboratory.index', ['patient' => $patient->patient_code]))->assertForbidden();
+        $item->update(['performed_by_employee_id' => User::where('business_code', 'NV000002')->firstOrFail()->employee->id]);
+        $this->get(route('employee.imaging.index', ['patient' => $patient->patient_code]))->assertOk()->assertDontSee($item->serviceOrder->service_order_code);
+    }
+
 }

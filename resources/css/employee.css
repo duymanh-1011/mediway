@@ -75,3 +75,7 @@ body.employee-body .employee-profile .portal-btn{display:inline-flex;align-items
 .tech-status{display:inline-block;max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.45}
 .tech-status--waiting{background:#fff1db;color:#85420b}.tech-status--paid{background:#e8f1ff;color:#164a9d}.tech-status--processing{background:#f1eaff;color:#6236a3}.tech-status--completed{background:#e3f6eb;color:#17613d}.tech-status--cancelled{background:#fdebec;color:#942d39}.tech-status--neutral{background:#eef2f6;color:#3d5065}
 .tech-header .tech-status{margin-top:8px}
+
+/* Ô tìm bệnh nhân đủ rộng trên máy tính và co theo màn hình nhỏ. */
+.tech-filter__patient{flex:1 1 240px;min-width:0}
+@media(max-width:600px){.tech-filter__patient{flex:auto;width:100%}}

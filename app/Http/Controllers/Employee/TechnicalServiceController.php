@@ -47,11 +47,17 @@ class TechnicalServiceController extends Controller
     {
         [$employee, $group, $title, $routePrefix] = $this->context($request);
         $filters = $request->validate([
+            'patient' => ['nullable', 'string', 'max:120'],
             'date' => ['nullable', 'date_format:Y-m-d'],
             'status' => ['nullable', 'in:PENDING,PROCESSING,COMPLETED,CANCELLED'],
         ]);
+        // Tìm theo tên hoặc mã bệnh nhân trong phạm vi nhân viên được phép xem.
+        $patientSearch = trim($filters['patient'] ?? '');
         $items = $this->scopedItems($employee, $group)
             ->with(['medicalService', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'payable.paymentStatus'])
+            ->when($patientSearch !== '', fn ($q) => $q->whereHas('serviceOrder.medicalVisit.patient', fn ($patient) => $patient->where(fn ($query) => $query
+                ->where('full_name', 'like', '%'.$patientSearch.'%')
+                ->orWhere('patient_code', 'like', '%'.$patientSearch.'%'))))
             ->when($filters['date'] ?? null, fn ($q, $date) => $q->whereHas('serviceOrder', fn ($order) => $order->whereDate('ordered_at', $date)))
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->whereHas('serviceStatus', fn ($s) => $s->where('name', $status)))
             ->orderByDesc('id')->paginate(15)->withQueryString();

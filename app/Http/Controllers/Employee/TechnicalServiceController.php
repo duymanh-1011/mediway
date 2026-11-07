@@ -51,7 +51,7 @@ class TechnicalServiceController extends Controller
             'status' => ['nullable', 'in:PENDING,PROCESSING,COMPLETED,CANCELLED'],
         ]);
         $items = $this->scopedItems($employee, $group)
-            ->with(['medicalService', 'serviceStatus', 'serviceOrder.medicalVisit.patient'])
+            ->with(['medicalService', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'payable.paymentStatus'])
             ->when($filters['date'] ?? null, fn ($q, $date) => $q->whereHas('serviceOrder', fn ($order) => $order->whereDate('ordered_at', $date)))
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->whereHas('serviceStatus', fn ($s) => $s->where('name', $status)))
             ->orderByDesc('id')->paginate(15)->withQueryString();

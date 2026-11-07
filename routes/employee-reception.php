@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Employee\ReceptionAppointmentController;
-use App\Http\Controllers\Employee\ReceptionQueueController;
 use App\Http\Controllers\Employee\ReceptionDashboardController;
 use App\Http\Controllers\Employee\WalkInReceptionController;
 use App\Http\Middleware\EmployeeMiddleware;
@@ -23,9 +22,5 @@ Route::prefix('nhan-vien')->name('employee.')
             Route::post('/tiep-don/truc-tiep/tim-benh-nhan', [WalkInReceptionController::class, 'search'])->name('walk-in.search');
             Route::post('/tiep-don/truc-tiep', [WalkInReceptionController::class, 'store'])->name('walk-in.store');
             Route::get('/tiep-don/truc-tiep/{visit}', [WalkInReceptionController::class, 'show'])->name('walk-in.show');
-        });
-        Route::middleware(EmployeeMiddleware::class.':queue.view')->group(function (): void {
-            Route::get('/hang-doi', [ReceptionQueueController::class, 'index'])->name('queue.index');
-            Route::post('/hang-doi/loc', [ReceptionQueueController::class, 'filter'])->name('queue.filter');
         });
     });

@@ -1,0 +1,29 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #eef2f7; color: #17243a; font: 15px/1.55 "Segoe UI", Arial, sans-serif; }
+.print-toolbar { width: min(210mm, calc(100% - 32px)); margin: 20px auto; display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+.print-toolbar a, .print-toolbar button { border: 1px solid #b8c9e3; border-radius: 8px; padding: 10px 16px; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+.print-toolbar a { color: #25497e; background: #fff; }.print-toolbar button { color: #fff; background: #255fe9; border-color: #255fe9; }
+.print-toolbar :focus-visible { outline: 3px solid #8cb2ff; outline-offset: 3px; }
+.result-paper { width: min(210mm, calc(100% - 32px)); min-height: 297mm; margin: 0 auto 28px; padding: 18mm; background: #fff; box-shadow: 0 8px 30px #2239571a; }
+.result-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 1px solid #d4e0f0; padding-bottom: 20px; color: #455b77; font-size: 12px; }
+.result-header__identity { min-width: 0; overflow-wrap: anywhere; }
+.result-brand { display: flex; align-items: center; gap: 12px; color: #17243a; font-size: 22px; line-height: 1.2; }
+.result-brand span { display: inline-grid; flex: 0 0 38px; place-items: center; width: 38px; height: 38px; border-radius: 9px; background: #2563eb; color: #fff; }
+.result-brand strong { display: block; }.result-brand small { display: block; margin-top: 3px; color: #53647a; font-size: 12px; font-weight: 400; }
+.result-header__codes { flex: 0 1 auto; min-width: 0; text-align: right; line-height: 1.7; overflow-wrap: anywhere; }
+.result-header__codes strong { color: #17243a; }
+.result-title { margin: 27px 0 24px; text-align: center; }.result-title h1 { margin: 0; font-size: 20px; letter-spacing: .02em; line-height: 1.35; color: #173f80; }.result-title p { margin: 6px 0 0; color: #53647a; font-size: 13px; }
+.result-section { margin: 24px 0; }.result-section h2 { margin: 0 0 12px; padding-bottom: 7px; border-bottom: 1px solid #e2e9f2; font-size: 14px; color: #254f84; }
+.result-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 28px; margin: 0; }
+.result-facts div { min-width: 0; }.result-facts dt { margin-bottom: 3px; font-size: 12px; }
+.result-details div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 10px 0; border-bottom: 1px solid #edf1f6; }
+dt { color: #53647a; } dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; white-space: pre-wrap; }
+.result-details dt { color: #263b58; font-weight: 700; overflow-wrap: anywhere; }
+.result-details dd { color: #25364d; font-weight: 400; line-height: 1.6; }
+.result-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+table { border-collapse: collapse; width: 100%; table-layout: fixed; } th, td { border: 1px solid #d7e1ed; text-align: left; padding: 9px 11px; vertical-align: top; overflow-wrap: anywhere; white-space: pre-wrap; }
+th { color: #25466e; background: #eff5fd; font-size: 12px; } th:first-child { width: 48%; } th:last-child { width: 22%; }
+.result-details { display: grid; gap: 0; margin: 0; }.result-footer { border-top: 1px solid #d7e1ed; margin-top: 30px; padding-top: 14px; text-align: right; color: #53647a; font-size: 12px; }.result-footer p { margin: 4px 0; }
+@media (max-width: 600px) { .print-toolbar { flex-wrap: wrap; } .result-paper { padding: 22px; min-height: 0; } .result-header { flex-wrap: wrap; } .result-header__codes { text-align: left; } .result-facts { grid-template-columns: 1fr; gap: 12px; } .result-title h1 { font-size: 18px; } .result-details div { grid-template-columns: 1fr; gap: 3px; } th, td { padding: 8px 6px; } }
+@page { size: A4; margin: 14mm; }
+@media print { body { background: #fff; color: #000; font-size: 10pt; } .print-toolbar { display: none; } .result-paper { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; } .result-header { flex-wrap: nowrap; } .result-header__codes { text-align: right; } .result-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } h1, .result-section h2 { color: #000; } thead { display: table-header-group; } tr, .result-details div { break-inside: avoid; } .result-section h2 { break-after: avoid; } .result-footer { break-inside: avoid; } }

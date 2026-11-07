@@ -16,7 +16,7 @@
     $submittedVersion = old('result_version');
     $submittedSummary = old('result_summary', $result?->result_summary);
 @endphp
-<section class="tech-page">
+<section class="tech-page tech-detail-page">
     <a class="portal-btn portal-btn--secondary tech-back" href="{{ $backUrl }}">← Quay lại danh sách chỉ định</a>
 
     @include('employee.technical._heading', [
@@ -27,7 +27,7 @@
         'statusTone' => $displayStatus['tone'],
     ])
 
-    <section class="tech-panel">
+    <section class="tech-panel tech-detail-panel">
         <h2>Thông tin chỉ định</h2>
         <dl class="tech-facts">
             <div><dt>Bệnh nhân</dt><dd>{{ $patient?->full_name ?? 'Chưa cập nhật' }}</dd></div>
@@ -37,8 +37,12 @@
             <div><dt>Bắt đầu lúc</dt><dd>{{ $record->started_at?->format('d/m/Y H:i') ?? '—' }}</dd></div>
             <div><dt>Hoàn tất lúc</dt><dd>{{ $record->completed_at?->format('d/m/Y H:i') ?? '—' }}</dd></div>
         </dl>
-        @if ($order?->reason)<p><strong>Lý do chỉ định</strong> {{ $order->reason }}</p>@endif
-        @if ($order?->instructions)<p><strong>Hướng dẫn</strong> {{ $order->instructions }}</p>@endif
+        @if ($order?->reason || $order?->instructions)
+            <div class="tech-order-notes">
+                @if ($order?->reason)<p><strong>Lý do chỉ định</strong> {{ $order->reason }}</p>@endif
+                @if ($order?->instructions)<p><strong>Hướng dẫn</strong> {{ $order->instructions }}</p>@endif
+            </div>
+        @endif
     </section>
 
     @if ($isClosedVisit && ! in_array($stage, ['COMPLETED', 'CANCELLED'], true))
@@ -56,9 +60,10 @@
     @endif
 
     @if ($canEdit && ! $isClosedVisit)
-        <section class="tech-panel">
+        <section class="tech-panel tech-detail-panel tech-entry-panel">
             <h2>{{ $hasResult ? 'Cập nhật kết quả kỹ thuật' : 'Nhập kết quả kỹ thuật' }}</h2>
-            <p>Nhập nội dung hoặc đính kèm tệp. Bệnh nhân có thể xem kết quả sau khi lưu.</p>
+            <p>Nhập thông tin thực tế trong phạm vi công việc. Bệnh nhân có thể xem kết quả sau khi lưu.</p>
+            @if (! $groupCode)<p>Dịch vụ chưa có một nhóm xác định; thông tin bổ sung cần được cấu hình nhóm trước.</p>@endif
             <form method="post" enctype="multipart/form-data" action="{{ route($routePrefix.'.save', $detailQuery) }}" class="tech-form">
                 @csrf
                 <input type="hidden" name="result_version" value="{{ is_string($submittedVersion) ? $submittedVersion : $currentVersion }}">
@@ -76,7 +81,7 @@
                             $parameterRows = is_array($submittedRows) ? array_slice($submittedRows, 0, 30, true) : $defaultRows;
                         @endphp
                         <fieldset class="tech-parameter-editor" data-parameter-editor>
-                            <legend>Chỉ số xét nghiệm</legend>
+                            <legend>{{ $groupCode === 'XN' ? 'Chỉ số xét nghiệm' : 'Chỉ số đo' }}</legend>
                             <p>Nhập tên và giá trị cho mỗi chỉ số. Đơn vị có thể để trống.</p>
                             <input type="hidden" name="parameters_present" value="1">
                             <div data-parameter-list>
@@ -104,28 +109,76 @@
                         <p>Chỉ số cũ có định dạng khác và được giữ nguyên khi cập nhật nội dung.</p>
                     @endif
                 @endif
+                @if ($supportsDetails)
+                    @php
+                        $existingDetails = \App\Models\ServiceResult::editableTechnicalDetails($result?->technical_details);
+                        $oldDetails = old('details', $existingDetails ?: []);
+                        $detailRows = is_array($oldDetails) ? array_slice($oldDetails, 0, 30, true) : [];
+                    @endphp
+                    @if ($existingDetails !== null)
+                        <fieldset class="tech-parameter-editor" data-detail-editor>
+                            <legend>Thông tin bổ sung</legend>
+                            <p>Chỉ ghi thông tin kỹ thuật; không nhập kết luận y khoa. Thêm mục khi cần.</p>
+                            <input type="hidden" name="details_present" value="1">
+                            <div data-detail-list>
+                                @foreach ($detailRows as $index => $detail)
+                                    <div class="tech-detail-row" data-detail-row>
+                                        <label>Tên thông tin<input name="details[{{ $index }}][name]" maxlength="120" value="{{ is_string($detail['name'] ?? null) ? $detail['name'] : '' }}"></label>
+                                        <label>Nội dung<textarea name="details[{{ $index }}][value]" maxlength="2000" rows="2">{{ is_scalar($detail['value'] ?? null) ? $detail['value'] : '' }}</textarea></label>
+                                        <button type="button" class="portal-btn portal-btn--secondary" data-remove-detail>Xóa dòng</button>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <template data-detail-template><div class="tech-detail-row" data-detail-row><label>Tên thông tin<input data-field="name" maxlength="120"></label><label>Nội dung<textarea data-field="value" maxlength="2000" rows="2"></textarea></label><button type="button" class="portal-btn portal-btn--secondary" data-remove-detail>Xóa dòng</button></div></template>
+                            <button type="button" class="portal-btn portal-btn--secondary" data-add-detail>+ Thêm thông tin</button>
+                            <small>Tối đa 30 thông tin.</small>
+                        </fieldset>
+                    @else
+                        <p>Thông tin cũ có định dạng khác và được giữ nguyên.</p>
+                    @endif
+                @endif
+                @if (! $hideUploads)
                 <div class="tech-upload">
                     <label>Phiếu kết quả PDF (tối đa 5 MB)<input type="file" name="result_pdf" accept=".pdf,application/pdf"></label>
                     <label>Ảnh kết quả (tối đa 2 MB)<input type="file" name="result_image" accept=".jpg,.jpeg,.png,.webp"></label>
                 </div>
+                @endif
                 <button type="submit" class="portal-btn portal-btn--primary" data-pending-label="Đang lưu…">Lưu kết quả</button>
             </form>
         </section>
     @endif
 
     @if ($result)
-        <section class="tech-panel">
+        <section class="tech-panel tech-detail-panel tech-result-panel">
             <h2>Kết quả đã lưu</h2>
-            <p class="tech-result-summary">{{ $result->result_summary !== null && trim($result->result_summary) !== '' ? $result->result_summary : 'Không có nội dung văn bản.' }}</p>
-            @if ($rows = $result->parameterDisplayRows())
-                <h3>Chỉ số đã ghi nhận</h3>
-                <dl class="tech-parameters">
-                    @foreach ($rows as $row)
-                        <div><dt>{{ $row['label'] }}</dt><dd>{{ $row['value'] }}</dd></div>
-                    @endforeach
-                </dl>
+            @if (filled($result->result_summary))
+                <div class="tech-result-content"><span>Nội dung kết quả</span><p class="tech-result-summary">{{ $result->result_summary }}</p></div>
             @endif
-            <p>Trạng thái xác minh: {{ $result->verified_by_user_id ? 'Đã xác minh' : 'Chưa xác minh' }}</p>
+            @php
+                $resultParameters = \App\Models\ServiceResult::editableParameters($result->result_parameters);
+                $displayParameters = $resultParameters === null ? $result->parameterDisplayRows() : $resultParameters;
+            @endphp
+            @if ($displayParameters)
+                <section class="tech-result-section" aria-labelledby="saved-parameters-title">
+                    <h3 id="saved-parameters-title">Chỉ số đã ghi nhận</h3>
+                    <div class="tech-result-table-wrap" role="region" aria-label="Bảng chỉ số đã ghi nhận" tabindex="0">
+                        <table class="tech-result-table"><thead><tr><th scope="col">Tên chỉ số</th><th scope="col">Giá trị</th><th scope="col">Đơn vị</th></tr></thead><tbody>
+                            @foreach ($displayParameters as $row)
+                                <tr><td>{{ $row['name'] ?? $row['label'] }}</td><td>{{ $row['value'] }}</td><td>{{ filled($row['unit'] ?? null) ? $row['unit'] : '—' }}</td></tr>
+                            @endforeach
+                        </tbody></table>
+                    </div>
+                </section>
+            @endif
+            @if ($rows = $result->technicalDetailRows())
+                <section class="tech-result-section" aria-labelledby="saved-details-title">
+                    <h3 id="saved-details-title">Thông tin bổ sung</h3>
+                    <dl class="tech-parameters">@foreach ($rows as $row)<div><dt>{{ $row['label'] }}</dt><dd>{{ $row['value'] }}</dd></div>@endforeach</dl>
+                </section>
+            @endif
+            @if ($supportsDetails && $hasResult)
+                <div class="tech-actions"><a class="portal-btn portal-btn--primary" href="{{ route($routePrefix.'.print', $detailQuery) }}">Xem và in phiếu kết quả</a></div>
+            @endif
             @if ($result->hasDocument('pdf') || $result->hasDocument('image'))
                 <div class="tech-actions">
                     @if ($result->hasDocument('pdf'))<a class="portal-btn portal-btn--secondary" href="{{ route($routePrefix.'.document', [$record->id, 'pdf']) }}">Mở PDF</a>@endif

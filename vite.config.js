@@ -17,6 +17,7 @@ export default defineConfig({
             'resources/js/employee/payments/collect.js',
             'resources/js/employee/payments/receipt.js',
             'resources/css/employee.css',
+            'resources/css/technical-result-print.css',
             'resources/js/employee.js',
             'resources/css/employee-payments.css',
             'resources/css/payment-receipt.css',

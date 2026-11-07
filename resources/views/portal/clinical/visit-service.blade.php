@@ -37,6 +37,10 @@
                     @if ($rows = $result->parameterDisplayRows())
                         <dl class="patient-record__parameters">@foreach ($rows as $row)<div><dt>{{ $row['label'] }}</dt><dd>{{ $row['value'] }}</dd></div>@endforeach</dl>
                     @endif
+                    @if ($rows = $result->technicalDetailRows())
+                        <h4>Thông tin bổ sung do nhân viên ghi nhận</h4>
+                        <dl class="patient-record__parameters">@foreach ($rows as $row)<div><dt>{{ $row['label'] }}</dt><dd>{{ $row['value'] }}</dd></div>@endforeach</dl>
+                    @endif
                     @if ($result->hasDocument('pdf') || $result->hasDocument('image'))
                         <a href="{{ route('patient.results.visit', ['visit' => $record->id, 'tab' => 'giay-to']) }}">Xem tệp kết quả trong mục Giấy tờ</a>
                     @endif

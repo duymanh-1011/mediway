@@ -28,6 +28,7 @@ class VisitAttachmentsTest extends TestCase
         MedicalVisit::whereKey($secondVisit)->update(['patient_id' => $patient->patient->id, 'appointment_id' => null]);
 
         foreach ([$own, $second] as $result) {
+            \Illuminate\Support\Facades\DB::table('service_results')->where('id', $result->id)->update(['patient_publication_status' => 'PUBLIC']);
             $path = 'service-results/'.$result->service_order_item_id.'/result.pdf';
             Storage::disk('local')->put($path, "%PDF-1.4\n%%EOF");
             $result->update(['result_pdf_path' => $path]);
@@ -37,6 +38,7 @@ class VisitAttachmentsTest extends TestCase
         $second->update(['result_image_path' => $imagePath]);
         $prescription = $patient->patient->medicalVisits()->whereKey($firstVisit)->firstOrFail()->prescription;
         $this->assertNotNull($prescription);
+        \Illuminate\Support\Facades\DB::table('prescriptions')->where('id', $prescription->id)->update(['patient_publication_status' => 'PUBLIC']);
         $prescriptionPath = 'prescriptions/'.$prescription->id.'/prescription.pdf';
         Storage::disk('local')->put($prescriptionPath, "%PDF-1.4\n%%EOF");
         $prescription->update(['prescription_pdf_path' => $prescriptionPath]);

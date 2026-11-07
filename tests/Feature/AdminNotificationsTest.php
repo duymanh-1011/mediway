@@ -142,6 +142,7 @@ class AdminNotificationsTest extends TestCase
 
     public function test_completion_and_payment_notifications_are_plain_language_and_reflect_real_progress(): void
     {
+        $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));
         $order = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail();
         $item = $order->items()->firstOrFail();
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])
@@ -157,6 +158,7 @@ class AdminNotificationsTest extends TestCase
 
     public function test_missing_status_configuration_gives_a_readable_next_step_without_starting_service(): void
     {
+        $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));
         $order = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail();
         $item = $order->items()->firstOrFail();
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();

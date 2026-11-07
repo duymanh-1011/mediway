@@ -50,6 +50,7 @@ class PreReleaseAuditTest extends TestCase
 
     public function test_service_start_respects_frozen_current_status(): void
     {
+        $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));
         $this->signIn();
         $item = $this->unpaidItem();
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), [
@@ -65,6 +66,7 @@ class PreReleaseAuditTest extends TestCase
 
     public function test_service_completion_respects_frozen_current_status(): void
     {
+        $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));
         $this->signIn();
         $item = $this->unpaidItem();
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), [

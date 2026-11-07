@@ -6,6 +6,16 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js', 'resources/css/portal.css', 'resources/css/portal-consistency.css', 'resources/js/portal.js',
+            'resources/css/employee/payments/index.css',
+            'resources/css/employee/payments/show.css',
+            'resources/css/employee/payments/collect.css',
+            'resources/css/employee/payments/receipt-common.css',
+            'resources/css/employee/payments/receipt-exam.css',
+            'resources/css/employee/payments/receipt-service.css',
+            'resources/css/employee/payments/receipt-prescription.css',
+            'resources/js/employee/payments/index.js',
+            'resources/js/employee/payments/collect.js',
+            'resources/js/employee/payments/receipt.js',
             'resources/css/employee.css',
             'resources/js/employee.js',
             'resources/css/doctors-index.css',

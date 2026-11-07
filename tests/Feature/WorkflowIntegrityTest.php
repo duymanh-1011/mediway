@@ -68,6 +68,7 @@ class WorkflowIntegrityTest extends TestCase
 
     public function test_paid_history_cannot_be_reset_by_manual_status_update(): void
     {
+        $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));
         $payable = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail()->items()->firstOrFail()->payable;
         $this->patch(route('admin.payables.update-status', $payable), [
             'payment_status_id' => PaymentStatus::where('name', 'PAID')->value('id'), 'confirm_update' => 1,

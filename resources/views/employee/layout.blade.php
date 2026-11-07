@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Khu vực nhân viên') - Mediway</title>
     @vite(['resources/css/portal.css', 'resources/css/portal-consistency.css', 'resources/css/employee.css', 'resources/js/portal.js', 'resources/js/employee.js'])
+    @stack('styles')
 </head>
 <body class="portal-body employee-body">
 @php

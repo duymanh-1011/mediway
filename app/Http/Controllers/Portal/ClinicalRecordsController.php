@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClinicalDocument;
 use App\Models\Prescription;
 use App\Models\ServiceResult;
+use App\Support\Portal\ClinicalPublication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -22,9 +23,10 @@ class ClinicalRecordsController extends Controller
         // Từng lượt khám là ranh giới dữ liệu, kể cả khi chỉ một dịch vụ đã có kết quả.
         $visits = $patient->medicalVisits()
             ->with(['doctor:id,full_name', 'specialty:id,name', 'status:id,name,description',
-                'conclusion', 'diagnoses.disease:id,name', 'prescription',
+                'conclusion', 'diagnoses.disease:id,name',
+                'prescription' => fn ($query) => ClinicalPublication::restrict($query, 'prescriptions'),
                 'serviceOrders.items.medicalService.serviceGroups', 'serviceOrders.items.serviceStatus',
-                'serviceOrders.items.result'])
+                'serviceOrders.items.result' => fn ($query) => ClinicalPublication::restrict($query, 'service_results')])
             ->orderByDesc('checked_in_at')
             ->orderByDesc('id')->paginate(10)->withQueryString();
 
@@ -43,7 +45,7 @@ class ClinicalRecordsController extends Controller
             abort_unless(is_string($visitId) && ctype_digit($visitId) && (int) $visitId > 0, 404);
             $patient->medicalVisits()->whereKey((int) $visitId)->firstOrFail();
         }
-        $prescriptions = Prescription::query()
+        $prescriptions = ClinicalPublication::restrict(Prescription::query(), 'prescriptions')
             ->whereHas('medicalVisit', fn ($visit) => $visit
                 ->where('patient_id', $patient->id))
             ->when($visitId !== null, fn ($query) => $query->where('medical_visit_id', (int) $visitId))
@@ -62,7 +64,7 @@ class ClinicalRecordsController extends Controller
         $patient = $request->user()->patient;
         abort_unless($patient && $patient->status === 'ACTIVE', 404);
 
-        $clinicalResult = ServiceResult::query()
+        $clinicalResult = ClinicalPublication::restrict(ServiceResult::query(), 'service_results')
             ->whereKey($result)
             ->whereHas('serviceOrderItem', fn ($item) => $item
                 ->whereHas('serviceOrder.medicalVisit', fn ($visit) => $visit->where('patient_id', $patient->id)))
@@ -83,7 +85,7 @@ class ClinicalRecordsController extends Controller
         $patient = $request->user()->patient;
         abort_unless($patient && $patient->status === 'ACTIVE', 404);
 
-        $record = Prescription::query()
+        $record = ClinicalPublication::restrict(Prescription::query(), 'prescriptions')
             ->whereKey($prescription)
             ->whereHas('medicalVisit', fn ($visit) => $visit
                 ->where('patient_id', $patient->id))

@@ -1,0 +1,559 @@
+
+
+        .exam-info {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+            gap: 5px 16px;
+            margin: 10px 0 14px;
+            font-size: 12px;
+        }
+
+        .exam-info div {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .exam-heading {
+            font-size: 13px;
+            color: #173d69;
+            border-bottom: 1px solid #b7c8d8;
+            margin: 12px 0 6px;
+            padding-bottom: 4px;
+        }
+
+        .exam-table {
+            border-collapse: collapse;
+            table-layout: fixed;
+            width: 100%;
+            font-size: 12px;
+        }
+
+        .exam-table th,
+        .exam-table td {
+            border: 1px solid #708196;
+            padding: 5px;
+            overflow-wrap: anywhere;
+            vertical-align: middle;
+        }
+
+        .exam-table thead th:nth-child(1),
+        .exam-table thead th:nth-child(3),
+        .exam-table thead th:nth-child(4) {
+            width: 9%;
+        }
+
+        .exam-table thead th:nth-child(5),
+        .exam-table thead th:nth-child(6) {
+            width: 18%;
+        }
+
+        .exam-allocation-title {
+            font-size: 12px;
+            margin: 9px 0 4px;
+        }
+
+        .exam-allocation {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .exam-allocation th,
+        .exam-allocation td {
+            border: 1px solid #aab8c6;
+            padding: 3px 6px;
+            text-align: left;
+        }
+
+        .exam-allocation td {
+            width: 25%;
+            text-align: right;
+        }
+
+        .exam-table thead th {
+            text-align: center;
+            background: #eef3f7;
+            line-height: 1.25;
+        }
+
+        .exam-center {
+            text-align: center;
+        }
+
+        .exam-number {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .exam-group th {
+            text-align: left;
+            background: #f4f7fa;
+        }
+
+        .exam-total {
+            font-weight: bold;
+        }
+
+        .exam-total th {
+            text-align: left;
+        }
+
+        .exam-summary {
+            font-size: 12px;
+            line-height: 1.55;
+            margin-top: 10px;
+        }
+
+        .exam-summary p {
+            font-style: italic;
+            margin: 4px 0;
+        }
+
+        @media screen and (max-width: 600px) {
+
+            .exam-table,
+            .exam-table tbody,
+            .exam-table tr,
+            .exam-table th,
+            .exam-table td {
+                display: block;
+                width: 100%;
+            }
+
+            .exam-table thead {
+                display: none;
+            }
+
+            .exam-table .exam-line td {
+                display: flex;
+                justify-content: space-between;
+                gap: 10px;
+                text-align: right;
+                border-top: 0;
+            }
+
+            .exam-table .exam-line td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                text-align: left;
+            }
+
+            .exam-table .exam-total td {
+                text-align: right;
+            }
+
+            .exam-info {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media print {
+
+            .exam-table-wrap {
+                overflow: visible !important;
+            }
+
+            .exam-table,
+            .exam-allocation {
+                font-size: 9pt !important;
+            }
+
+            .exam-table th,
+            .exam-table td,
+            .exam-allocation th,
+            .exam-allocation td {
+                padding: 1mm 1.5mm !important;
+            }
+
+            .exam-info,
+            .exam-summary {
+                font-size: 9pt !important;
+            }
+        }
+/*
+    |--------------------------------------------------------------------------
+    | MEDIWAY EXAM RECEIPT
+    |--------------------------------------------------------------------------
+    */
+
+    .mw-exam {
+        --exam-text: #172e49;
+        --exam-navy: #10345c;
+        --exam-border: #98aec8;
+        --exam-light: #f2f6fb;
+
+        width: 100%;
+        min-width: 0;
+        color: var(--exam-text);
+        font-family: inherit;
+        font-size: 12px;
+        line-height: 1.55;
+    }
+
+    .mw-exam,
+    .mw-exam * {
+        box-sizing: border-box;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tiêu đề từng mục
+    |--------------------------------------------------------------------------
+    */
+
+    .mw-exam-title {
+        margin: 19px 0 9px;
+        padding: 0 0 7px;
+
+        border-bottom: 1px solid var(--exam-border);
+
+        color: var(--exam-navy);
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.4;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | I. Hành chính
+    |--------------------------------------------------------------------------
+    */
+
+    .mw-exam-info {
+        display: grid;
+        grid-template-columns:
+            minmax(0, 1fr)
+            minmax(0, 1fr);
+
+        column-gap: 28px;
+        row-gap: 5px;
+    }
+
+    .mw-exam-info-column {
+        min-width: 0;
+    }
+
+    .mw-exam-info p {
+        margin: 0 0 5px;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+    .mw-exam-info strong {
+        color: #142f50;
+        font-weight: 750;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | II. Tiêu đề chi phí + hình thức nộp tiền
+    |--------------------------------------------------------------------------
+    */
+
+    .mw-exam-section-heading {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 14px;
+        margin: 19px 0 10px;
+        padding-bottom: 8px;
+
+        border-bottom: 1px solid var(--exam-border);
+        min-width: 0;
+    }
+
+    .mw-exam-section-heading h3 {
+        margin: 0;
+        padding: 0;
+        border: 0;
+
+        color: var(--exam-navy);
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.4;
+    }
+
+    .mw-exam-payment-method {
+        display: inline-flex;
+        align-items: baseline;
+        justify-content: flex-end;
+
+        gap: 5px;
+        min-width: 0;
+
+        color: #183856;
+        font-size: 11px;
+        line-height: 1.4;
+        white-space: nowrap;
+        text-align: right;
+    }
+
+    .mw-exam-payment-method strong {
+        font-weight: 750;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bảng chi phí khám
+    |--------------------------------------------------------------------------
+    */
+
+    .mw-exam-table {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+
+        border-collapse: collapse;
+        border-spacing: 0;
+        table-layout: fixed;
+
+        margin: 8px 0 0;
+
+        color: #142d47;
+        font-size: 10.5px;
+    }
+
+    .mw-exam-table th,
+    .mw-exam-table td {
+        border: 1px solid var(--exam-border);
+        padding: 7px 5px;
+        vertical-align: middle;
+        overflow-wrap: anywhere;
+    }
+
+    .mw-exam-table th {
+        background: #edf3fa;
+        text-align: center;
+        font-weight: 800;
+        line-height: 1.4;
+    }
+
+    .mw-exam-table .center {
+        text-align: center;
+    }
+
+    .mw-exam-table .right {
+        text-align: right;
+        white-space: nowrap;
+        overflow-wrap: normal;
+    }
+
+    .mw-exam-table .group-row td {
+        background: #f8fafc;
+        font-weight: 800;
+    }
+
+    .mw-exam-table .total-row td {
+        background: #f1f5fa;
+        font-weight: 800;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bảng BHYT — chỉ xuất hiện nếu có dữ liệu
+    |--------------------------------------------------------------------------
+    */
+
+    .mw-exam-insurance {
+        margin-top: 12px;
+    }
+
+    .mw-exam-insurance-title {
+        margin: 0 0 6px;
+
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--exam-navy);
+    }
+
+    .mw-exam-insurance-table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        font-size: 10.5px;
+    }
+
+    .mw-exam-insurance-table th,
+    .mw-exam-insurance-table td {
+        border: 1px solid var(--exam-border);
+        padding: 6px 9px;
+    }
+
+    .mw-exam-insurance-table th {
+        text-align: left;
+        font-weight: 650;
+        background: #f8fafc;
+    }
+
+    .mw-exam-insurance-table td {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tổng hợp dưới bảng
+    |--------------------------------------------------------------------------
+    */
+
+    .mw-exam-summary {
+        margin-top: 14px;
+        padding-top: 10px;
+
+        border-top: 1px solid #cbd8e7;
+    }
+
+    .mw-exam-summary-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+
+        gap: 14px;
+        margin-bottom: 7px;
+
+        font-size: 12px;
+        line-height: 1.55;
+    }
+
+    .mw-exam-summary-line span:first-child {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .mw-exam-summary-line span:last-child {
+        flex: 0 0 auto;
+
+        text-align: right;
+        font-weight: 750;
+        white-space: nowrap;
+    }
+
+    .mw-exam-summary-line:first-child {
+        color: var(--exam-navy);
+        font-weight: 700;
+    }
+
+    .mw-exam-words {
+        margin-top: 9px;
+        color: #17324f;
+
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .mw-exam-words strong {
+        font-weight: 800;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | In A4
+    |--------------------------------------------------------------------------
+    */
+
+    @media print {
+        .mw-exam {
+            font-size: 10pt;
+            color: #101c2c;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .mw-exam-title,
+        .mw-exam-section-heading {
+            break-after: avoid;
+            page-break-after: avoid;
+        }
+
+        .mw-exam-section-heading {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            flex-wrap: nowrap !important;
+        }
+
+        .mw-exam-section-heading h3 {
+            font-size: 10pt;
+        }
+
+        .mw-exam-payment-method {
+            font-size: 9pt;
+            white-space: nowrap;
+        }
+
+        .mw-exam-info {
+            display: grid !important;
+            grid-template-columns:
+                minmax(0, 1fr)
+                minmax(0, 1fr) !important;
+        }
+
+        .mw-exam-table {
+            font-size: 8.5pt;
+        }
+
+        .mw-exam-table th,
+        .mw-exam-table td {
+            padding: 5px 4px;
+        }
+
+        .mw-exam-table thead {
+            display: table-header-group;
+        }
+
+        .mw-exam-table tr,
+        .mw-exam-insurance-table tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .mw-exam-summary {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Màn hình nhỏ
+    |--------------------------------------------------------------------------
+    */
+
+    @media screen and (max-width: 500px) {
+        .mw-exam-info {
+            grid-template-columns: 1fr;
+            gap: 2px;
+        }
+
+        .mw-exam-section-heading {
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .mw-exam-payment-method {
+            justify-content: flex-start;
+            text-align: left;
+        }
+
+        .mw-exam-table {
+            font-size: 9px;
+        }
+
+        .mw-exam-table th,
+        .mw-exam-table td {
+            padding: 5px 3px;
+        }
+
+        .mw-exam-summary-line {
+            font-size: 11px;
+        }
+    }
+
+.mw-col-8 { width: 8%; }
+.mw-col-34 { width: 34%; }
+.mw-col-10 { width: 10%; }
+.mw-col-20 { width: 20%; }

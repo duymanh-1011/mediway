@@ -50,6 +50,7 @@ class ServiceOrderActionsTest extends TestCase
 
     private function pay(ServiceOrderItem $item): void
     {
+        $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), [
             'payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id'),
         ])->assertSessionHasNoErrors()->assertSessionMissing('error');

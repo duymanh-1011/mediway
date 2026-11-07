@@ -36,7 +36,7 @@
             <div class="portal-visit-actions"><x-portal.button :href="route('patient.prescriptions.show', $prescription->id)">Xem chi tiết đơn thuốc</x-portal.button></div>
         </article>
     @empty
-        <div class="patient-records__empty"><span aria-hidden="true">▧</span><h3>Chưa có đơn thuốc</h3><p>Đơn thuốc sẽ xuất hiện tại đây khi có dữ liệu trong hồ sơ của bạn.</p></div>
+        <div class="patient-records__empty"><span aria-hidden="true">▧</span><h3>Chưa có đơn thuốc được cung cấp</h3><p>Đơn thuốc sẽ hiển thị khi lượt khám đã hoàn tất và có đơn thuốc được ghi nhận. Vui lòng liên hệ cơ sở y tế nếu cần hỗ trợ.</p></div>
     @endforelse
     </div>
     {{ $prescriptions->links() }}

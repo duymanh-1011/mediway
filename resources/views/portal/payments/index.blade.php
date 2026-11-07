@@ -1,13 +1,13 @@
 @extends('portal.layouts.app')
 
 @push('portal_page_styles')
-    @vite('resources/css/payments-index.css')
+    @vite(['resources/css/payments-index.css', 'resources/js/portal/payments-sync.js'])
 @endpush
 
 @section('title', 'Khoản cần thanh toán - Mediway')
 
 @section('content')
-    <div class="payment-page">
+    <div class="payment-page" data-payment-snapshot="{{ $snapshot }}" data-payment-refresh-url="{{ route('patient.payments.index') }}">
         <section class="portal-page-head">
             <div class="portal-shell">
                 <a class="portal-back" href="{{ route('patient.home') }}">← Quay lại tài khoản</a>

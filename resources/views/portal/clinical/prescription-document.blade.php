@@ -13,7 +13,7 @@
             @if ($record->hasPdf())<a href="{{ route('patient.prescriptions.document', $record->id) }}">Xem PDF gốc</a>@endif
             <button type="button" data-f08-print>In đơn thuốc</button>
         </nav>
-        <main class="paper">
+        <main class="paper prescription-paper">
             <header class="document-head">
                 <div class="brand-line"><span class="brand-icon" aria-hidden="true">✦</span><div><p class="brand-name">Mediway</p><p class="brand-sub">Hồ sơ điều trị</p></div></div>
                 <div class="document-meta"><span class="meta-label">Mã đơn</span> <strong>{{ $record->prescription_code }}</strong><br><span class="meta-label">Mã lượt khám</span> <strong>{{ $record->medicalVisit->visit_code }}</strong></div>
@@ -54,6 +54,15 @@
                 </table>
             </section>
             @if ($record->general_instructions)<section class="section"><h2 class="section-title">Lời dặn</h2><p>{{ $record->general_instructions }}</p></section>@endif
+            <section class="prescription-doctor-signature" aria-label="Khu vực ký của bác sĩ kê đơn">
+                @if ($record->prescribed_at)
+                    <p class="prescription-sign-date">Ngày {{ $record->prescribed_at->format('d') }} tháng {{ $record->prescribed_at->format('m') }} năm {{ $record->prescribed_at->format('Y') }}</p>
+                @endif
+                <h2>BÁC SĨ KÊ ĐƠN</h2>
+                <p class="prescription-sign-note">(Ký, ghi rõ họ tên)</p>
+                <div class="prescription-sign-space" aria-hidden="true"></div>
+                <p class="prescription-sign-name">{{ $record->doctor?->full_name ?? 'Chưa cập nhật bác sĩ kê đơn' }}</p>
+            </section>
         </main>
     </div>
 </body>

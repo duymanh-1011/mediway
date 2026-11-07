@@ -63,7 +63,13 @@ class EmployeeReceptionWorkflowTest extends TestCase
         $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
         $this->assertSame('UNPAID', $fee->paymentStatus->name);
         $this->assertDatabaseHas('audit_logs', ['user_id' => $employee->user_id, 'role_name_snapshot' => 'Employee', 'action' => 'CHECK_IN', 'entity_id' => $appointment->id]);
-        $this->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])->assertSessionHasErrors('appointment');
+        $originalDate = $appointment->fresh()->appointment_date->toDateString();
+        $originalSlot = $appointment->fresh()->appointment_time_slot_id;
+        $this->post(route('employee.appointments.check-in', $appointment), [
+            'confirm_reception' => 1, 'appointment_date' => '2030-01-01', 'appointment_time_slot_id' => 999999, 'id' => 1,
+        ])->assertSessionHasErrors('appointment');
+        $this->assertSame($originalDate, $appointment->fresh()->appointment_date->toDateString());
+        $this->assertSame($originalSlot, $appointment->fresh()->appointment_time_slot_id);
         $this->assertSame(1, $appointment->medicalVisit()->count());
         $this->assertSame(1, $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->count());
         $this->flushSession();
@@ -76,9 +82,8 @@ class EmployeeReceptionWorkflowTest extends TestCase
         $this->post(route('admin.queues.call', $queue))->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->assertSame('CALLED', $queue->fresh()->status->name);
         $this->flushSession();
-        $this->actingAs($employee->user)->post(route('employee.queue.filter'), ['q' => $visit->visit_code])->assertRedirect();
-        $this->get(route('employee.queue.index'))->assertOk()->assertSee($visit->visit_code)->assertSee('Đã gọi')
-            ->assertDontSee('Gọi bệnh nhân')->assertDontSee('Bắt đầu khám');
+        $this->actingAs($employee->user)->get(route('employee.appointments.show', $appointment))->assertOk()
+            ->assertSee($visit->visit_code)->assertDontSee('Gọi bệnh nhân')->assertDontSee('/nhan-vien/hang-doi', false);
         $this->flushSession();
         $this->actingAs($appointment->patient->user)->get(route('patient.appointments.show', $appointment))->assertOk()->assertSee('Đã tiếp nhận');
     }

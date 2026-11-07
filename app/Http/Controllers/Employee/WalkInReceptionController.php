@@ -20,6 +20,7 @@ class WalkInReceptionController extends Controller
     {
         $employee = app(EmployeeAccess::class)->employee($request->user());
         try {
+            $searched = $request->session()->has(self::MATCHES);
             $patientIds = $request->session()->get(self::MATCHES, []);
             $patients = Patient::whereIn('id', $patientIds)->where('status', 'ACTIVE')->get(['id', 'patient_code', 'full_name', 'date_of_birth']);
             $schedules = DoctorSchedule::where('status', 'ACTIVE')->whereDate('work_date', today())
@@ -29,7 +30,7 @@ class WalkInReceptionController extends Controller
                 ->whereHas('specialty', fn ($q) => $q->where('status', 'ACTIVE'))
                 ->whereHas('examinationRoom', fn ($q) => $q->where('status', 'ACTIVE'))
                 ->with(['doctor:id,full_name', 'specialty:id,name', 'examinationRoom:id,name'])->orderBy('start_time')->get();
-            return view('employee.reception.walk-in', compact('employee', 'patients', 'schedules'));
+            return view('employee.reception.walk-in', compact('employee', 'patients', 'schedules', 'searched'));
         } catch (QueryException $exception) {
             logger()->error('Không thể tải tiếp đón trực tiếp.', ['exception' => get_class($exception)]);
             return response()->view('employee.reception.unavailable', ['employee' => $employee, 'backRoute' => 'employee.walk-in.create'], 503);
@@ -38,13 +39,14 @@ class WalkInReceptionController extends Controller
 
     public function search(Request $request)
     {
+        $request->session()->forget(self::MATCHES);
         $data = $request->validate(['identifier' => ['required', 'string', 'max:30']], ['identifier.required' => 'Vui lòng nhập mã bệnh nhân, số điện thoại hoặc CCCD.']);
         $term = trim($data['identifier']);
-        $ids = Patient::where('status', 'ACTIVE')->where(fn ($q) => $q->where('patient_code', $term)
+        $ids = Patient::where('status', 'ACTIVE')->where(fn ($q) => $q->whereIn('patient_code', [$term, strtoupper($term)])
             ->orWhereHas('user', fn ($u) => $u->where('phone', $term))
             ->orWhereHas('detail', fn ($d) => $d->where('citizen_id_number', $term)))->limit(5)->pluck('id')->all();
         $request->session()->put(self::MATCHES, $ids);
-        return redirect()->route('employee.walk-in.create')->with('walkin_searched', true);
+        return redirect()->route('employee.walk-in.create')->withInput(['identifier' => $term]);
     }
 
     public function store(Request $request, WalkInReceptionService $service)

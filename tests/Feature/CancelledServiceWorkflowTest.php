@@ -26,6 +26,7 @@ class CancelledServiceWorkflowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->travelTo(now()->setDate(2026, 10, 15)->setTime(9, 0));
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());

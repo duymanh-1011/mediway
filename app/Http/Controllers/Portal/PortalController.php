@@ -121,7 +121,8 @@ class PortalController extends Controller
             }
         }
         if (in_array($category, ['tat-ca', 'ket-qua'], true)) {
-            $results = ServiceResult::whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))
+            $results = \App\Support\Portal\ClinicalPublication::restrict(ServiceResult::query(), 'service_results')
+                ->whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))
                 ->where(fn ($q) => $q->whereNotNull('result_summary')->orWhereNotNull('result_conclusion')
                     ->orWhereNotNull('result_parameters')->orWhereNotNull('technical_details')->orWhereNotNull('result_pdf_path')->orWhereNotNull('result_image_path'))
                 ->with(['serviceOrderItem.medicalService', 'serviceOrderItem.serviceOrder'])->orderByDesc('updated_at')->limit(20)->get();
@@ -138,7 +139,8 @@ class PortalController extends Controller
                     'description' => 'Bạn có thể xem kết luận trong kết quả khám bệnh.',
                     'time' => $conclusion->concluded_at ?? $conclusion->created_at, 'url' => route('patient.results.visit', $conclusion->medical_visit_id).'#ket-luan']);
             }
-            $prescriptions = Prescription::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))
+            $prescriptions = \App\Support\Portal\ClinicalPublication::restrict(Prescription::query(), 'prescriptions')
+                ->whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))
                 ->where('status', 'ACTIVE')->orderByDesc('prescribed_at')->limit(20)->get();
             foreach ($prescriptions as $prescription) {
                 $items->push(['key' => $this->notificationKey('prescription', $prescription->id, $prescription->updated_at), 'category' => 'Kết quả', 'title' => 'Có đơn thuốc',

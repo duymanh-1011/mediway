@@ -196,11 +196,11 @@
 
         <nav class="toolbar" aria-label="Thao tác phiếu thu">
 
-            <a href="{{ route(
+            <a href="{{ $receiptBackUrl ?? route(
     'employee.payments.show',
     ['payable' => $payable->id]
 ) }}">
-                ← Quay lại chi tiết
+                ← {{ $receiptBackLabel ?? 'Quay lại chi tiết' }}
             </a>
 
             <button type="button" data-f08-print>

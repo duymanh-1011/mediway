@@ -17,7 +17,9 @@
                     <div><dt>Ngày thanh toán</dt><dd>{{ $payment['date']?->format('d/m/Y H:i') ?? 'Chưa cập nhật' }}</dd></div>
                     <div><dt>Nhân viên thu tiền</dt><dd>{{ $transaction->collector?->full_name ?? 'Chưa có thông tin' }}</dd></div>
                 </dl>
-                <a class="portal-back" href="{{ route('patient.results.receipt', [$record->id, $transaction->id]) }}">Xem phiếu thu</a>
+                @if ($payment['can_print'])
+                    <a class="portal-back" href="{{ route('patient.results.receipt', [$record->id, $transaction->id]) }}">Xem phiếu thu</a>
+                @endif
             </article>
         @empty
             <x-portal.empty-state title="Chưa có giao dịch đã thanh toán" description="Các giao dịch thành công của lượt khám sẽ xuất hiện tại đây." />

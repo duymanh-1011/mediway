@@ -36,6 +36,48 @@ th, .group-row, .total-row, .ms-total-row, .medicine-total { background: #f1f5f9
 .signature-grid { text-align: center; margin-top: 24px; }
 .signature-space { min-height: 34px; }
 .signature-title, .signature-name { font-weight: 600; }
+/* Medicine receipts have three signers, unlike the two-signer exam/service forms. */
+.medicine-receipt .signature-grid--medicine {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    align-items: stretch;
+    break-inside: avoid;
+}
+.medicine-receipt .signature-grid--medicine > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    text-align: center;
+}
+.medicine-receipt .signature-grid--medicine .signature-title {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 3em;
+    width: 100%;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.medicine-receipt .signature-grid--medicine .signature-note {
+    font-size: 12px;
+    font-style: italic;
+    line-height: 1.5;
+}
+.medicine-receipt .signature-grid--medicine .signature-space {
+    flex: 1 0 64px;
+    width: 100%;
+}
+.medicine-receipt .signature-grid--medicine .signature-name {
+    min-height: 1.5em;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+@media screen and (max-width: 480px) {
+    .medicine-receipt .signature-grid--medicine { grid-template-columns: 1fr; gap: 24px; }
+    .medicine-receipt .signature-grid--medicine .signature-title { min-height: 0; }
+}
 .receipt-footer { margin-top: 16px; border-top: 1px solid #dbe3ed; padding-top: 8px; }
 :is(.medicine-table-wrap, .ms-table-wrap, .receipt-table-scroll) { max-width: 100%; overflow: auto; }
 @media screen and (max-width: 620px) {
@@ -54,3 +96,23 @@ th, .group-row, .total-row, .ms-total-row, .medicine-total { background: #f1f5f9
 }
 
 .info-grid dd { margin: 2px 0 0; }
+
+/* Doctor's signing area belongs to the prescription, not the payment receipt. */
+.prescription-paper { display: flex; flex-direction: column; }
+.prescription-doctor-signature {
+    align-self: flex-end;
+    width: min(100%, 280px);
+    margin: 32px 0 8px auto;
+    text-align: center;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+.prescription-doctor-signature h2 { margin: 12px 0 2px; font-size: 14px; font-weight: 700; }
+.prescription-sign-date { margin: 0; font-size: 13px; }
+.prescription-sign-note { margin: 0; color: #64748b; font-size: 12px; font-style: italic; }
+.prescription-sign-space { height: 80px; }
+.prescription-sign-name { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+@media print {
+    .prescription-doctor-signature { width: 80mm; }
+    .prescription-sign-space { height: 22mm; }
+}

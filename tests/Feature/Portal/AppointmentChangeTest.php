@@ -262,6 +262,9 @@ class AppointmentChangeTest extends TestCase
     public function test_checked_in_appointment_cannot_change(): void
     {
         $appointment = $this->booked($this->slot());
+        $target = $this->slot(2);
+        $originalDate = $appointment->appointment_date->format('Y-m-d');
+        $originalSlot = $appointment->appointment_time_slot_id;
 
         $status = AppointmentStatus::where(
             'name',
@@ -279,10 +282,40 @@ class AppointmentChangeTest extends TestCase
             ['cancellation_reason' => 'Muốn hủy sau tiếp nhận.']
         )->assertSessionHasErrors('appointment');
 
+        $this->post(route('patient.appointments.reschedule', $appointment), [
+            'appointment_time_slot_id' => $target->id,
+            'appointment_date' => $target->doctorSchedule->work_date->format('Y-m-d'),
+        ])->assertSessionHasErrors('appointment');
+
+        $this->assertSame($originalDate, $appointment->fresh()->appointment_date->format('Y-m-d'));
+        $this->assertSame($originalSlot, $appointment->fresh()->appointment_time_slot_id);
+
         $this->assertSame(
             'CHECKED_IN',
             $appointment->fresh()->appointmentStatus->name
         );
+    }
+
+    public function test_reschedule_rejects_appointment_with_a_visit_even_when_booked(): void
+    {
+        $old = $this->slot(1);
+        $target = $this->slot(2);
+        $appointment = $this->booked($old);
+        $visit = \App\Models\MedicalVisit::query()->firstOrFail()->replicate();
+        $visit->visit_code = 'TEST-RESCHEDULE-VISIT';
+        $visit->appointment_id = $appointment->id;
+        $visit->patient_id = $appointment->patient_id;
+        $visit->save();
+        $date = $appointment->appointment_date->format('Y-m-d');
+        $this->approve();
+
+        $this->post(route('patient.appointments.reschedule', $appointment), [
+            'appointment_time_slot_id' => $target->id,
+            'appointment_date' => $target->doctorSchedule->work_date->format('Y-m-d'),
+        ])->assertSessionHasErrors('appointment');
+
+        $this->assertSame($date, $appointment->fresh()->appointment_date->format('Y-m-d'));
+        $this->assertSame($old->id, $appointment->fresh()->appointment_time_slot_id);
     }
 
     public function test_cutoff_blocks_late_cancellation(): void
@@ -300,5 +333,33 @@ class AppointmentChangeTest extends TestCase
             'BOOKED',
             $appointment->fresh()->appointmentStatus->name
         );
+    }
+
+    public function test_patient_booking_reception_and_cashier_create_one_queue(): void
+    {
+        $slot = $this->slot(1);
+        $appointment = $this->booked($slot);
+        $patientId = $appointment->patient_id;
+        $this->travelTo($slot->doctorSchedule->work_date->copy()->setTime(9, 0));
+        $receptionist = User::where('business_code', 'NV000001')->firstOrFail();
+        $this->flushSession()->actingAs($receptionist)
+            ->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])
+            ->assertSessionHasNoErrors();
+        $visit = $appointment->fresh()->medicalVisit;
+        $this->assertNotNull($visit);
+        $this->assertSame($patientId, $visit->patient_id);
+        $this->assertSame($appointment->id, $visit->appointment_id);
+        $this->assertSame($appointment->doctor_id, $visit->doctor_id);
+        $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
+        $this->assertSame('UNPAID', $fee->paymentStatus->name);
+        $cashier = User::where('business_code', 'NV000004')->firstOrFail();
+        $this->flushSession()->actingAs($cashier)
+            ->post(route('employee.payments.collect.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('PAID', $fee->fresh()->paymentStatus->name);
+        $transaction = $fee->transactions()->where('transaction_result', 'SUCCESS')->sole();
+        $this->assertSame($cashier->employee->id, $transaction->collected_by_employee_id);
+        $this->assertDatabaseHas('audit_logs', ['entity_type' => 'payment_transactions', 'entity_id' => $transaction->id, 'user_id' => $cashier->id]);
+        $this->assertSame('WAITING', $visit->queues()->where('queue_type', 'INITIAL_EXAM')->sole()->status->name);
     }
 }

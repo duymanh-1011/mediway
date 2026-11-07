@@ -51,8 +51,11 @@ class WalkInReceptionTest extends TestCase
     public function test_existing_patient_walk_in_requires_payment_then_receives_one_queue_number(): void
     {
         $patient = Patient::where('patient_code', 'BN000005')->firstOrFail();
-        $this->actingAs($this->receptionist())->post(route('employee.walk-in.search'), ['identifier' => $patient->patient_code])->assertRedirect();
-        $this->get(route('employee.walk-in.create'))->assertSee($patient->full_name);
+        $identifier = strtolower($patient->patient_code);
+        $this->actingAs($this->receptionist())->post(route('employee.walk-in.search'), ['identifier' => $identifier])->assertRedirect();
+        $this->get(route('employee.walk-in.create'))->assertOk()
+            ->assertSee('value="'.$identifier.'"', false)->assertSee('Tìm thấy 1 hồ sơ bệnh nhân')
+            ->assertSee($patient->full_name)->assertSee('Chọn hồ sơ để tiếp nhận');
         $payload = ['patient_mode' => 'existing', 'patient_id' => $patient->id, 'schedule_id' => $this->schedule->id, 'confirm_reception' => 1, 'request_token' => (string) \Illuminate\Support\Str::uuid()];
         $this->post(route('employee.walk-in.store'), $payload)->assertSessionHasNoErrors();
         $visit = MedicalVisit::where('patient_id', $patient->id)->where('reception_source', 'WALK_IN')->sole();
@@ -140,6 +143,7 @@ class WalkInReceptionTest extends TestCase
         $this->get(route('employee.walk-in.create'))->assertSee($patient->patient_code);
         $this->post(route('employee.walk-in.search'), ['identifier' => '01234567890'])->assertRedirect();
         $this->get(route('employee.walk-in.create'))->assertDontSee($patient->patient_code)->assertSee('Không tìm thấy hồ sơ');
+        $this->get(route('employee.walk-in.create'))->assertSee('Không tìm thấy hồ sơ');
     }
 
     public function test_unfinished_walk_in_prevents_duplicate_appointment_reception_for_same_doctor(): void

@@ -22,5 +22,5 @@
         <div class="portal-visit-actions"><x-portal.button :href="route('patient.prescriptions.show', $prescription->id)">Xem chi tiết đơn thuốc</x-portal.button></div>
     </section>
 @else
-    <x-portal.empty-state title="Chưa có đơn thuốc" description="Đơn thuốc của lượt khám sẽ xuất hiện tại đây khi được ghi nhận." />
+    <x-portal.empty-state title="Chưa có đơn thuốc được cung cấp" description="Đơn thuốc sẽ hiển thị khi lượt khám đã hoàn tất và có đơn thuốc được ghi nhận. Vui lòng liên hệ cơ sở y tế nếu cần hỗ trợ." />
 @endif

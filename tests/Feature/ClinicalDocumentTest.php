@@ -175,7 +175,6 @@ class ClinicalDocumentTest extends TestCase
             $this->assertStringContainsString($type === 'pdf' ? '%PDF-1.4' : 'PNG', $response->streamedContent());
             $this->get(route('admin.service-results.show', $result))->assertOk()
                 ->assertSee('href="'.$url.'"', false)->assertDontSee('/storage/'.$path, false);
-            $this->post(route('admin.service-order-items.complete', $item))->assertSessionHasNoErrors()->assertSessionMissing('error');
             $this->assertSame('COMPLETED', $item->fresh()->serviceStatus->name);
         }
     }
@@ -183,8 +182,8 @@ class ClinicalDocumentTest extends TestCase
     public function test_deleted_empty_or_fake_attachments_do_not_count_as_result_content(): void
     {
         $item = $this->item();
-        $result = $this->upload($item);
-        $path = $result->result_pdf_path;
+        $path = Storage::disk('local')->putFileAs('service-results/'.$item->id, $this->pdf(), 'ket-qua.pdf');
+        $result = $item->result()->create(['result_pdf_path' => $path]);
         foreach ([null, '', '<?php echo "not a PDF";'] as $content) {
             if ($content === null) {
                 Storage::disk('local')->delete($path);

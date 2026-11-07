@@ -6,6 +6,7 @@
     $patient = $order?->medicalVisit?->patient;
     $result = $record->result;
     $stage = $record->technicalStage();
+    $displayStatus = \App\Support\TechnicalServiceStatus::for($record);
     $isWorking = $stage === 'PROCESSING' && (int) $record->performed_by_employee_id === (int) $employee->id;
     $canEdit = $isWorking && ! $result?->verified_by_user_id && $result?->patient_publication_status !== 'PUBLISHED';
     $hasResult = $result?->hasContent();
@@ -22,7 +23,8 @@
         'eyebrow' => $record->medicalService?->serviceGroups->pluck('name')->join(' · ') ?: 'CHỈ ĐỊNH DỊCH VỤ',
         'heading' => $record->medicalService?->name ?? 'Chi tiết chỉ định',
         'description' => implode(' · ', array_filter([$order?->service_order_code, $order?->ordered_at?->format('d/m/Y H:i')])),
-        'stageLabel' => \App\Models\ServiceOrderItem::TECHNICAL_STAGES[$stage] ?? 'Chưa cập nhật',
+        'stageLabel' => $displayStatus['label'],
+        'statusTone' => $displayStatus['tone'],
     ])
 
     <section class="tech-panel">

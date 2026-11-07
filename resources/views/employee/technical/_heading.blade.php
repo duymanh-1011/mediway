@@ -4,7 +4,7 @@
         <h1>{{ $heading }}</h1>
         <p>{{ $description }}</p>
         @isset($stageLabel)
-            <span class="tech-status tech-heading-status" data-stage="{{ $stage }}">{{ $stageLabel }}</span>
+            <span class="tech-status tech-heading-status tech-status--{{ $statusTone }}">{{ $stageLabel }}</span>
         @endisset
     </div>
     <div class="employee-welcome__art" aria-hidden="true">

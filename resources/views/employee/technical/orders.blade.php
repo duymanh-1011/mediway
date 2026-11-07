@@ -46,7 +46,7 @@
         <div class="tech-list">
             @forelse ($items as $item)
                 @php
-                    $stage = $item->technicalStage();
+                    $displayStatus = \App\Support\TechnicalServiceStatus::for($item);
                     $order = $item->serviceOrder;
                     $patient = $order?->medicalVisit?->patient;
                 @endphp
@@ -58,7 +58,7 @@
                         @if ($order?->ordered_at)<p>{{ $order->ordered_at->format('d/m/Y H:i') }}</p>@endif
                     </div>
                     <div class="tech-card__meta">
-                        <span class="tech-status" data-stage="{{ $stage }}">{{ \App\Models\ServiceOrderItem::TECHNICAL_STAGES[$stage] ?? 'Chưa cập nhật' }}</span>
+                        <span class="tech-status tech-status--{{ $displayStatus['tone'] }}">{{ $displayStatus['label'] }}</span>
                         <span>{{ $item->performed_by_employee_id ? 'Việc của tôi' : 'Chưa có người thực hiện' }}</span>
                         <span class="employee-card__link">Xem chỉ định <x-employee-icon name="arrow" /></span>
                     </div>

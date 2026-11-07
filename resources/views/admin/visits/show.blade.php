@@ -841,7 +841,7 @@
             </div>
 
 
-            @if (in_array($currentStatus, ['IN_EXAMINATION', 'RETURNING'], true))
+            @if ($medicalVisit->canOrderServices())
 
                 <a
                     href="{{ route(

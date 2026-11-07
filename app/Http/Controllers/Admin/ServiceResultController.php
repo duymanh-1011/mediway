@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreServiceResultRequest;
 use App\Http\Requests\Admin\UpdateServiceResultRequest;
 use App\Models\ClinicalDocument;
-use App\Models\ClinicalTimeline;
 use App\Models\MedicalVisit;
 use App\Models\ServiceOrderItem;
+use App\Models\ServiceOrderProgress;
 use App\Models\ServiceResult;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -267,7 +267,7 @@ class ServiceResultController extends Controller
                 }
 
                 User::lockResultVerifier($validated['verified_by_user_id'] ?? null);
-                ClinicalTimeline::assertEventTime($validated['resulted_at'] ?? null, $lockedItem->started_at, 'resulted_at', 'Thời điểm trả kết quả');
+                $confirmedAt = now();
                 $paths = $documents->store($request, 'service-results/'.$lockedItem->id, ClinicalDocument::RESULT_FILES);
                 $result = ServiceResult::create([
                     'service_order_item_id' => $lockedItem->id,
@@ -289,8 +289,7 @@ class ServiceResultController extends Controller
                     'verified_by_user_id' => $validated['verified_by_user_id']
                         ?? null,
 
-                    'resulted_at' => $validated['resulted_at']
-                        ?? null,
+                    'resulted_at' => $confirmedAt,
 
                     'notes' => $validated['notes']
                         ?? null,
@@ -299,6 +298,8 @@ class ServiceResultController extends Controller
                 if (! $result->hasContent()) {
                     throw ValidationException::withMessages(['result_summary' => 'Vui lòng nhập nội dung kết quả hoặc tải lên tệp PDF/ảnh kết quả hợp lệ trước khi lưu.']);
                 }
+
+                app(ServiceOrderProgress::class)->completeAdminItem($request, $lockedItem, $confirmedAt);
 
                 $roleNameSnapshot = null;
 
@@ -423,7 +424,9 @@ class ServiceResultController extends Controller
             )
             ->with(
                 'success',
-                'Tạo kết quả dịch vụ thành công.'
+                $result->wasRecentlyCreated
+                    ? 'Đã xác nhận kết quả và hoàn tất dịch vụ. '.app(ServiceOrderProgress::class)->returnQueueMessage($serviceOrderItem->serviceOrder->medical_visit_id)
+                    : 'Kết quả dịch vụ đã được lưu trước đó.'
             );
     }
 
@@ -520,9 +523,6 @@ class ServiceResultController extends Controller
             'verified_by_user_id' => $validated['verified_by_user_id']
                 ?? null,
 
-            'resulted_at' => $validated['resulted_at']
-                ?? null,
-
             'notes' => $validated['notes']
                 ?? null,
         ];
@@ -544,7 +544,7 @@ class ServiceResultController extends Controller
                 ->value('roles.name');
         }
 
-        ClinicalDocument::transaction(
+        $completed = ClinicalDocument::transaction(
             function (ClinicalDocument $documents) use (
                 $request,
                 $result,
@@ -557,12 +557,15 @@ class ServiceResultController extends Controller
                     throw ValidationException::withMessages(['result' => 'Lượt khám đã hoàn tất, không thể sửa trực tiếp kết quả dịch vụ.']);
                 }
                 $visit->assertServiceDataWritable();
-                $item = ServiceOrderItem::whereKey($result->service_order_item_id)->lockForUpdate()->firstOrFail();
-                ClinicalTimeline::assertEventTime($updateData['resulted_at'] ?? null, $item->started_at, 'resulted_at', 'Thời điểm trả kết quả');
+                $item = ServiceOrderItem::with('serviceStatus')->whereKey($result->service_order_item_id)->lockForUpdate()->firstOrFail();
                 $result = ServiceResult::with(['serviceOrderItem.serviceOrder', 'serviceOrderItem.medicalService'])
                     ->whereKey($result->id)->lockForUpdate()->firstOrFail();
                 if ((int) ($updateData['verified_by_user_id'] ?? 0) !== (int) ($result->verified_by_user_id ?? 0)) {
                     User::lockResultVerifier($updateData['verified_by_user_id'] ?? null);
+                }
+                $confirmedAt = $item->serviceStatus?->name === 'PROCESSING' ? now() : null;
+                if ($confirmedAt) {
+                    $updateData['resulted_at'] = $confirmedAt;
                 }
                 $oldValues = $result->only(['result_summary', 'result_conclusion', 'result_parameters', 'result_pdf_path', 'result_image_path', 'verified_by_user_id', 'notes']);
                 $oldValues['resulted_at'] = $result->resulted_at?->format('Y-m-d H:i:s');
@@ -574,6 +577,9 @@ class ServiceResultController extends Controller
                     $updateData
                 );
 
+                if ($confirmedAt) {
+                    app(ServiceOrderProgress::class)->completeAdminItem($request, $item, $confirmedAt);
+                }
                 $result->refresh();
 
                 $newValues = [
@@ -660,6 +666,8 @@ class ServiceResultController extends Controller
 
                     'created_at' => now(),
                 ]);
+
+                return $confirmedAt !== null;
             }
         );
 
@@ -670,7 +678,9 @@ class ServiceResultController extends Controller
             )
             ->with(
                 'success',
-                'Cập nhật kết quả dịch vụ thành công.'
+                $completed
+                    ? 'Đã xác nhận kết quả và hoàn tất dịch vụ. '.app(ServiceOrderProgress::class)->returnQueueMessage($result->serviceOrderItem->serviceOrder->medical_visit_id)
+                    : 'Cập nhật kết quả dịch vụ thành công.'
             );
     }
 }

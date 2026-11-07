@@ -64,12 +64,12 @@
         </form>
     @endcomponent
 
-    <div class="as-card">
+    <div class="as-card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách quản trị viên'])
 
 
-        <div class="as-table-wrap">
-            <table class="as-table">
+        <div class="as-table-wrap admin-list-table-wrap">
+            <table class="as-table admin-list-table">
                 <thead>
                     <tr>
                         <th scope="col" class="admin-row-number">STT</th>
@@ -120,34 +120,7 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="as-footer">
-            <span>
-                Hiển thị {{ $administrators->count() }} /
-                {{ $administrators->total() }} quản trị viên
-            </span>
-
-            <div class="as-pagination">
-                @if($administrators->onFirstPage())
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-                @else
-                    <a class="admin-btn admin-btn-secondary"
-                       href="{{ $administrators->previousPageUrl() }}">Trước</a>
-                @endif
-
-                <span>
-                    Trang {{ $administrators->currentPage() }} /
-                    {{ $administrators->lastPage() }}
-                </span>
-
-                @if($administrators->hasMorePages())
-                    <a class="admin-btn admin-btn-secondary"
-                       href="{{ $administrators->nextPageUrl() }}">Sau</a>
-                @else
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-                @endif
-            </div>
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $administrators, 'recordLabel' => 'quản trị viên'])
     </div>
 </div>
 @endsection

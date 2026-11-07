@@ -222,7 +222,7 @@
                     <form novalidate
                         action="{{ route('admin.users.update-status', $user) }}"
                         method="POST"
-                        onsubmit="return confirm('Xác nhận khóa tài khoản {{ $user->business_code }}? Người dùng sẽ không thể đăng nhập.');"
+                        data-confirm="Xác nhận khóa tài khoản {{ $user->business_code }}? Người dùng sẽ không thể đăng nhập."
                     >
                         @csrf
                         @method('PATCH')
@@ -247,7 +247,7 @@
                 <form novalidate
                     action="{{ route('admin.users.update-status', $user) }}"
                     method="POST"
-                    onsubmit="return confirm('Xác nhận mở khóa tài khoản này?');"
+                    data-confirm="Xác nhận mở khóa tài khoản này?"
                 >
                     @csrf
                     @method('PATCH')
@@ -285,7 +285,7 @@
             <form novalidate
                 action="{{ route('admin.users.reset-password', $user) }}"
                 method="POST"
-                onsubmit="return confirm('Xác nhận đặt lại mật khẩu cho tài khoản {{ $user->business_code }}?');"
+                data-confirm="Xác nhận đặt lại mật khẩu cho tài khoản {{ $user->business_code }}?"
             >
                 @csrf
                 @method('PATCH')

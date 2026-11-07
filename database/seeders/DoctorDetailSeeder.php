@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class DoctorDetailSeeder extends Seeder
 {
-    public function run(): void
+    public function run(bool $includePracticeData = false): void
     {
         $details = [
             [
@@ -38,6 +38,23 @@ class DoctorDetailSeeder extends Seeder
                 'experience' => 12,
             ],
         ];
+
+        if ($includePracticeData) {
+            $details = [...$details,
+                [
+                    'code' => 'BS000004', 'qualification' => 'Bác sĩ chuyên khoa', 'degree' => 'Bác sĩ CKI',
+                    'position' => 'Bác sĩ điều trị', 'field' => 'Tiêu hóa', 'license' => 'GPHN-BS-0004', 'experience' => 11,
+                ],
+                [
+                    'code' => 'BS000005', 'qualification' => 'Bác sĩ chuyên khoa', 'degree' => 'Bác sĩ CKI',
+                    'position' => 'Bác sĩ điều trị', 'field' => 'Da liễu', 'license' => 'GPHN-BS-0005', 'experience' => 9,
+                ],
+                [
+                    'code' => 'BS000006', 'qualification' => 'Bác sĩ chuyên khoa', 'degree' => 'Bác sĩ CKI',
+                    'position' => 'Bác sĩ điều trị', 'field' => 'Tai Mũi Họng', 'license' => 'GPHN-BS-0006', 'experience' => 12,
+                ],
+            ];
+        }
 
         foreach ($details as $detail) {
             $doctorId = DB::table('doctors')

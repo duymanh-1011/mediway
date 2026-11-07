@@ -13,7 +13,7 @@
         </form>
         @if(session('walkin_searched') && $patients->isEmpty())<p>Không tìm thấy hồ sơ đang hoạt động. Kiểm tra lại thông tin trước khi tạo mới.</p>@endif
     </section>
-    <form class="employee-card portal-form" method="post" action="{{ route('employee.walk-in.store') }}" data-reception-form>@csrf
+    <form class="employee-card portal-form" method="post" action="{{ route('employee.walk-in.store') }}">@csrf
         <input type="hidden" name="request_token" value="{{ old('request_token', (string) \Illuminate\Support\Str::uuid()) }}">
         <h2>2. Xác định bệnh nhân</h2>
         <label><input type="radio" name="patient_mode" value="existing" @checked(old('patient_mode', $patients->isNotEmpty() ? 'existing' : 'new') === 'existing')> Chọn hồ sơ đã có</label>
@@ -31,7 +31,7 @@
         <select id="schedule_id" name="schedule_id" required><option value="">Chọn ca đang hoạt động</option>@foreach($schedules as $schedule)<option value="{{ $schedule->id }}" @selected((string) old('schedule_id') === (string) $schedule->id)>{{ $schedule->doctor?->full_name ?? '—' }} · {{ $schedule->specialty?->name ?? '—' }} · {{ $schedule->examinationRoom?->name ?? '—' }} · {{ substr($schedule->start_time, 0, 5) }}–{{ substr($schedule->end_time, 0, 5) }}</option>@endforeach</select>
         @if($schedules->isEmpty())<p>Hiện không có ca khám đang hoạt động. Vui lòng kiểm tra lại lịch làm việc.</p>@endif
         <label><input type="checkbox" name="confirm_reception" value="1" required @checked(old('confirm_reception'))> Tôi xác nhận đã kiểm tra đúng bệnh nhân và ca khám.</label>
-        <button type="submit" class="portal-btn portal-btn--primary" data-reception-submit @disabled($schedules->isEmpty())>Xác nhận tiếp nhận</button>
+        <button type="submit" class="portal-btn portal-btn--primary" data-pending-label="Đang tiếp nhận…" @disabled($schedules->isEmpty())>Xác nhận tiếp nhận</button>
     </form>
 </section>
 @endsection

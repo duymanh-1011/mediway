@@ -315,11 +315,7 @@
                     <button
                         type="submit"
                         class="admin-btn admin-btn-warning"
-                        onclick="
-                            return confirm(
-                                'Tạm bỏ qua bệnh nhân này trong hàng đợi? Bạn vẫn có thể gọi lại sau.'
-                            );
-                        "
+                        data-confirm="Tạm bỏ qua bệnh nhân này trong hàng đợi? Bạn vẫn có thể gọi lại sau."
                     >
                         Bỏ qua
                     </button>

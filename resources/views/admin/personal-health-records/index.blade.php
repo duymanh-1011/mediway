@@ -78,7 +78,7 @@
         </form>
     @endcomponent
 
-    <div class="hl-card">
+    <div class="hl-card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách lần đo sức khỏe'])
 
 
@@ -90,8 +90,8 @@
             </div>
         @endif
 
-        <div class="hl-table-wrap">
-            <table class="hl-table">
+        <div class="hl-table-wrap admin-list-table-wrap">
+            <table class="hl-table admin-list-table">
                 <thead>
                     <tr>
                         <th scope="col" class="admin-row-number">STT</th>
@@ -158,34 +158,7 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="hl-footer">
-            <span>
-                Hiển thị {{ $records->count() }} /
-                {{ $records->total() }} lần đo
-            </span>
-
-            <div class="hl-pages">
-                @if($records->onFirstPage())
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-                @else
-                    <a href="{{ $records->previousPageUrl() }}"
-                       class="admin-btn admin-btn-secondary">Trước</a>
-                @endif
-
-                <span>
-                    Trang {{ $records->currentPage() }} /
-                    {{ $records->lastPage() }}
-                </span>
-
-                @if($records->hasMorePages())
-                    <a href="{{ $records->nextPageUrl() }}"
-                       class="admin-btn admin-btn-secondary">Sau</a>
-                @else
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-                @endif
-            </div>
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $records])
     </div>
 </div>
 @endsection

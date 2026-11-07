@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\EmployeeAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -57,7 +58,7 @@ class User extends Authenticatable
         return $query->where('status', 'ACTIVE')
             ->whereHas('role', fn ($q) => $q->where('name', 'Employee')->where('status', 'ACTIVE'))
             ->whereHas('employee', fn ($q) => $q->where('status', 'ACTIVE')
-                ->whereHas('detail', fn ($detail) => $detail->whereIn('employee_type', ['LAB_TECHNICIAN', 'IMAGING_TECHNICIAN'])));
+                ->whereHas('detail', fn ($detail) => $detail->whereIn('employee_type', EmployeeAccess::TECHNICIAN_CODES)));
     }
 
     /** Must be called inside the service-result transaction, before saving uploads. */
@@ -71,7 +72,7 @@ class User extends Authenticatable
         $detail = $employee?->detail()->lockForUpdate()->first();
         if (! $user || $user->status !== 'ACTIVE' || $employee?->status !== 'ACTIVE'
             || $user->role?->name !== 'Employee' || $user->role?->status !== 'ACTIVE'
-            || ! in_array($detail?->employee_type, ['LAB_TECHNICIAN', 'IMAGING_TECHNICIAN'], true)) {
+            || ! in_array($detail?->employee_type, EmployeeAccess::TECHNICIAN_CODES, true)) {
             throw ValidationException::withMessages(['verified_by_user_id' => 'Vui lòng chọn kỹ thuật viên đang hoạt động.']);
         }
     }

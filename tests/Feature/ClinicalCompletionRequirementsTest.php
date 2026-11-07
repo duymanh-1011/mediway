@@ -45,6 +45,8 @@ class ClinicalCompletionRequirementsTest extends TestCase
 
     public function test_visit_requires_both_diagnosis_and_conclusion_before_completion(): void
     {
+        $this->travelTo(now()->startOfSecond());
+
         foreach (['IN_EXAMINATION', 'RETURNING'] as $index => $status) {
             $source = MedicalVisit::where('visit_code', 'LK000005')->firstOrFail();
             $visit = $source->replicate();
@@ -68,6 +70,9 @@ class ClinicalCompletionRequirementsTest extends TestCase
                         'professional_conclusion' => 'Đã khám và đánh giá', 'has_follow_up' => 0,
                     ])->assertSessionHasNoErrors()->assertSessionMissing('error');
                 }
+                if ($step === 1) {
+                    $this->travel(5)->minutes();
+                }
                 $response = $this->patch(route('admin.visits.update-status', $visit), $completed);
                 if ($step === 0) {
                     $response->assertSessionHasErrors('visit_status_id');
@@ -76,7 +81,11 @@ class ClinicalCompletionRequirementsTest extends TestCase
                 } else {
                     $response->assertSessionHasNoErrors()->assertSessionMissing('error');
                     $this->assertSame('COMPLETED', $visit->fresh()->status->name);
-                    $this->assertNotNull($visit->fresh()->examination_ended_at);
+                    $this->assertSame(now()->toDateTimeString(), $visit->fresh()->examination_ended_at->toDateTimeString());
+                    $patient = User::where('business_code', 'BN000005')->firstOrFail();
+                    $this->actingAs($patient)->get(route('patient.results.visit', $visit->id))->assertOk()
+                        ->assertSee(now()->format('d/m/Y H:i'));
+                    $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
                 }
             }
         }

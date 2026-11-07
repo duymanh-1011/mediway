@@ -122,11 +122,11 @@ class AdminFreezeAuditTest extends TestCase
 
     public function test_result_time_must_not_be_before_execution_start(): void
     {
-        $item = ServiceOrderItem::whereDoesntHave('result')->firstOrFail();
-        $item->update(['service_status_id' => ServiceStatus::where('name', 'PROCESSING')->value('id'), 'started_at' => now()->subHour()]);
+        $item = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail()->items()->whereDoesntHave('result')->firstOrFail();
+        $item->update(['service_status_id' => ServiceStatus::where('name', 'PROCESSING')->value('id'), 'started_at' => now()->addHour()]);
         $this->postJson(route('admin.service-order-items.service-results.store', $item), [
-            'result_summary' => 'Kết quả kiểm thử', 'resulted_at' => '2020-01-01 08:00:00', 'confirm_create' => 1,
-        ])->assertUnprocessable();
+            'result_summary' => 'Kết quả kiểm thử', 'confirm_create' => 1,
+        ])->assertUnprocessable()->assertJsonValidationErrors('service_status_id');
     }
 
     public function test_password_reset_must_leave_a_non_secret_audit_event(): void

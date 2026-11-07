@@ -3,7 +3,7 @@
 @section('title', 'Chi tiết khoản phải thu')
 
 @push('styles')
-    @vite(["resources/css/employee/payments/show.css"])
+    @vite('resources/css/employee-payments.css')
 @endpush
 
 @section('content')

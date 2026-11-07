@@ -247,7 +247,7 @@
         </div>
 
 
-        <div class="card">
+        <div class="card admin-list-panel admin-list-panel--embedded">
 
             <div class="slot-header">
 
@@ -274,9 +274,9 @@
             </div>
 
 
-            <div class="table-wrapper">
+            <div class="table-wrapper admin-list-table-wrap">
 
-                <table class="admin-table">
+                <table class="admin-table admin-list-table">
 
                     <thead>
 
@@ -373,11 +373,7 @@
                                             'admin.appointment-time-slots.destroy',
                                             $slot->id
                                         ) }}"
-                                        onsubmit="
-                                            return confirm(
-                                                'Bạn có chắc muốn xóa khung giờ này? Khung giờ đã có lịch hẹn sẽ không thể xóa.'
-                                            );
-                                        "
+                                        data-confirm="Bạn có chắc muốn xóa khung giờ này? Khung giờ đã có lịch hẹn sẽ không thể xóa."
                                     >
 
                                         @csrf

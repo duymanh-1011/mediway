@@ -95,11 +95,11 @@
 
             <div class="filter-group admin-filter-field">
 
-                <label>Tìm kiếm</label>
+                <label for="appointment-filter-keyword">Tìm kiếm</label>
 
                 <input
                     type="text"
-                    name="keyword"
+                    id="appointment-filter-keyword" name="keyword"
                     class="form-control"
                     value="{{ $keyword }}"
                     placeholder="Mã lịch, bệnh nhân, bác sĩ..."
@@ -111,11 +111,11 @@
 
             <div class="filter-group admin-filter-field">
 
-                <label>Ngày khám</label>
+                <label for="appointment-filter-appointment_date">Ngày khám</label>
 
                 <input
                     type="date"
-                    name="appointment_date"
+                    id="appointment-filter-appointment_date" name="appointment_date"
                     class="form-control"
                     value="{{ $appointmentDate }}"
                 >
@@ -126,10 +126,10 @@
 
             <div class="filter-group admin-filter-field">
 
-                <label>Trạng thái</label>
+                <label for="appointment-filter-appointment_status_id">Trạng thái</label>
 
                 <select
-                    name="appointment_status_id"
+                    id="appointment-filter-appointment_status_id" name="appointment_status_id"
                     class="form-control"
                 >
 
@@ -169,10 +169,10 @@
 
             <div class="filter-group admin-filter-field">
 
-                <label>Bác sĩ</label>
+                <label for="appointment-filter-doctor_id">Bác sĩ</label>
 
                 <select
-                    name="doctor_id"
+                    id="appointment-filter-doctor_id" name="doctor_id"
                     class="form-control"
                 >
 
@@ -207,10 +207,10 @@
 
             <div class="filter-group admin-filter-field">
 
-                <label>Chuyên khoa</label>
+                <label for="appointment-filter-specialty_id">Chuyên khoa</label>
 
                 <select
-                    name="specialty_id"
+                    id="appointment-filter-specialty_id" name="specialty_id"
                     class="form-control"
                 >
 
@@ -241,10 +241,10 @@
 
             <div class="filter-group admin-filter-field">
 
-                <label>Phòng khám</label>
+                <label for="appointment-filter-examination_room_id">Phòng khám</label>
 
                 <select
-                    name="examination_room_id"
+                    id="appointment-filter-examination_room_id" name="examination_room_id"
                     class="form-control"
                 >
 
@@ -291,13 +291,13 @@
     @endcomponent
 
 
-    <div class="card">
+    <div class="card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách lịch hẹn'])
 
 
-        <div class="table-wrapper">
+        <div class="table-wrapper admin-list-table-wrap">
 
-            <table class="admin-table">
+            <table class="admin-table admin-list-table" data-mobile-records>
 
                 <thead>
 
@@ -442,12 +442,7 @@
             </table>
 
         </div>
-
-
-        <div class="pagination-wrapper">
-            {{ $appointments->links() }}
-        </div>
-
+        @include('admin.layouts.partials.list-footer', ['rows' => $appointments, 'recordLabel' => 'lịch hẹn'])
     </div>
 
 @endsection

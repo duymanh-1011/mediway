@@ -61,7 +61,7 @@
 
                 <button type="submit"
                         class="admin-btn admin-btn-primary"
-                        onclick="return confirm('Xác nhận lưu thay đổi hồ sơ bác sĩ?');">Cập nhật</button>
+                        data-confirm="Xác nhận lưu thay đổi hồ sơ bác sĩ?">Cập nhật</button>
             </div>
         </form>
     </div>

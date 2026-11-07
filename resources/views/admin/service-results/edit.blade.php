@@ -366,32 +366,12 @@
 
                         <div class="result-form-group">
 
-                            <label for="resulted_at">
-                                Thời gian trả kết quả
-                            </label>
-
-                            <input
-                                id="resulted_at"
-                                type="datetime-local"
-                                name="resulted_at"
-                                class="result-control"
-                                value="{{ old(
-                                    'resulted_at',
-                                    $result->resulted_at
-                                        ? $result->resulted_at->format(
-                                            'Y-m-d\TH:i'
-                                        )
-                                        : ''
-                                ) }}"
-                            >
-
-                            @error('resulted_at')
-
-                                <div class="result-field-error">
-                                    {{ \App\Models\AdminDisplay::text($message) }}
-                                </div>
-
-                            @enderror
+                            @if ($serviceStatus?->name === 'PROCESSING')
+                                <p>Thời điểm trả kết quả và hoàn tất dịch vụ được ghi tự động khi bạn xác nhận.</p>
+                            @else
+                                <p>Thời điểm trả kết quả</p>
+                                <strong>{{ $result->resulted_at?->format('d/m/Y H:i:s') ?? 'Chưa ghi nhận' }}</strong>
+                            @endif
 
                         </div>
 
@@ -452,7 +432,9 @@
                     >
 
                     <span>
-                        Tôi xác nhận muốn cập nhật kết quả dịch vụ này.
+                        {{ $serviceStatus?->name === 'PROCESSING'
+                            ? 'Tôi xác nhận kết quả trên là đúng và đồng ý hoàn tất dịch vụ.'
+                            : 'Tôi xác nhận muốn cập nhật kết quả dịch vụ này.' }}
                     </span>
 
                 </label>
@@ -473,7 +455,7 @@
                 <button
                     type="submit"
                     class="admin-btn admin-btn-primary"
-                >Cập nhật</button>
+                >{{ $serviceStatus?->name === 'PROCESSING' ? 'Xác nhận và hoàn tất' : 'Cập nhật' }}</button>
 
             </div>
 

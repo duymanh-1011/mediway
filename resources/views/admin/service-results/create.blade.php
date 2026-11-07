@@ -300,21 +300,7 @@
 
                         <div class="form-group">
 
-                            <label for="resulted_at">
-                                Thời gian trả kết quả
-                            </label>
-
-                            <input
-                                id="resulted_at"
-                                type="datetime-local"
-                                name="resulted_at"
-                                class="form-control"
-                                value="{{ old(
-                                    'resulted_at',
-                                    now()->format('Y-m-d\TH:i')
-                                ) }}"
-                            >
-@error('resulted_at')<div class="field-error">{{ $message }}</div>@enderror
+                            <p>Thời điểm trả kết quả và hoàn tất dịch vụ được ghi tự động khi bạn xác nhận.</p>
 
                         </div>
 
@@ -357,7 +343,7 @@
 
                     <span>
                         Tôi xác nhận thông tin kết quả trên là đúng
-                        và đồng ý lưu vào hồ sơ dịch vụ.
+                        và đồng ý hoàn tất dịch vụ.
                     </span>
 
                 </label>
@@ -378,7 +364,7 @@
                 <button
                     type="submit"
                     class="admin-btn admin-btn-primary"
-                >Lưu</button>
+                >Xác nhận và hoàn tất</button>
 
             </div>
 

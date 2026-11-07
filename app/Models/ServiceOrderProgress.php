@@ -2,11 +2,70 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 final class ServiceOrderProgress
 {
+    /** The caller holds the visit and item locks in the same transaction. */
+    public function completeAdminItem(Request $request, ServiceOrderItem $item, CarbonInterface $completedAt): void
+    {
+        $current = ServiceStatus::whereKey($item->service_status_id)->lockForUpdate()->firstOrFail();
+        if ($current->name !== 'PROCESSING' || ! $current->allows_transition) {
+            throw ValidationException::withMessages(['service_status_id' => 'Trạng thái hiện tại không cho phép hoàn tất dịch vụ.']);
+        }
+        if ($item->started_at && $completedAt->lt($item->started_at)) {
+            throw ValidationException::withMessages(['service_status_id' => 'Thời điểm hoàn tất dịch vụ không được trước thời điểm bắt đầu.']);
+        }
+
+        $completed = ServiceStatus::where('name', 'COMPLETED')->where('is_active', true)->first();
+        if (! $completed) {
+            throw ValidationException::withMessages(['service_status_id' => 'Chưa có trạng thái “Đã hoàn thành” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái dịch vụ.']);
+        }
+
+        $before = [
+            'service_status_id' => $current->id,
+            'service_status' => $current->name,
+            'started_at' => $item->started_at?->toDateTimeString(),
+            'completed_at' => $item->completed_at?->toDateTimeString(),
+        ];
+        $item->update(['service_status_id' => $completed->id, 'completed_at' => $completedAt]);
+        $this->auditItemTransition($request, $item, $before, [
+            'service_status_id' => $completed->id,
+            'service_status' => $completed->name,
+            'started_at' => $before['started_at'],
+            'completed_at' => $completedAt->format('Y-m-d H:i:s'),
+        ], 'Hoàn tất dịch vụ');
+
+        try {
+            $this->synchronize($item->service_order_id);
+        } catch (\UnexpectedValueException $exception) {
+            throw ValidationException::withMessages(['service_status_id' => $exception->getMessage()]);
+        }
+    }
+
+    public function auditItemTransition(Request $request, ServiceOrderItem $item, array $before, array $after, string $action): void
+    {
+        $serviceCode = $item->medicalService?->service_code;
+        $orderCode = $item->serviceOrder?->service_order_code;
+        AuditLog::create([
+            'user_id' => $request->user()?->id,
+            'role_name_snapshot' => $request->user()?->role?->name,
+            'action' => 'STATUS_CHANGE',
+            'entity_type' => 'service_order_items',
+            'entity_id' => $item->id,
+            'old_values' => $before,
+            'new_values' => $after,
+            'description' => $action.($serviceCode ? ' '.$serviceCode : '').($orderCode ? ' của phiếu '.$orderCode : '').'.',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'performed_at' => now(),
+        ]);
+    }
+
     public function returnQueueMessage(int $medicalVisitId): string
     {
         $remaining = ServiceOrderItem::whereHas('serviceOrder', fn (Builder $query): Builder => $query->where('medical_visit_id', $medicalVisitId))
@@ -56,7 +115,7 @@ final class ServiceOrderProgress
 
             $waitingStatus = QueueStatus::where('name', 'WAITING')->where('is_active', true)->first();
             if (! $waitingStatus) {
-                throw new \RuntimeException('Chưa có trạng thái “Đang chờ” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái hàng đợi.');
+                throw new \UnexpectedValueException('Chưa có trạng thái “Đang chờ” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái hàng đợi.');
             }
             ExaminationRoom::whereKey($visit->examination_room_id)->lockForUpdate()->firstOrFail();
             $lastNumber = ExaminationRoomQueue::whereDate('queued_at', now()->toDateString())

@@ -3,7 +3,7 @@
     $editing = isset($employee);
     $detail = $editing ? $employee->detail : null;
     $employeeTypeValue = old('employee_type', $detail?->employee_type);
-    $employeeTypeValue = is_string($employeeTypeValue) ? \App\Models\AdminDisplay::employeeTypeCode($employeeTypeValue) : '';
+    $employeeTypeValue = is_string($employeeTypeValue) ? \App\Support\EmployeeAccess::typeCode(\App\Models\AdminDisplay::employeeTypeCode($employeeTypeValue)) : '';
 
     $selectedUserId = old('user_id', '');
 

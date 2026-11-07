@@ -393,7 +393,7 @@
              CHỈ ĐỊNH GẦN ĐÂY
         ====================================================== --}}
 
-        <div class="card">
+        <div class="card admin-list-panel admin-list-panel--embedded">
 
             <div class="section-heading">
 
@@ -413,9 +413,9 @@
             </div>
 
 
-            <div class="table-wrapper">
+            <div class="table-wrapper admin-list-table-wrap">
 
-                <table class="admin-table">
+                <table class="admin-table admin-list-table">
 
                     <thead>
 

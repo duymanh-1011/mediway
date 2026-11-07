@@ -12,10 +12,10 @@
         <div><dt>Lượt khám</dt><dd>{{ $appointment->medicalVisit?->visit_code ?? 'Chưa có lượt khám' }}</dd></div><div><dt>Thời gian tiếp nhận</dt><dd>{{ $appointment->medicalVisit?->checked_in_at?->format('H:i d/m/Y') ?? 'Chưa tiếp nhận' }}</dd></div></dl>
     </section>
     @if (! $appointment->medicalVisit && $appointment->appointmentStatus?->name === 'BOOKED' && ! $appointment->receptionUnavailableReason())
-        <form class="employee-card" method="post" action="{{ route('employee.appointments.check-in', $appointment) }}" data-reception-form>@csrf
+        <form class="employee-card" method="post" action="{{ route('employee.appointments.check-in', $appointment) }}">@csrf
             <p>Vui lòng xác nhận đúng bệnh nhân đã đến. Sau tiếp nhận, bệnh nhân thanh toán phí khám trước khi được cấp số thứ tự.</p>
             <label><input type="checkbox" name="confirm_reception" value="1" required> Tôi xác nhận thông tin tiếp nhận chính xác.</label>
-            <button class="portal-btn portal-btn--primary" type="submit" data-reception-submit>Xác nhận tiếp nhận</button>
+            <button class="portal-btn portal-btn--primary" type="submit" data-pending-label="Đang tiếp nhận…">Xác nhận tiếp nhận</button>
         </form>
     @elseif (! $appointment->medicalVisit && $appointment->appointmentStatus?->name === 'BOOKED')
         <div class="portal-alert portal-alert--info">{{ $appointment->receptionUnavailableReason() }}</div>

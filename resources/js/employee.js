@@ -1,3 +1,7 @@
+import { initializeResponsiveTables } from './responsive-tables.js';
+
+initializeResponsiveTables('.f08 table[data-mobile-records]');
+
 const menu = document.querySelector('.employee-menu');
 if (menu) {
     const wide = window.matchMedia('(min-width: 901px)');
@@ -5,17 +9,19 @@ if (menu) {
     wide.addEventListener('change', (event) => { menu.open = event.matches; });
 }
 
-const receptionForm = document.querySelector('[data-reception-form]');
-const receptionButton = receptionForm?.querySelector('[data-reception-submit]');
-receptionForm?.addEventListener('submit', () => {
-    if (!receptionButton) return;
-    receptionButton.disabled = true;
-    receptionButton.textContent = 'Đang tiếp nhận…';
-});
-window.addEventListener('pageshow', () => {
-    if (!receptionButton) return;
-    receptionButton.disabled = false;
-    receptionButton.textContent = 'Xác nhận tiếp nhận';
+document.querySelector('[data-f08-print]')?.addEventListener('click', () => window.print());
+
+document.querySelectorAll('.paper table').forEach((table) => {
+    let region = table.closest('.medicine-table-wrap, .ms-table-wrap');
+    if (!region) {
+        region = document.createElement('div');
+        region.className = 'receipt-table-scroll';
+        table.before(region);
+        region.append(table);
+    }
+    region.tabIndex = 0;
+    region.setAttribute('role', 'region');
+    region.setAttribute('aria-label', 'Bảng chi tiết phiếu thu, có thể cuộn ngang');
 });
 
 // Thêm hoặc xóa dòng chỉ số; đánh số lại để máy chủ nhận đúng danh sách.

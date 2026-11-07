@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    public function run(): void
+    public function run(bool $includePracticeData = false): void
     {
         $users = [
             ['business_code' => 'QT000001', 'phone' => '0901000001', 'role' => 'Administrator'],
@@ -28,6 +28,19 @@ class UserSeeder extends Seeder
             ['business_code' => 'NV000003', 'phone' => '0904000003', 'role' => 'Employee'],
             ['business_code' => 'NV000004', 'phone' => '0904000004', 'role' => 'Employee'],
         ];
+
+        if ($includePracticeData) {
+            $users = [...$users,
+                ['business_code' => 'BN000006', 'phone' => '0902000006', 'role' => 'Patient'],
+                ['business_code' => 'BN000007', 'phone' => '0902000007', 'role' => 'Patient'],
+                ['business_code' => 'BN000008', 'phone' => '0902000008', 'role' => 'Patient'],
+                ['business_code' => 'BN000009', 'phone' => '0902000009', 'role' => 'Patient'],
+                ['business_code' => 'BN000010', 'phone' => '0902000010', 'role' => 'Patient'],
+                ['business_code' => 'BS000004', 'phone' => '0903000004', 'role' => 'Doctor'],
+                ['business_code' => 'BS000005', 'phone' => '0903000005', 'role' => 'Doctor'],
+                ['business_code' => 'BS000006', 'phone' => '0903000006', 'role' => 'Doctor'],
+            ];
+        }
 
         foreach ($users as $user) {
             $roleId = DB::table('roles')

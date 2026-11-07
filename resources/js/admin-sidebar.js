@@ -30,11 +30,7 @@ export function initializeAdminSidebar(doc = document, win = window) {
         toggle.title = label;
         backdrop.hidden = !media.matches || !open;
         if (persist && !media.matches) save('mediway_sidebar_state', open ? 'open' : 'closed');
-        if (moveFocus && media.matches && open) {
-            const focusDrawer = () => { if (open && media.matches) sidebar.querySelector('[data-sidebar-close]').focus(); };
-            if (win.requestAnimationFrame) win.requestAnimationFrame(focusDrawer);
-            else focusDrawer();
-        }
+        if (moveFocus && media.matches && open) sidebar.querySelector('[data-sidebar-close]').focus();
     };
     toggle.addEventListener('click', () => setOpen(!open, true, true));
     doc.querySelectorAll('[data-sidebar-close]').forEach((button) => button.addEventListener('click', () => setOpen(false, true)));
@@ -51,6 +47,7 @@ export function initializeAdminSidebar(doc = document, win = window) {
                 .filter((element) => element.getClientRects().length > 0);
             const first = controls[0], last = controls.at(-1);
             if (!first) { event.preventDefault(); sidebar.focus(); }
+            else if (!sidebar.contains(doc.activeElement)) { event.preventDefault(); (event.shiftKey ? last : first).focus(); }
             else if (event.shiftKey && doc.activeElement === first) { event.preventDefault(); last.focus(); }
             else if (!event.shiftKey && doc.activeElement === last) { event.preventDefault(); first.focus(); }
         }

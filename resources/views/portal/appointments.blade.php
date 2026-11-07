@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{{ asset('css/patient-appointments.css') }}">
 <section class="appointment-page">
     <div class="portal-shell">
-        <a class="appointment-back" href="{{ route('patient.home') }}"><span aria-hidden="true">←</span> Quay lại tài khoản</a>
+        <a class="appointment-back portal-back" href="{{ route('patient.home') }}"><span aria-hidden="true">←</span> Quay lại tài khoản</a>
         <header class="appointment-heading">
             <div><p class="portal-eyebrow">TÀI KHOẢN BỆNH NHÂN</p><h1>Lịch khám của bạn</h1><p>Theo dõi thông tin lịch hẹn tại Mediway.</p></div>
             <div class="appointment-actions"><x-portal.button variant="primary" :href="route('patient.doctors.index')">Đặt lịch khám</x-portal.button><x-portal.button variant="secondary" :href="route('patient.appointments.index')">Xem tất cả lịch hẹn</x-portal.button></div>

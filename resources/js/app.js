@@ -3,16 +3,15 @@ import { validationMessage } from './admin-validation';
 import { initializeAppointmentBooking } from './appointment-booking';
 import { initializeDoctorSpecialtyPairs } from './doctor-specialty';
 import { initializeAdminSidebar } from './admin-sidebar';
+import { initializeResponsiveTables } from './responsive-tables';
+import { initializeConfirmations } from './admin-confirm';
 
 const initializeAdmin = () => {
     initializeAdminSidebar();
     initializeLookups();
     new MutationObserver(() => initializeLookups()).observe(document.body, { childList: true, subtree: true });
-    document.querySelectorAll('form[data-confirm]').forEach((form) => {
-        form.addEventListener('submit', (event) => {
-            if (!window.confirm(form.dataset.confirm)) event.preventDefault();
-        });
-    });
+    initializeResponsiveTables('.admin-content table');
+    initializeConfirmations();
 
     document.querySelectorAll('.admin-content form, .login-card form').forEach((form) => {
         if (form.method.toLowerCase() === 'get') return;

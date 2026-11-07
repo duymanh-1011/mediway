@@ -127,7 +127,7 @@ class ServiceOrderController extends Controller
             'status',
         ]);
 
-        if (! in_array($visit->status?->name, ['IN_EXAMINATION', 'RETURNING'], true)) {
+        if (! $visit->canOrderServices()) {
             return redirect()
                 ->route(
                     'admin.visits.show',
@@ -135,19 +135,7 @@ class ServiceOrderController extends Controller
                 )
                 ->with(
                     'error',
-                    'Chỉ được chỉ định dịch vụ khi đang khám hoặc đang khám lại sau dịch vụ.'
-                );
-        }
-
-        if (! $visit->doctor_id) {
-            return redirect()
-                ->route(
-                    'admin.visits.show',
-                    $visit
-                )
-                ->with(
-                    'error',
-                    'Lượt khám chưa có bác sĩ phụ trách.'
+                    'Cần có bác sĩ phụ trách và lượt khám đang ở giai đoạn cho phép chỉ định dịch vụ.'
                 );
         }
 
@@ -182,7 +170,8 @@ class ServiceOrderController extends Controller
             'status',
         ]);
 
-        if (! in_array($visit->status?->name, ['IN_EXAMINATION', 'RETURNING'], true)) {
+        $visit->assertNotBeforeAppointmentDay();
+        if (! $visit->canOrderServices()) {
             return redirect()
                 ->route(
                     'admin.visits.show',
@@ -190,19 +179,7 @@ class ServiceOrderController extends Controller
                 )
                 ->with(
                     'error',
-                    'Chỉ được chỉ định dịch vụ khi đang khám hoặc đang khám lại sau dịch vụ.'
-                );
-        }
-
-        if (! $visit->doctor_id) {
-            return redirect()
-                ->route(
-                    'admin.visits.show',
-                    $visit
-                )
-                ->with(
-                    'error',
-                    'Lượt khám chưa có bác sĩ phụ trách.'
+                    'Cần có bác sĩ phụ trách và lượt khám đang ở giai đoạn cho phép chỉ định dịch vụ.'
                 );
         }
 
@@ -282,7 +259,7 @@ class ServiceOrderController extends Controller
             ) {
                 $visit = MedicalVisit::with('status')->whereKey($visit->id)->lockForUpdate()->firstOrFail();
                 $visit->assertNotBeforeAppointmentDay();
-                if (! in_array($visit->status?->name, ['IN_EXAMINATION', 'RETURNING'], true) || ! $visit->status?->allows_transition) {
+                if (! $visit->canOrderServices()) {
                     throw ValidationException::withMessages(['medical_service_ids' => 'Lượt khám không còn ở giai đoạn cho phép chỉ định dịch vụ.']);
                 }
                 $waitingForServiceStatus = $visit->transitionStatus('WAITING_FOR_SERVICE');
@@ -476,16 +453,7 @@ class ServiceOrderController extends Controller
                 | Chuyển lượt khám sang chờ dịch vụ
                 |--------------------------------------------------------------------------
                 */
-                if (
-                    in_array(
-                        $visit->status?->name,
-                        [
-                            'IN_EXAMINATION',
-                            'RETURNING',
-                        ],
-                        true
-                    )
-                ) {
+                if ($visit->visit_status_id !== $waitingForServiceStatus->id) {
                     $visit->update([
                         'visit_status_id' => $waitingForServiceStatus->id,
                     ]);

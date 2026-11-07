@@ -164,9 +164,9 @@
 
 
         {{-- Result list --}}
-        <div class="result-card">
+        <div class="result-card admin-list-panel">
 
-            <div class="result-card-header result-list-header">
+            <div class="result-card-header result-list-header admin-list-heading">
 
                 <div>
 
@@ -194,9 +194,9 @@
             </div>
 
 
-            <div class="result-table-wrapper">
+            <div class="result-table-wrapper admin-list-table-wrap">
 
-                <table class="result-table">
+                <table class="result-table admin-list-table">
 
                     <thead>
 
@@ -438,58 +438,8 @@
                 </table>
 
             </div>
-
-
-            {{-- Pagination --}}
-            @if ($results->hasPages())
-
-                <div class="result-pagination">
-
-                    <div class="result-pagination-info">
-
-                        Trang
-
-                        <strong>
-                            {{ $results->currentPage() }}
-                        </strong>
-
-                        /
-
-                        {{ $results->lastPage() }}
-
-                    </div>
-
-
-                    <div class="result-pagination-buttons">
-
-                        @if ($results->onFirstPage())
-
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-
-                        @else
-
-                            <a href="{{ $results->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
-
-                        @endif
-
-
-                        @if ($results->hasMorePages())
-
-                            <a href="{{ $results->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
-
-                        @else
-
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-
-                        @endif
-
-                    </div>
-
-                </div>
-
-            @endif
-
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $results])
+    </div>
 
 
         {{-- Policy --}}

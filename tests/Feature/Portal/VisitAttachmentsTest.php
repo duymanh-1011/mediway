@@ -45,20 +45,13 @@ class VisitAttachmentsTest extends TestCase
         $secondUrl = route('patient.results.document', [$second->id, 'result_pdf']);
         $imageUrl = route('patient.results.document', [$second->id, 'result_image']);
         $prescriptionUrl = route('patient.prescriptions.document', $prescription->id);
-        $html = $this->actingAs($patient)->get(route('patient.results'))->assertOk()->assertDontSee('Tài liệu trong hồ sơ')->getContent();
-        $document = new \DOMDocument;
-        $previous = libxml_use_internal_errors(true);
-        $document->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NONET);
-        libxml_clear_errors();
-        libxml_use_internal_errors($previous);
-        $xpath = new \DOMXPath($document);
-        $this->assertSame(1, $xpath->query('//article[@data-visit-id="'.$firstVisit.'"]//a[@href="'.$firstUrl.'"]')->length);
-        $this->assertSame(0, $xpath->query('//article[@data-visit-id="'.$secondVisit.'"]//a[@href="'.$firstUrl.'"]')->length);
-        $this->assertSame(1, $xpath->query('//article[@data-visit-id="'.$secondVisit.'"]//a[@href="'.$secondUrl.'"]')->length);
-        $this->assertSame(0, $xpath->query('//article[@data-visit-id="'.$firstVisit.'"]//a[@href="'.$secondUrl.'"]')->length);
-        $this->assertSame(1, $xpath->query('//article[@data-visit-id="'.$secondVisit.'"]//a[@href="'.$imageUrl.'"]')->length);
-        $this->assertSame(0, $xpath->query('//article[@data-visit-id="'.$firstVisit.'"]//a[@href="'.$imageUrl.'"]')->length);
-        $this->assertSame(1, $xpath->query('//article[@data-visit-id="'.$firstVisit.'"]//a[@href="'.$prescriptionUrl.'"]')->length);
+        $this->actingAs($patient)->get(route('patient.results'))->assertOk()
+            ->assertSee(route('patient.results.visit', $firstVisit))->assertSee(route('patient.results.visit', $secondVisit))
+            ->assertDontSee($firstUrl)->assertDontSee($secondUrl);
+        $this->get(route('patient.results.visit', ['visit' => $firstVisit, 'tab' => 'giay-to']))->assertOk()
+            ->assertSee($firstUrl)->assertSee($prescriptionUrl)->assertDontSee($secondUrl)->assertDontSee($imageUrl);
+        $this->get(route('patient.results.visit', ['visit' => $secondVisit, 'tab' => 'giay-to']))->assertOk()
+            ->assertSee($secondUrl)->assertSee($imageUrl)->assertDontSee($firstUrl)->assertDontSee($prescriptionUrl);
         $this->get($firstUrl)->assertOk();
         $this->actingAs($other)->get($firstUrl)->assertNotFound();
         $this->get($imageUrl)->assertNotFound();
@@ -75,8 +68,9 @@ class VisitAttachmentsTest extends TestCase
         Storage::disk('local')->put($path, "%PDF-1.4\n%%EOF");
         $patient->patient->detail->update(['profile_pdf_path' => $path]);
         $url = route('patient.documents.show', 'profile-pdf');
-        $this->actingAs($patient)->get(route('patient.results'))->assertOk()->assertDontSee($url)
-            ->assertSee('Lượt khám này chưa có tệp đính kèm.');
+        $visit = $patient->patient->medicalVisits()->firstOrFail();
+        $this->actingAs($patient)->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'giay-to']))->assertOk()
+            ->assertDontSee($url)->assertSee('Lượt khám này chưa có tệp đính kèm.');
         $this->get(route('patient.profile.show'))->assertOk()->assertSee($url)->assertSee('Giấy tờ cá nhân');
         $this->get($url)->assertOk();
         $other = User::where('business_code', 'BN000002')->firstOrFail();

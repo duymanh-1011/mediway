@@ -70,3 +70,8 @@ body.employee-body .employee-profile .portal-btn{display:inline-flex;align-items
 
 /* Bảng nhập chỉ số: tách từng giá trị và tự xếp dọc trên màn hình nhỏ. */
 .tech-parameter-editor{min-width:0;margin:0;padding:18px;border:1px solid #dfe8f2;border-radius:12px}.tech-parameter-editor legend{padding:0 6px;color:#243c57;font-weight:700}.tech-parameter-editor>p{margin:0 0 14px}.tech-parameter-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;align-items:end;gap:10px;margin-bottom:12px}.tech-parameter-row .portal-btn{min-height:42px}.tech-parameter-editor>small{display:block;margin-top:8px;color:#64748b}.tech-parameters{display:grid;gap:8px}.tech-parameters div{display:flex;justify-content:space-between;gap:16px;padding:10px 12px;background:#f6f9fd;border-radius:8px}.tech-parameters dt{font-weight:600}.tech-parameters dd{margin:0;text-align:right;overflow-wrap:anywhere}@media(max-width:700px){.tech-parameter-row{grid-template-columns:1fr 1fr}.tech-parameter-row label:first-child{grid-column:1/-1}.tech-parameter-row button{grid-column:1/-1;justify-self:start}}@media(max-width:380px){.tech-parameter-row{grid-template-columns:1fr}.tech-parameter-row label:first-child{grid-column:auto}}
+
+/* Màu và chữ thể hiện hai trạng thái độc lập của dịch vụ và khoản thu. */
+.tech-status{display:inline-block;max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.45}
+.tech-status--waiting{background:#fff1db;color:#85420b}.tech-status--paid{background:#e8f1ff;color:#164a9d}.tech-status--processing{background:#f1eaff;color:#6236a3}.tech-status--completed{background:#e3f6eb;color:#17613d}.tech-status--cancelled{background:#fdebec;color:#942d39}.tech-status--neutral{background:#eef2f6;color:#3d5065}
+.tech-header .tech-status{margin-top:8px}

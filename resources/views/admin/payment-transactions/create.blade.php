@@ -279,14 +279,14 @@
                     </option>
 
                     <option
-                        value="QR"
+                        value="QR" disabled
                         @selected(
                             old('payment_method')
                             ===
                             'QR'
                         )
                     >
-                        QR
+                        QR — chưa hỗ trợ xác minh tiền về
                     </option>
 
                 </select>

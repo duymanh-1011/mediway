@@ -56,7 +56,7 @@
                 @foreach ($navigation as [$label, $type, $routeName, $icon])
                     @if ($employeeType === $type && \Illuminate\Support\Facades\Route::has($routeName))
                         <a class="employee-nav__item {{ ($activeSection[2] ?? null) === $routeName ? 'is-active' : '' }}" href="{{ route($routeName) }}" @if(request()->routeIs($routeName)) aria-current="page" @elseif(($activeSection[2] ?? null) === $routeName) aria-current="location" @endif><x-employee-icon :name="$icon" /><span>{{ $label }}</span></a>
-                    @elseif ($employeeType !== \App\Support\EmployeeAccess::SERVICE_TECHNICIAN)
+                    @else
                         <div class="employee-nav__item employee-nav__item--disabled" aria-label="{{ $label }}: {{ $employeeType === $type ? 'Chưa tích hợp' : 'Không có quyền' }}"><x-employee-icon :name="$icon" /><span>{{ $label }}<small>{{ $employeeType === $type ? 'Chưa tích hợp' : 'Không có quyền' }}</small></span><x-employee-icon name="lock" /></div>
                     @endif
                 @endforeach

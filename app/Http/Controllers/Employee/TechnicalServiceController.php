@@ -8,6 +8,7 @@ use App\Models\ClinicalDocument;
 use App\Models\MedicalVisit;
 use App\Models\Employee;
 use App\Models\EmployeeDetail;
+use App\Models\MedicalService;
 use App\Models\Payable;
 use App\Models\User;
 use App\Models\ServiceGroup;
@@ -25,6 +26,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TechnicalServiceController extends Controller
 {
+    private const UNGROUPED = 'chua-phan-nhom';
+
     private function technician(User $user): Employee
     {
         $employee = app(EmployeeAccess::class)->employee($user);
@@ -55,7 +58,7 @@ class TechnicalServiceController extends Controller
     {
         return ServiceOrderItem::query()
             ->when($groupCodes, fn ($query) => $query->whereHas('medicalService.serviceGroups', fn ($groups) => $groups->whereIn('service_group_code', $groupCodes)))
-            ->where(fn ($query) => $query->whereNull('performed_by_employee_id')->orWhere('performed_by_employee_id', $employee->id));
+            ->visibleToTechnician($employee);
     }
 
     private function listQuery(Request $request): array
@@ -89,24 +92,54 @@ class TechnicalServiceController extends Controller
     {
         $employee = $this->technician($request->user());
         $shortcutGroups = $this->shortcutGroups($request);
-        $title = 'Thực hiện dịch vụ';
-        $routePrefix = $this->routePrefix($request);
+        $withCurrentOrders = fn ($services) => $services->withCount([
+            'serviceOrderItems as current_order_count' => fn (Builder $items) => $items->visibleToTechnician($employee)->unresolved()
+                ->whereDoesntHave('serviceOrder', fn ($order) => $order->where('status', 'CANCELLED')),
+        ])->orderBy('medical_services.display_order')->orderBy('medical_services.name');
+
+        $groups = ServiceGroup::query()
+            ->when($shortcutGroups, fn ($groups) => $groups->whereIn('service_group_code', $shortcutGroups))
+            ->with(['medicalServices' => $withCurrentOrders])
+            ->orderBy('display_order')->orderBy('name')->get()
+            ->map(fn (ServiceGroup $group) => [
+                'code' => $group->service_group_code, 'name' => $group->name, 'services' => $group->medicalServices,
+            ]);
+
+        if (! $shortcutGroups) {
+            $ungrouped = $withCurrentOrders(MedicalService::whereDoesntHave('serviceGroups'))->get();
+            if ($ungrouped->isNotEmpty()) {
+                $groups->push(['code' => self::UNGROUPED, 'name' => 'Chưa phân nhóm', 'services' => $ungrouped]);
+            }
+        }
+
+        $openGroup = $request->query('group');
+        if ($openGroup === null && count($shortcutGroups) === 1) {
+            $openGroup = $shortcutGroups[0];
+        }
+
+        return view('employee.technical.index', compact('employee', 'groups', 'openGroup', 'shortcutGroups'));
+    }
+
+    public function orders(Request $request, string $group, string $service)
+    {
+        $employee = $this->technician($request->user());
+        $groupRecord = $group === self::UNGROUPED ? null : ServiceGroup::where('service_group_code', $group)->firstOrFail();
+        $group = $groupRecord?->service_group_code ?? self::UNGROUPED;
+        $groupName = $groupRecord?->name ?? 'Chưa phân nhóm';
+        $service = ($groupRecord?->medicalServices() ?? MedicalService::whereDoesntHave('serviceGroups'))
+            ->where('medical_services.service_code', $service)->firstOrFail();
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
             'date' => ['nullable', 'date_format:Y-m-d'],
             'status' => ['nullable', 'in:PENDING,READY,WAITING_PAYMENT,PROCESSING,COMPLETED,CANCELLED'],
             'assignee' => ['nullable', 'in:mine,unassigned'],
-            'group' => ['nullable', 'string', 'max:50', 'exists:service_groups,service_group_code'],
         ]);
-        $groups = $shortcutGroups ? collect() : ServiceGroup::orderBy('display_order')->orderBy('name')->get(['service_group_code', 'name']);
-        $groupCodes = $shortcutGroups ?: array_filter([$filters['group'] ?? null]);
-        $items = $this->scopedItems($employee, $groupCodes)
-            ->with(['medicalService.serviceGroups', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'payable.paymentStatus'])
-            ->when(isset($filters['q']), function (Builder $items) use ($filters) {
-                $keyword = '%'.trim($filters['q']).'%';
+        $items = $service->serviceOrderItems()->visibleToTechnician($employee)
+            ->with(['serviceStatus', 'serviceOrder.medicalVisit.patient', 'payable.paymentStatus'])
+            ->when($filters['q'] ?? null, function (Builder $items, string $search) {
+                $keyword = '%'.trim($search).'%';
                 $items->where(fn (Builder $matches) => $matches
-                    ->whereHas('medicalService', fn ($query) => $query->whereLike('name', $keyword)->orWhereLike('service_code', $keyword))
-                    ->orWhereHas('serviceOrder', fn ($query) => $query->whereLike('service_order_code', $keyword))
+                    ->whereHas('serviceOrder', fn ($query) => $query->whereLike('service_order_code', $keyword))
                     ->orWhereHas('serviceOrder.medicalVisit.patient', fn ($query) => $query->whereLike('full_name', $keyword)->orWhereLike('patient_code', $keyword)));
             })
             ->when(($filters['assignee'] ?? null) === 'mine', fn ($query) => $query->where('performed_by_employee_id', $employee->id))
@@ -114,9 +147,11 @@ class TechnicalServiceController extends Controller
             ->when($filters['date'] ?? null, fn ($q, $date) => $q->whereHas('serviceOrder', fn ($order) => $order->whereDate('ordered_at', $date)))
             ->when($filters['status'] ?? null, fn (Builder $query, string $stage) => $this->filterStage($query, $stage))
             ->orderByDesc('id')->paginate(15)->withQueryString();
-        $listQuery = $this->listQuery($request);
+        $listQuery = ['group' => $group, ...Arr::except($this->listQuery($request), ['group'])];
+        $ordersUrl = route('employee.services.orders', ['group' => $group, 'service' => $service->service_code]);
+        $catalogueUrl = route('employee.services.index', ['group' => $group]).'#nhom-'.rawurlencode($group);
 
-        return view('employee.technical.index', compact('employee', 'title', 'routePrefix', 'items', 'filters', 'groups', 'shortcutGroups', 'listQuery'));
+        return view('employee.technical.orders', compact('employee', 'groupName', 'service', 'items', 'filters', 'listQuery', 'ordersUrl', 'catalogueUrl'));
     }
 
     public function show(Request $request, int $item)
@@ -131,8 +166,19 @@ class TechnicalServiceController extends Controller
         $supportsParameters = $serviceGroups?->contains('service_group_code', 'XN') ?? false;
         $isImaging = $serviceGroups?->contains(fn ($group) => in_array($group->service_group_code, ['CDHA', 'SA'], true)) ?? false;
         $listQuery = $this->listQuery($request);
+        $shortcutGroups = $this->shortcutGroups($request);
+        $backGroup = $serviceGroups?->firstWhere('service_group_code', $listQuery['group'] ?? null)
+            ?? $serviceGroups?->first(fn (ServiceGroup $group) => in_array($group->service_group_code, $shortcutGroups, true))
+            ?? $serviceGroups?->sortBy('display_order')->first();
+        $backUrl = $record->medicalService
+            ? route('employee.services.orders', [
+                'group' => $backGroup?->service_group_code ?? self::UNGROUPED,
+                'service' => $record->medicalService->service_code,
+                ...Arr::except($listQuery, ['group']),
+            ])
+            : route('employee.services.index');
 
-        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'isImaging', 'listQuery'));
+        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'isImaging', 'listQuery', 'backUrl'));
     }
 
     // Giữ khóa tài khoản và lượt khám trước khi nhận hoặc ghi kết quả dịch vụ.

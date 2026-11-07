@@ -16,16 +16,14 @@
     $submittedSummary = old('result_summary', $result?->result_summary);
 @endphp
 <section class="tech-page">
-    <a class="tech-back" href="{{ route($routePrefix.'.index', $listQuery) }}">← Quay lại danh sách chỉ định</a>
+    <a class="portal-btn portal-btn--secondary tech-back" href="{{ $backUrl }}">← Quay lại danh sách chỉ định</a>
 
-    <header class="tech-header">
-        <div>
-            <p class="portal-eyebrow">{{ $record->medicalService?->serviceGroups->pluck('name')->join(' · ') ?: 'CHỈ ĐỊNH DỊCH VỤ' }}</p>
-            <h1>{{ $record->medicalService?->name ?? 'Chi tiết chỉ định' }}</h1>
-            <p>{{ $order?->service_order_code }} @if ($order?->ordered_at) · {{ $order->ordered_at->format('d/m/Y H:i') }} @endif</p>
-        </div>
-        <span class="tech-status" data-stage="{{ $stage }}">{{ \App\Models\ServiceOrderItem::TECHNICAL_STAGES[$stage] ?? 'Chưa cập nhật' }}</span>
-    </header>
+    @include('employee.technical._heading', [
+        'eyebrow' => $record->medicalService?->serviceGroups->pluck('name')->join(' · ') ?: 'CHỈ ĐỊNH DỊCH VỤ',
+        'heading' => $record->medicalService?->name ?? 'Chi tiết chỉ định',
+        'description' => implode(' · ', array_filter([$order?->service_order_code, $order?->ordered_at?->format('d/m/Y H:i')])),
+        'stageLabel' => \App\Models\ServiceOrderItem::TECHNICAL_STAGES[$stage] ?? 'Chưa cập nhật',
+    ])
 
     <section class="tech-panel">
         <h2>Thông tin chỉ định</h2>

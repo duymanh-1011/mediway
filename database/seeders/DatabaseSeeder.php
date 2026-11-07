@@ -62,7 +62,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         if ($includePracticeData) {
-            $this->call(TechnicalServicePracticeSeeder::class);
+            $this->call([EmployeeDemoExpansionSeeder::class, TechnicalServicePracticeSeeder::class]);
         }
     }
 }

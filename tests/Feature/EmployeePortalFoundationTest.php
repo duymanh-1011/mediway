@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\ServiceOrderItem;
 use App\Support\EmployeeAccess;
 use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\EmployeeDemoExpansionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -25,7 +26,7 @@ class EmployeePortalFoundationTest extends TestCase
     {
         $employee = User::where('business_code', 'NV000002')->firstOrFail();
         $this->post(route('patient.login.store'), ['phone' => $employee->phone, 'password' => 'Mediway@123'])->assertRedirect(route('employee.services.index'));
-        $this->get(route('employee.services.index'))->assertOk()->assertSee($employee->employee->full_name)->assertSee('Danh sách chỉ định');
+        $this->get(route('employee.services.index'))->assertOk()->assertSee($employee->employee->full_name)->assertSee('Nhóm dịch vụ');
         $this->post(route('employee.logout'))->assertRedirect(route('public.home'));
         $nurse = User::where('business_code', 'NV000001')->firstOrFail();
         $nurse->employee->detail()->update(['employee_type' => 'NURSE']);
@@ -41,6 +42,32 @@ class EmployeePortalFoundationTest extends TestCase
         $this->assertSame('Lễ tân', $receptionist->department);
         $this->assertSame('CASHIER', $cashier->employee_type);
         $this->assertSame('Thu ngân', $cashier->department);
+    }
+
+    public function test_expanded_demo_accounts_can_log_in_and_reseeding_preserves_existing_records(): void
+    {
+        $this->seed(EmployeeDemoExpansionSeeder::class);
+        $accounts = [
+            'NV000005' => ['RECEPTIONIST', 'employee.home'],
+            'NV000006' => ['CASHIER', 'employee.home'],
+            'NV000007' => ['SERVICE_TECHNICIAN', 'employee.services.index'],
+            'NV000008' => ['SERVICE_TECHNICIAN', 'employee.services.index'],
+        ];
+        foreach ($accounts as $code => [$type, $destination]) {
+            $user = User::where('business_code', $code)->firstOrFail();
+            $this->assertSame($type, $user->employee->detail->employee_type);
+            $this->post(route('patient.login.store'), ['phone' => $user->phone, 'password' => 'Mediway@123'])
+                ->assertRedirect(route($destination));
+            $this->post(route('employee.logout'))->assertRedirect(route('public.home'));
+        }
+        $user->update(['password' => 'MatKhauMauDaDoi@123']);
+        $user->employee->detail()->update(['department' => 'Bộ phận đã đổi']);
+
+        $this->seed(EmployeeDemoExpansionSeeder::class);
+
+        $this->assertSame(8, \App\Models\Employee::count());
+        $this->assertSame('Bộ phận đã đổi', $user->employee->detail()->value('department'));
+        $this->assertTrue(Hash::check('MatKhauMauDaDoi@123', $user->fresh()->password));
     }
 
     public function test_doctor_login_is_only_redirected_when_the_doctor_portal_exists(): void

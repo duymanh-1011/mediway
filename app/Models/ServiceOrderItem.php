@@ -43,6 +43,12 @@ class ServiceOrderItem extends Model
         return $query->whereHas('serviceStatus', fn (Builder $status): Builder => $status->whereNotIn('name', self::RESOLVED_STATUSES));
     }
 
+    public function scopeVisibleToTechnician(Builder $query, Employee $employee): Builder
+    {
+        return $query->where(fn (Builder $items) => $items->whereNull('performed_by_employee_id')
+            ->orWhere('performed_by_employee_id', $employee->id));
+    }
+
     public function canBeCancelled(): bool
     {
         return in_array($this->serviceStatus?->name, ['PENDING', 'CANCELLED'], true)

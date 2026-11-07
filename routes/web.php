@@ -81,11 +81,14 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::put('/mat-khau', [\App\Http\Controllers\Employee\WorkspaceController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.update');
     // Các URL cũ là lối tắt theo nhóm cho cùng màn hình thực hiện dịch vụ.
     foreach (['dich-vu' => 'services', 'xet-nghiem' => 'laboratory', 'chan-doan-hinh-anh' => 'imaging'] as $path => $routeName) {
-        Route::prefix($path)->name($routeName . '.')->group(function () {
+        Route::prefix($path)->name($routeName . '.')->group(function () use ($routeName) {
             $controller = \App\Http\Controllers\Employee\TechnicalServiceController::class;
             $viewPermission = \App\Http\Middleware\EmployeeMiddleware::class . ':services.view';
             $processPermission = \App\Http\Middleware\EmployeeMiddleware::class . ':services.process';
             Route::get('/', [$controller, 'index'])->middleware($viewPermission)->name('index');
+            if ($routeName === 'services') {
+                Route::get('/nhom/{group}/{service}', [$controller, 'orders'])->middleware($viewPermission)->name('orders');
+            }
             Route::get('/{item}', [$controller, 'show'])->whereNumber('item')->middleware($viewPermission)->name('show');
             Route::get('/{item}/tep/{type}', [$controller, 'document'])->whereNumber('item')->where('type', 'pdf|image')->middleware($viewPermission)->name('document');
             Route::post('/{item}/bat-dau', [$controller, 'start'])->whereNumber('item')->middleware($processPermission)->name('start');

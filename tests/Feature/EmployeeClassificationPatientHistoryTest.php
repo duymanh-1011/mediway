@@ -61,7 +61,7 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
 
     public function test_catalog_forms_and_filters_use_one_standard_classification(): void
     {
-        $this->assertSame(['RECEPTIONIST', 'NURSE', 'LAB_TECHNICIAN', 'IMAGING_TECHNICIAN', 'CASHIER', 'SERVICE_TECHNICIAN'], EmployeeType::orderBy('display_order')->pluck('code')->all());
+        $this->assertSame(['RECEPTIONIST', 'NURSE', 'CASHIER', 'SERVICE_TECHNICIAN'], EmployeeType::orderBy('display_order')->pluck('code')->all());
         foreach (['admin.employees.create' => [], 'admin.employees.edit' => [Employee::firstOrFail()]] as $route => $parameters) {
             $xpath = $this->xpath($this->get(route($route, $parameters))->assertOk()->getContent());
             $this->assertCount(1, $xpath->query('//select[@name="employee_type" and @required]'));
@@ -75,12 +75,26 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
         $this->get(route('admin.employees.index', ['employee_type' => 'RECEPTIONIST']))->assertOk()->assertSee('Không tìm thấy nhân viên phù hợp.');
     }
 
-    public function test_admin_filters_and_edits_both_legacy_technicians_as_the_same_type(): void
+    public function test_migration_merges_legacy_technicians_and_admin_lists_one_type(): void
     {
+        $migration = require database_path('migrations/2026_11_07_200000_merge_legacy_technician_types.php');
+        $migration->down();
         $lab = Employee::where('employee_code', 'NV000002')->firstOrFail();
         $imaging = Employee::where('employee_code', 'NV000003')->firstOrFail();
-        $lab->detail()->update(['employee_type' => 'LAB_TECHNICIAN']);
-        $imaging->detail()->update(['employee_type' => 'IMAGING_TECHNICIAN']);
+        $lab->detail()->update(['employee_type' => 'LAB_TECHNICIAN', 'position' => 'Kỹ thuật viên xét nghiệm', 'department' => 'Khoa Xét nghiệm']);
+        $imaging->detail()->update(['employee_type' => 'IMAGING_TECHNICIAN', 'position' => 'Kỹ thuật viên CĐHA', 'department' => 'Khoa tự đặt']);
+        $before = $imaging->detail()->firstOrFail();
+
+        $migration->up();
+        $this->assertSame($before->id, $imaging->detail()->firstOrFail()->id);
+        $this->assertSame('Khoa tự đặt', $imaging->detail()->firstOrFail()->department);
+        $this->assertSame('Dịch vụ y tế', $lab->detail()->firstOrFail()->department);
+        foreach ([$lab, $imaging] as $employee) {
+            $this->assertSame('SERVICE_TECHNICIAN', $employee->detail()->firstOrFail()->employee_type);
+            $this->assertSame('Kỹ thuật viên dịch vụ y tế', $employee->detail()->firstOrFail()->position);
+        }
+        $this->assertDatabaseMissing('employee_types', ['code' => 'LAB_TECHNICIAN']);
+        $this->assertDatabaseMissing('employee_types', ['code' => 'IMAGING_TECHNICIAN']);
 
         $response = $this->get(route('admin.employees.index', ['employee_type' => 'SERVICE_TECHNICIAN']))->assertOk()
             ->assertSee('Kỹ thuật viên dịch vụ y tế');
@@ -91,9 +105,9 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
             'full_name' => $lab->full_name,
             'status' => 'ACTIVE',
             'employee_type' => 'SERVICE_TECHNICIAN',
-            'expected_employee_type' => 'LAB_TECHNICIAN',
+            'expected_employee_type' => 'SERVICE_TECHNICIAN',
         ])->assertSessionHasNoErrors();
-        $this->assertSame('LAB_TECHNICIAN', $lab->detail->fresh()->employee_type);
+        $this->assertSame('SERVICE_TECHNICIAN', $lab->detail->fresh()->employee_type);
     }
 
     public function test_create_and_update_persist_valid_classification_without_expanding_account_role(): void

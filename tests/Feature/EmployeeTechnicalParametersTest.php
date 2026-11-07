@@ -137,6 +137,9 @@ class EmployeeTechnicalParametersTest extends TestCase
 
     public function test_legacy_technician_can_find_and_complete_endoscopy_in_the_shared_workspace(): void
     {
+        // Kiểm tra code mới trên database còn danh mục cũ trong lúc nâng cấp.
+        $migration = require database_path('migrations/2026_11_07_200000_merge_legacy_technician_types.php');
+        $migration->down();
         $item = $this->pendingItem();
         $service = MedicalService::where('service_code', 'DVTDCN002')->firstOrFail();
         $item->update(['medical_service_id' => $service->id]);
@@ -150,9 +153,10 @@ class EmployeeTechnicalParametersTest extends TestCase
         $this->flushSession();
         $technician = User::where('business_code', 'NV000002')->firstOrFail();
         $technician->employee->detail()->update(['employee_type' => 'LAB_TECHNICIAN']);
+        $orders = route('employee.services.orders', ['group' => 'NS', 'service' => $service->service_code]);
         $this->actingAs($technician)
-            ->get(route('employee.services.index', ['group' => 'NS']))->assertOk()->assertSee($url);
-        $this->get(route('employee.services.index', ['group' => 'XN']))->assertOk()->assertDontSee($url);
+            ->get($orders)->assertOk()->assertSee($url);
+        $this->get(route('employee.services.orders', ['group' => 'XN', 'service' => $service->service_code]))->assertNotFound();
         $this->get($url)->assertOk()->assertSee($service->name);
         $this->post(route('employee.services.start', $item->id))->assertSessionHasErrors('service');
 
@@ -167,7 +171,7 @@ class EmployeeTechnicalParametersTest extends TestCase
         $this->flushSession();
         $other = User::where('business_code', 'NV000003')->firstOrFail();
         $other->employee->detail()->update(['employee_type' => 'IMAGING_TECHNICIAN']);
-        $this->actingAs($other)->get(route('employee.services.index'))->assertOk()->assertDontSee($url);
+        $this->actingAs($other)->get($orders)->assertOk()->assertDontSee($url);
         $this->get($url)->assertNotFound();
     }
 
@@ -175,16 +179,26 @@ class EmployeeTechnicalParametersTest extends TestCase
     {
         $order = ServiceOrder::where('service_order_code', 'CD-MAUDV-01')->firstOrFail();
         $endoscopy = $order->items()->whereHas('medicalService', fn ($query) => $query->where('service_code', 'DVNS001'))->sole();
-        $filters = ['q' => 'BN000006', 'group' => 'NS', 'status' => 'READY', 'assignee' => 'unassigned'];
-        $index = route('employee.services.index', $filters);
-        $detail = ['item' => $endoscopy->id, ...$filters];
-        $this->actingAs(User::where('business_code', 'NV000002')->firstOrFail())
-            ->get($index)->assertOk()->assertSee(route('employee.services.show', $detail))->assertSee('Nội soi dạ dày')
+        $filters = ['q' => 'BN000006', 'status' => 'READY', 'assignee' => 'unassigned'];
+        $index = route('employee.services.orders', ['group' => 'NS', 'service' => 'DVNS001', ...$filters]);
+        $detail = ['item' => $endoscopy->id, 'group' => 'NS', ...$filters];
+        $technician = User::where('business_code', 'NV000002')->firstOrFail();
+        $catalogue = $this->actingAs($technician)->get(route('employee.services.index'))->assertOk()
+            ->assertSee('Nhóm dịch vụ')->assertSee('Nội soi')->assertSee('Siêu âm')->assertDontSee('CD-MAUDV-01')
+            ->assertDontSee('Hoàng Bảo Ngân')->assertDontSee('Danh sách phiếu chỉ định');
+        $services = $catalogue->viewData('groups')->firstWhere('code', 'NS')['services']->keyBy('service_code');
+        $this->assertSame(1, $services['DVNS001']->current_order_count);
+        $this->assertSame(1, $services['DVTDCN002']->current_order_count);
+        $this->assertSame(0, $services['DVNS002']->current_order_count);
+
+        $this->get($index)->assertOk()->assertSee(route('employee.services.show', $detail))->assertSee('Nội soi dạ dày')
             ->assertDontSee('Siêu âm ổ bụng')->assertDontSee('Tổng phân tích nước tiểu');
-        $this->get(route('employee.services.index', ['q' => 'CD-MAUDV-02', 'assignee' => 'mine', 'status' => 'PROCESSING']))
-            ->assertOk()->assertSee('Nội soi Tai Mũi Họng')->assertDontSee('X-quang cột sống thắt lưng');
-        $this->get(route('employee.services.index', ['q' => 'CD-MAUDV-01', 'status' => 'WAITING_PAYMENT']))
-            ->assertOk()->assertSee('Tổng phân tích nước tiểu')->assertDontSee('Nội soi dạ dày');
+        $this->get(route('employee.services.orders', ['group' => 'NS', 'service' => 'DVTDCN002', 'q' => 'CD-MAUDV-02', 'assignee' => 'mine', 'status' => 'PROCESSING']))
+            ->assertOk()->assertSee('CD-MAUDV-02')->assertSee('Nội soi Tai Mũi Họng')->assertDontSee('X-quang cột sống thắt lưng');
+        $this->get(route('employee.services.orders', ['group' => 'XN', 'service' => 'DVXN004', 'q' => 'CD-MAUDV-01', 'status' => 'WAITING_PAYMENT']))
+            ->assertOk()->assertSee('CD-MAUDV-01')->assertSee('Tổng phân tích nước tiểu')->assertDontSee('Nội soi dạ dày');
+        $this->get(route('employee.services.orders', ['group' => 'NS', 'service' => 'DVNS002']))
+            ->assertOk()->assertSee('Không tìm thấy phiếu chỉ định');
 
         $this->get(route('employee.services.show', $detail))->assertOk()->assertSee($index)->assertSee('Bắt đầu thực hiện');
         $this->post(route('employee.services.start', $detail))->assertRedirect(route('employee.services.show', $detail));
@@ -193,6 +207,9 @@ class EmployeeTechnicalParametersTest extends TestCase
         $this->get(route('employee.services.show', $detail))->assertOk()->assertSee('Xác nhận hoàn tất');
         $this->post(route('employee.services.complete', $detail))->assertRedirect(route('employee.services.show', $detail));
         $this->assertSame('COMPLETED', $endoscopy->fresh()->serviceStatus->name);
+        $after = $this->get(route('employee.services.index', ['group' => 'NS']))->assertOk();
+        $this->assertSame('NS', $after->viewData('openGroup'));
+        $this->assertSame(0, $after->viewData('groups')->firstWhere('code', 'NS')['services']->firstWhere('service_code', 'DVNS001')->current_order_count);
     }
 
     public function test_text_or_pdf_alone_can_be_saved_and_opened(): void

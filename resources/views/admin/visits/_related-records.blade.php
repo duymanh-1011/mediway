@@ -1,9 +1,9 @@
-<section class="card section-spacing">
+<section class="card section-spacing admin-list-panel admin-list-panel--embedded">
     <h3 class="section-title">Đơn thuốc</h3>
     @if($medicalVisit->prescription)
         @php($prescription = $medicalVisit->prescription)
-        <div class="admin-table-scroll">
-            <table class="admin-table">
+        <div class="admin-table-scroll admin-list-table-wrap">
+            <table class="admin-table admin-list-table">
                 <thead><tr>
                     <th scope="col" class="admin-row-number">STT</th>
                     <th scope="col">Mã đơn thuốc</th>
@@ -32,10 +32,10 @@
     @endif
 </section>
 
-<section class="card section-spacing">
+<section class="card section-spacing admin-list-panel admin-list-panel--embedded">
     <h3 class="section-title">Danh sách khoản phải thanh toán</h3>
-    <div class="admin-table-scroll">
-        <table class="admin-table">
+    <div class="admin-table-scroll admin-list-table-wrap">
+        <table class="admin-table admin-list-table">
             <thead><tr>
                 <th scope="col" class="admin-row-number">STT</th>
                 <th scope="col">Mã khoản thu</th>

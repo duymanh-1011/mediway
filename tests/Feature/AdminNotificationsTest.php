@@ -144,23 +144,26 @@ class AdminNotificationsTest extends TestCase
     {
         $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));
         $order = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail();
+        $this->travelTo($order->medicalVisit->appointment->appointment_date->copy()->setTime(10, 0));
         $item = $order->items()->firstOrFail();
+        $this->travelTo($item->payable->medicalVisit->appointment->appointment_date->copy()->setTime(10, 0));
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])
             ->assertSessionHas('success', 'Đã ghi nhận thanh toán thành công cho khoản thu này.');
         $this->post(route('admin.service-order-items.start', $item))->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->post(route('admin.service-order-items.service-results.store', $item), ['result_summary' => 'Kết quả thực tế đã nhập', 'confirm_create' => 1])
             ->assertSessionHasNoErrors();
-        $this->get(route('admin.service-orders.show', $order))->assertOk()->assertDontSee('chuyển sang COMPLETED');
-        $this->post(route('admin.service-order-items.complete', $item))->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->assertStringContainsString('dịch vụ cần hoàn tất', session('success'));
         $this->assertStringNotContainsString('Nếu không còn', session('success'));
+        $this->get(route('admin.service-orders.show', $order))->assertOk()->assertDontSee('chuyển sang COMPLETED');
     }
 
     public function test_missing_status_configuration_gives_a_readable_next_step_without_starting_service(): void
     {
         $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));
         $order = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail();
+        $this->travelTo($order->medicalVisit->appointment->appointment_date->copy()->setTime(10, 0));
         $item = $order->items()->firstOrFail();
+        $this->travelTo($item->payable->medicalVisit->appointment->appointment_date->copy()->setTime(10, 0));
         $this->post(route('admin.payables.payment-transactions.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();
         ServiceStatus::where('name', 'PROCESSING')->update(['is_active' => false]);
         $this->post(route('admin.service-order-items.start', $item))

@@ -70,6 +70,7 @@ class WorkflowIntegrityTest extends TestCase
     {
         $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));
         $payable = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail()->items()->firstOrFail()->payable;
+        $this->travelTo($payable->medicalVisit->appointment->appointment_date->copy()->setTime(10, 0));
         $this->patch(route('admin.payables.update-status', $payable), [
             'payment_status_id' => PaymentStatus::where('name', 'PAID')->value('id'), 'confirm_update' => 1,
         ])->assertSessionHasErrors('payment_status_id');

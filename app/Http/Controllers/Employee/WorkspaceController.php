@@ -18,8 +18,8 @@ class WorkspaceController extends Controller
     public function home(Request $request)
     {
         $employee = app(EmployeeAccess::class)->employee($request->user());
-        $work = match ($employee->detail->employee_type) {
-            'LAB_TECHNICIAN', 'IMAGING_TECHNICIAN' => [
+        $work = match (EmployeeAccess::typeCode($employee->detail->employee_type)) {
+            EmployeeAccess::SERVICE_TECHNICIAN => [
                 'label' => 'Dịch vụ được giao chưa hoàn tất',
                 'count' => \App\Models\ServiceOrderItem::where('performed_by_employee_id', $employee->id)->unresolved()->count(),
             ],

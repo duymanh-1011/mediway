@@ -5,6 +5,7 @@
         @case('reception') <circle cx="12" cy="8" r="3"/><path d="M5 20a7 7 0 0 1 14 0M19 8v4m-2-2h4"/> @break
         @case('calendar') <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-10 4h5"/> @break
         @case('queue') <path d="M4 6h11M4 12h11M4 18h7m7-4 3 3-3 3"/> @break
+        @case('services') <rect x="3" y="7" width="18" height="14" rx="3"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-4 4v6m-3-3h6"/> @break
         @case('lab') <path d="M9 3h6m-5 0v6l-5.4 9.2A2 2 0 0 0 6.3 21h11.4a2 2 0 0 0 1.7-2.8L14 9V3M8 15h8"/> @break
         @case('image') <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m4 18 5-5 3 3 3-4 5 6"/> @break
         @case('payment') <rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/> @break

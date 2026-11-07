@@ -391,7 +391,7 @@
          aria-labelledby="pd-tab-health"
          hidden>
 
-        <section class="pd-card pd-section">
+        <section class="pd-card pd-section admin-list-panel admin-list-panel--embedded">
             <div class="pd-section-heading">
                 <div>
                     <h2>Lịch sử chỉ số sức khỏe</h2>
@@ -415,8 +415,8 @@
             </div>
 
             @if($healthRecords->isNotEmpty())
-                <div class="pd-table-wrap">
-                    <table class="pd-health-table">
+                <div class="pd-table-wrap admin-list-table-wrap">
+                    <table class="pd-health-table admin-list-table">
                         <thead>
                             <tr>
                                 <th scope="col" class="admin-row-number">STT</th>

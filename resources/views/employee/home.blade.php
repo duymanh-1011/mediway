@@ -2,12 +2,11 @@
 @section('title', 'Tổng quan')
 @section('content')
 @php
-    $employeeType = $employee->detail->employee_type;
+    $employeeType = \App\Support\EmployeeAccess::typeCode($employee->detail->employee_type);
     $employeeTypeName = \App\Support\EmployeeAccess::TYPES[$employeeType];
     $groups = [
         'RECEPTIONIST' => ['Tiếp đón và lịch hẹn', 'Hỗ trợ tiếp nhận và theo dõi lịch hẹn.', 'employee.reception.index', 'reception'],
-        'LAB_TECHNICIAN' => ['Xét nghiệm', 'Theo dõi công việc xét nghiệm được giao.', 'employee.laboratory.index', 'lab'],
-        'IMAGING_TECHNICIAN' => ['Chẩn đoán hình ảnh', 'Theo dõi công việc chẩn đoán hình ảnh.', 'employee.imaging.index', 'image'],
+        'SERVICE_TECHNICIAN' => ['Thực hiện dịch vụ', 'Nhận chỉ định và ghi nhận kết quả kỹ thuật.', 'employee.services.index', 'services'],
         'CASHIER' => ['Thu ngân và thanh toán', 'Theo dõi khoản thu và giao dịch.', 'employee.payments.index', 'payment'],
     ];
     [$currentTitle, $currentDescription, $currentRoute, $currentIcon] = $groups[$employeeType];

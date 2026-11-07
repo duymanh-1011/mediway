@@ -14,7 +14,7 @@ class ClinicalPublicationSecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_private_records_and_direct_documents_are_not_available_to_the_patient(): void
+    public function test_private_service_results_remain_hidden_while_completed_visit_prescriptions_are_visible(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
@@ -25,7 +25,7 @@ class ClinicalPublicationSecurityTest extends TestCase
         DB::table('prescriptions')->where('id', $prescription->id)->update(['patient_publication_status' => 'PRIVATE']);
 
         $this->actingAs($user)->get(route('patient.results'))->assertOk()->assertDontSee('PRIVATE-SENTINEL-RESULT');
-        $this->get(route('patient.prescriptions'))->assertOk()->assertDontSee($prescription->prescription_code);
+        $this->get(route('patient.prescriptions'))->assertOk()->assertSee($prescription->prescription_code);
         $this->get(route('patient.results.document', [$result->id, 'result_pdf']))->assertNotFound();
         $this->get(route('patient.prescriptions.document', $prescription->id))->assertNotFound();
     }
@@ -43,13 +43,15 @@ class ClinicalPublicationSecurityTest extends TestCase
         foreach (['PUBLIC', 'PUBLISHED'] as $status) {
             DB::table('service_results')->where('id', $result->id)->update(['patient_publication_status' => $status, 'result_summary' => 'PUBLIC-SENTINEL']);
             DB::table('prescriptions')->where('id', $prescription->id)->update(['patient_publication_status' => $status]);
-            $this->actingAs($user)->get(route('patient.results'))->assertOk()->assertSee('PUBLIC-SENTINEL')->assertDontSee('FOREIGN-SENTINEL');
+            $this->actingAs($user)->get(route('patient.results'))->assertOk()->assertDontSee('FOREIGN-SENTINEL');
+            $this->get(route('patient.results.visit', ['visit' => $result->serviceOrderItem->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $result->service_order_item_id]))
+                ->assertOk()->assertSee('PUBLIC-SENTINEL')->assertDontSee('FOREIGN-SENTINEL');
             $this->get(route('patient.prescriptions'))->assertOk()->assertSee($prescription->prescription_code);
             $this->get(route('patient.results.document', [$foreign->id, 'result_pdf']))->assertNotFound();
         }
     }
 
-    public function test_missing_publication_columns_fail_closed_without_server_error(): void
+    public function test_missing_publication_columns_deny_results_but_do_not_hide_completed_visit_prescriptions(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
@@ -65,13 +67,13 @@ class ClinicalPublicationSecurityTest extends TestCase
         }
 
         $this->actingAs($user)->get(route('patient.results'))->assertOk()->assertDontSee('SCHEMA-MISSING-SECRET');
-        $this->get(route('patient.prescriptions'))->assertOk()->assertDontSee($prescription->prescription_code);
+        $this->get(route('patient.prescriptions'))->assertOk()->assertSee($prescription->prescription_code);
         $this->get(route('patient.results.document', [$result->id, 'result_pdf']))->assertNotFound();
         $this->get(route('patient.prescriptions.document', $prescription->id))->assertNotFound();
-        $this->get(route('patient.notifications', ['danh-muc' => 'ket-qua']))->assertOk()->assertDontSee($prescription->prescription_code);
+        $this->get(route('patient.notifications', ['danh-muc' => 'ket-qua']))->assertOk()->assertSee($prescription->prescription_code);
     }
 
-    public function test_actual_private_pdf_is_denied_and_published_pdf_is_accessible(): void
+    public function test_service_pdf_requires_publication_and_completed_prescription_pdf_does_not(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
@@ -90,7 +92,7 @@ class ClinicalPublicationSecurityTest extends TestCase
         $prescriptionUrl = route('patient.prescriptions.document', $prescription->id);
 
         $this->actingAs($user)->get($resultUrl)->assertNotFound();
-        $this->get($prescriptionUrl)->assertNotFound();
+        $this->get($prescriptionUrl)->assertOk();
         DB::table('service_results')->where('id', $result->id)->update(['patient_publication_status' => 'PUBLIC']);
         DB::table('prescriptions')->where('id', $prescription->id)->update(['patient_publication_status' => 'PUBLISHED']);
         $this->get($resultUrl)->assertOk();

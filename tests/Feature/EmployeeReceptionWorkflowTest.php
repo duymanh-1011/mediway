@@ -82,9 +82,8 @@ class EmployeeReceptionWorkflowTest extends TestCase
         $this->post(route('admin.queues.call', $queue))->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->assertSame('CALLED', $queue->fresh()->status->name);
         $this->flushSession();
-        $this->actingAs($employee->user)->post(route('employee.queue.filter'), ['q' => $visit->visit_code])->assertRedirect();
-        $this->get(route('employee.queue.index'))->assertOk()->assertSee($visit->visit_code)->assertSee('Đã gọi')
-            ->assertDontSee('Gọi bệnh nhân')->assertDontSee('Bắt đầu khám');
+        $this->actingAs($employee->user)->get(route('employee.appointments.show', $appointment))->assertOk()
+            ->assertSee($visit->visit_code)->assertDontSee('Gọi bệnh nhân')->assertDontSee('/nhan-vien/hang-doi', false);
         $this->flushSession();
         $this->actingAs($appointment->patient->user)->get(route('patient.appointments.show', $appointment))->assertOk()->assertSee('Đã tiếp nhận');
     }

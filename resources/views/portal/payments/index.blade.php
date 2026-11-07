@@ -1,78 +1,32 @@
 @extends('portal.layouts.app')
 
 @push('portal_page_styles')
-    @vite('resources/css/payments-index.css')
+    @vite(['resources/css/payments-index.css', 'resources/js/portal/payments-sync.js'])
 @endpush
 
 @section('title', 'Khoản cần thanh toán - Mediway')
 
 @section('content')
-
-
-    <div class="payment-page">
+    <div class="payment-page" data-payment-snapshot="{{ $snapshot }}" data-payment-refresh-url="{{ route('patient.payments.index') }}">
         <section class="portal-page-head">
             <div class="portal-shell">
-                <a class="appointment-back" href="{{ route('patient.home') }}">← Quay lại tài khoản</a>
-                <p class="portal-eyebrow">
-                    TÀI KHOẢN BỆNH NHÂN
-                </p>
-
-                <h1>
-                    Khoản cần thanh toán
-                </h1>
-
-                <p class="portal-lead">
-                    Theo dõi các khoản phải thanh toán và lịch sử giao dịch đã được Mediway ghi nhận.
-                    Vui lòng thanh toán phí khám tại quầy sau khi tiếp nhận; số thứ tự được cấp sau khi ghi nhận thanh toán. Trang này chưa hỗ trợ thanh toán trực tuyến.
-                </p>
+                <a class="portal-back" href="{{ route('patient.home') }}">← Quay lại tài khoản</a>
+                <p class="portal-eyebrow">TÀI KHOẢN BỆNH NHÂN</p>
+                <h1>Khoản cần thanh toán</h1>
+                <p class="portal-lead">Vui lòng thanh toán tại quầy. Bạn có thể tra cứu các khoản đã thu trong mục Viện phí của từng lượt khám.</p>
             </div>
         </section>
 
-        <section class="payment-summary-section">
+        <section class="payment-summary-section" aria-label="Tổng quan các khoản cần thanh toán">
             <div class="portal-shell">
-                @if ($summary['unknown_status_count'])
-                    <x-portal.alert type="info">Có khoản thu chưa xác định được trạng thái. Số tiền chưa hoàn tất bên dưới chỉ tính các khoản chưa thanh toán hoặc chờ xác nhận; vui lòng liên hệ cơ sở khám để kiểm tra.</x-portal.alert>
-                @endif
-                <div class="payment-summary-grid">
+                <div class="payment-summary-grid payment-summary-grid--outstanding">
                     <div class="payment-summary-card">
-                        <div class="payment-summary-label">
-                            Tổng khoản thu
-                        </div>
-
-                        <div class="payment-summary-value">
-                            {{ $summary['payable_count'] }}
-                        </div>
+                        <div class="payment-summary-label">Khoản cần thanh toán</div>
+                        <div class="payment-summary-value">{{ $payables->count() }}</div>
                     </div>
-
                     <div class="payment-summary-card">
-                        <div class="payment-summary-label">
-                            Tổng giá trị
-                        </div>
-
-                        <div class="payment-summary-value">
-                            {{ number_format($summary['total_amount'], 0, ',', '.') }} ₫
-                        </div>
-                    </div>
-
-                    <div class="payment-summary-card">
-                        <div class="payment-summary-label">
-                            Chưa hoàn tất
-                        </div>
-
-                        <div class="payment-summary-value">
-                            {{ $summary['outstanding_count'] }}
-                            khoản
-                        </div>
-                    </div>
-
-                    <div class="payment-summary-card">
-                        <div class="payment-summary-label">
-                            Số tiền chưa hoàn tất
-                        </div>
-
-                        <div class="payment-summary-value">
-                            {{ number_format($summary['outstanding_amount'], 0, ',', '.') }} ₫
-                        </div>
+                        <div class="payment-summary-label">Tổng số tiền</div>
+                        <div class="payment-summary-value">{{ number_format((float) $amount, 0, ',', '.') }} ₫</div>
                     </div>
                 </div>
             </div>
@@ -81,237 +35,43 @@
         <section class="payment-content-section">
             <div class="portal-shell">
                 <div class="payment-section-head">
-                    <h2>
-                        Danh sách khoản phải thanh toán
-                    </h2>
-
-                    <p>
-                        Xem chi tiết các khoản thu và giao dịch của bạn.
-                    </p>
+                    <h2>Danh sách khoản phải thanh toán</h2>
                 </div>
 
                 <div class="payment-list">
                     @forelse ($payables as $payable)
-                        @php
-                            $statusName = $payable->paymentStatus?->name ?? 'UNKNOWN';
-
-                            $statusClass = match ($statusName) {
-                                'PAID' => 'is-paid',
-                                'PENDING', 'UNPAID' => 'is-pending',
-                                'CANCELLED' => 'is-cancelled',
-                                default => 'is-default',
-                            };
-
-                            $statusLabel = match ($statusName) {
-                                'PAID' => 'Đã thanh toán',
-                                'PENDING' => 'Đang chờ xác nhận',
-                                'UNPAID' => 'Chưa thanh toán',
-                                'CANCELLED' => 'Đã hủy',
-                                default => $statusName,
-                            };
-
-                            $paymentTypeLabel = match ($payable->payment_type) {
-                                'EXAMINATION_FEE' => 'Phí khám',
-                                'SERVICE_FEE' => 'Phí dịch vụ',
-                                'MEDICINE_FEE' => 'Tiền thuốc',
-                                default => $payable->payment_type ?: 'Chưa cập nhật',
-                            };
-
-                            $latestSuccessfulTransaction = $payable->transactions
-                                ->where('transaction_result', 'SUCCESS')
-                                ->sortByDesc(fn ($transaction) => ($transaction->confirmed_at ?? $transaction->paid_at ?? $transaction->started_at)?->timestamp ?? 0)
-                                ->first();
-                        @endphp
-
-                        <article class="payment-card">
+                        @php($unavailable = app(\App\Services\AppointmentPaymentDateGuard::class)->unavailableReason($payable))
+                        <article class="payment-card" id="khoan-thu-{{ $payable->id }}">
                             <div class="payment-card-top">
                                 <div>
-                                    <h3 class="payment-code">
-                                        {{ $payable->payable_code }}
-                                    </h3>
-
-                                    <p class="payment-description">
-                                        {{ $payable->description }}
-                                    </p>
+                                    <h3 class="payment-code">{{ $payable->payable_code }}</h3>
+                                    <p class="payment-description">{{ $payable->displayContent() }}</p>
                                 </div>
-
-                                <span class="payment-status {{ $statusClass }}">
-                                    {{ $statusLabel }}
-                                </span>
+                                <span class="payment-status is-pending">{{ $payable->paymentStatus?->name === 'PENDING' ? 'Chờ xác nhận' : 'Chưa thanh toán' }}</span>
                             </div>
 
                             <div class="payment-detail-grid">
                                 <div class="payment-info-item">
-                                    <span class="payment-info-label">
-                                        Mã lượt khám
-                                    </span>
-
-                                    <span class="payment-info-value">
-                                        {{ $payable->medicalVisit?->visit_code ?? 'Chưa cập nhật' }}
-                                    </span>
+                                    <span class="payment-info-label">Mã lượt khám</span>
+                                    <a class="payment-info-value" href="{{ route('patient.results.visit', $payable->medical_visit_id) }}">{{ $payable->medicalVisit?->visit_code ?? 'Chi tiết lượt khám' }}</a>
                                 </div>
-
                                 <div class="payment-info-item">
-                                    <span class="payment-info-label">
-                                        Loại khoản thu
-                                    </span>
-
-                                    <span class="payment-info-value">
-                                        {{ $paymentTypeLabel }}
-                                    </span>
+                                    <span class="payment-info-label">Ngày phát sinh</span>
+                                    <span class="payment-info-value">{{ $payable->generated_at?->format('H:i d/m/Y') ?? 'Chưa cập nhật' }}</span>
                                 </div>
-
                                 <div class="payment-info-item">
-                                    <span class="payment-info-label">
-                                        Số tiền
-                                    </span>
-
-                                    <span class="payment-info-value payment-amount">
-                                        {{ number_format((float) $payable->amount, 0, ',', '.') }} ₫
-                                    </span>
-                                </div>
-
-                                <div class="payment-info-item">
-                                    <span class="payment-info-label">
-                                        Ngày phát sinh
-                                    </span>
-
-                                    <span class="payment-info-value">
-                                        {{ $payable->generated_at?->format('H:i d/m/Y') ?? 'Chưa cập nhật' }}
-                                    </span>
-                                </div>
-
-                                <div class="payment-info-item">
-                                    <span class="payment-info-label">
-                                        Nhân viên thu tiền gần nhất
-                                    </span>
-
-                                    <span class="payment-info-value">
-                                        {{ $latestSuccessfulTransaction?->collector?->full_name ?? 'Chưa có thông tin' }}
-                                    </span>
-                                </div>
-
-                                <div class="payment-info-item">
-                                    <span class="payment-info-label">
-                                        Thanh toán lúc
-                                    </span>
-
-                                    <span class="payment-info-value">
-                                        {{ $payable->paid_at?->format('H:i d/m/Y') ?? 'Chưa thanh toán' }}
-                                    </span>
+                                    <span class="payment-info-label">Số tiền</span>
+                                    <span class="payment-info-value payment-amount">{{ number_format((float) $payable->amount, 0, ',', '.') }} ₫</span>
                                 </div>
                             </div>
-
-                            <div class="transaction-block">
-                                <h4 class="transaction-title">
-                                    Lịch sử giao dịch
-                                </h4>
-
-                                @if ($payable->transactions->isNotEmpty())
-                                    <div class="transaction-list">
-                                        @foreach ($payable->transactions as $transaction)
-                                                        @php
-                                                            $resultLabel = match ($transaction->transaction_result) {
-                                                                'SUCCESS' => 'Thành công',
-                                                                'FAILED' => 'Thất bại',
-                                                                'PENDING' => 'Đang xử lý',
-                                                                default => $transaction->transaction_result ?: 'Chưa cập nhật',
-                                                            };
-
-                                                            $methodLabel = match ($transaction->payment_method) {
-                                                                'CASH' => 'Tiền mặt',
-                                                                'QR' => 'QR',
-                                                                'BANK_TRANSFER' => 'Chuyển khoản',
-                                                                'CARD' => 'Thẻ',
-                                                                default => $transaction->payment_method ?: 'Chưa cập nhật',
-                                                            };
-                                                        @endphp
-
-                                                        <div class="transaction-item">
-                                                            <div class="transaction-cell">
-                                                                <span class="transaction-label">
-                                                                    Mã giao dịch
-                                                                </span>
-
-                                                                <span class="transaction-value">
-                                                                    {{ $transaction->transaction_code }}
-                                                                </span>
-                                                            </div>
-
-                                                            <div class="transaction-cell">
-                                                                <span class="transaction-label">
-                                                                    Số tiền
-                                                                </span>
-
-                                                                <span class="transaction-value">
-                                                                    {{ number_format((float) $transaction->amount, 0, ',', '.') }} ₫
-                                                                </span>
-                                                            </div>
-
-                                                            <div class="transaction-cell">
-                                                                <span class="transaction-label">
-                                                                    Phương thức
-                                                                </span>
-
-                                                                <span class="transaction-value">
-                                                                    {{ $methodLabel }}
-                                                                </span>
-                                                            </div>
-
-                                                            <div class="transaction-cell">
-                                                                <span class="transaction-label">
-                                                                    Kết quả
-                                                                </span>
-
-                                                                <span class="transaction-value">
-                                                                    {{ $resultLabel }}
-                                                                </span>
-                                                            </div>
-
-                                                            <div class="transaction-cell">
-                                                                <span class="transaction-label">Nhân viên thu tiền</span>
-                                                                <span class="transaction-value">{{ $transaction->collector?->full_name ?? 'Chưa có thông tin' }}</span>
-                                                            </div>
-
-                                                            <div class="transaction-cell">
-                                                                <span class="transaction-label">
-                                                                    Thời gian xác nhận
-                                                                </span>
-
-                                                                <span class="transaction-value">
-                                                                    {{ $transaction->confirmed_at?->format('H:i d/m/Y')
-                                            ?? $transaction->paid_at?->format('H:i d/m/Y')
-                                            ?? $transaction->started_at?->format('H:i d/m/Y')
-                                            ?? 'Chưa cập nhật' }}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <div class="payment-empty">
-                                        <h3>
-                                            Chưa có giao dịch
-                                        </h3>
-
-                                        <p>
-                                            Khoản thu này chưa có giao dịch thanh toán được ghi nhận.
-                                        </p>
-                                    </div>
-                                @endif
-                            </div>
-
+                            @if ($unavailable)
+                                <p class="payment-description">{{ $unavailable }}</p>
+                            @endif
                         </article>
                     @empty
-                        <div class="payment-empty">
-                            <h3>
-                                Chưa có khoản cần thanh toán
-                            </h3>
-
-                            <p>
-                                Tài khoản của bạn hiện chưa có khoản phải thanh toán nào được Mediway ghi nhận.
-                            </p>
-                        </div>
+                        <x-portal.empty-state title="Bạn không có khoản cần thanh toán">
+                            Các giao dịch đã thanh toán có thể xem trong mục Viện phí của từng lượt khám.
+                        </x-portal.empty-state>
                     @endforelse
                 </div>
             </div>

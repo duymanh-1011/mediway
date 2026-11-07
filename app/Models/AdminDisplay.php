@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Support\EmployeeAccess;
+
 final class AdminDisplay
 {
-    public const EMPLOYEE_TYPES = [
-        'RECEPTIONIST' => 'Nhân viên tiếp đón',
-        'CASHIER' => 'Nhân viên thu ngân', 'IMAGING_TECHNICIAN' => 'Kỹ thuật viên chẩn đoán hình ảnh',
+    public const EMPLOYEE_TYPES = EmployeeAccess::TYPES + [
+        'IMAGING_TECHNICIAN' => 'Kỹ thuật viên chẩn đoán hình ảnh',
         'LAB_TECHNICIAN' => 'Kỹ thuật viên xét nghiệm', 'NURSE' => 'Điều dưỡng',
     ];
 
@@ -37,6 +38,7 @@ final class AdminDisplay
         'CREATE' => 'Tạo mới', 'UPDATE' => 'Cập nhật', 'DELETE' => 'Xóa', 'STATUS_CHANGE' => 'Đổi trạng thái',
         'CHECK_IN' => 'Tiếp nhận', 'CANCEL' => 'Hủy', 'PRINT' => 'In',
         'LOGIN' => 'Đăng nhập', 'LOGOUT' => 'Đăng xuất',
+        'PATIENT_NOTIFICATION_READ' => 'Đọc thông báo', 'patient_notification' => 'Thông báo bệnh nhân',
         'users' => 'Tài khoản', 'User' => 'Tài khoản', 'roles' => 'Vai trò',
         'appointments' => 'Lịch hẹn', 'Appointment' => 'Lịch hẹn',
         'medical_visits' => 'Lượt khám', 'MedicalVisit' => 'Lượt khám',

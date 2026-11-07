@@ -25,6 +25,26 @@ class EmployeePaymentCollectionTest extends TestCase
     private function payable(): Payable { return Payable::where('payable_code', 'PT000012')->firstOrFail(); }
     private function payload(array $extra = []): array { return array_merge(['payment_method' => 'CASH', 'confirm_payment' => '1'], $extra); }
 
+    public function test_cashier_screens_render_using_the_production_vite_manifest(): void
+    {
+        if (! is_file(public_path('build/manifest.json')) || is_file(public_path('hot'))) {
+            $this->markTestSkipped('Run npm run build with the Vite dev server stopped.');
+        }
+
+        $this->withVite();
+        $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));
+        $payable = $this->payable();
+        $this->actingAs($this->cashier());
+
+        $this->get(route('employee.payments.index'))->assertOk()->assertSee('/build/assets/employee-payments-', false);
+        $this->get(route('employee.payments.show', $payable))->assertOk()->assertSee('/build/assets/employee-payments-', false);
+        $this->get(route('employee.payments.collect.create', $payable))->assertOk()->assertSee('/build/assets/employee-payments-', false);
+
+        $this->post(route('employee.payments.collect.store', $payable), $this->payload())->assertRedirect();
+        $transaction = $payable->transactions()->where('transaction_result', 'SUCCESS')->firstOrFail();
+        $this->get(route('employee.payments.receipt', $transaction))->assertOk()->assertSee('/build/assets/payment-receipt-', false);
+    }
+
     public function test_cashier_collects_once_with_authenticated_identity_and_audit(): void
     {
         $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));

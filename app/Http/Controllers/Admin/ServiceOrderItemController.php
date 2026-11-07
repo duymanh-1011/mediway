@@ -9,7 +9,6 @@ use App\Models\ServiceOrderProgress;
 use App\Models\ServiceStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -205,7 +204,7 @@ class ServiceOrderItemController extends Controller
                     ),
                 ];
 
-                $this->writeAuditLog(
+                app(ServiceOrderProgress::class)->auditItemTransition(
                     $request,
                     $lockedItem,
                     $oldValues,
@@ -309,31 +308,11 @@ class ServiceOrderItemController extends Controller
             );
         }
 
-        $completedStatus =
-            ServiceStatus::query()
-                ->where(
-                    'name',
-                    'COMPLETED'
-                )
-                ->where(
-                    'is_active',
-                    true
-                )
-                ->first();
-
-        if (! $completedStatus) {
-            return back()->with(
-                'error',
-                'Chưa có trạng thái “Đã hoàn thành” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái dịch vụ.'
-            );
-        }
-
         try {
             DB::transaction(
                 function () use (
                     $request,
-                    $serviceOrderItem,
-                    $completedStatus
+                    $serviceOrderItem
                 ) {
                     $visit = MedicalVisit::with('status')->whereKey($serviceOrderItem->serviceOrder->medical_visit_id)->lockForUpdate()->firstOrFail();
                     $visit->assertServiceDataWritable();
@@ -360,74 +339,14 @@ class ServiceOrderItemController extends Controller
                         return;
                     }
 
-                    $currentStatus = ServiceStatus::whereKey($lockedItem->service_status_id)->lockForUpdate()->firstOrFail();
-                    if (! $currentStatus->allows_transition) {
-                        throw ValidationException::withMessages(['service_status_id' => 'Dịch vụ đang bị khóa thay đổi trạng thái. Vui lòng kiểm tra mục Trạng thái dịch vụ.']);
-                    }
-
                     if (! $lockedItem->result?->hasContent()) {
                         return;
                     }
 
-                    $oldValues = [
-                        'service_status_id' => $lockedItem
-                            ->service_status_id,
-
-                        'service_status' => $lockedItem
-                            ->serviceStatus
-                            ?->name,
-
-                        'started_at' => $lockedItem
-                            ->started_at
-                            ?->format(
-                                'Y-m-d H:i:s'
-                            ),
-
-                        'completed_at' => $lockedItem
-                            ->completed_at
-                            ?->format(
-                                'Y-m-d H:i:s'
-                            ),
-                    ];
-
-                    $completedAt =
-                        $lockedItem->completed_at
-                        ?? now();
-
-                    $lockedItem->update([
-                        'service_status_id' => $completedStatus->id,
-
-                        'completed_at' => $completedAt,
-                    ]);
-
-                    $newValues = [
-                        'service_status_id' => $completedStatus->id,
-
-                        'service_status' => 'COMPLETED',
-
-                        'started_at' => $lockedItem
-                            ->started_at
-                            ?->format(
-                                'Y-m-d H:i:s'
-                            ),
-
-                        'completed_at' => $completedAt->format(
-                            'Y-m-d H:i:s'
-                        ),
-                    ];
-
-                    $this->writeAuditLog(
-                        $request,
-                        $lockedItem,
-                        $oldValues,
-                        $newValues,
-                        'Hoàn tất dịch vụ'
-                    );
-
-                    app(ServiceOrderProgress::class)->synchronize($lockedItem->service_order_id);
+                    app(ServiceOrderProgress::class)->completeAdminItem($request, $lockedItem, $lockedItem->completed_at ?? now());
                 }
             );
-        } catch (\RuntimeException $exception) {
+        } catch (\RuntimeException|ValidationException $exception) {
             return back()->with(
                 'error',
                 $exception->getMessage()
@@ -464,102 +383,5 @@ class ServiceOrderItemController extends Controller
                 'success',
                 'Đã hoàn tất dịch vụ. '.app(ServiceOrderProgress::class)->returnQueueMessage($serviceOrderItem->serviceOrder->medical_visit_id)
             );
-    }
-
-    /**
-     * Ghi nhật ký thao tác.
-     */
-    private function writeAuditLog(
-        Request $request,
-        ServiceOrderItem $serviceOrderItem,
-        array $oldValues,
-        array $newValues,
-        string $descriptionPrefix
-    ): void {
-        $roleNameSnapshot = null;
-
-        if (Auth::check()) {
-            $roleNameSnapshot =
-                DB::table('users')
-                    ->join(
-                        'roles',
-                        'roles.id',
-                        '=',
-                        'users.role_id'
-                    )
-                    ->where(
-                        'users.id',
-                        Auth::id()
-                    )
-                    ->value(
-                        'roles.name'
-                    );
-        }
-
-        $orderCode =
-            $serviceOrderItem
-                ->serviceOrder
-                ?->service_order_code;
-
-        $serviceCode =
-            $serviceOrderItem
-                ->medicalService
-                ?->service_code;
-
-        $description =
-            $descriptionPrefix
-            .(
-                $serviceCode
-                    ? ' '
-                        .$serviceCode
-                    : ''
-            )
-            .(
-                $orderCode
-                    ? ' của phiếu '
-                        .$orderCode
-                    : ''
-            )
-            .'.';
-
-        DB::table('audit_logs')
-            ->insert([
-                'user_id' => Auth::id(),
-
-                'role_name_snapshot' => $roleNameSnapshot,
-
-                'action' => 'STATUS_CHANGE',
-
-                'entity_type' => 'service_order_items',
-
-                'entity_id' => $serviceOrderItem->id,
-
-                'entity_business_code' => null,
-
-                'old_values' => json_encode(
-                    $oldValues,
-                    JSON_UNESCAPED_UNICODE
-                    |
-                    JSON_UNESCAPED_SLASHES
-                ),
-
-                'new_values' => json_encode(
-                    $newValues,
-                    JSON_UNESCAPED_UNICODE
-                    |
-                    JSON_UNESCAPED_SLASHES
-                ),
-
-                'description' => $description,
-
-                'ip_address' => $request->ip(),
-
-                'user_agent' => $request
-                    ->userAgent(),
-
-                'performed_at' => now(),
-
-                'created_at' => now(),
-            ]);
     }
 }

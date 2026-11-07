@@ -67,10 +67,10 @@
         </form>
     @endcomponent
 
-    <section class="admin-card" id="group-diseases">
+    <section class="admin-card admin-list-panel admin-list-panel--embedded" id="group-diseases">
         <h2>Danh mục bệnh thuộc nhóm</h2>
-        <div class="table-wrapper">
-            <table class="admin-table">
+        <div class="table-wrapper admin-list-table-wrap">
+            <table class="admin-table admin-list-table">
                 <thead><tr><th scope="col" class="admin-row-number">STT</th>
                 <th>Mã bệnh</th><th>Tên bệnh</th><th>Tên khác</th><th>Triệu chứng thường gặp</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                 <tbody>

@@ -3,34 +3,139 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\ClinicalDocument;
+use App\Models\PaymentTransaction;
 use App\Models\Prescription;
 use App\Models\ServiceResult;
 use App\Support\Portal\ClinicalPublication;
+use App\Support\PatientVisitServices;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClinicalRecordsController extends Controller
 {
-    // Trang kết quả lấy dữ liệu và tài liệu của bệnh nhân đang đăng nhập.
     public function results(Request $request)
     {
-        // Lấy hồ sơ từ tài khoản hiện tại và kiểm tra hồ sơ đang hoạt động.
         $patient = $request->user()->patient;
         abort_unless($patient && $patient->status === 'ACTIVE', 404);
 
-        // Từng lượt khám là ranh giới dữ liệu, kể cả khi chỉ một dịch vụ đã có kết quả.
         $visits = $patient->medicalVisits()
             ->with(['doctor:id,full_name', 'specialty:id,name', 'status:id,name,description',
-                'conclusion', 'diagnoses.disease:id,name',
+                'conclusion', 'diagnoses.disease:id,name,disease_code',
                 'prescription' => fn ($query) => ClinicalPublication::restrict($query, 'prescriptions'),
                 'serviceOrders.items.medicalService.serviceGroups', 'serviceOrders.items.serviceStatus',
                 'serviceOrders.items.result' => fn ($query) => ClinicalPublication::restrict($query, 'service_results')])
             ->orderByDesc('checked_in_at')
             ->orderByDesc('id')->paginate(10)->withQueryString();
+        $recoveredEndTimes = $this->recordedCompletionTimes($visits->getCollection());
 
-        return view('portal.clinical.results', compact('visits'));
+        return view('portal.clinical.results', compact('visits', 'patient', 'recoveredEndTimes'));
+    }
+
+    public function visit(Request $request, int $visit, PatientVisitServices $catalog)
+    {
+        $patient = $request->user()->patient;
+        abort_unless($patient && $patient->status === 'ACTIVE', 404);
+
+        $record = $patient->medicalVisits()->with([
+            'doctor:id,full_name', 'specialty:id,name', 'status:id,name,description', 'examinationRoom:id,name',
+            'conclusion', 'diagnoses.disease:id,name,disease_code',
+            'prescription' => fn ($query) => ClinicalPublication::restrict($query, 'prescriptions'),
+            'prescription.doctor', 'prescription.items.medicine',
+            'serviceOrders.items.medicalService.serviceGroups', 'serviceOrders.items.serviceStatus', 'serviceOrders.items.performer:id,full_name',
+            'serviceOrders.items.result' => fn ($query) => ClinicalPublication::restrict($query, 'service_results'),
+            'payables.serviceOrderItem.medicalService',
+            'payables.transactions' => fn ($query) => $query->where('transaction_result', 'SUCCESS')->with('collector:id,full_name'),
+        ])->findOrFail($visit);
+
+        $endedAt = $record->examination_ended_at ?? $this->recordedCompletionTimes(collect([$record]))->get($record->id);
+        $tabs = ['tong-quan' => 'Tổng quan', 'dich-vu' => 'Dịch vụ', 'giay-to' => 'Giấy tờ', 'vien-phi' => 'Viện phí', 'don-thuoc' => 'Đơn thuốc'];
+        $tab = $request->query('tab');
+        $tab = is_string($tab) && isset($tabs[$tab]) ? $tab : 'tong-quan';
+        $entries = $catalog->entries($record);
+        $groups = $entries->groupBy('group');
+        $groupFilter = $request->query('nhom');
+        $groupFilter = is_string($groupFilter) && $groups->has($groupFilter) ? $groupFilter : '';
+        $statusFilter = $request->query('trang-thai');
+        $statusFilter = in_array($statusFilter, ['COMPLETED', 'PROCESSING', 'PENDING', 'CANCELLED'], true) ? $statusFilter : '';
+        $sort = $request->query('sap-xep') === 'moi-nhat' ? 'moi-nhat' : 'theo-nhom';
+        $opened = $request->query('dich-vu');
+        $opened = is_string($opened) ? $opened : '';
+        $visible = $entries->filter(fn ($entry) => (! $groupFilter || $entry['group'] === $groupFilter)
+            && (! $statusFilter || $entry['status'] === $statusFilter));
+        if ($sort === 'moi-nhat') {
+            $visible = $visible->sortByDesc(fn ($entry) => ($entry['result']?->resulted_at ?? $entry['completed'] ?? $entry['started'] ?? $entry['ordered'])?->timestamp ?? 0);
+        }
+
+        $payments = $record->payables->flatMap(function ($payable) {
+            return $payable->transactions->map(fn ($transaction) => [
+                'payable' => $payable, 'transaction' => $transaction,
+                'date' => $transaction->confirmed_at ?? $transaction->paid_at ?? $transaction->started_at ?? $transaction->created_at,
+            ]);
+        })->sortByDesc(fn ($payment) => $payment['date']?->timestamp ?? 0)
+            ->map(fn ($payment) => [...$payment, 'can_print' => $payment['transaction']->payment_method === 'CASH'
+                && ($payment['payable']->payment_type !== 'MEDICINE_FEE'
+                    || ($record->prescription && (int) $record->prescription->id === (int) $payment['payable']->prescription_id))]);
+
+        return view('portal.clinical.visit', compact(
+            'record', 'patient', 'endedAt', 'tabs', 'tab', 'entries', 'groups', 'visible', 'groupFilter', 'statusFilter', 'sort', 'opened', 'payments'
+        ));
+    }
+
+    public function receipt(Request $request, int $visit, int $transaction)
+    {
+        $patient = $request->user()->patient;
+        abort_unless($patient && $patient->status === 'ACTIVE', 404);
+
+        $receipt = PaymentTransaction::query()
+            ->where('transaction_result', 'SUCCESS')
+            ->where('payment_method', 'CASH')
+            ->whereHas('payable.medicalVisit', fn ($record) => $record->whereKey($visit)->where('patient_id', $patient->id))
+            ->with(['collector:id,full_name', 'payable.medicalVisit', 'payable.serviceOrderItem.medicalService'])
+            ->findOrFail($transaction);
+
+        if ($receipt->payable->payment_type === 'MEDICINE_FEE') {
+            ClinicalPublication::restrict(Prescription::query(), 'prescriptions')
+                ->whereKey($receipt->payable->prescription_id)
+                ->where('medical_visit_id', $visit)
+                ->firstOrFail();
+        }
+
+        return view('employee.payments.receipt', [
+            ...app(\App\Support\Payments\ReceiptViewData::class)->build($receipt),
+            'receiptBackUrl' => route('patient.results.visit', ['visit' => $visit, 'tab' => 'giay-to']),
+            'receiptBackLabel' => 'Quay lại giấy tờ',
+        ]);
+    }
+
+    public function prescription(Request $request, int $prescription)
+    {
+        $patient = $request->user()->patient;
+        abort_unless($patient && $patient->status === 'ACTIVE', 404);
+
+        $record = ClinicalPublication::restrict(Prescription::query(), 'prescriptions')->whereHas('medicalVisit', fn ($visit) => $visit->where('patient_id', $patient->id))
+            ->with(['doctor', 'medicalVisit.diagnoses.disease', 'items.medicine'])
+            ->findOrFail($prescription);
+
+        return view('portal.clinical.prescription-document', compact('record', 'patient'));
+    }
+
+    private function recordedCompletionTimes(Collection $visits): Collection
+    {
+        $legacy = $visits->filter(fn ($visit) => ! $visit->examination_ended_at && $visit->status?->name === 'COMPLETED')->keyBy('id');
+        if ($legacy->isEmpty()) {
+            return collect();
+        }
+
+        return AuditLog::query()->where('entity_type', 'medical_visits')->where('action', 'STATUS_CHANGE')
+            ->whereIn('entity_id', $legacy->keys())->orderByDesc('performed_at')->orderByDesc('id')->get()
+            ->filter(fn ($log) => $log->performed_at && isset($log->old_values['visit_status_id'], $log->new_values['visit_status_id'])
+                && (int) $log->new_values['visit_status_id'] === (int) $legacy[$log->entity_id]->visit_status_id
+                && (int) ($log->old_values['visit_status_id'] ?? 0) !== (int) $legacy[$log->entity_id]->visit_status_id)
+            ->unique('entity_id')->pluck('performed_at', 'entity_id');
     }
 
     // Lấy đơn thuốc của bệnh nhân qua mối liên hệ với lượt khám.

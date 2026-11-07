@@ -11,9 +11,10 @@ body.portal-body .portal-main :is(h1, h2, h3, h4, h5, h6) {
     color: #172033;
     letter-spacing: normal;
 }
-body.portal-body .portal-main h1 { font-size: 26px; font-weight: 750; line-height: 1.25; }
-body.portal-body .portal-main h2,
-body.portal-body .portal-main h3 { font-size: 18px; font-weight: 650; line-height: 1.5; }
+body.portal-body .portal-main h1 { font-size: clamp(24px, 2.5vw, 28px); font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+body.portal-body .portal-main .portal-hero h1 { font-size: clamp(29px, 4vw, 48px); line-height: 1.15; }
+body.portal-body .portal-main h2 { font-size: 20px; font-weight: 700; line-height: 1.35; }
+body.portal-body .portal-main h3 { font-size: 17px; font-weight: 600; line-height: 1.4; }
 body.portal-body .portal-main h4,
 body.portal-body .portal-main h5,
 body.portal-body .portal-main h6 { font-size: 15px; font-weight: 650; line-height: 1.5; }
@@ -91,3 +92,178 @@ body.portal-body .portal-main :is(a, button):focus-visible { outline: 3px solid 
 .portal-body .portal-utility-card { display: block; color: inherit; text-decoration: none; }
 .portal-body .portal-utility-card:hover { border-color: #94b8ef; box-shadow: 0 7px 20px rgb(37 99 235 / 10%); }
 .portal-body .portal-utility-card:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+    html:has(.portal-body) { scroll-behavior: auto; }
+    .portal-body :is(.portal-btn, .portal-utility-card, .employee-menu__chevron, .employee-service, .public-news-card img) { transition: none; }
+    .portal-body :is(.portal-utility-card, .employee-service, .public-news-card img):hover { transform: none; }
+    .portal-loading span:first-child { animation: none; }
+}
+
+@media (pointer: coarse) {
+    body.portal-body :is(.portal-btn, .portal-menu-toggle, .portal-back) { min-height: 44px; }
+}
+
+.portal-connection-note {
+    margin: 8px 0 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #fff5e5;
+    color: #854d0e;
+    font-size: 13px;
+}
+.portal-form [aria-invalid="true"] { border-color: #b42318; }
+.portal-body button[data-pending-label]:disabled { cursor: not-allowed; }
+
+/* Lượt khám và hồ sơ của bệnh nhân */
+.portal-visit-page .portal-visit-hero {
+    margin-top: 16px;
+    align-items: start;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+.portal-visit-page .portal-visit-hero .patient-record__badge { margin-top: 2px; }
+.portal-visit-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 18px 0;
+    padding: 6px;
+    border: 1px solid #dbe5ef;
+    border-radius: 12px;
+    background: #fff;
+}
+.portal-visit-tabs a {
+    display: grid;
+    place-items: center;
+    flex: 1 1 auto;
+    min-height: 44px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: #334155;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+}
+.portal-visit-tabs a:hover { background: #f1f5f9; }
+.portal-visit-tabs a[aria-current="page"] { color: #174ca9; background: #eaf2ff; box-shadow: inset 0 -2px #2563eb; }
+.portal-visit-content, .portal-visit-rows { display: grid; gap: 12px; min-width: 0; }
+.portal-visit-panel, .portal-visit-list-card, .portal-visit-payment { min-width: 0; overflow-wrap: anywhere; }
+.portal-visit-panel { margin: 0; padding: clamp(16px, 3vw, 24px); }
+.portal-visit-panel :is(h2, h3, h4), .portal-visit-service .patient-record__header h3 { margin: 0; }
+.portal-visit-panel > h2 { margin-bottom: 14px; }
+.portal-visit-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 165px), 1fr));
+    gap: 12px 16px;
+    margin: 14px 0;
+    padding: 14px;
+    border-radius: 10px;
+    background: #f3f7fc;
+}
+.portal-visit-facts dt { color: #526175; font-size: 13px; }
+.portal-visit-facts dd { margin: 2px 0 0; font-weight: 600; }
+.portal-visit-lead { margin: 10px 0; color: #334155; }
+.portal-visit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.portal-visit-section { margin-top: 16px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
+.portal-visit-section p, .portal-visit-section ul { margin: 6px 0 0; }
+.portal-visit-section p { white-space: pre-line; }
+.portal-visit-section h3 + .portal-visit-rows { margin-top: 10px; }
+.portal-visit-line { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.portal-visit-progress { width: 100%; height: 10px; margin-top: 10px; accent-color: #2563eb; }
+.portal-visit-counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 18px; }
+.portal-visit-counts span { padding: 6px 10px; border-radius: 8px; background: #f1f5fa; color: #334155; }
+.portal-visit-counts strong { margin-right: 4px; color: #174ca9; }
+.portal-visit-panel > h3 + .portal-visit-rows { margin-top: 10px; }
+.portal-body a.portal-visit-row, .portal-visit-payment {
+    padding: 12px 14px;
+    border: 1px solid #dbe5ef;
+    border-radius: 10px;
+    background: #f8fafd;
+}
+.portal-body a.portal-visit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    min-height: 52px;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+.portal-body a.portal-visit-row:hover { border-color: #9ebaea; background: #eef5ff; }
+.portal-visit-row small { display: block; margin-top: 3px; color: #526175; }
+.portal-visit-filter { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 10px; align-items: end; }
+.portal-visit-filter label { display: grid; gap: 5px; min-width: 0; font-weight: 600; }
+.portal-visit-filter select {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px;
+    border: 1px solid #a7b7cb;
+    border-radius: 8px;
+    background: #fff;
+}
+.portal-visit-group {
+    min-width: 0;
+    padding: 0 12px;
+    border: 1px solid #dbe5ef;
+    border-radius: 12px;
+    background: #eef5fd;
+}
+.portal-visit-group > summary { min-height: 52px; padding: 12px 4px; cursor: pointer; color: #174ca9; font-weight: 700; }
+.portal-visit-group > summary .medical-count { float: inline-end; margin-inline-start: 8px; }
+.portal-visit-group > .portal-visit-rows { padding-bottom: 12px; clear: both; }
+.portal-visit-service, #ket-luan, .payment-list > article { scroll-margin-top: 95px; }
+.portal-visit-service .clinical-visit-details { margin-top: 12px; }
+.portal-visit-total { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 14px; margin-bottom: 12px; background: #eaf7f1; color: #166044; border-radius: 10px; }
+.portal-visit-amount { color: #166044; white-space: nowrap; }
+.portal-visit-medicines { padding-inline-start: 22px; margin: 0; }
+.portal-visit-medicines li { padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+.portal-visit-medicines p { margin: 3px 0 0; color: #526175; }
+.payment-summary-grid.payment-summary-grid--outstanding { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.portal-toast {
+    position: fixed;
+    z-index: 70;
+    inset-block-start: 84px;
+    inset-inline-end: max(16px, calc((100vw - 1160px) / 2));
+    width: min(360px, calc(100% - 32px));
+    display: flex;
+    align-items: start;
+    gap: 4px;
+    padding: 8px;
+    border: 1px solid #bfd6fa;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 12px 34px rgb(15 44 85 / 18%);
+}
+.portal-toast[hidden] { display: none; }
+.portal-toast form { min-width: 0; flex: 1; }
+.portal-toast__open, .portal-toast__close {
+    border: 0;
+    border-radius: 8px;
+    background: #fff;
+    color: #172033;
+    cursor: pointer;
+}
+.portal-toast__open { display: flex; width: 100%; gap: 10px; padding: 10px; text-align: start; }
+.portal-toast__open:hover, .portal-toast__close:hover { background: #eef5ff; }
+.portal-toast__open > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.portal-toast__open :is(small, strong, .portal-toast__hint) { display: block; }
+.portal-toast__open small { color: #526175; }
+.portal-toast__open [hidden] { display: none; }
+.portal-toast__open strong { margin: 3px 0 4px; font-size: 15px; }
+.portal-toast__hint { color: #174ca9; font-size: 13px; font-weight: 600; }
+.portal-toast__icon { display: grid; flex: 0 0 32px; height: 32px; place-items: center; border-radius: 8px; background: #eaf2ff; color: #2563eb; }
+.portal-body .portal-toast__close { width: 44px; min-height: 44px; font-size: 23px; line-height: 1; }
+.portal-toast :is(button):focus-visible, .portal-visit-page :is(select, summary, a):focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+
+@media (max-width: 680px) {
+    .portal-visit-filter { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .portal-visit-tabs a { flex-basis: 26%; }
+    .portal-toast { inset-block-start: auto; inset-block-end: max(16px, env(safe-area-inset-bottom)); }
+}
+@media (max-width: 370px) {
+    .portal-visit-facts { grid-template-columns: minmax(0, 1fr); }
+    .portal-visit-tabs a { flex-basis: 42%; }
+}

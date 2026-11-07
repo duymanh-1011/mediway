@@ -55,10 +55,10 @@
         </form>
     @endcomponent
 
-    <section class="admin-card">
+    <section class="admin-card admin-list-panel admin-list-panel--embedded">
         <h2>Dịch vụ thuộc nhóm</h2>
-        <div class="table-wrapper">
-            <table class="admin-table">
+        <div class="table-wrapper admin-list-table-wrap">
+            <table class="admin-table admin-list-table">
                 <thead><tr><th scope="col" class="admin-row-number">STT</th>
                 <th>Mã dịch vụ</th><th>Tên dịch vụ</th><th>Giá</th><th>Đơn vị</th><th>Thời lượng</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                 <tbody>

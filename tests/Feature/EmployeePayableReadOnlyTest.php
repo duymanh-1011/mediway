@@ -45,7 +45,7 @@ class EmployeePayableReadOnlyTest extends TestCase
                 ->assertDontSee('Thông tin giao dịch gần nhất');
         }
         $cashier = $this->account('NV000002');
-        $cashier->employee->detail()->update(['employee_type' => 'LAB_TECHNICIAN']);
+        $cashier->employee->detail()->update(['employee_type' => 'SERVICE_TECHNICIAN']);
         $this->flushSession();
         $this->actingAs($cashier)->get(route('employee.payments.show', $payable))->assertForbidden();
     }
@@ -95,7 +95,7 @@ class EmployeePayableReadOnlyTest extends TestCase
 
     public function test_other_employee_types_cannot_open_cashier_list(): void
     {
-        foreach (['LAB_TECHNICIAN', 'IMAGING_TECHNICIAN', 'RECEPTIONIST'] as $type) {
+        foreach (['SERVICE_TECHNICIAN', 'RECEPTIONIST'] as $type) {
             $user = $this->account('NV000002');
             $user->employee->detail()->update(['employee_type' => $type]);
             $this->actingAs($user)
@@ -192,7 +192,7 @@ class EmployeePayableReadOnlyTest extends TestCase
         $this->actingAs($cashier)
             ->get(route('employee.payments.index'))->assertOk();
 
-        $cashier->employee->detail()->update(['employee_type' => 'LAB_TECHNICIAN']);
+        $cashier->employee->detail()->update(['employee_type' => 'SERVICE_TECHNICIAN']);
         $this->get(route('employee.payments.index'))->assertForbidden();
     }
 

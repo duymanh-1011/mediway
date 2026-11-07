@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\ClinicalDocument;
-use App\Models\ClinicalTimeline;
 use App\Models\ServiceResult;
 use App\Rules\ActiveResultVerifier;
 use Illuminate\Foundation\Http\FormRequest;
@@ -45,11 +44,6 @@ class StoreServiceResultRequest extends FormRequest
                 new ActiveResultVerifier,
             ],
 
-            'resulted_at' => [
-                'nullable',
-                'date',
-            ],
-
             'notes' => [
                 'nullable',
                 'string',
@@ -67,10 +61,6 @@ class StoreServiceResultRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
-            if (! $validator->errors()->has('resulted_at')) {
-                $item = $this->route('serviceOrderItem');
-                ClinicalTimeline::assertEventTime($this->input('resulted_at'), $item?->started_at, 'resulted_at', 'Thời điểm trả kết quả');
-            }
             $hasUpload = collect(array_keys(ClinicalDocument::RESULT_FILES))->contains(
                 fn (string $field): bool => $this->hasFile($field) && ! $validator->errors()->has($field)
             );
@@ -88,8 +78,6 @@ class StoreServiceResultRequest extends FormRequest
             'verified_by_user_id.integer' => 'Vui lòng chọn người xác nhận từ danh sách kỹ thuật viên.',
 
             'verified_by_user_id.exists' => 'Người xác nhận phải là kỹ thuật viên hợp lệ.',
-
-            'resulted_at.date' => 'Thời điểm trả kết quả chưa hợp lệ. Vui lòng chọn đủ ngày và giờ.',
 
             'confirm_create.accepted' => 'Vui lòng đánh dấu ô xác nhận nội dung kết quả trước khi lưu.',
         ];

@@ -6,7 +6,6 @@
     <div class="employee-grid">
         <section class="employee-card"><h2>Khám trực tiếp tại quầy</h2><p>Tìm hồ sơ hoặc tạo hồ sơ mới, sau đó tiếp nhận vào ca khám đang hoạt động.</p><a class="portal-btn portal-btn--primary" href="{{ route('employee.walk-in.create') }}">Tiếp nhận khám trực tiếp</a></section>
         <section class="employee-card"><h2>Lịch hẹn hôm nay</h2><p><strong>{{ $todayAppointments }}</strong> lịch hẹn · {{ $bookedAppointments }} lịch đang ở trạng thái đã đặt.</p><form method="post" action="{{ route('employee.appointments.filter') }}">@csrf<button class="portal-btn portal-btn--primary" type="submit" name="reset" value="1">Xem lịch hẹn và tiếp nhận</button></form></section>
-        <section class="employee-card"><h2>Hàng đợi hành chính</h2><p><strong>{{ $waitingQueues }}</strong> lượt đang chờ hoặc đã gọi trong ngày.</p><form method="post" action="{{ route('employee.queue.filter') }}">@csrf<button class="portal-btn portal-btn--secondary" type="submit" name="reset" value="1">Theo dõi hàng đợi</button></form></section>
     </div>
 </section>
 @endsection

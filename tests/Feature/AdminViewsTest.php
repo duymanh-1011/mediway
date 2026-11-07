@@ -97,7 +97,7 @@ class AdminViewsTest extends TestCase
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $payable = Payable::where('payable_code', 'PT000004')->firstOrFail();
-        $this->travelTo(\Illuminate\Support\Carbon::parse($payable->medicalVisit->appointment->appointment_date)->startOfDay());
+        $this->travelTo($payable->medicalVisit->appointment->appointment_date->copy()->setTime(10, 0));
 
         $response = $this->get(route('admin.payables.payment-transactions.create', $payable))->assertOk();
         $text = $this->interfaceText($response->getContent());

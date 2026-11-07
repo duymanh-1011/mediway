@@ -397,7 +397,7 @@
         @endif
 
 
-        <div class="payable-card">
+        <div class="payable-card admin-list-panel admin-list-panel--embedded">
 
             <div class="payable-card-header">
 
@@ -418,9 +418,9 @@
             </div>
 
 
-            <div class="payable-table-wrapper">
+            <div class="payable-table-wrapper admin-list-table-wrap">
 
-                <table class="payable-table">
+                <table class="payable-table admin-list-table">
 
                     <thead>
                         <tr>

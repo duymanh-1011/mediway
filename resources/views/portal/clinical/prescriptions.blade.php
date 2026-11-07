@@ -13,7 +13,7 @@
         <article class="patient-record" id="don-thuoc-{{ $prescription->id }}">
             <div class="patient-record__header"><div><span class="patient-record__label">ĐƠN THUỐC</span><h3>{{ $prescription->prescription_code }}</h3></div><span @class(['patient-record__badge', 'patient-record__badge--pending' => $prescription->status !== 'ACTIVE'])>{{ match ($prescription->status) { 'ACTIVE' => 'Đang hiệu lực', 'CANCELLED' => 'Đã hủy', 'INACTIVE' => 'Không còn hiệu lực', default => $prescription->status ?: 'Chưa cập nhật' } }}</span></div>
             <div class="patient-record__meta"><span>Ngày kê: <strong>{{ $prescription->prescribed_at?->format('d/m/Y H:i') ?? 'Chưa cập nhật' }}</strong></span><span>Bác sĩ: <strong>{{ $prescription->doctor?->full_name ?? 'Chưa cập nhật' }}</strong></span></div>
-            <details class="clinical-visit-details" @if ($visitId) open @endif><summary>Xem chi tiết đơn thuốc <span aria-hidden="true">⌄</span></summary><div class="clinical-visit-details__body">
+            <details class="clinical-visit-details" @if ($visitId) open @endif><summary>Xem thuốc và hướng dẫn <span aria-hidden="true">⌄</span></summary><div class="clinical-visit-details__body">
             @if ($prescription->general_instructions)<div class="patient-record__content"><h4>Lời dặn</h4><p>{{ $prescription->general_instructions }}</p></div>@endif
             <div class="patient-record__content"><h4>Danh sách thuốc</h4><ul class="patient-medicine-list">
                 {{-- Từng thuốc hiển thị liều và hướng dẫn nếu các thông tin đó có dữ liệu. --}}
@@ -28,14 +28,15 @@
                 @empty<li>Chưa có chi tiết thuốc.</li>@endforelse
             </ul></div>
             <div class="patient-record__content"><h4>Tổng tiền thuốc</h4><p>{{ $prescription->pricedTotal() === null ? 'Chưa có đủ thông tin giá' : number_format((float) $prescription->pricedTotal(), 0, ',', '.').' đ' }}</p>
-                @if ($prescription->payable && $prescription->payable->paymentStatus?->name !== 'CANCELLED')<a href="{{ route('patient.payments.index') }}">Xem khoản thanh toán</a>@else<p>Số tiền dự kiến theo đơn; khoản thanh toán được tạo khi xác nhận mua thuốc.</p>@endif
+                @if ($prescription->payable && in_array($prescription->payable->paymentStatus?->name, ['UNPAID', 'PENDING'], true))<a href="{{ route('patient.payments.index').'#khoan-thu-'.$prescription->payable->id }}">Xem khoản thanh toán</a>@elseif ($prescription->payable?->paymentStatus?->name === 'PAID')<a href="{{ route('patient.results.visit', ['visit' => $prescription->medical_visit_id, 'tab' => 'vien-phi']) }}">Xem giao dịch đã thanh toán</a>@elseif (! $prescription->payable)<p>Số tiền dự kiến theo đơn; khoản thanh toán được tạo khi xác nhận mua thuốc.</p>@endif
             </div>
             {{-- Chỉ hiện nút PDF khi tệp đơn thuốc có thể mở. --}}
             @if ($prescription->hasPdf())<div class="patient-record__links"><a href="{{ route('patient.prescriptions.document', $prescription->id) }}">Xem đơn thuốc PDF <span aria-hidden="true">↗</span></a></div>@endif
             </div></details>
+            <div class="portal-visit-actions"><x-portal.button :href="route('patient.prescriptions.show', $prescription->id)">Xem chi tiết đơn thuốc</x-portal.button></div>
         </article>
     @empty
-        <div class="patient-records__empty"><span aria-hidden="true">▧</span><h3>Chưa có đơn thuốc</h3><p>Đơn thuốc sẽ xuất hiện tại đây khi có dữ liệu trong hồ sơ của bạn.</p></div>
+        <div class="patient-records__empty"><span aria-hidden="true">▧</span><h3>Chưa có đơn thuốc được cung cấp</h3><p>Đơn thuốc sẽ hiển thị khi lượt khám đã hoàn tất và có đơn thuốc được ghi nhận. Vui lòng liên hệ cơ sở y tế nếu cần hỗ trợ.</p></div>
     @endforelse
     </div>
     {{ $prescriptions->links() }}

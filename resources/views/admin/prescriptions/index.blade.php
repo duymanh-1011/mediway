@@ -174,7 +174,7 @@
         TABLE
         ====================================================== --}}
 
-        <div class="prescription-card">
+        <div class="prescription-card admin-list-panel">
 
             <div class="prescription-table-header">
 
@@ -191,9 +191,9 @@
             </div>
 
 
-            <div class="prescription-table-wrapper">
+            <div class="prescription-table-wrapper admin-list-table-wrap">
 
-                <table class="prescription-table">
+                <table class="prescription-table admin-list-table">
 
                     <thead>
 
@@ -425,81 +425,8 @@
                 </table>
 
             </div>
-
-
-            {{-- =====================================================
-            PAGINATION
-            ====================================================== --}}
-
-            @if ($prescriptions->hasPages())
-
-                <div class="prescription-pagination">
-
-                    <div class="prescription-pagination-info">
-
-                        Hiển thị
-
-                        <strong>
-                            {{ $prescriptions->firstItem() }}
-                        </strong>
-
-                        -
-
-                        <strong>
-                            {{ $prescriptions->lastItem() }}
-                        </strong>
-
-                        trên
-
-                        <strong>
-                            {{ $prescriptions->total() }}
-                        </strong>
-
-                        bản ghi
-
-                    </div>
-
-
-                    <div class="prescription-pagination-actions">
-
-                        @if ($prescriptions->onFirstPage())
-
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-
-                        @else
-
-                            <a href="{{ $prescriptions->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
-
-                        @endif
-
-
-                        <span class="prescription-page-current">
-
-                            Trang
-                            {{ $prescriptions->currentPage() }}
-                            /
-                            {{ $prescriptions->lastPage() }}
-
-                        </span>
-
-
-                        @if ($prescriptions->hasMorePages())
-
-                            <a href="{{ $prescriptions->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
-
-                        @else
-
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-
-                        @endif
-
-                    </div>
-
-                </div>
-
-            @endif
-
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $prescriptions])
+    </div>
 
     </div>
 

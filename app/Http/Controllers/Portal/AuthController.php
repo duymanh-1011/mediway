@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\LoginRequest;
 use App\Models\User;
+use App\Support\EmployeeAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -15,9 +16,6 @@ class AuthController extends Controller
 {
     public function create()
     {
-        if (Auth::check()) {
-            return Auth::user()->canAccessPortal() ? redirect()->route('patient.home') : redirect()->route('admin.dashboard');
-        }
         return view('portal.auth.login');
     }
 
@@ -42,11 +40,11 @@ class AuthController extends Controller
             $request->session()->forget('url.intended');
             return redirect()->route('admin.dashboard')->with('success', 'Đăng nhập thành công.');
         }
-        if ($user instanceof User && app(\App\Support\EmployeeAccess::class)->employee($user)) {
+        if ($user instanceof User && ($employee = app(EmployeeAccess::class)->employee($user))) {
             RateLimiter::clear($key);
             $request->session()->forget('url.intended');
             $request->session()->put('password_hash_'.Auth::getDefaultDriver(), Auth::guard()->hashPasswordForCookie($user->getAuthPassword()));
-            return redirect()->route('employee.home')->with('success', 'Đăng nhập thành công.');
+            return redirect()->route(EmployeeAccess::homeRoute($employee))->with('success', 'Đăng nhập thành công.');
         }
         // The Doctor Portal is supplied by its owner. Do not create or route to
         // a placeholder when that portal has not been installed.

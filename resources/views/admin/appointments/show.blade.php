@@ -149,11 +149,7 @@
                     'admin.appointments.check-in',
                     $appointment
                 ) }}"
-                onsubmit="
-                    return confirm(
-                        'Xác nhận tiếp nhận bệnh nhân cho lịch hẹn này?'
-                    );
-                "
+                data-confirm="Xác nhận tiếp nhận bệnh nhân cho lịch hẹn này?"
             >
 
                 @csrf
@@ -502,11 +498,7 @@
                     'admin.appointments.cancel',
                     $appointment
                 ) }}"
-                onsubmit="
-                    return confirm(
-                        'Bạn có chắc muốn hủy lịch hẹn này?'
-                    );
-                "
+                data-confirm="Bạn có chắc muốn hủy lịch hẹn này?"
             >
 
                 @csrf

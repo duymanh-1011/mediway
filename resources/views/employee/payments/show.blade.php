@@ -3,7 +3,7 @@
 @section('title', 'Chi tiết khoản phải thu')
 
 @push('styles')
-    @vite(["resources/css/employee/payments/show.css"])
+    @vite(['resources/css/employee-payments.css', 'resources/css/employee/payments/show.css'])
 @endpush
 
 @section('content')
@@ -116,9 +116,9 @@
     @elseif ($canCollect && $dateReason && ! $errors->has('payment_date'))
         <p class="f08-payment-warning" role="status">{{ $dateReason }}</p>
     @elseif ($status === 'PAID')
-        <p role="status">Đã thu tiền</p>
+        <p class="f08-payment-state is-success" role="status"><span aria-hidden="true">✓</span> Đã thu tiền</p>
     @elseif ($status === 'CANCELLED')
-        <p role="status">Đã hủy</p>
+        <p class="f08-payment-state is-danger" role="status">Đã hủy</p>
     @endif
 
     {{-- TỔNG QUAN TIỀN --}}

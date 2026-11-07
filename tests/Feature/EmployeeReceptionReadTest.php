@@ -40,12 +40,13 @@ class EmployeeReceptionReadTest extends TestCase
         $this->get(route('employee.appointments.index'))->assertOk()->assertSee('Không tìm thấy lịch hẹn phù hợp.');
     }
 
-    public function test_receptionist_can_read_queue_but_cannot_control_it(): void
+    public function test_receptionist_cannot_access_the_clinical_queue(): void
     {
-        $queue = ExaminationRoomQueue::with('medicalVisit.patient')->firstOrFail();
-        $this->actingAs($this->receptionist())->post(route('employee.queue.filter'), ['q' => $queue->medicalVisit->visit_code])->assertRedirect();
-        $this->get(route('employee.queue.index'))->assertOk()->assertSee($queue->medicalVisit->visit_code)
-            ->assertSee($queue->medicalVisit->patient->full_name)->assertDontSee('Gọi bệnh nhân')->assertDontSee('Bắt đầu khám');
+        $queue = ExaminationRoomQueue::firstOrFail();
+        $this->actingAs($this->receptionist())->get(route('employee.reception.index'))
+            ->assertOk()->assertDontSee('Hàng đợi hành chính')->assertDontSee('/nhan-vien/hang-doi', false);
+        $this->get('/nhan-vien/hang-doi')->assertNotFound();
+        $this->post('/nhan-vien/hang-doi/loc')->assertNotFound();
         $this->post(route('admin.queues.call', $queue))->assertRedirect(route('admin.login'));
     }
 
@@ -56,19 +57,17 @@ class EmployeeReceptionReadTest extends TestCase
             $this->flushSession();
             $this->actingAs(Employee::where('employee_code', $code)->firstOrFail()->user)
                 ->get(route('employee.appointments.index'))->assertForbidden();
-            $this->get(route('employee.queue.index'))->assertForbidden();
         }
         foreach (['QT000001', 'BN000001', 'BS000001'] as $code) {
             $this->flushSession();
             $this->actingAs(User::where('business_code', $code)->firstOrFail())
                 ->get(route('employee.appointments.index'))->assertForbidden();
-            $this->get(route('employee.queue.index'))->assertForbidden();
         }
         $user = $this->receptionist();
         $this->flushSession();
-        $this->actingAs($user)->get(route('employee.queue.index'))->assertOk();
+        $this->actingAs($user)->get(route('employee.appointments.index'))->assertOk();
         $user->employee->detail->update(['employee_type' => 'CASHIER']);
-        $this->get(route('employee.queue.index'))->assertForbidden();
+        $this->get(route('employee.appointments.index'))->assertForbidden();
         $this->post(route('employee.appointments.filter'), ['q' => ''])->assertForbidden();
     }
 }

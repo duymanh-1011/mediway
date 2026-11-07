@@ -189,13 +189,13 @@
         </form>
     @endcomponent
 
-    <div class="card">
+    <div class="card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách thuốc'])
 
 
-        <div class="table-wrapper">
+        <div class="table-wrapper admin-list-table-wrap">
 
-            <table class="admin-table">
+            <table class="admin-table admin-list-table">
 
                 <thead>
 
@@ -207,7 +207,7 @@
                         <th>Hàm lượng</th>
                         <th>Dạng</th>
                         <th>Đường dùng</th>
-                        <th>Giá cơ bản</th>
+                        <th>Đơn giá</th>
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
                     </tr>
@@ -252,7 +252,13 @@
                                 ?? '—' }}
                         </td>
 
-                        <td class="medicine-price">{{ $medicine->price_per_unit === null ? 'Chưa thiết lập' : number_format((float) $medicine->price_per_unit, 0, ',', '.').' đ / '.($medicine->unit ?: 'đơn vị') }}</td>
+                        <td class="medicine-price">
+                            @forelse ($medicine->salePrices() as $unit => $price)
+                                <div>{{ number_format((float) $price, 0, ',', '.') }} đ / {{ $unit }}</div>
+                            @empty
+                                Chưa thiết lập
+                            @endforelse
+                        </td>
 
                         <td>
 
@@ -319,11 +325,7 @@
             </table>
 
         </div>
-
-        <div class="pagination-wrapper">
-            {{ $medicines->links() }}
-        </div>
-
+        @include('admin.layouts.partials.list-footer', ['rows' => $medicines])
     </div>
 
 @endsection

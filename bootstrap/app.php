@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\EmployeeAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,7 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(function (Request $request) {
             $user = $request->user();
             if ($user?->canAccessAdmin()) return route('admin.dashboard');
-            if ($user && app(\App\Support\EmployeeAccess::class)->employee($user)) return route('employee.home');
+            if ($user && ($employee = app(EmployeeAccess::class)->employee($user))) {
+                return route(EmployeeAccess::homeRoute($employee));
+            }
             if ($user?->canAccessPortal()) return route('patient.home');
             if ($user && Route::has('doctor.home')) {
                 $user->load(['role', 'doctor']);

@@ -198,13 +198,13 @@
         </form>
     @endcomponent
 
-    <div class="card">
+    <div class="card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách bệnh'])
 
 
-        <div class="table-wrapper">
+        <div class="table-wrapper admin-list-table-wrap">
 
-            <table class="admin-table">
+            <table class="admin-table admin-list-table">
 
                 <thead>
 
@@ -319,11 +319,7 @@
             </table>
 
         </div>
-
-        <div class="pagination-wrapper">
-            {{ $diseases->links() }}
-        </div>
-
+        @include('admin.layouts.partials.list-footer', ['rows' => $diseases])
     </div>
 
 @endsection

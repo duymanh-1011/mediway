@@ -293,15 +293,15 @@
     @endcomponent
 
 
-    <div class="card">
+    <div class="card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách lượt khám'])
 
 
         @if ($medicalVisits->count())
 
-            <div class="table-wrapper">
+            <div class="table-wrapper admin-list-table-wrap">
 
-                <table class="admin-table">
+                <table class="admin-table admin-list-table">
 
                     <thead>
                     <tr>
@@ -403,11 +403,6 @@
 
             </div>
 
-
-            <div class="admin-u-6840f0a6">
-                {{ $medicalVisits->links() }}
-            </div>
-
         @else
 
             <div class="admin-u-f98eb126">
@@ -415,7 +410,7 @@
             </div>
 
         @endif
-
+        @include('admin.layouts.partials.list-footer', ['rows' => $medicalVisits])
     </div>
 
 @endsection

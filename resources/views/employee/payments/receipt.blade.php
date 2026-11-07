@@ -11,7 +11,7 @@
     </title>
 
 
-    @vite(['resources/css/employee/payments/receipt-common.css', 'resources/css/employee/payments/receipt-'.$receiptType.'.css', 'resources/js/employee/payments/receipt.js'])
+    @vite(['resources/css/payment-receipt.css', 'resources/js/employee.js'])
 </head>
 
 <body @class(['medicine-receipt' => $receiptType === 'prescription'])>
@@ -196,11 +196,11 @@
 
         <nav class="toolbar" aria-label="Thao tác phiếu thu">
 
-            <a href="{{ route(
+            <a href="{{ $receiptBackUrl ?? route(
     'employee.payments.show',
     ['payable' => $payable->id]
 ) }}">
-                ← Quay lại chi tiết
+                ← {{ $receiptBackLabel ?? 'Quay lại chi tiết' }}
             </a>
 
             <button type="button" data-f08-print>

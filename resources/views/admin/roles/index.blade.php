@@ -55,12 +55,12 @@
         </form>
     @endcomponent
 
-    <div class="card">
+    <div class="card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách vai trò'])
 
 
-        <div class="table-wrapper">
-            <table class="admin-table">
+        <div class="table-wrapper admin-list-table-wrap">
+            <table class="admin-table admin-list-table">
                 <thead>
                     <tr>
                         <th scope="col" class="admin-row-number">STT</th>
@@ -100,7 +100,7 @@
                                     @if (!$role->isSystemRole() && $role->users_count === 0)
                                         <form novalidate method="POST"
                                               action="{{ route('admin.roles.destroy', $role) }}"
-                                              onsubmit="return confirm('Bạn chắc chắn muốn xóa vai trò này?');">
+                                              data-confirm="Bạn chắc chắn muốn xóa vai trò này?">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="admin-btn admin-btn-danger">
@@ -121,32 +121,7 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="roles-footer">
-            <span>
-                Hiển thị {{ $roles->count() }} / {{ $roles->total() }} vai trò
-            </span>
-
-            <div class="role-pagination">
-                @if ($roles->onFirstPage())
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-                @else
-                    <a class="admin-btn admin-btn-secondary" href="{{ $roles->previousPageUrl() }}">
-                        Trước
-                    </a>
-                @endif
-
-                <span>Trang {{ $roles->currentPage() }} / {{ $roles->lastPage() }}</span>
-
-                @if ($roles->hasMorePages())
-                    <a class="admin-btn admin-btn-secondary" href="{{ $roles->nextPageUrl() }}">
-                        Sau
-                    </a>
-                @else
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-                @endif
-            </div>
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $roles, 'recordLabel' => 'vai trò'])
     </div>
 </div>
 @endsection

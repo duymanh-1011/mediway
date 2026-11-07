@@ -60,6 +60,15 @@
     </div>
 
 
+    <dialog id="admin-confirm-dialog" class="admin-confirm-dialog" aria-labelledby="admin-confirm-title" aria-describedby="admin-confirm-message">
+        <h2 id="admin-confirm-title">Xác nhận thao tác</h2>
+        <p id="admin-confirm-message" data-confirm-message></p>
+        <form method="dialog">
+            <button type="submit" class="admin-btn admin-btn-secondary" value="cancel" autofocus>Hủy</button>
+            <button type="submit" class="admin-btn admin-btn-danger" value="confirm">Xác nhận</button>
+        </form>
+    </dialog>
+
     @stack('scripts')
 
 </body>

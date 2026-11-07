@@ -114,7 +114,7 @@
                 <form novalidate class="admin-u-86de7ac6"
                     action="{{ route('admin.roles.destroy', $role) }}"
                     method="POST"
-                    onsubmit="return confirm('Bạn có chắc chắn muốn xóa vai trò này?');"
+                    data-confirm="Bạn có chắc chắn muốn xóa vai trò này?"
 
                 >
                     @csrf
@@ -128,13 +128,13 @@
         </div>
     </div>
 
-    <div class="card role-users-card">
-        <h2 class="role-section-title">
+    <div class="card role-users-card admin-list-panel">
+        <h2 class="role-section-title admin-list-heading">
             Danh sách tài khoản thuộc vai trò
         </h2>
 
-        <div class="table-wrapper">
-            <table class="admin-table">
+        <div class="table-wrapper admin-list-table-wrap">
+            <table class="admin-table admin-list-table">
                 <thead>
                     <tr>
                         <th scope="col" class="admin-row-number">STT</th>
@@ -174,33 +174,7 @@
             </table>
         </div>
 
-        <div class="role-users-pagination">
-            <span>
-                Hiển thị {{ $users->count() }} /
-                {{ $users->total() }} tài khoản
-            </span>
-
-            <div class="role-pagination-actions">
-                @if ($users->onFirstPage())
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-                @else
-                    <a href="{{ $users->previousPageUrl() }}"
-                       class="admin-btn admin-btn-secondary">Trước</a>
-                @endif
-
-                <span>
-                    Trang {{ $users->currentPage() }} /
-                    {{ $users->lastPage() }}
-                </span>
-
-                @if ($users->hasMorePages())
-                    <a href="{{ $users->nextPageUrl() }}"
-                       class="admin-btn admin-btn-secondary">Sau</a>
-                @else
-                    <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-                @endif
-            </div>
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $users, 'recordLabel' => 'tài khoản'])
     </div>
 
 </div>

@@ -11,7 +11,7 @@
     </title>
 
 
-    @vite(['resources/css/employee/payments/receipt-common.css', 'resources/css/employee/payments/receipt-'.$receiptType.'.css', 'resources/js/employee/payments/receipt.js'])
+    @vite(['resources/css/payment-receipt.css', 'resources/js/employee.js'])
 </head>
 
 <body @class(['medicine-receipt' => $receiptType === 'prescription'])>

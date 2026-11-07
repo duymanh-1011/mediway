@@ -172,7 +172,7 @@
         @endcomponent
 
 
-        <div class="payable-card">
+        <div class="payable-card admin-list-panel">
 
             <div class="payable-table-header">
 
@@ -187,9 +187,9 @@
             </div>
 
 
-            <div class="payable-table-wrapper">
+            <div class="payable-table-wrapper admin-list-table-wrap">
 
-                <table class="payable-table">
+                <table class="payable-table admin-list-table" data-mobile-records>
 
                     <thead>
                         <tr>
@@ -380,65 +380,8 @@
                 </table>
 
             </div>
-
-
-            @if ($payables->hasPages())
-
-                <div class="payable-pagination">
-
-                    <div class="payable-pagination-info">
-                        Hiển thị
-
-                        <strong>
-                            {{ $payables->firstItem() }}
-                        </strong>
-
-                        -
-
-                        <strong>
-                            {{ $payables->lastItem() }}
-                        </strong>
-
-                        trên
-
-                        <strong>
-                            {{ $payables->total() }}
-                        </strong>
-
-                        bản ghi
-                    </div>
-
-
-                    <div class="payable-pagination-actions">
-
-                        @if ($payables->onFirstPage())
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-                        @else
-                            <a href="{{ $payables->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
-                        @endif
-
-
-                        <span class="payable-page-current">
-                            Trang
-                            {{ $payables->currentPage() }}
-                            /
-                            {{ $payables->lastPage() }}
-                        </span>
-
-
-                        @if ($payables->hasMorePages())
-                            <a href="{{ $payables->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
-                        @else
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-                        @endif
-
-                    </div>
-
-                </div>
-
-            @endif
-
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $payables])
+    </div>
 
     </div>
 

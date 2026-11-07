@@ -29,13 +29,13 @@
     </form>
 @endcomponent
 
-<section class="pd-card pd-section" aria-labelledby="patient-history-heading">
+<section class="pd-card pd-section admin-list-panel admin-list-panel--embedded" aria-labelledby="patient-history-heading">
     <div class="pd-section-heading">
         <h2 id="patient-history-heading">Danh sách lượt khám</h2>
         <span class="form-help">Tổng cộng {{ $visits->total() }} lượt khám</span>
     </div>
-    <div class="admin-table-scroll">
-        <table class="admin-table pd-visit-history-table">
+    <div class="admin-table-scroll admin-list-table-wrap">
+        <table class="admin-table pd-visit-history-table admin-list-table">
             <thead>
                 <tr>
                     <th scope="col" class="admin-row-number">STT</th>

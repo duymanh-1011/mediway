@@ -271,7 +271,7 @@
 
 
         {{-- Prescription items --}}
-        <div class="prescription-card">
+        <div class="prescription-card admin-list-panel admin-list-panel--embedded">
 
             <div class="prescription-card-header">
 
@@ -294,8 +294,8 @@
             </div>
 
 
-            <div class="admin-table-scroll">
-                <table class="admin-table admin-prescription-table">
+            <div class="admin-table-scroll admin-list-table-wrap">
+                <table class="admin-table admin-prescription-table admin-list-table">
                     <thead>
                         <tr><th scope="col" class="admin-row-number">STT</th><th>Mã thuốc</th><th>Thuốc</th><th>Liều mỗi lần</th><th>Số lần/ngày</th><th>Số ngày</th><th>Thời điểm dùng</th><th>Cách dùng</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th><th>Hướng dẫn</th><th>Ghi chú</th></tr>
                     </thead>

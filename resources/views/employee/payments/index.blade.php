@@ -3,7 +3,7 @@
 @section('title', 'Quản lý khoản phải thu')
 
 @push('styles')
-    @vite(["resources/css/employee/payments/index.css","resources/js/employee/payments/index.js"])
+    @vite('resources/css/employee-payments.css')
 @endpush
 
 @section('content')
@@ -74,11 +74,11 @@
                     <div class="f08-field">
 
                         <label for="f08-q">
-                            Tìm kiếm khoản thu, bệnh nhân, người thu
+                            Tìm kiếm
                         </label>
 
                         <input id="f08-q" type="search" name="q" maxlength="80" value="{{ $filters['q'] ?? '' }}"
-                            placeholder="Tên bệnh nhân, người thu, mã giao dịch...">
+                            placeholder="Tên bệnh nhân, mã khoản thu...">
 
                     </div>
 
@@ -240,9 +240,9 @@
 
             </div>
 
-            <div class="f08-tablewrap">
+            <div class="f08-tablewrap" data-scroll-label="Bảng khoản phải thu, có thể cuộn ngang">
 
-                <table>
+                <table data-mobile-records>
 
                     <thead>
                         <tr>

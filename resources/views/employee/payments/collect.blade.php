@@ -3,7 +3,7 @@
 @section('title', 'Ghi nhận thanh toán')
 
 @push('styles')
-    @vite(["resources/css/employee/payments/collect.css","resources/js/employee/payments/collect.js"])
+    @vite('resources/css/employee-payments.css')
 @endpush
 
 @section('content')
@@ -255,7 +255,7 @@
 
                         <div class="f08-actions">
 
-                            <button type="submit" class="f08-btn f08-btn-primary" id="f08-submit" @disabled(!$canCollect)>
+                            <button type="submit" class="f08-btn f08-btn-primary" id="f08-submit" data-pending-label="Đang ghi nhận…" @disabled(!$canCollect)>
                                 Xác nhận thu tiền
                             </button>
 

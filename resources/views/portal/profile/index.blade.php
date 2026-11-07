@@ -3,7 +3,7 @@
 @section('content')
 <link rel="stylesheet" href="{{ asset('css/patient-profile.css') }}">
 <section class="profile-page"><div class="portal-shell">
-    <a class="profile-back" href="{{ route('patient.home') }}">← Quay lại tài khoản</a>
+    <a class="profile-back portal-back" href="{{ route('patient.home') }}">← Quay lại tài khoản</a>
     <header class="profile-heading"><p class="portal-eyebrow">TÀI KHOẢN BỆNH NHÂN</p><h1>Hồ sơ cá nhân</h1><p>Thông tin cá nhân và liên hệ của bạn tại Mediway.</p></header>
     <div class="profile-summary">
         <span class="profile-summary__avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr(trim($patient->full_name), 0, 1)) }}</span>

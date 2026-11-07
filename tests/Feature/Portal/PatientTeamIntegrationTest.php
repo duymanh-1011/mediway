@@ -116,7 +116,10 @@ class PatientTeamIntegrationTest extends TestCase
         $this->actingAs($admin)->post(route('admin.payables.payment-transactions.store', $payable), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();
         $transaction = $payable->fresh()->transactions()->where('transaction_result', 'SUCCESS')->sole();
         $this->actingAs($patient)->get(route('patient.payments.index'))->assertOk()
-            ->assertSee($payable->payable_code)->assertSee($transaction->transaction_code)->assertSeeText('Đã thanh toán');
+            ->assertDontSee($payable->payable_code)->assertDontSee($transaction->transaction_code);
+        $this->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'vien-phi']))->assertOk()
+            ->assertSee($transaction->transaction_code);
+        $this->get(route('patient.results.receipt', [$visit->id, $transaction->id]))->assertOk()->assertSee($payable->payable_code);
         $this->get(route('patient.notifications', ['danh-muc' => 'thanh-toan']))->assertOk()->assertDontSee($payable->payable_code);
     }
 }

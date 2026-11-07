@@ -81,12 +81,12 @@
         </form>
     @endcomponent
 
-    <div class="users-panel">
+    <div class="users-panel admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách tài khoản'])
 
 
-        <div class="users-table-wrap">
-            <table class="users-table">
+        <div class="users-table-wrap admin-list-table-wrap">
+            <table class="users-table admin-list-table">
                 <thead>
                     <tr>
                         <th scope="col" class="admin-row-number">STT</th>
@@ -134,30 +134,7 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="users-footer">
-            <span>
-                Hiển thị {{ $users->count() }} / {{ $users->total() }} tài khoản
-            </span>
-
-            <div class="users-pagination">
-                @if($users->onFirstPage())
-                    <span class="users-button users-button-light users-disabled">Trước</span>
-                @else
-                    <a href="{{ $users->previousPageUrl() }}"
-class="admin-btn admin-btn-secondary">Trước</a>
-                @endif
-
-                <span>Trang {{ $users->currentPage() }} / {{ $users->lastPage() }}</span>
-
-                @if($users->hasMorePages())
-                    <a href="{{ $users->nextPageUrl() }}"
-                       class="admin-btn admin-btn-secondary">Sau</a>
-                @else
-                    <span class="users-button users-button-light users-disabled">Sau</span>
-                @endif
-            </div>
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $users, 'recordLabel' => 'tài khoản'])
     </div>
 </div>
 @endsection

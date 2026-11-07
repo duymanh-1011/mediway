@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './admin.css';
 @import './admin-presentation.css';
+@import './responsive-records.css';
 
 @source '../views/**/*.blade.php';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';

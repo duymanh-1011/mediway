@@ -154,7 +154,7 @@
         @endcomponent
 
 
-        <div class="transaction-card">
+        <div class="transaction-card admin-list-panel">
 
             <div class="transaction-table-header">
 
@@ -169,9 +169,9 @@
             </div>
 
 
-            <div class="transaction-table-wrapper">
+            <div class="transaction-table-wrapper admin-list-table-wrap">
 
-                <table class="transaction-table">
+                <table class="transaction-table admin-list-table">
 
                     <thead>
                         <tr>
@@ -330,52 +330,8 @@
                 </table>
 
             </div>
-
-
-            @if ($transactions->hasPages())
-
-                <div class="transaction-pagination">
-
-                    <div>
-                        Hiển thị
-                        {{ $transactions->firstItem() }}
-                        -
-                        {{ $transactions->lastItem() }}
-                        /
-                        {{ $transactions->total() }}
-                    </div>
-
-
-                    <div class="transaction-pagination-actions">
-
-                        @if ($transactions->onFirstPage())
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-                        @else
-                            <a href="{{ $transactions->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
-                        @endif
-
-
-                        <span>
-                            Trang
-                            {{ $transactions->currentPage() }}
-                            /
-                            {{ $transactions->lastPage() }}
-                        </span>
-
-
-                        @if ($transactions->hasMorePages())
-                            <a href="{{ $transactions->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
-                        @else
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-                        @endif
-
-                    </div>
-
-                </div>
-
-            @endif
-
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $transactions])
+    </div>
 
     </div>
 

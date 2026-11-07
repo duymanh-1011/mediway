@@ -1,0 +1,55 @@
+/* Opted-in record lists keep their table on desktop and show each record at narrow widths. */
+.record-cell-label { display: none; }
+.record-scroll-hint { margin: 0 0 8px; color: #526175; font-size: var(--admin-font-small, 12px); }
+:is(.admin-content, .f08) [role="region"][tabindex="0"]:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+
+@media (max-width: 600px) {
+    :is(body.admin-ui .admin-content, body.employee-body .f08) table[data-mobile-ready] {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        white-space: normal;
+    }
+    :is(body.admin-ui .admin-content, body.employee-body .f08) table[data-mobile-ready] thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+    :is(body.admin-ui .admin-content, body.employee-body .f08) table[data-mobile-ready] tbody { display: grid; gap: 12px; }
+    :is(body.admin-ui .admin-content, body.employee-body .f08) table[data-mobile-ready] tbody tr {
+        display: grid;
+        min-width: 0;
+        padding: 6px 12px;
+        border: 1px solid #dbe3ed;
+        border-radius: 8px;
+        background: #fff;
+    }
+    :is(body.admin-ui .admin-content, body.employee-body .f08) table[data-mobile-ready] tbody td {
+        display: block;
+        width: auto;
+        min-width: 0;
+        padding: 8px 0;
+        text-align: start;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+    :is(body.admin-ui .admin-content, body.employee-body .f08) table[data-mobile-ready] tbody td:last-child { border-bottom: 0; }
+    :is(body.admin-ui .admin-content, body.employee-body .f08) table[data-mobile-ready] .record-cell-label {
+        display: block;
+        margin-bottom: 3px;
+        color: #526175;
+        font-size: var(--admin-font-small, 12px);
+        font-weight: 600;
+    }
+    :is(body.admin-ui .admin-content, body.employee-body .f08) table[data-mobile-ready] :is(.admin-record-code, .admin-btn, .admin-badge, .badge, .f08-nowrap, .f08-money) {
+        max-width: 100%;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+    :is(body.admin-ui .admin-content, body.employee-body .f08) table[data-mobile-ready] .admin-table-actions,
+    :is(body.admin-ui .admin-content, body.employee-body .f08) table[data-mobile-ready] .admin-table-actions > div { flex-wrap: wrap; }
+    :is(body.admin-ui .admin-content, body.employee-body .f08) table[data-mobile-ready] :is(.admin-btn, .f08-detail-btn, .f08-pay-btn) { min-height: 44px; }
+}

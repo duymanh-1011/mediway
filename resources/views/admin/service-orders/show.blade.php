@@ -477,9 +477,7 @@
                                     <button
                                         type="submit"
                                         class="admin-btn admin-btn-primary"
-                                        onclick="return confirm(
-                                            'Xác nhận bắt đầu thực hiện dịch vụ này?'
-                                        )"
+                                        data-confirm="Xác nhận bắt đầu thực hiện dịch vụ này?"
                                     >
                                         Bắt đầu thực hiện
                                     </button>
@@ -556,9 +554,7 @@
                                     <button
                                         type="submit"
                                         class="admin-btn admin-btn-success"
-                                        onclick="return confirm(
-                                            'Xác nhận hoàn tất dịch vụ này? Hệ thống sẽ kiểm tra kết quả trước khi hoàn tất.'
-                                        )"
+                                        data-confirm="Xác nhận hoàn tất dịch vụ này? Hệ thống sẽ kiểm tra kết quả trước khi hoàn tất."
                                     >
                                         Hoàn tất dịch vụ
                                     </button>

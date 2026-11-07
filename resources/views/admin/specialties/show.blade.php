@@ -222,15 +222,15 @@
 
             </div>
 
-            <div class="card">
+            <div class="card admin-list-panel admin-list-panel--embedded">
 
                 <h3 class="section-title">
                     Lịch bác sĩ gần đây
                 </h3>
 
-                <div class="table-wrapper">
+                <div class="table-wrapper admin-list-table-wrap">
 
-                    <table class="admin-table">
+                    <table class="admin-table admin-list-table">
 
                         <thead>
 
@@ -337,7 +337,7 @@
     </div>
 
     <div
-        class="admin-u-a26bda7d card"
+        class="admin-u-a26bda7d card admin-list-panel admin-list-panel--embedded"
 
     >
 
@@ -345,9 +345,9 @@
             Lịch hẹn gần đây
         </h3>
 
-        <div class="table-wrapper">
+        <div class="table-wrapper admin-list-table-wrap">
 
-            <table class="admin-table">
+            <table class="admin-table admin-list-table">
 
                 <thead>
 

@@ -127,9 +127,9 @@
         @endcomponent
 
         {{-- Table --}}
-        <div class="audit-card">
+        <div class="audit-card admin-list-panel">
 
-            <div class="audit-card-header audit-list-header">
+            <div class="audit-card-header audit-list-header admin-list-heading">
                 <div>
                     <h2 class="admin-list-title">Danh sách nhật ký hoạt động</h2>
 
@@ -145,8 +145,8 @@
                 </div>
             </div>
 
-            <div class="audit-table-wrapper">
-                <table class="audit-table">
+            <div class="audit-table-wrapper admin-list-table-wrap">
+                <table class="audit-table admin-list-table" data-mobile-records>
 
                     <thead>
                         <tr>
@@ -218,7 +218,7 @@
 
                                                 <td>
                                                     @if ($log->entity_business_code)
-                                                        <span class="audit-code">
+                                                        <span class="audit-code" title="{{ $log->entity_business_code }}">
                                                             @include('admin.layouts.partials.record-code', ['code' => $log->entity_business_code])
                                                         </span>
                                                     @else
@@ -270,40 +270,8 @@
                     </tbody>
                 </table>
             </div>
-
-            {{-- Pagination --}}
-            @if ($logs->hasPages())
-                <div class="audit-pagination">
-
-                    <div class="audit-pagination-info">
-                        Trang
-                        <strong>
-                            {{ $logs->currentPage() }}
-                        </strong>
-                        /
-                        {{ $logs->lastPage() }}
-                    </div>
-
-                    <div class="audit-pagination-buttons">
-
-                        @if ($logs->onFirstPage())
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-                        @else
-                            <a href="{{ $logs->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
-                        @endif
-
-                        @if ($logs->hasMorePages())
-                            <a href="{{ $logs->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
-                        @else
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-                        @endif
-
-                    </div>
-
-                </div>
-            @endif
-
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $logs])
+    </div>
 
     </div>
 

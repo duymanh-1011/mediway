@@ -323,7 +323,7 @@
     </div>
 
     <div
-        class="admin-u-a26bda7d card"
+        class="admin-u-a26bda7d card admin-list-panel admin-list-panel--embedded"
 
     >
 
@@ -331,9 +331,9 @@
             Lịch sử kê thuốc gần đây
         </h3>
 
-        <div class="table-wrapper">
+        <div class="table-wrapper admin-list-table-wrap">
 
-            <table class="admin-table">
+            <table class="admin-table admin-list-table">
 
                 <thead>
 

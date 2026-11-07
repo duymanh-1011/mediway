@@ -162,9 +162,9 @@
 
 
         {{-- List --}}
-        <div class="order-card">
+        <div class="order-card admin-list-panel">
 
-            <div class="order-card-header order-list-header">
+            <div class="order-card-header order-list-header admin-list-heading">
 
                 <div>
 
@@ -193,9 +193,9 @@
             </div>
 
 
-            <div class="order-table-wrapper">
+            <div class="order-table-wrapper admin-list-table-wrap">
 
-                <table class="order-table">
+                <table class="order-table admin-list-table">
 
                     <thead>
 
@@ -388,58 +388,8 @@
                 </table>
 
             </div>
-
-
-            {{-- Pagination --}}
-            @if ($orders->hasPages())
-
-                <div class="order-pagination">
-
-                    <div class="order-pagination-info">
-
-                        Trang
-
-                        <strong>
-                            {{ $orders->currentPage() }}
-                        </strong>
-
-                        /
-
-                        {{ $orders->lastPage() }}
-
-                    </div>
-
-
-                    <div class="order-pagination-buttons">
-
-                        @if ($orders->onFirstPage())
-
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Trước</span>
-
-                        @else
-
-                            <a href="{{ $orders->previousPageUrl() }}" class="admin-btn admin-btn-secondary">Trước</a>
-
-                        @endif
-
-
-                        @if ($orders->hasMorePages())
-
-                            <a href="{{ $orders->nextPageUrl() }}" class="admin-btn admin-btn-secondary">Sau</a>
-
-                        @else
-
-                            <span class="admin-btn admin-btn-secondary" aria-disabled="true">Sau</span>
-
-                        @endif
-
-                    </div>
-
-                </div>
-
-            @endif
-
-        </div>
+        @include('admin.layouts.partials.list-footer', ['rows' => $orders])
+    </div>
 
     </div>
 

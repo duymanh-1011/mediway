@@ -1,11 +1,49 @@
 @extends('employee.layout')
-@section('title', $title)
+@section('title', 'Thực hiện dịch vụ')
 @section('content')
-<section class="tech-page">
-    <header class="tech-header"><p class="portal-eyebrow">DỊCH VỤ ĐƯỢC PHÂN CÔNG</p><h1>{{ $title }}</h1><p>Theo dõi chỉ định và cập nhật kết quả kỹ thuật.</p></header>
-    {{-- Bộ lọc sử dụng ngày chỉ định và trạng thái dịch vụ hiện tại. --}}
-    <form class="tech-filter" method="get"><label>Ngày chỉ định <input type="date" name="date" value="{{ $filters['date'] ?? '' }}"></label><label>Trạng thái <select name="status"><option value="">Tất cả</option>@foreach (['PENDING' => 'Chờ thực hiện', 'PROCESSING' => 'Đang thực hiện', 'COMPLETED' => 'Đã hoàn tất', 'CANCELLED' => 'Đã hủy'] as $key => $label)<option value="{{ $key }}" @selected(($filters['status'] ?? '') === $key)>{{ $label }}</option>@endforeach</select></label><div class="tech-filter__actions"><button type="submit" class="portal-btn portal-btn--primary">Lọc danh sách</button>{{-- Trở về danh sách không có tham số lọc hoặc trang cũ. --}}<a class="portal-btn portal-btn--secondary tech-filter__reset" href="{{ route($routePrefix.'.index') }}">Xóa lọc</a></div></form>
-    <div class="tech-list">@forelse ($items as $item)<a class="tech-card" href="{{ route($routePrefix.'.show', $item->id) }}"><div><span class="tech-label">{{ $item->serviceOrder?->service_order_code ?? 'Chỉ định' }}</span><h2>{{ $item->medicalService?->name ?? 'Dịch vụ' }}</h2><p>Bệnh nhân: {{ $item->serviceOrder?->medicalVisit?->patient?->full_name ?? 'Chưa cập nhật' }}</p><p>Ngày chỉ định: {{ $item->serviceOrder?->ordered_at?->format('d/m/Y H:i') ?? 'Chưa cập nhật' }}</p></div>@php($displayStatus = \App\Support\TechnicalServiceStatus::for($item))<span class="tech-status tech-status--{{ $displayStatus['tone'] }}">{{ $displayStatus['label'] }}</span></a>@empty<div class="tech-empty">Không có chỉ định phù hợp với bộ lọc hoặc phạm vi công việc của bạn.</div>@endforelse</div>
-    {{ $items->links() }}
+@include('employee.technical._heading', [
+    'eyebrow' => 'KHU VỰC NHÂN VIÊN',
+    'heading' => 'Thực hiện dịch vụ',
+    'description' => 'Mở nhóm dịch vụ, chọn dịch vụ và xem các chỉ định cần xử lý.',
+])
+
+<section class="employee-section" aria-labelledby="technical-groups-title">
+    <div class="employee-section__heading">
+        <div>
+            <p class="portal-eyebrow">KHÔNG GIAN LÀM VIỆC</p>
+            <h2 id="technical-groups-title">Nhóm dịch vụ</h2>
+            <p>Chọn nhóm để xem các dịch vụ và số chỉ định hiện tại.</p>
+        </div>
+        @if ($shortcutGroups)
+            <a class="portal-btn portal-btn--secondary" href="{{ route('employee.services.index') }}">Xem tất cả nhóm</a>
+        @endif
+    </div>
+
+    <div class="tech-catalogue">
+        @forelse ($groups as $group)
+            <details class="employee-card tech-group" id="nhom-{{ rawurlencode($group['code']) }}" @if ($openGroup === $group['code']) open @endif>
+                <summary class="tech-group__summary">
+                    <span class="employee-card__icon"><x-employee-icon name="services" /></span>
+                    <span>{{ $group['name'] }}</span>
+                    <span class="tech-group__chevron" aria-hidden="true"></span>
+                </summary>
+                <ul class="tech-group__services">
+                    @forelse ($group['services'] as $service)
+                        <li>
+                            <a class="tech-service-link" href="{{ route('employee.services.orders', ['group' => $group['code'], 'service' => $service->service_code]) }}">
+                                <span class="tech-service-link__name">{{ $service->name }}</span>
+                                <span class="tech-service-link__count">{{ $service->current_order_count }} chỉ định hiện tại</span>
+                                <x-employee-icon name="arrow" />
+                            </a>
+                        </li>
+                    @empty
+                        <li class="tech-group__empty">Nhóm này chưa có dịch vụ.</li>
+                    @endforelse
+                </ul>
+            </details>
+        @empty
+            <div class="employee-card">Chưa có nhóm dịch vụ.</div>
+        @endforelse
+    </div>
 </section>
 @endsection

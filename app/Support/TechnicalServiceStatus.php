@@ -11,6 +11,9 @@ final class TechnicalServiceStatus
     {
         // Trạng thái dịch vụ và thanh toán là hai thông tin độc lập.
         $status = $item->serviceStatus;
+        if ($item->serviceOrder?->status === 'CANCELLED') {
+            return ['label' => 'Đã hủy', 'tone' => 'cancelled'];
+        }
         if ($status?->name === 'PENDING') {
             $payment = $item->payable?->paymentStatus;
             return match ($payment?->name) {

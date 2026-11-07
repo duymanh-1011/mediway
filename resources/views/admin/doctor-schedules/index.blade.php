@@ -312,14 +312,14 @@
         </form>
     @endcomponent
 
-    <div class="card">
+    <div class="card admin-list-panel">
         @include('admin.layouts.partials.list-heading', ['listTitle' => 'Danh sách lịch làm việc bác sĩ'])
 
 
 
-        <div class="table-wrapper">
+        <div class="table-wrapper admin-list-table-wrap">
 
-            <table class="admin-table">
+            <table class="admin-table admin-list-table">
 
                 <thead>
 
@@ -450,11 +450,7 @@
                                         'admin.doctor-schedules.destroy',
                                         $schedule
                                     ) }}"
-                                    onsubmit="
-                                        return confirm(
-                                            'Bạn có chắc muốn xóa lịch làm việc này? Lịch có khung giờ hoặc lịch hẹn sẽ không được phép xóa.'
-                                        );
-                                    "
+                                    data-confirm="Bạn có chắc muốn xóa lịch làm việc này? Lịch có khung giờ hoặc lịch hẹn sẽ không được phép xóa."
                                 >
 
                                     @csrf
@@ -495,12 +491,7 @@
             </table>
 
         </div>
-
-
-        <div class="pagination-wrapper">
-            {{ $doctorSchedules->links() }}
-        </div>
-
+        @include('admin.layouts.partials.list-footer', ['rows' => $doctorSchedules])
     </div>
 
 @endsection

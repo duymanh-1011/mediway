@@ -157,11 +157,7 @@
                             'admin.visits.update-status',
                             $medicalVisit
                         ) }}"
-                        onsubmit="
-                            return confirm(
-                                'Hoàn tất lượt khám này? Sau khi hoàn tất, bạn không thể sửa trực tiếp nội dung khám, chẩn đoán, kết luận hoặc đơn thuốc.'
-                            );
-                        "
+                        data-confirm="Hoàn tất lượt khám này? Sau khi hoàn tất, bạn không thể sửa trực tiếp nội dung khám, chẩn đoán, kết luận hoặc đơn thuốc."
                     >
 
                         @csrf
@@ -497,7 +493,7 @@
 
     {{-- HÀNG ĐỢI --}}
 
-    <div class="card section-spacing">
+    <div class="card section-spacing admin-list-panel">
 
         <div class="section-header">
 
@@ -517,9 +513,9 @@
 
         @if ($medicalVisit->queues->isNotEmpty())
 
-            <div class="table-wrapper">
+            <div class="table-wrapper admin-list-table-wrap">
 
-                <table class="admin-table">
+                <table class="admin-table admin-list-table">
 
                     <thead>
                         <tr>
@@ -713,7 +709,7 @@
 
     {{-- CHẨN ĐOÁN --}}
 
-    <div class="card section-spacing">
+    <div class="card section-spacing admin-list-panel">
 
         <h3 class="section-title">
             Chẩn đoán
@@ -722,9 +718,9 @@
 
         @if ($medicalVisit->diagnoses->isNotEmpty())
 
-            <div class="table-wrapper">
+            <div class="table-wrapper admin-list-table-wrap">
 
-                <table class="admin-table">
+                <table class="admin-table admin-list-table">
 
                     <thead>
                         <tr>
@@ -830,7 +826,7 @@
 
     {{-- CHỈ ĐỊNH DỊCH VỤ --}}
 
-    <div class="card section-spacing">
+    <div class="card section-spacing admin-list-panel">
 
         <div class="section-header">
 
@@ -862,9 +858,9 @@
 
         @if ($medicalVisit->serviceOrders->isNotEmpty())
 
-            <div class="table-wrapper service-orders-table">
+            <div class="table-wrapper service-orders-table admin-list-table-wrap">
 
-                <table class="admin-table">
+                <table class="admin-table admin-list-table">
 
                     <thead>
                         <tr>

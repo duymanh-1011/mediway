@@ -71,7 +71,7 @@
                 <button
                     type="submit"
                     class="admin-btn admin-btn-primary"
-                    onclick="return confirm('Xác nhận lưu thay đổi hồ sơ nhân viên?');"
+                    data-confirm="Xác nhận lưu thay đổi hồ sơ nhân viên?"
                 >Cập nhật</button>
             </div>
         </form>

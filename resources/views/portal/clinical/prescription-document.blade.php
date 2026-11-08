@@ -2,14 +2,6 @@
     $visit = $record->medicalVisit;
     $doctorName = $record->doctor?->full_name;
     $prescribedAt = $record->prescribed_at;
-    $detail = $patient->detail;
-    $address = $detail?->current_address ?: $detail?->permanent_address;
-    $diagnoses = $visit->diagnoses->map(function ($diagnosis) {
-        $name = $diagnosis->disease?->name ?: $diagnosis->diagnosis_description;
-        $code = $diagnosis->disease?->disease_code;
-
-        return $name && $code ? $code.' – '.$name : ($name ?: $code);
-    })->filter()->unique()->join('; ');
     $formatNumber = fn ($value) => str_replace('.', ',', (string) (float) $value);
 @endphp
 <x-print.document
@@ -34,23 +26,7 @@
         </x-slot:titleDetails>
     @endif
 
-    <section class="print-section" aria-labelledby="prescription-patient">
-        <h2 class="print-heading" id="prescription-patient"><span>I.</span> Thông tin bệnh nhân</h2>
-        <x-print.fields
-            :values="[
-                'Họ và tên' => $patient->full_name,
-                'Ngày sinh' => $patient->date_of_birth?->format('d/m/Y'),
-                'Giới tính' => $patient->gender ? \App\Models\AdminDisplay::label($patient->gender) : null,
-                'Số CCCD' => $detail?->citizen_id_number,
-                'Số điện thoại' => $phone,
-                'Địa chỉ' => $address,
-                'Chẩn đoán' => $diagnoses ?: 'Chưa ghi nhận',
-            ]"
-            :wide="['Họ và tên', 'Địa chỉ', 'Chẩn đoán']"
-            divider="Chẩn đoán"
-            fallback="Chưa cập nhật"
-        />
-    </section>
+    <x-print.patient-information :patient="$patient" :visit="$visit" :include-profile-details="true" :phone="$phone" />
 
     <section class="print-section" aria-labelledby="prescribed-medicines">
         <div class="print-section-head">
@@ -103,13 +79,6 @@
 
     <x-print.medication-notes :prescription="$record" />
 
-    <section class="prescription-doctor-signature print-document-signature" aria-label="Khu vực ký của bác sĩ kê đơn">
-        @if ($prescribedAt)
-            <p class="print-sign-date">Ngày {{ $prescribedAt->format('d') }} tháng {{ $prescribedAt->format('m') }} năm {{ $prescribedAt->format('Y') }}</p>
-        @endif
-        <h2>BÁC SĨ KÊ ĐƠN</h2>
-        <p class="print-sign-note">(Ký, ghi rõ họ tên)</p>
-        <div class="print-sign-space" aria-hidden="true"></div>
-        <p class="print-sign-name">{{ $doctorName ?: 'Chưa cập nhật bác sĩ kê đơn' }}</p>
-    </section>
+    <x-print.signature class="prescription-doctor-signature" label="BÁC SĨ KÊ ĐƠN"
+        :name="$doctorName" :date="$prescribedAt" fallback="Chưa cập nhật bác sĩ kê đơn" />
 </x-print.document>

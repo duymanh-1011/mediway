@@ -4,6 +4,7 @@ namespace Tests\Feature\Portal;
 
 use App\Models\Prescription;
 use App\Models\ServiceResult;
+use App\Models\ServiceStatus;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,23 +15,32 @@ class ClinicalPublicationSecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_private_service_results_remain_hidden_while_completed_visit_prescriptions_are_visible(): void
+    public function test_unfinished_service_results_stay_hidden_even_with_a_legacy_publication_flag(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
         $user = User::where('business_code', 'BN000001')->firstOrFail();
         $result = ServiceResult::whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $user->patient->id))->firstOrFail();
         $prescription = Prescription::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $user->patient->id))->firstOrFail();
-        DB::table('service_results')->where('id', $result->id)->update(['patient_publication_status' => 'PRIVATE', 'result_summary' => 'PRIVATE-SENTINEL-RESULT']);
+        $item = $result->serviceOrderItem;
+        $item->update(['service_status_id' => ServiceStatus::where('name', 'PROCESSING')->value('id')]);
+        DB::table('service_results')->where('id', $result->id)->update(['patient_publication_status' => 'PUBLISHED', 'result_summary' => 'DRAFT-SENTINEL-RESULT']);
         DB::table('prescriptions')->where('id', $prescription->id)->update(['patient_publication_status' => 'PRIVATE']);
 
-        $this->actingAs($user)->get(route('patient.results'))->assertOk()->assertDontSee('PRIVATE-SENTINEL-RESULT');
+        $this->actingAs($user)->get(route('patient.results.visit', ['visit' => $item->serviceOrder->medical_visit_id, 'tab' => 'dich-vu']))
+            ->assertOk()->assertDontSee('DRAFT-SENTINEL-RESULT');
+        $resultNotificationUrl = route('patient.results.visit', [
+            'visit' => $item->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $item->id,
+        ]).'#dich-vu-'.$item->id;
+        $this->get(route('patient.notifications', ['danh-muc' => 'ket-qua']))
+            ->assertOk()->assertDontSee($resultNotificationUrl);
         $this->get(route('patient.prescriptions'))->assertOk()->assertSee($prescription->prescription_code);
+        $this->get(route('patient.results.service-print', $result))->assertNotFound();
         $this->get(route('patient.results.document', [$result->id, 'result_pdf']))->assertNotFound();
         $this->get(route('patient.prescriptions.document', $prescription->id))->assertNotFound();
     }
 
-    public function test_only_explicitly_published_own_records_are_visible(): void
+    public function test_only_own_completed_results_are_visible_regardless_of_legacy_flag(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
@@ -40,25 +50,42 @@ class ClinicalPublicationSecurityTest extends TestCase
         $foreign = ServiceResult::whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $other->patient->id))->firstOrFail();
         $prescription = Prescription::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $user->patient->id))->firstOrFail();
         DB::table('service_results')->where('id', $foreign->id)->update(['patient_publication_status' => 'PUBLIC', 'result_summary' => 'FOREIGN-SENTINEL']);
-        foreach (['PUBLIC', 'PUBLISHED'] as $status) {
-            DB::table('service_results')->where('id', $result->id)->update(['patient_publication_status' => $status, 'result_summary' => 'PUBLIC-SENTINEL']);
+        foreach (['PRIVATE', 'PUBLIC', 'PUBLISHED'] as $status) {
+            DB::table('service_results')->where('id', $result->id)->update(['patient_publication_status' => $status, 'result_summary' => 'COMPLETED-SENTINEL']);
             DB::table('prescriptions')->where('id', $prescription->id)->update(['patient_publication_status' => $status]);
             $this->actingAs($user)->get(route('patient.results'))->assertOk()->assertDontSee('FOREIGN-SENTINEL');
             $this->get(route('patient.results.visit', ['visit' => $result->serviceOrderItem->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $result->service_order_item_id]))
-                ->assertOk()->assertSee('PUBLIC-SENTINEL')->assertDontSee('FOREIGN-SENTINEL');
+                ->assertOk()->assertSee('COMPLETED-SENTINEL')->assertDontSee('FOREIGN-SENTINEL');
             $this->get(route('patient.prescriptions'))->assertOk()->assertSee($prescription->prescription_code);
+            $this->get(route('patient.results.service-print', $foreign))->assertNotFound();
             $this->get(route('patient.results.document', [$foreign->id, 'result_pdf']))->assertNotFound();
         }
     }
 
-    public function test_missing_publication_columns_deny_results_but_do_not_hide_completed_visit_prescriptions(): void
+    public function test_completed_legacy_result_needs_no_admin_publication_action(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->withoutVite();
+        $patient = User::where('business_code', 'BN000001')->firstOrFail();
+        $result = ServiceResult::whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($query) => $query->where('patient_id', $patient->patient->id))->firstOrFail();
+        $print = route('patient.results.service-print', $result);
+
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('admin.service-results.publish'));
+        $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail())
+            ->get(route('admin.service-results.show', $result))->assertOk()->assertDontSee('Công bố cho bệnh nhân');
+        $this->patch(url('/admin/service-results/'.$result->id.'/publish'))->assertNotFound();
+        $this->actingAs($patient)->get($print)->assertOk()->assertSee($result->result_summary);
+        $this->assertSame('PRIVATE', $result->fresh()->patient_publication_status);
+    }
+
+    public function test_completed_records_are_visible_without_legacy_publication_columns(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
         $user = User::where('business_code', 'BN000001')->firstOrFail();
         $prescription = Prescription::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $user->patient->id))->firstOrFail();
         $result = ServiceResult::whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $user->patient->id))->firstOrFail();
-        DB::table('service_results')->where('id', $result->id)->update(['result_summary' => 'SCHEMA-MISSING-SECRET']);
+        DB::table('service_results')->where('id', $result->id)->update(['result_summary' => 'COMPLETED-LEGACY-RESULT']);
         foreach (['service_results', 'prescriptions'] as $table) {
             \Illuminate\Support\Facades\Schema::table($table, function ($blueprint) {
                 $blueprint->dropIndex(['patient_publication_status']);
@@ -66,19 +93,18 @@ class ClinicalPublicationSecurityTest extends TestCase
             });
         }
 
-        $this->actingAs($user)->get(route('patient.results'))->assertOk()->assertDontSee('SCHEMA-MISSING-SECRET');
+        $this->actingAs($user)->get(route('patient.results.service-print', $result))->assertOk()->assertSee('COMPLETED-LEGACY-RESULT');
         $this->get(route('patient.prescriptions'))->assertOk()->assertSee($prescription->prescription_code);
         $this->get(route('patient.results.document', [$result->id, 'result_pdf']))->assertNotFound();
         $this->get(route('patient.prescriptions.document', $prescription->id))->assertNotFound();
         $this->get(route('patient.notifications', ['danh-muc' => 'ket-qua']))->assertOk()->assertSee($prescription->prescription_code);
     }
 
-    public function test_service_pdf_requires_publication_and_completed_prescription_pdf_does_not(): void
+    public function test_service_pdf_requires_completion_and_a_non_cancelled_order(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
-        $disk = \Illuminate\Support\Facades\Storage::build(['driver' => 'local', 'root' => storage_path('app/clinical-test-'.\Illuminate\Support\Str::ulid())]);
-        \Illuminate\Support\Facades\Storage::set('local', $disk);
+        $disk = \Illuminate\Support\Facades\Storage::fake('local');
         $user = User::where('business_code', 'BN000001')->firstOrFail();
         $result = ServiceResult::whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $user->patient->id))->firstOrFail();
         $prescription = Prescription::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $user->patient->id))->firstOrFail();
@@ -90,12 +116,16 @@ class ClinicalPublicationSecurityTest extends TestCase
         DB::table('prescriptions')->where('id', $prescription->id)->update(['patient_publication_status' => 'PRIVATE', 'prescription_pdf_path' => $prescriptionPath]);
         $resultUrl = route('patient.results.document', [$result->id, 'result_pdf']);
         $prescriptionUrl = route('patient.prescriptions.document', $prescription->id);
+        $item = $result->serviceOrderItem;
+        $completedStatusId = $item->service_status_id;
+        $item->update(['service_status_id' => ServiceStatus::where('name', 'PROCESSING')->value('id')]);
 
         $this->actingAs($user)->get($resultUrl)->assertNotFound();
         $this->get($prescriptionUrl)->assertOk();
-        DB::table('service_results')->where('id', $result->id)->update(['patient_publication_status' => 'PUBLIC']);
-        DB::table('prescriptions')->where('id', $prescription->id)->update(['patient_publication_status' => 'PUBLISHED']);
+        $item->update(['service_status_id' => $completedStatusId]);
         $this->get($resultUrl)->assertOk();
-        $this->get($prescriptionUrl)->assertOk();
+        $item->serviceOrder()->update(['status' => 'CANCELLED']);
+        $this->get($resultUrl)->assertNotFound();
+        $this->get(route('patient.results.service-print', $result))->assertNotFound();
     }
 }

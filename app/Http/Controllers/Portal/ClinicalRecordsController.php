@@ -131,7 +131,9 @@ class ClinicalRecordsController extends Controller
         abort_unless($clinicalResult->hasContent(), 404);
         $clinicalResult->load([
             'serviceOrderItem.medicalService', 'serviceOrderItem.performer',
-            'serviceOrderItem.serviceOrder.medicalVisit.patient', 'serviceOrderItem.serviceOrder.medicalVisit.examinationRoom',
+            'serviceOrderItem.serviceOrder.medicalVisit.patient.detail:id,patient_id,current_address,permanent_address,citizen_id_number',
+            'serviceOrderItem.serviceOrder.medicalVisit.diagnoses.disease:id,disease_code,name',
+            'serviceOrderItem.serviceOrder.medicalVisit.examinationRoom:id,name',
         ]);
         $record = $clinicalResult->serviceOrderItem->setRelation('result', $clinicalResult);
         $title = 'PHIẾU KẾT QUẢ DỊCH VỤ';
@@ -143,7 +145,11 @@ class ClinicalRecordsController extends Controller
             'image' => route('patient.results.document', [$result, 'result_image']),
         ];
 
-        return response()->view('print.service-result', compact('record', 'title', 'backUrl', 'attachmentUrls'))
+        return response()->view('print.service-result', [
+            ...compact('record', 'title', 'backUrl', 'attachmentUrls'),
+            'includeProfileDetails' => true,
+            'phone' => $request->user()->phone,
+        ])
             ->header('Cache-Control', 'private, no-store');
     }
 

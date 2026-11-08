@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ServiceResult extends Model
 {
+    public const TECHNIQUE_DETAIL_NAME = 'Kỹ thuật thực hiện';
+
     protected $table = 'service_results';
 
     protected $fillable = [

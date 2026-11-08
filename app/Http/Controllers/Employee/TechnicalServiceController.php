@@ -169,7 +169,6 @@ class TechnicalServiceController extends Controller
         $hideUploads = $serviceGroups?->contains(fn ($group) => in_array($group->service_group_code, ['XN', 'CDHA', 'TDCN', 'TT'], true)) ?? false;
         $supportsDetails = in_array($groupCode, ['XN', 'CDHA', 'TDCN', 'TT'], true);
         $supportsParameters = in_array($groupCode, ['XN', 'TDCN'], true);
-        $isImaging = $serviceGroups?->contains(fn ($group) => in_array($group->service_group_code, ['CDHA', 'SA'], true)) ?? false;
         $listQuery = $this->listQuery($request);
         $shortcutGroups = $this->shortcutGroups($request);
         $backGroup = $serviceGroups?->firstWhere('service_group_code', $listQuery['group'] ?? null)
@@ -183,7 +182,7 @@ class TechnicalServiceController extends Controller
             ])
             : route('employee.services.index');
 
-        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'supportsDetails', 'hideUploads', 'groupCode', 'isImaging', 'listQuery', 'backUrl'));
+        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'supportsDetails', 'hideUploads', 'groupCode', 'listQuery', 'backUrl'));
     }
 
     // Chỉ tạo bản xem từ dữ liệu đã lưu trong phạm vi nhân viên được phép xem.
@@ -195,15 +194,15 @@ class TechnicalServiceController extends Controller
             ->with(['medicalService.serviceGroups', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.examinationRoom', 'performer', 'result'])
             ->findOrFail($item);
         $groups = $record->medicalService?->serviceGroups;
-        $group = $groups?->count() === 1 ? $groups->first()->service_group_code : null;
-        $title = match ($group) {
+        abort_unless($groups?->count() === 1 && $record->result?->hasContent(), 404);
+        $title = match ($groups->first()->service_group_code) {
             'XN' => 'PHIẾU KẾT QUẢ XÉT NGHIỆM',
             'CDHA' => 'PHIẾU KẾT QUẢ CHẨN ĐOÁN HÌNH ẢNH',
+            'SA' => 'PHIẾU KẾT QUẢ SIÊU ÂM',
             'TDCN' => 'PHIẾU KẾT QUẢ THĂM DÒ CHỨC NĂNG',
             'TT' => 'PHIẾU KẾT QUẢ THỦ THUẬT',
-            default => null,
+            default => 'PHIẾU KẾT QUẢ DỊCH VỤ',
         };
-        abort_unless($title && $record->result?->hasContent(), 404);
         $backUrl = route($routePrefix.'.show', ['item' => $item, ...$this->listQuery($request)]);
         $attachmentUrls = [
             'pdf' => route($routePrefix.'.document', ['item' => $item, 'type' => 'pdf']),
@@ -260,6 +259,8 @@ class TechnicalServiceController extends Controller
         $routePrefix = $this->routePrefix($request);
         $data = $request->validate([
             'result_version' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/'],
+            'technique' => ['nullable', 'string', 'max:2000'],
+            'result_conclusion' => ['nullable', 'string', 'max:10000'],
             'result_summary' => ['nullable', 'string', 'max:10000'],
             'parameters_present' => ['sometimes', 'in:1'],
             'parameters' => ['sometimes', 'array', 'max:30'],
@@ -283,6 +284,10 @@ class TechnicalServiceController extends Controller
             }],
             'result_pdf' => ClinicalDocument::pdfRules(),
             'result_image' => ClinicalDocument::imageRules(),
+        ], [], [
+            'technique' => 'cách thức và vị trí thực hiện',
+            'result_conclusion' => 'kết luận dịch vụ',
+            'result_summary' => 'mô tả kết quả',
         ]);
         $parameters = [];
         foreach ($data['parameters'] ?? [] as $index => $row) {
@@ -306,7 +311,7 @@ class TechnicalServiceController extends Controller
             }
             $details[] = ['name' => $name, 'value' => $value];
         }
-        // Ghi kết quả và tệp trong một giao dịch; không cho nhân viên tự xác nhận y khoa.
+        // Lưu kết quả và tệp cùng giao dịch; bước xác minh vẫn tách riêng.
         ClinicalDocument::transaction(function (ClinicalDocument $documents) use ($request, $item, $data, $parameters, $details) {
             [$record, $employee] = $this->lockedItem($request, $item);
             if ($record->serviceStatus?->name !== 'PROCESSING' || (int) $record->performed_by_employee_id !== (int) $employee->id || $record->serviceOrder?->status === 'CANCELLED') {
@@ -338,17 +343,39 @@ class TechnicalServiceController extends Controller
             if ($request->has('parameters_present') && $result && ServiceResult::editableParameters($result->result_parameters) === null) {
                 throw ValidationException::withMessages(['parameters' => 'Chỉ số cũ có định dạng khác và được giữ nguyên.']);
             }
-            if ($request->has('details_present') && $result && ServiceResult::editableTechnicalDetails($result->technical_details) === null) {
+            $updatesDetails = $request->has('details_present');
+            $updatesTechnique = array_key_exists('technique', $data);
+            $existingDetails = ServiceResult::editableTechnicalDetails($result?->technical_details);
+            if (($updatesDetails || $updatesTechnique) && $existingDetails === null) {
                 throw ValidationException::withMessages(['details' => 'Thông tin cũ có định dạng khác và được giữ nguyên.']);
             }
             $paths = $documents->store($request, 'service-results/'.$record->id, ClinicalDocument::RESULT_FILES);
-            $summary = trim($data['result_summary'] ?? '');
-            $values = array_merge(['result_summary' => $summary !== '' ? $summary : null, 'resulted_at' => now()], $paths);
+            $values = ['resulted_at' => now(), ...$paths];
+            foreach (['result_summary', 'result_conclusion'] as $field) {
+                if (array_key_exists($field, $data)) {
+                    $values[$field] = $data[$field];
+                }
+            }
             if ($request->has('parameters_present')) $values['result_parameters'] = $parameters;
-            if ($request->has('details_present')) $values['technical_details'] = $details;
+            if ($updatesDetails || $updatesTechnique) {
+                $rows = $updatesDetails ? $details : $existingDetails;
+                if ($updatesTechnique) {
+                    // Trường kỹ thuật nằm ngoài các dòng bổ sung của biểu mẫu.
+                    if (! $updatesDetails) {
+                        $index = array_search(ServiceResult::TECHNIQUE_DETAIL_NAME, array_column($rows, 'name'), true);
+                        if ($index !== false) {
+                            unset($rows[$index]);
+                        }
+                    }
+                    if (filled($data['technique'])) {
+                        array_unshift($rows, ['name' => ServiceResult::TECHNIQUE_DETAIL_NAME, 'value' => $data['technique']]);
+                    }
+                }
+                $values['technical_details'] = array_values($rows);
+            }
             $content = array_merge($result?->getAttributes() ?? [], $values);
             if (! ServiceResult::hasContentValues($content, $record->id)) {
-                throw ValidationException::withMessages(['result_summary' => 'Vui lòng nhập nội dung, chỉ số hoặc thông tin kết quả hợp lệ.']);
+                throw ValidationException::withMessages(['result_summary' => 'Vui lòng nhập kỹ thuật, kết luận, mô tả hoặc chỉ số kết quả hợp lệ.']);
             }
             if ($result) {
                 $result->update($values);
@@ -372,9 +399,12 @@ class TechnicalServiceController extends Controller
             $status = ServiceStatus::where('name', 'COMPLETED')->where('is_active', true)->first();
             if (! $status) throw ValidationException::withMessages(['service' => 'Chưa cấu hình trạng thái hoàn thành.']);
             $record->update(['service_status_id' => $status->id, 'completed_at' => now()]);
+            $record->setRelation('serviceStatus', $status);
+            $progress = app(ServiceOrderProgress::class);
+            $progress->publishCompletedResult($record, $request);
             $this->audit($request, $record, 'Hoàn tất dịch vụ');
             // Dùng quy trình chung để cập nhật phiếu và hàng đợi quay lại bác sĩ.
-            app(ServiceOrderProgress::class)->synchronize($record->service_order_id);
+            $progress->synchronize($record->service_order_id);
         }, 3);
         return redirect()->route($routePrefix.'.show', ['item' => $item, ...$this->listQuery($request)])->with('success', 'Đã hoàn tất dịch vụ.');
     }

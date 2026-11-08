@@ -105,6 +105,7 @@ class ServiceOrderActionsTest extends TestCase
             ])->assertSessionHasNoErrors()->assertSessionMissing('error');
             $item->refresh();
             $this->assertSame('COMPLETED', $item->serviceStatus->name);
+            $this->assertSame('PRIVATE', $item->result->patient_publication_status);
             $this->assertEquals($confirmedAt, $item->completed_at);
             $this->assertEquals($confirmedAt, $item->result->resulted_at);
             $this->get(route('admin.service-results.show', $item->result))->assertOk()

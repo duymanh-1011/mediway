@@ -51,13 +51,24 @@ class WalkInReceptionTest extends TestCase
     public function test_existing_patient_walk_in_requires_payment_then_receives_one_queue_number(): void
     {
         $patient = Patient::where('patient_code', 'BN000005')->firstOrFail();
+        $citizenId = '012345678910';
+        $patient->detail()->updateOrCreate([], ['citizen_id_number' => $citizenId]);
+        $originalName = $patient->full_name;
         $identifier = strtolower($patient->patient_code);
         $this->actingAs($this->receptionist())->post(route('employee.walk-in.search'), ['identifier' => $identifier])->assertRedirect();
         $this->get(route('employee.walk-in.create'))->assertOk()
             ->assertSee('value="'.$identifier.'"', false)->assertSee('Tìm thấy 1 hồ sơ bệnh nhân')
-            ->assertSee($patient->full_name)->assertSee('Chọn hồ sơ để tiếp nhận');
+            ->assertSee('Chọn hồ sơ để tiếp nhận')->assertSee('value="'.$patient->id.'" selected', false)
+            ->assertSee('data-citizen-id="'.$citizenId.'"', false)
+            ->assertSeeInOrder(['data-patient-field="fullName" value="'.$originalName.'"',
+                'data-patient-field="birthDate" value="'.$patient->date_of_birth->toDateString().'"',
+                '<option value="'.$patient->gender.'" selected>',
+                'data-patient-field="citizenId" value="'.$citizenId.'"'], false);
         $payload = ['patient_mode' => 'existing', 'patient_id' => $patient->id, 'schedule_id' => $this->schedule->id, 'confirm_reception' => 1, 'request_token' => (string) \Illuminate\Support\Str::uuid()];
-        $this->post(route('employee.walk-in.store'), $payload)->assertSessionHasNoErrors();
+        $this->post(route('employee.walk-in.store'), [...$payload, 'full_name' => 'Tên nhập nhầm',
+            'date_of_birth' => '2099-01-01', 'gender' => 'không hợp lệ', 'citizen_id_number' => $citizenId])
+            ->assertSessionHasNoErrors();
+        $this->assertSame($originalName, $patient->fresh()->full_name);
         $visit = MedicalVisit::where('patient_id', $patient->id)->where('reception_source', 'WALK_IN')->sole();
         $this->assertNull($visit->appointment_id);
         $this->assertSame(0, $visit->queues()->count());
@@ -83,7 +94,7 @@ class WalkInReceptionTest extends TestCase
     public function test_new_patient_record_is_created_without_creating_an_account(): void
     {
         $this->actingAs($this->receptionist())->post(route('employee.walk-in.store'), [
-            'patient_mode' => 'new', 'full_name' => 'Người Mới Kiểm Thử', 'date_of_birth' => '2000-01-02', 'gender' => 'Nữ',
+            'patient_mode' => 'new', 'patient_id' => 'không sử dụng', 'full_name' => 'Người Mới Kiểm Thử', 'date_of_birth' => '2000-01-02', 'gender' => 'Nữ',
             'citizen_id_number' => '123456789012', 'confirm_search' => 1, 'schedule_id' => $this->schedule->id, 'confirm_reception' => 1, 'request_token' => (string) \Illuminate\Support\Str::uuid(),
         ])->assertSessionHasNoErrors();
         $patient = Patient::where('full_name', 'Người Mới Kiểm Thử')->sole();

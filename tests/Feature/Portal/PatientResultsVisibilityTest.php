@@ -124,7 +124,7 @@ class PatientResultsVisibilityTest extends TestCase
         $this->get(route('patient.notifications', ['danh-muc' => 'ket-qua']))->assertOk()->assertSee($prescription->prescription_code);
     }
 
-    public function test_patient_sees_published_service_results_and_own_visit_results(): void
+    public function test_patient_sees_completed_service_results_and_own_visit_results(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
@@ -132,11 +132,13 @@ class PatientResultsVisibilityTest extends TestCase
         $other = User::where('business_code', 'BN000002')->firstOrFail();
         $own = ServiceResult::whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $patient->patient->id))->firstOrFail();
         $others = ServiceResult::whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $other->patient->id))->firstOrFail();
-        $own->update(['result_summary' => 'Kết quả dịch vụ của bệnh nhân A', 'verified_by_user_id' => null]);
+        $own->update([
+            'result_summary' => 'Kết quả dịch vụ của bệnh nhân A',
+            'result_conclusion' => 'Kết luận dịch vụ của bệnh nhân A',
+            'technical_details' => [['name' => 'Vị trí thực hiện', 'value' => 'Vị trí kiểm thử']],
+            'verified_by_user_id' => null,
+        ]);
         $servicePrint = route('patient.results.service-print', $own);
-        \Illuminate\Support\Facades\DB::table('service_results')->where('id', $own->id)->update(['patient_publication_status' => 'PRIVATE']);
-        $this->actingAs($patient)->get($servicePrint)->assertNotFound();
-        \Illuminate\Support\Facades\DB::table('service_results')->whereIn('id', [$own->id, $others->id])->update(['patient_publication_status' => 'PUBLIC']);
         $others->update(['result_summary' => 'Kết quả riêng của bệnh nhân B']);
         $visit = MedicalVisit::where('patient_id', $patient->patient->id)->whereHas('conclusion')->firstOrFail();
         $visit->conclusion->update(['professional_conclusion' => 'Kết luận khám của bệnh nhân A']);
@@ -146,14 +148,20 @@ class PatientResultsVisibilityTest extends TestCase
         $this->actingAs($patient)->get(route('patient.results'))->assertOk()
             ->assertSee(route('patient.results.visit', $visit->id))->assertDontSee($otherVisit->visit_code);
         $this->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'dich-vu', 'dich-vu' => $own->service_order_item_id]))
-            ->assertOk()->assertSee('Kết quả dịch vụ của bệnh nhân A')->assertSee('Chưa xác minh')
+            ->assertOk()->assertSee('Kết quả dịch vụ của bệnh nhân A')->assertDontSee('Chưa xác minh')
             ->assertSee($servicePrint)
             ->assertSee('Đơn giá ghi nhận')->assertSee('Số lượng')->assertDontSee('Kết quả riêng của bệnh nhân B');
         $this->get(route('patient.results.visit', $visit->id))->assertOk()
             ->assertSee('Kết luận khám của bệnh nhân A')->assertDontSee('Kết luận riêng của bệnh nhân B')
             ->assertSee(route('patient.results.visit-print', $visit));
         $this->get($servicePrint)->assertOk()->assertSee('PHIẾU KẾT QUẢ DỊCH VỤ')->assertSee('data-print-document', false)
-            ->assertSee('Kết quả dịch vụ của bệnh nhân A')->assertDontSee('Kết quả riêng của bệnh nhân B');
+            ->assertSeeInOrder([
+                'Thông tin bệnh nhân', 'Số CCCD', $patient->patient->detail->citizen_id_number, 'Số điện thoại', $patient->phone,
+                'Địa chỉ', 'Chẩn đoán', 'Nội dung kết quả', '1. Kỹ thuật', $own->serviceOrderItem->medicalService->name,
+                'Vị trí thực hiện', 'Vị trí kiểm thử', '2. Kết luận', 'Kết luận dịch vụ của bệnh nhân A',
+                'Mô tả kết quả', 'Kết quả dịch vụ của bệnh nhân A', 'NHÂN VIÊN THỰC HIỆN',
+            ])
+            ->assertDontSee('Kết quả riêng của bệnh nhân B')->assertDontSee('Thời điểm in');
         $this->get(route('patient.results.visit-print', $visit))->assertOk()
             ->assertSee('PHIẾU KẾT QUẢ KHÁM BỆNH')->assertSee('data-print-document', false)
             ->assertSee('Kết luận khám của bệnh nhân A')->assertDontSee('Kết luận riêng của bệnh nhân B');

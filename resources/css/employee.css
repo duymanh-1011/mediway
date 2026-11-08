@@ -175,8 +175,10 @@ body.employee-body .employee-profile .portal-btn{display:inline-flex;align-items
 .tech-order-notes strong{display:inline-block;margin-right:8px;color:#2e4260}
 .tech-entry-panel>p{max-width:68ch;line-height:1.6}
 .tech-detail-page .tech-form{gap:20px;margin-top:22px}
-.tech-detail-page .tech-form>label{gap:8px}
-.tech-detail-page .tech-form>label textarea{min-height:122px;resize:vertical}
+.tech-detail-page .tech-entry-fields{margin-top:14px}
+.tech-detail-page .tech-form .tech-entry-fields>label + label{margin-top:14px}
+.tech-detail-page .tech-form textarea{resize:vertical}
+.tech-detail-page [data-add-detail]{margin-top:8px}
 .tech-detail-page .tech-parameter-editor{padding:20px;border-color:#dbe6f4;background:#f9fbfe}
 .tech-detail-page .tech-parameter-editor legend{padding:0 8px;font-size:15px}
 .tech-detail-page .tech-parameter-editor>p{font-size:13px;line-height:1.55;color:#61738d}

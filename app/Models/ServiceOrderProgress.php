@@ -33,6 +33,7 @@ final class ServiceOrderProgress
             'completed_at' => $item->completed_at?->toDateTimeString(),
         ];
         $item->update(['service_status_id' => $completed->id, 'completed_at' => $completedAt]);
+        $item->setRelation('serviceStatus', $completed);
         $this->auditItemTransition($request, $item, $before, [
             'service_status_id' => $completed->id,
             'service_status' => $completed->name,
@@ -45,6 +46,38 @@ final class ServiceOrderProgress
         } catch (\UnexpectedValueException $exception) {
             throw ValidationException::withMessages(['service_status_id' => $exception->getMessage()]);
         }
+    }
+
+    /** The caller holds the visit and item locks in the same transaction. */
+    public function publishCompletedResult(ServiceOrderItem $item, ?Request $request = null): bool
+    {
+        if ($item->serviceStatus?->name !== 'COMPLETED' || $item->serviceOrder?->status === 'CANCELLED') {
+            return false;
+        }
+
+        $result = $item->result()->lockForUpdate()->first();
+        if ($result?->patient_publication_status !== 'PRIVATE' || ! $result->hasContent()) {
+            return false;
+        }
+
+        $result->patient_publication_status = 'PUBLISHED';
+        $result->save();
+
+        AuditLog::create([
+            'user_id' => $request?->user()?->id,
+            'role_name_snapshot' => $request?->user()?->role?->name,
+            'action' => 'STATUS_CHANGE',
+            'entity_type' => 'service_results',
+            'entity_id' => $result->id,
+            'old_values' => ['patient_publication_status' => 'PRIVATE'],
+            'new_values' => ['patient_publication_status' => 'PUBLISHED'],
+            'description' => 'Công bố kết quả dịch vụ đã hoàn tất cho bệnh nhân.',
+            'ip_address' => $request?->ip(),
+            'user_agent' => $request?->userAgent(),
+            'performed_at' => now(),
+        ]);
+
+        return true;
     }
 
     public function auditItemTransition(Request $request, ServiceOrderItem $item, array $before, array $after, string $action): void

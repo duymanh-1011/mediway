@@ -9,6 +9,48 @@ if (menu) {
     wide.addEventListener('change', (event) => { menu.open = event.matches; });
 }
 
+const walkInForm = document.querySelector('[data-walk-in-form]');
+if (walkInForm) {
+    const patientMode = walkInForm.elements.namedItem('patient_mode');
+    const patientSelect = walkInForm.elements.namedItem('patient_id');
+    const profileFields = walkInForm.querySelectorAll('[data-patient-field]');
+    const confirmSearch = walkInForm.elements.namedItem('confirm_search');
+    const newPatientDraft = new Map();
+    let showingExisting = patientMode.value === 'existing';
+
+    function syncPatientSelection() {
+        const existing = patientMode.value === 'existing';
+        const profile = patientSelect.selectedOptions[0]?.dataset;
+
+        profileFields.forEach((field) => {
+            if (existing) {
+                if (!showingExisting) newPatientDraft.set(field, field.value);
+                field.value = profile?.[field.dataset.patientField] ?? '';
+            } else if (showingExisting) {
+                field.value = newPatientDraft.get(field) ?? '';
+            }
+
+            if (field instanceof HTMLSelectElement) field.disabled = existing;
+            else field.readOnly = existing;
+        });
+        patientSelect.disabled = !existing;
+        confirmSearch.disabled = existing;
+        showingExisting = existing;
+    }
+
+    patientSelect.required = true;
+    walkInForm.addEventListener('change', (event) => {
+        if (event.target.name === 'patient_mode' || event.target === patientSelect) syncPatientSelection();
+    });
+    window.addEventListener('pageshow', syncPatientSelection);
+    document.querySelector('[data-walk-in-choose]')?.addEventListener('click', () => {
+        patientMode.value = 'existing';
+        syncPatientSelection();
+        patientSelect.focus({ preventScroll: true });
+    });
+    syncPatientSelection();
+}
+
 // Thêm hoặc xóa dòng chỉ số; đánh số lại để máy chủ nhận đúng danh sách.
 document.querySelectorAll('[data-parameter-editor]').forEach((editor) => {
     const list = editor.querySelector('[data-parameter-list]');

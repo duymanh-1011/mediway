@@ -60,7 +60,7 @@ class PrescriptionCreationTest extends TestCase
             ->assertDontSee('href="'.route('admin.visits.prescription.create', $visit).'"', false);
         $this->assertNotNull($visit->patient->user);
         $this->actingAs($visit->patient->user)->get(route('patient.prescriptions'))->assertOk()->assertDontSee($prescription->prescription_code);
-        \Illuminate\Support\Facades\DB::table('prescriptions')->where('id', $prescription->id)->update(['patient_publication_status' => 'PUBLIC']);
+        $visit->update(['visit_status_id' => VisitStatus::where('name', 'COMPLETED')->value('id')]);
         $this->actingAs($visit->patient->user)->get(route('patient.prescriptions'))->assertOk()
             ->assertSee($prescription->prescription_code)->assertSee($medicines[0]->name);
     }
@@ -150,7 +150,7 @@ class PrescriptionCreationTest extends TestCase
         $this->get(route('admin.payables.show', $fee))->assertOk()->assertSee('Tiền thuốc')->assertSee($prescription->prescription_code);
         $patient = $visit->patient->user;
         $this->actingAs($patient)->get(route('patient.prescriptions'))->assertOk()->assertDontSee($prescription->prescription_code);
-        \Illuminate\Support\Facades\DB::table('prescriptions')->where('id', $prescription->id)->update(['patient_publication_status' => 'PUBLIC']);
+        $visit->update(['visit_status_id' => VisitStatus::where('name', 'COMPLETED')->value('id')]);
         $this->actingAs($patient)->get(route('patient.prescriptions'))->assertOk()->assertSee('36.000')->assertSee($prescription->prescription_code);
         $this->get(route('patient.payments.index'))->assertOk()->assertSee($fee->payable_code)->assertSee('Tiền thuốc');
         $admin = User::where('business_code', 'QT000001')->firstOrFail();

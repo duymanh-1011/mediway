@@ -22,7 +22,9 @@ class WalkInReceptionController extends Controller
         try {
             $searched = $request->session()->has(self::MATCHES);
             $patientIds = $request->session()->get(self::MATCHES, []);
-            $patients = Patient::whereIn('id', $patientIds)->where('status', 'ACTIVE')->get(['id', 'patient_code', 'full_name', 'date_of_birth']);
+            $patients = Patient::whereIn('id', $patientIds)->where('status', 'ACTIVE')
+                ->with('detail:id,patient_id,citizen_id_number')
+                ->get(['id', 'patient_code', 'full_name', 'date_of_birth', 'gender']);
             $schedules = DoctorSchedule::where('status', 'ACTIVE')->whereDate('work_date', today())
                 ->where('start_time', '<=', now()->format('H:i:s'))->where('end_time', '>', now()->format('H:i:s'))
                 ->withQualifiedDoctor()
@@ -30,7 +32,8 @@ class WalkInReceptionController extends Controller
                 ->whereHas('specialty', fn ($q) => $q->where('status', 'ACTIVE'))
                 ->whereHas('examinationRoom', fn ($q) => $q->where('status', 'ACTIVE'))
                 ->with(['doctor:id,full_name', 'specialty:id,name', 'examinationRoom:id,name'])->orderBy('start_time')->get();
-            return view('employee.reception.walk-in', compact('employee', 'patients', 'schedules', 'searched'));
+            return response()->view('employee.reception.walk-in', compact('employee', 'patients', 'schedules', 'searched'))
+                ->header('Cache-Control', 'private, no-store');
         } catch (QueryException $exception) {
             logger()->error('Không thể tải tiếp đón trực tiếp.', ['exception' => get_class($exception)]);
             return response()->view('employee.reception.unavailable', ['employee' => $employee, 'backRoute' => 'employee.walk-in.create'], 503);
@@ -53,23 +56,23 @@ class WalkInReceptionController extends Controller
     {
         $data = $request->validate([
             'patient_mode' => ['required', Rule::in(['existing', 'new'])],
-            'patient_id' => ['nullable', 'required_if:patient_mode,existing', 'integer', Rule::exists('patients', 'id')],
-            'full_name' => ['nullable', 'required_if:patient_mode,new', 'string', 'max:120', 'regex:/\S/u'],
-            'date_of_birth' => ['nullable', 'required_if:patient_mode,new', 'date_format:Y-m-d', 'before_or_equal:today'],
-            'gender' => ['nullable', 'required_if:patient_mode,new', Rule::in(['Nam', 'Nữ', 'Khác'])],
-            'citizen_id_number' => ['nullable', 'string', 'regex:/^[0-9]{12}$/', Rule::unique('patient_details', 'citizen_id_number')],
-            'confirm_search' => ['accepted_if:patient_mode,new'],
+            'patient_id' => ['exclude_unless:patient_mode,existing', 'required', 'integer', Rule::exists('patients', 'id')],
+            'full_name' => ['exclude_unless:patient_mode,new', 'required', 'string', 'max:120', 'regex:/\S/u'],
+            'date_of_birth' => ['exclude_unless:patient_mode,new', 'required', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'gender' => ['exclude_unless:patient_mode,new', 'required', Rule::in(['Nam', 'Nữ', 'Khác'])],
+            'citizen_id_number' => ['exclude_unless:patient_mode,new', 'nullable', 'string', 'regex:/^[0-9]{12}$/', Rule::unique('patient_details', 'citizen_id_number')],
+            'confirm_search' => ['exclude_unless:patient_mode,new', 'accepted'],
             'schedule_id' => ['required', 'integer', Rule::exists('doctor_schedules', 'id')],
             'request_token' => ['required', 'uuid'],
             'confirm_reception' => ['accepted'],
         ], [
             'patient_mode.required' => 'Vui lòng chọn bệnh nhân có hồ sơ hoặc tạo hồ sơ mới.',
-            'patient_id.required_if' => 'Vui lòng tìm và chọn bệnh nhân đã có hồ sơ.',
-            'full_name.required_if' => 'Vui lòng nhập họ tên bệnh nhân.', 'full_name.regex' => 'Họ tên không được để trống.',
-            'date_of_birth.required_if' => 'Vui lòng nhập ngày sinh.', 'date_of_birth.before_or_equal' => 'Ngày sinh không thể ở tương lai.',
-            'gender.required_if' => 'Vui lòng chọn giới tính.', 'citizen_id_number.regex' => 'CCCD phải gồm 12 chữ số.',
+            'patient_id.required' => 'Vui lòng tìm và chọn bệnh nhân đã có hồ sơ.',
+            'full_name.required' => 'Vui lòng nhập họ tên bệnh nhân.', 'full_name.regex' => 'Họ tên không được để trống.',
+            'date_of_birth.required' => 'Vui lòng nhập ngày sinh.', 'date_of_birth.before_or_equal' => 'Ngày sinh không thể ở tương lai.',
+            'gender.required' => 'Vui lòng chọn giới tính.', 'citizen_id_number.regex' => 'CCCD phải gồm 12 chữ số.',
             'citizen_id_number.unique' => 'CCCD đã có trong hồ sơ. Vui lòng tìm bệnh nhân hiện có.',
-            'confirm_search.accepted_if' => 'Vui lòng xác nhận đã tìm hồ sơ trước khi tạo mới.',
+            'confirm_search.accepted' => 'Vui lòng xác nhận đã tìm hồ sơ trước khi tạo mới.',
             'schedule_id.required' => 'Vui lòng chọn ca khám đang hoạt động.',
             'confirm_reception.accepted' => 'Vui lòng xác nhận thông tin tiếp nhận.',
         ]);

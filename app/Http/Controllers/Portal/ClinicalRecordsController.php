@@ -104,11 +104,47 @@ class ClinicalRecordsController extends Controller
                 ->firstOrFail();
         }
 
-        return view('employee.payments.receipt', [
+        return response()->view('employee.payments.receipt', [
             ...app(\App\Support\Payments\ReceiptViewData::class)->build($receipt),
             'receiptBackUrl' => route('patient.results.visit', ['visit' => $visit, 'tab' => 'giay-to']),
             'receiptBackLabel' => 'Quay lại giấy tờ',
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function printVisitResult(Request $request, int $visit)
+    {
+        $patient = $request->user()->patient;
+        abort_unless($patient && $patient->status === 'ACTIVE', 404);
+
+        $record = $patient->medicalVisits()->whereHas('conclusion')
+            ->with(['examinationRoom:id,name', 'specialty:id,name', 'doctor:id,full_name',
+                'conclusion.doctor:id,full_name', 'diagnoses.disease:id,disease_code,name'])
+            ->findOrFail($visit);
+
+        return response()->view('print.visit-result', compact('record', 'patient'))
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    public function printServiceResult(Request $request, int $result)
+    {
+        $clinicalResult = $this->patientServiceResult($request, $result);
+        abort_unless($clinicalResult->hasContent(), 404);
+        $clinicalResult->load([
+            'serviceOrderItem.medicalService', 'serviceOrderItem.performer',
+            'serviceOrderItem.serviceOrder.medicalVisit.patient', 'serviceOrderItem.serviceOrder.medicalVisit.examinationRoom',
         ]);
+        $record = $clinicalResult->serviceOrderItem->setRelation('result', $clinicalResult);
+        $title = 'PHIẾU KẾT QUẢ DỊCH VỤ';
+        $backUrl = route('patient.results.visit', [
+            'visit' => $record->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $record->id,
+        ]);
+        $attachmentUrls = [
+            'pdf' => route('patient.results.document', [$result, 'result_pdf']),
+            'image' => route('patient.results.document', [$result, 'result_image']),
+        ];
+
+        return response()->view('print.service-result', compact('record', 'title', 'backUrl', 'attachmentUrls'))
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function prescription(Request $request, int $prescription)
@@ -117,10 +153,15 @@ class ClinicalRecordsController extends Controller
         abort_unless($patient && $patient->status === 'ACTIVE', 404);
 
         $record = ClinicalPublication::restrict(Prescription::query(), 'prescriptions')->whereHas('medicalVisit', fn ($visit) => $visit->where('patient_id', $patient->id))
-            ->with(['doctor', 'medicalVisit.diagnoses.disease', 'items.medicine'])
+            ->with(['doctor:id,full_name', 'medicalVisit.diagnoses.disease:id,disease_code,name',
+                'medicalVisit.examinationRoom:id,name', 'items.medicine'])
             ->findOrFail($prescription);
 
-        return view('portal.clinical.prescription-document', compact('record', 'patient'));
+        $patient->load('detail:id,patient_id,current_address,permanent_address,citizen_id_number');
+        $phone = $request->user()->phone;
+
+        return response()->view('portal.clinical.prescription-document', compact('record', 'patient', 'phone'))
+            ->header('Cache-Control', 'private, no-store');
     }
 
     private function recordedCompletionTimes(Collection $visits): Collection
@@ -165,15 +206,7 @@ class ClinicalRecordsController extends Controller
     public function resultDocument(Request $request, int $result, string $type): StreamedResponse
     {
         abort_unless(in_array($type, ['result_pdf', 'result_image'], true), 404);
-
-        $patient = $request->user()->patient;
-        abort_unless($patient && $patient->status === 'ACTIVE', 404);
-
-        $clinicalResult = ClinicalPublication::restrict(ServiceResult::query(), 'service_results')
-            ->whereKey($result)
-            ->whereHas('serviceOrderItem', fn ($item) => $item
-                ->whereHas('serviceOrder.medicalVisit', fn ($visit) => $visit->where('patient_id', $patient->id)))
-            ->firstOrFail();
+        $clinicalResult = $this->patientServiceResult($request, $result);
 
         // Xác định cột đường dẫn, loại tệp và thư mục theo loại tài liệu được yêu cầu.
         $pathColumn = $type === 'result_pdf' ? 'result_pdf_path' : 'result_image_path';
@@ -182,6 +215,16 @@ class ClinicalRecordsController extends Controller
 
         $this->auditDownload($request, 'ServiceResult', $clinicalResult->id, $type);
         return app(ClinicalDocument::class)->response($clinicalResult->{$pathColumn}, $directory, $fileType);
+    }
+
+    private function patientServiceResult(Request $request, int $result): ServiceResult
+    {
+        $patient = $request->user()->patient;
+        abort_unless($patient && $patient->status === 'ACTIVE', 404);
+
+        return ClinicalPublication::restrict(ServiceResult::query(), 'service_results')
+            ->whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($visit) => $visit->where('patient_id', $patient->id))
+            ->findOrFail($result);
     }
 
     // Kiểm tra quyền sở hữu trước khi mở PDF đơn thuốc, kể cả khi truy cập trực tiếp URL.

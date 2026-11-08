@@ -1,574 +1,361 @@
-<!DOCTYPE html>
-<html lang="vi">
+@php
+    /*
+     * Dữ liệu giao dịch lấy từ Controller.
+     * Không ghi dữ liệu hoặc tạo giao dịch trong view.
+     */
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
+    $rawPaidAt = $transaction->paid_at
+        ?? $transaction->confirmed_at
+        ?? ($receiptType === 'prescription' ? null : $transaction->created_at);
 
-    <title>
-        Phiếu thu - {{ $transaction->transaction_code }}
-    </title>
+    $paidAt = $rawPaidAt
+        ? \Carbon\Carbon::parse($rawPaidAt)
+            ->timezone('Asia/Ho_Chi_Minh')
+        : null;
 
+    $amount = (int) round(
+        (float) ($transaction->amount ?? 0)
+    );
 
-    @vite(['resources/css/payment-receipt.css', 'resources/js/employee.js'])
-</head>
+    $amountFormatted = number_format(
+        $amount,
+        0,
+        ',',
+        '.'
+    );
 
-<body @class(['medicine-receipt' => $receiptType === 'prescription'])>
-    @php
-        /*
-         * Dữ liệu giao dịch lấy từ Controller.
-         * Không ghi dữ liệu hoặc tạo giao dịch trong view.
-         */
+    /*
+     * Chỉ hiển thị thông tin cơ sở khi đã cấu hình.
+     * Không in địa chỉ hoặc số điện thoại giả.
+     */
 
-        $rawPaidAt = $transaction->paid_at
-            ?? $transaction->confirmed_at
-            ?? ($receiptType === 'prescription' ? null : $transaction->created_at);
+    $clinicName = config('mediway.clinic_name');
+    $clinicAddress = config('mediway.clinic_address');
+    $clinicPhone = config('mediway.clinic_phone');
 
-        $paidAt = $rawPaidAt
-            ? \Carbon\Carbon::parse($rawPaidAt)
-                ->timezone('Asia/Ho_Chi_Minh')
-            : null;
+    $receiptSubtitle = match ($receiptType) {
+        'exam' => 'Hóa đơn khám bệnh',
+        'service' => 'Hóa đơn dịch vụ',
+        'prescription' => 'HÓA ĐƠN TIỀN THUỐC',
+    };
 
-        $amount = (int) round(
-            (float) ($transaction->amount ?? 0)
-        );
+    /*
+     * Đọc tiền thành chữ.
+     *
+     * Ví dụ:
+     * 120000  => Một trăm hai mươi nghìn đồng
+     * 1400000 => Một triệu bốn trăm nghìn đồng
+     * 1000001 => Một triệu không trăm lẻ một đồng
+     */
 
-        $amountFormatted = number_format(
-            $amount,
-            0,
-            ',',
-            '.'
-        );
+    $digits = [
+        'không',
+        'một',
+        'hai',
+        'ba',
+        'bốn',
+        'năm',
+        'sáu',
+        'bảy',
+        'tám',
+        'chín',
+    ];
 
-        /*
-         * Chỉ hiển thị thông tin cơ sở khi đã cấu hình.
-         * Không in địa chỉ hoặc số điện thoại giả.
-         */
+    $readThree = function (int $number, bool $readFull = false) use ($digits): string {
+        $hundreds = intdiv($number, 100);
+        $tens = intdiv($number % 100, 10);
+        $ones = $number % 10;
 
-        $clinicName = config('mediway.clinic_name');
-        $clinicAddress = config('mediway.clinic_address');
-        $clinicPhone = config('mediway.clinic_phone');
+        $words = [];
 
-        $paymentType = match ($payable->payment_type ?? null) {
-            'EXAMINATION_FEE' => 'Phí khám bệnh',
-            'SERVICE_FEE' => 'Phí dịch vụ kỹ thuật',
-            'MEDICINE_FEE' => 'Tiền thuốc',
-            default => 'Khoản thu khám chữa bệnh',
-        };
-
-        $receiptSubtitle = match ($receiptType) {
-            'exam' => 'Hóa đơn khám bệnh',
-            'service' => 'Hóa đơn dịch vụ',
-            'prescription' => 'HÓA ĐƠN TIỀN THUỐC',
-        };
-
-        $description = $payable->displayContent();
-
-        /*
-         * Đọc tiền thành chữ.
-         *
-         * Ví dụ:
-         * 120000  => Một trăm hai mươi nghìn đồng
-         * 1400000 => Một triệu bốn trăm nghìn đồng
-         * 1000001 => Một triệu không trăm lẻ một đồng
-         */
-
-        $digits = [
-            'không',
-            'một',
-            'hai',
-            'ba',
-            'bốn',
-            'năm',
-            'sáu',
-            'bảy',
-            'tám',
-            'chín',
-        ];
-
-        $readThree = function (int $number, bool $readFull = false) use ($digits): string {
-            $hundreds = intdiv($number, 100);
-            $tens = intdiv($number % 100, 10);
-            $ones = $number % 10;
-
-            $words = [];
-
-            if ($hundreds > 0 || $readFull) {
-                $words[] = $digits[$hundreds] . ' trăm';
-            }
-
-            if ($tens > 1) {
-                $words[] = $digits[$tens] . ' mươi';
-
-                if ($ones === 1) {
-                    $words[] = 'mốt';
-                } elseif ($ones === 5) {
-                    $words[] = 'lăm';
-                } elseif ($ones > 0) {
-                    $words[] = $digits[$ones];
-                }
-            } elseif ($tens === 1) {
-                $words[] = 'mười';
-
-                if ($ones === 5) {
-                    $words[] = 'lăm';
-                } elseif ($ones > 0) {
-                    $words[] = $digits[$ones];
-                }
-            } elseif ($ones > 0) {
-                if ($hundreds > 0 || $readFull) {
-                    $words[] = 'lẻ';
-                }
-
-                $words[] = $digits[$ones];
-            }
-
-            return implode(' ', $words);
-        };
-
-        $amountWords = 'Chưa xác định';
-
-        if ($amount >= 0 && $amount <= 999999999999999) {
-            if ($amount === 0) {
-                $amountWords = 'Không đồng';
-            } else {
-                $scaleNames = [
-                    '',
-                    'nghìn',
-                    'triệu',
-                    'tỷ',
-                    'nghìn tỷ',
-                ];
-
-                $groups = [];
-                $value = $amount;
-
-                while ($value > 0) {
-                    $groups[] = $value % 1000;
-                    $value = intdiv($value, 1000);
-                }
-
-                $highest = count($groups) - 1;
-                $pieces = [];
-
-                for ($i = $highest; $i >= 0; $i--) {
-                    $group = $groups[$i];
-
-                    if ($group === 0) {
-                        continue;
-                    }
-
-                    $readFull = (
-                        $i < $highest
-                        && $group < 100
-                    );
-
-                    $words = $readThree(
-                        $group,
-                        $readFull
-                    );
-
-                    $scale = $scaleNames[$i] ?? '';
-
-                    $pieces[] = trim(
-                        $words . ' ' . $scale
-                    );
-                }
-
-                $amountWords = ucfirst(
-                    implode(' ', $pieces)
-                ) . ' đồng';
-            }
+        if ($hundreds > 0 || $readFull) {
+            $words[] = $digits[$hundreds] . ' trăm';
         }
 
-        $collectorName = $collector?->full_name
-            ?? 'Chưa ghi nhận';
+        if ($tens > 1) {
+            $words[] = $digits[$tens] . ' mươi';
 
-        $collectorCode = $collector?->employee_code
-            ?? '—';
+            if ($ones === 1) {
+                $words[] = 'mốt';
+            } elseif ($ones === 5) {
+                $words[] = 'lăm';
+            } elseif ($ones > 0) {
+                $words[] = $digits[$ones];
+            }
+        } elseif ($tens === 1) {
+            $words[] = 'mười';
 
-        $patientName = $patient?->full_name
-            ?? 'Chưa ghi nhận';
-    @endphp
+            if ($ones === 5) {
+                $words[] = 'lăm';
+            } elseif ($ones > 0) {
+                $words[] = $digits[$ones];
+            }
+        } elseif ($ones > 0) {
+            if ($hundreds > 0 || $readFull) {
+                $words[] = 'lẻ';
+            }
 
-    <div class="screen-wrap">
+            $words[] = $digits[$ones];
+        }
 
-        <nav class="toolbar" aria-label="Thao tác phiếu thu">
+        return implode(' ', $words);
+    };
 
-            <a href="{{ $receiptBackUrl ?? route(
-    'employee.payments.show',
-    ['payable' => $payable->id]
-) }}">
-                ← {{ $receiptBackLabel ?? 'Quay lại chi tiết' }}
-            </a>
+    $amountWords = 'Chưa xác định';
 
-            <button type="button" data-f08-print>
-                In phiếu thu A4
-            </button>
+    if ($amount >= 0 && $amount <= 999999999999999) {
+        if ($amount === 0) {
+            $amountWords = 'Không đồng';
+        } else {
+            $scaleNames = [
+                '',
+                'nghìn',
+                'triệu',
+                'tỷ',
+                'nghìn tỷ',
+            ];
 
-        </nav>
+            $groups = [];
+            $value = $amount;
 
-        <main class="paper">
+            while ($value > 0) {
+                $groups[] = $value % 1000;
+                $value = intdiv($value, 1000);
+            }
 
-            <!-- THÔNG TIN CƠ SỞ -->
-            <header class="document-head">
+            $highest = count($groups) - 1;
+            $pieces = [];
 
-                <div>
-                    <div class="brand-line">
+            for ($i = $highest; $i >= 0; $i--) {
+                $group = $groups[$i];
 
-                        <span class="brand-icon" aria-hidden="true">+</span>
+                if ($group === 0) {
+                    continue;
+                }
 
-                        <div>
-                            <h2 class="brand-name">
-                                MEDIWAY
-                            </h2>
+                $readFull = (
+                    $i < $highest
+                    && $group < 100
+                );
 
-                            <p class="brand-sub">
-                                Hệ thống quản lý phòng khám
-                            </p>
-                        </div>
+                $words = $readThree(
+                    $group,
+                    $readFull
+                );
 
-                    </div>
+                $scale = $scaleNames[$i] ?? '';
 
-                    @if (
-                            $clinicName ||
-                            $clinicAddress ||
-                            $clinicPhone
-                        )
-                        <div class="facility">
+                $pieces[] = trim(
+                    $words . ' ' . $scale
+                );
+            }
 
-                            @if ($clinicName)
-                                <div>
-                                    <strong>
-                                        {{ $clinicName }}
-                                    </strong>
-                                </div>
-                            @endif
+            $amountWords = ucfirst(
+                implode(' ', $pieces)
+            ) . ' đồng';
+        }
+    }
 
-                            @if ($clinicAddress)
-                                <div>
-                                    Địa chỉ:
-                                    {{ $clinicAddress }}
-                                </div>
-                            @endif
+    $collectorName = $collector?->full_name
+        ?? 'Chưa ghi nhận';
 
-                            @if ($clinicPhone)
-                                <div>
-                                    Điện thoại:
-                                    {{ $clinicPhone }}
-                                </div>
-                            @endif
+    $money = static fn ($value) => $value === null ? '—' : number_format((float) $value, 0, ',', '.');
+    $isMedicine = $receiptType === 'prescription';
+    $isExam = $receiptType === 'exam';
+    $examFee = data_get($receiptData ?? $receipt ?? [], 'exam_fee_amount', $payable->amount);
+    $payerAmount = data_get($receiptData ?? $receipt ?? [], 'patient_payable_amount');
+    $insurance = data_get($receiptData ?? $receipt ?? [], 'insurance_allocation');
+    $insuranceLabels = [
+        'government_budget' => 'Nguồn ngân sách chi trả',
+        'insurance_unit_price' => 'Đơn giá bảo hiểm y tế',
+        'insurance_amount' => 'Thành tiền bảo hiểm y tế',
+        'insurance_paid' => 'Bảo hiểm y tế thanh toán',
+        'patient_copay' => 'Bệnh nhân cùng chi trả',
+        'patient_self_pay' => 'Bệnh nhân tự trả',
+        'cancelled_service' => 'Dịch vụ đã hủy',
+    ];
+    $insuranceRows = [];
+    if ($isExam && is_array($insurance)) {
+        foreach ($insuranceLabels as $key => $label) {
+            if (filled($insurance[$key] ?? null)) {
+                $insuranceRows[$label] = $money($insurance[$key]).' đ';
+            }
+        }
+    }
+    $patientFields = [
+        'Họ và tên' => $patient->full_name,
+        'Ngày sinh' => $patient->date_of_birth?->format('d/m/Y'),
+        'Giới tính' => $patient->gender ? \App\Models\AdminDisplay::label($patient->gender) : null,
+        'Tuổi' => match ($receiptType) {
+            'exam' => $examPatient['age'],
+            'service' => $serviceReceipt['patient_age'],
+            'prescription' => $patient->date_of_birth && $paidAt ? (int) $patient->date_of_birth->diffInYears($paidAt) : null,
+        },
+        'Số điện thoại' => $patient->user?->phone,
+        'Địa chỉ' => $patient->detail?->current_address ?: $patient->detail?->permanent_address,
+    ];
+    if ($isExam) {
+        $patientFields['Ngày khám'] = $examPatient['exam_date']?->format('d/m/Y H:i');
+        $patientFields['Chẩn đoán'] = $examPatient['diagnosis'];
+    }
+    if ($isMedicine) {
+        $patientFields['Chẩn đoán'] = $visit->diagnoses
+            ->map(fn ($diagnosis) => $diagnosis->diagnosis_description ?: $diagnosis->disease?->name)->filter()->join('; ');
+        $patientFields['Bác sĩ kê đơn'] = $prescription->doctor?->full_name;
+    }
+    $identifiers = ['Số giao dịch:' => $transaction->transaction_code, 'Mã bệnh nhân:' => $patient->patient_code];
+    if ($isMedicine) {
+        $identifiers['Mã đơn thuốc:'] = $prescription->prescription_code;
+    }
+    $contentHeading = match ($receiptType) {
+        'exam' => 'Chi phí khám, chữa bệnh',
+        'service' => 'Chi tiết dịch vụ',
+        'prescription' => 'Chi tiết tiền thuốc',
+    };
+    $rowLabel = match ($receiptType) {
+        'exam' => 'Nội dung',
+        'service' => 'Dịch vụ',
+        'prescription' => 'Tên thuốc / Hàm lượng',
+    };
+    $rows = match ($receiptType) {
+        'exam' => [['Phí khám bệnh', 'Lần', 1, $examFee, $examFee]],
+        'service' => [[$serviceReceipt['service_name'], $serviceReceipt['service_unit'], $serviceReceipt['quantity'],
+            $serviceReceipt['unit_price'], $serviceReceipt['line_total']]],
+        'prescription' => $prescription->items->map(fn ($item) => [
+            $item->medicine->name.($item->medicine->strength ? ' · '.$item->medicine->strength : ''),
+            $item->usage_unit, $item->quantity, $item->unit_price, $item->line_total,
+        ]),
+    };
+    $totalLabel = match ($receiptType) {
+        'exam' => 'TỔNG CHI PHÍ KHÁM, CHỮA BỆNH',
+        'service' => 'TỔNG TIỀN GIAO DỊCH',
+        'prescription' => 'TỔNG TIỀN BỆNH NHÂN THANH TOÁN',
+    };
+@endphp
 
-                        </div>
-                    @endif
-                </div>
+<x-print.document
+    :title="'Phiếu thu '.$transaction->transaction_code"
+    heading="HÓA ĐƠN"
+    brand-subtitle="Chứng từ thanh toán"
+    :facility="[$clinicName, $visit->examinationRoom?->name, $clinicAddress, $clinicPhone]"
+    :identifiers="$identifiers"
+    :back-url="$receiptBackUrl ?? route('employee.payments.show', ['payable' => $payable->id])"
+    :back-label="$receiptBackLabel ?? 'Quay lại chi tiết'"
+    print-label="In phiếu thu A4"
+    :medicine-receipt="$isMedicine"
+>
+    <x-slot:titleDetails>
+        <div class="print-receipt-title-details">
+            <p>{{ $receiptSubtitle }}</p>
+            <span class="status">ĐÃ THANH TOÁN</span>
+        </div>
+    </x-slot:titleDetails>
 
-                <div class="document-meta">
+    <section class="print-section" aria-labelledby="receipt-patient">
+        <h2 class="print-heading" id="receipt-patient"><span>I.</span> Thông tin bệnh nhân</h2>
+        <x-print.fields :values="$patientFields" :wide="['Họ và tên', 'Địa chỉ', 'Chẩn đoán', 'Bác sĩ kê đơn']" />
+    </section>
 
-                    <div>
-                        <span class="meta-label">
-                            Số giao dịch:
-                        </span>
+    <section class="print-section" aria-labelledby="receipt-details">
+        <div class="print-section-head">
+            <h2 class="print-heading" id="receipt-details"><span>II.</span> {{ $contentHeading }}</h2>
+        </div>
+        @if ($receiptType === 'service')
+            <x-print.fields class="print-facts--wide print-facts--before-table"
+                :values="[
+                    'Bác sĩ chỉ định' => $serviceReceipt['doctor_name'],
+                    'Chuyên khoa / phòng khám' => collect([$serviceReceipt['department_name'], $serviceReceipt['room_name']])->filter()->join(' / '),
+                    'Nhóm dịch vụ' => $serviceReceipt['service_group'],
+                ]"
+                :wide="['Chuyên khoa / phòng khám', 'Nhóm dịch vụ']"
+            />
+        @endif
+        <div class="print-table-wrap" tabindex="0" role="region" aria-labelledby="receipt-details">
+            <table class="print-table" aria-labelledby="receipt-details">
+                <thead>
+                    <tr>
+                        <th class="print-table-index" scope="col">STT</th>
+                        <th class="print-table-label" scope="col">{{ $rowLabel }}</th>
+                        <th class="print-table-unit" scope="col">Đơn vị</th>
+                        <th class="print-table-quantity" scope="col">Số lượng</th>
+                        <th scope="col">Đơn giá (đ)</th>
+                        <th scope="col">Thành tiền (đ)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($rows as [$label, $unit, $quantity, $price, $total])
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <th scope="row">{{ $label }}</th>
+                            <td>{{ $unit ?: '—' }}</td>
+                            <td>{{ $quantity !== null ? str_replace('.', ',', (string) (float) $quantity) : '—' }}</td>
+                            <td class="print-table-number">{{ $money($price) }}</td>
+                            <td class="print-table-number">{{ $money($total) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <th scope="row" colspan="5">{{ $totalLabel }}</th>
+                        <td class="print-table-number">{{ $amountFormatted }} đ</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <p class="print-document-text"><strong>Số tiền bằng chữ</strong> {{ $amountWords }}.</p>
 
-                        <strong>
-                            {{ $transaction->transaction_code }}
-                        </strong>
-                    </div>
+        @if ($insuranceRows)
+            <h3 class="print-heading print-subheading">Phân bổ nguồn thanh toán</h3>
+            <x-print.fields class="print-facts--wide" :values="$insuranceRows" :wide="array_keys($insuranceRows)" />
+        @endif
+        @if ($isExam && filled($payerAmount))
+            <p><strong>Số tiền bệnh nhân phải trả</strong> {{ $money($payerAmount) }} đ</p>
+        @endif
+    </section>
 
-                    @if ($receiptType === 'prescription')
-                        <div><span class="meta-label">Mã đơn thuốc:</span>
-                            <strong>{{ $prescription?->prescription_code ?? '—' }}</strong>
-                        </div>
-                    @endif
-                    @if ($receiptType === 'exam')
-                        <div><span class="meta-label">Mã bệnh nhân:</span>
-                            <strong>{{ $patient?->patient_code ?? '—' }}</strong>
-                        </div>
-                    @endif
+    <section class="print-section" aria-labelledby="receipt-transaction">
+        <h2 class="print-heading" id="receipt-transaction"><span>III.</span> Thông tin giao dịch</h2>
+        <x-print.fields class="print-facts--wide"
+            :values="[
+                'Mã khoản thu' => $payable->payable_code,
+                'Hình thức nộp tiền' => \App\Models\AdminDisplay::label($transaction->payment_method),
+                'Nhân viên thu tiền' => $collectorName,
+                'Mã nhân viên' => $collector?->employee_code,
+                'Nội dung thu' => $payable->displayContent(),
+            ]"
+            :wide="['Nội dung thu']"
+        />
+    </section>
 
-                </div>
+    @if ($isMedicine)
+        <x-print.medication-notes :prescription="$prescription" :always-show-advice="true" />
+    @endif
 
-            </header>
-
-            <!-- TIÊU ĐỀ -->
-            <div class="document-title">
-
-                <h1>
-                    @if ($receiptType === 'exam')
-                        HÓA ĐƠN
-                    @elseif ($receiptType === 'service')
-                        HÓA ĐƠN
-                    @else
-                        HÓA ĐƠN
-                    @endif
-                </h1>
-
-                <p>
-                    @if ($receiptType === 'exam')
-                        Hóa đơn khám bệnh<br>Chứng từ ghi nhận thanh toán tại quầy.
-                    @elseif ($receiptType === 'service')
-                        Hóa đơn dịch vụ - Chứng từ ghi nhận thanh toán tại quầy
-                    @else
-                        {{ $receiptSubtitle }} · Chứng từ ghi nhận thanh toán tại quầy
-                    @endif
-                </p>
-
-                <span class="status">
-                    ĐÃ THANH TOÁN
-                </span>
-
+    @if ($paidAt)
+        <p class="sign-date">Ngày {{ $paidAt->format('d') }} tháng {{ $paidAt->format('m') }} năm {{ $paidAt->format('Y') }}</p>
+    @endif
+    <section @class(['signature-grid', 'signature-grid--medicine' => $isMedicine]) aria-label="Khu vực chữ ký">
+        @if ($isMedicine)
+            <div>
+                <div class="signature-title">NGƯỜI GIAO THUỐC</div>
+                <div class="signature-note">(Ký, ghi rõ họ tên)</div>
+                <div class="signature-space" aria-hidden="true"></div>
             </div>
-
-            @if ($receiptType === 'prescription')
-                @include('employee.payments.receipts.prescription')
-            @elseif ($receiptType === 'exam')
-                @include('employee.payments.receipts.exam')
-            @elseif ($receiptType === 'service')
-                @include('employee.payments.receipts.service')
-            @else
-                <!-- PHẦN I -->
-                <section class="section">
-
-                    <h3 class="section-title">
-                        I. THÔNG TIN BỆNH NHÂN
-                    </h3>
-
-                    <div class="info-grid">
-
-                        <div class="info-item">
-                            <span class="field-label">
-                                Họ và tên bệnh nhân
-                            </span>
-
-                            <strong class="field-value">
-                                {{ $patientName }}
-                            </strong>
-                        </div>
-
-                        <div class="info-item">
-                            <span class="field-label">
-                                Mã bệnh nhân
-                            </span>
-
-                            <strong class="field-value">
-                                {{ $patient?->patient_code ?? '—' }}
-                            </strong>
-                        </div>
-
-                        @if ($receiptType === 'service')
-                            <div class="info-item">
-                                <span class="field-label">
-                                    Mã lượt khám
-                                </span>
-
-                                <strong class="field-value">
-                                    {{ $visit?->visit_code ?? '—' }}
-                                </strong>
-                            </div>
-                        @endif
-
-                        <div class="info-item">
-                            <span class="field-label">
-                                Mã khoản phải thu
-                            </span>
-
-                            <strong class="field-value">
-                                {{ $payable->payable_code ?? '—' }}
-                            </strong>
-                        </div>
-
-                        <div @class(['info-item', 'full' => $receiptType !== 'prescription'])>
-                            <span class="field-label">
-                                Nội dung thu
-                            </span>
-
-                            <strong class="field-value">
-                                {{ $description }}
-                            </strong>
-                        </div>
-
-                    </div>
-
-                </section>
-
-                <!-- PHẦN II -->
-                <section class="section">
-
-                    <h3 class="section-title">
-                        II. CHI TIẾT THANH TOÁN
-                    </h3>
-
-                    @include('employee.payments.receipts.' . $receiptType)
-
-                    <div class="money-words">
-
-                        <strong>
-                            Số tiền bằng chữ:
-                        </strong>
-
-                        <em>
-                            {{ $amountWords }}.
-                        </em>
-
-                    </div>
-
-                    <div class="total-box">
-
-                        <span class="total-label">
-                            TỔNG SỐ TIỀN ĐÃ THU
-                        </span>
-
-                        <strong class="total-value">
-                            {{ $amountFormatted }} đ
-                        </strong>
-
-                    </div>
-
-                </section>
-
-                <!-- PHẦN III -->
-                <section class="section">
-
-                    <h3 class="section-title">
-                        III. THÔNG TIN GIAO DỊCH
-                    </h3>
-
-                    <div class="info-grid">
-
-                        <div class="info-item">
-                            <span class="field-label">
-                                Phương thức thanh toán
-                            </span>
-
-                            <strong class="field-value">
-                                Tiền mặt
-                            </strong>
-                        </div>
-
-                        <div class="info-item">
-                            <span class="field-label">
-                                Trạng thái giao dịch
-                            </span>
-
-                            <strong class="field-value">
-                                Thành công
-                            </strong>
-                        </div>
-
-                        <div class="info-item">
-                            <span class="field-label">
-                                Nhân viên thu tiền
-                            </span>
-
-                            <strong class="field-value">
-                                {{ $collectorName }}
-                            </strong>
-                        </div>
-
-                        <div class="info-item">
-                            <span class="field-label">
-                                Mã nhân viên thu tiền
-                            </span>
-
-                            <strong class="field-value">
-                                {{ $collectorCode }}
-                            </strong>
-                        </div>
-
-                    </div>
-
-                </section>
-
-            @endif
-            @if ($receiptType === 'prescription')
-            <div class="medicine-approval">@endif
-                <!-- NGÀY LẬP -->
-                <div class="sign-date">
-
-                    Ngày {{ $paidAt?->format('d') ?? '...' }}
-                    tháng {{ $paidAt?->format('m') ?? '...' }}
-                    năm {{ $paidAt?->format('Y') ?? '...' }}
-
-                </div>
-
-                <!-- CHỮ KÝ -->
-                <section @class(['signature-grid', 'signature-grid--medicine' => $receiptType === 'prescription'])>
-
-                    @if ($receiptType === 'prescription')
-                        <div>
-                            <div class="signature-title">NGƯỜI GIAO THUỐC</div>
-                            <div class="signature-note">(Ký, ghi rõ họ tên)</div>
-                            <div class="signature-space"></div>
-                        </div>
-                    @endif
-
-                    <div>
-
-                        <div class="signature-title">
-                            {{ $receiptType === 'prescription' ? 'BỆNH NHÂN / NGƯỜI NHẬN THUỐC' : ($receiptType === 'exam' ? 'XÁC NHẬN CỦA NGƯỜI BỆNH' : 'NGƯỜI NỘP TIỀN') }}
-                        </div>
-
-                        <div class="signature-note">
-                            (Ký, ghi rõ họ tên)
-                        </div>
-
-                        <div class="signature-space"></div>
-
-                        <div class="signature-name">
-                            <!-- Để người nộp thực tế ký và ghi tên -->
-                        </div>
-
-                    </div>
-
-                    <div>
-
-                        <div class="signature-title">
-                            {{ $receiptType === 'exam' ? 'NGƯỜI LẬP BẢNG KÊ / NGƯỜI THU TIỀN' : 'NGƯỜI THU TIỀN' }}
-                        </div>
-
-                        <div class="signature-note">
-                            (Ký, ghi rõ họ tên)
-                        </div>
-
-                        <div class="signature-space"></div>
-
-                        <div class="signature-name">
-                            {{ $collectorName }}
-                        </div>
-
-                    </div>
-
-                </section>
-
-                <!-- CHÂN TRANG -->
-                <footer class="receipt-footer">
-
-                    <div>
-                        <strong>MEDIWAY</strong>
-                    </div>
-
-                    @if ($receiptType === 'prescription')
-                        <div>Vui lòng kiểm tra thuốc trước khi rời quầy và sử dụng theo chỉ định của bác sĩ.</div>
-                    @endif
-                    <div>
-                        Phiếu thu được lập từ dữ liệu giao dịch
-                        đã ghi nhận trong hệ thống.
-                    </div>
-
-                    <div>
-                        Phiếu thu không thay thế hóa đơn điện tử
-                        hoặc hóa đơn giá trị gia tăng.
-                    </div>
-
-                </footer>
-                @if ($receiptType === 'prescription')
-                </div>@endif
-
-        </main>
-
-    </div>
-
-</body>
-
-</html>
+        @endif
+        <div>
+            <div class="signature-title">{{ $isMedicine ? 'BỆNH NHÂN / NGƯỜI NHẬN THUỐC' : ($isExam ? 'XÁC NHẬN CỦA NGƯỜI BỆNH' : 'NGƯỜI NỘP TIỀN') }}</div>
+            <div class="signature-note">(Ký, ghi rõ họ tên)</div>
+            <div class="signature-space" aria-hidden="true"></div>
+        </div>
+        <div>
+            <div class="signature-title">{{ $isExam ? 'NGƯỜI LẬP BẢNG KÊ / NGƯỜI THU TIỀN' : 'NGƯỜI THU TIỀN' }}</div>
+            <div class="signature-note">(Ký, ghi rõ họ tên)</div>
+            <div class="signature-space" aria-hidden="true"></div>
+            <div class="signature-name">{{ $collectorName }}</div>
+        </div>
+    </section>
+
+    <footer class="receipt-footer">
+        <p>Phiếu thu được lập từ giao dịch đã ghi nhận trong Mediway và không thay thế hóa đơn điện tử hoặc hóa đơn giá trị gia tăng.</p>
+    </footer>
+</x-print.document>

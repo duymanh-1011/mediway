@@ -192,7 +192,7 @@ class TechnicalServiceController extends Controller
         $employee = $this->technician($request->user());
         $routePrefix = $this->routePrefix($request);
         $record = $this->scopedItems($employee, $this->shortcutGroups($request))
-            ->with(['medicalService.serviceGroups', 'serviceOrder.medicalVisit.patient', 'performer', 'result'])
+            ->with(['medicalService.serviceGroups', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.examinationRoom', 'performer', 'result'])
             ->findOrFail($item);
         $groups = $record->medicalService?->serviceGroups;
         $group = $groups?->count() === 1 ? $groups->first()->service_group_code : null;
@@ -205,9 +205,13 @@ class TechnicalServiceController extends Controller
         };
         abort_unless($title && $record->result?->hasContent(), 404);
         $backUrl = route($routePrefix.'.show', ['item' => $item, ...$this->listQuery($request)]);
+        $attachmentUrls = [
+            'pdf' => route($routePrefix.'.document', ['item' => $item, 'type' => 'pdf']),
+            'image' => route($routePrefix.'.document', ['item' => $item, 'type' => 'image']),
+        ];
 
         // Không lưu bản sao phiếu vào bộ nhớ đệm chung vì chứa dữ liệu y tế.
-        return response()->view('employee.technical.print-result', compact('record', 'title', 'backUrl'))
+        return response()->view('print.service-result', compact('record', 'title', 'backUrl', 'attachmentUrls'))
             ->header('Cache-Control', 'private, no-store, no-cache, must-revalidate')
             ->header('X-Content-Type-Options', 'nosniff')
             ->header('X-Robots-Tag', 'noindex, nofollow');

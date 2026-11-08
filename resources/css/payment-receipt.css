@@ -97,22 +97,154 @@ th, .group-row, .total-row, .ms-total-row, .medicine-total { background: #f1f5f9
 
 .info-grid dd { margin: 2px 0 0; }
 
-/* Doctor's signing area belongs to the prescription, not the payment receipt. */
-.prescription-paper { display: flex; flex-direction: column; }
-.prescription-doctor-signature {
-    align-self: flex-end;
+/* Shared A4 document. */
+.print-document-wrap { width: min(100% - 24px, 210mm); }
+.print-document-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.print-document-toolbar > a { gap: 8px; }
+.print-document-paper { box-shadow: 0 12px 36px rgb(23 32 51 / 7%); }
+.print-document-paper .document-head { align-items: center; }
+.print-document-paper .brand-line { display: grid; grid-template-columns: auto minmax(0, 1fr); }
+.print-document-paper .document-title { padding: 24px 0 6px; }
+.print-document-paper .document-title h1 { font-size: clamp(24px, 5vw, 32px); letter-spacing: .06em; }
+.print-document-paper .document-title p { color: #475569; }
+.print-document-paper .document-title .prescription-status { margin-top: 8px; font-weight: 600; }
+.print-receipt-title-details { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 10px; }
+.print-receipt-title-details .status { margin-top: 0; }
+.document-meta { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; margin: 0; }
+.document-meta > div { display: contents; }
+.print-document-paper dt { color: #475569; font-size: .9em; }
+.print-document-paper dd { margin: 0; font-weight: 600; }
+.print-section { margin-top: 24px; }
+.print-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    column-gap: 12px;
+    margin-bottom: 10px;
+}
+.print-heading { margin: 0; font-size: 17px; }
+.print-heading span { color: #1d4ed8; margin-right: 4px; }
+.prescription-count { color: #475569; font-weight: 600; }
+.print-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 20px;
+    margin: 10px 0 0;
+}
+.print-facts > div {
+    display: grid;
+    grid-template-columns: var(--print-label-width, 6rem) minmax(0, 1fr);
+    column-gap: 8px;
+    align-items: baseline;
+}
+.print-facts dt { display: flex; justify-content: space-between; gap: 4px; }
+.print-fact-wide { grid-column: 1 / -1; }
+.print-fact-divider { border-top: 1px solid #dbe3ed; padding-top: 10px; }
+.print-facts--wide { --print-label-width: 9rem; }
+.print-facts--before-table { margin-bottom: 12px; }
+.print-subheading { margin: 12px 0 0; font-size: 14px; }
+.print-table-wrap { max-width: 100%; overflow-x: auto; }
+.print-table { table-layout: fixed; }
+.print-table :is(th, td) { overflow-wrap: anywhere; }
+.print-table thead th { font-size: .9em; }
+.print-table tbody th { background: transparent; }
+.print-table tfoot { font-weight: 700; }
+.print-table-number { text-align: end; font-variant-numeric: tabular-nums; }
+.print-table-label { width: 34%; }
+.print-table-index { width: 8%; }
+.print-table-unit, .print-table-quantity { width: 11%; }
+.print-document-text { white-space: pre-wrap; margin: 8px 0 0; }
+.print-document-paper .sign-date { text-align: end; margin-top: 24px; }
+.print-document-paper .signature-grid { margin-top: 12px; }
+.print-document-paper .signature-note { color: #64748b; font-size: 12px; font-style: italic; }
+.print-document-paper .receipt-footer p { margin: 0; }
+.print-document-paper .prescription-table { min-width: 0; table-layout: fixed; }
+.prescription-table :is(th, td) { padding: 9px; }
+.prescription-table thead th { font-size: .9em; }
+.prescription-table tbody th { background: transparent; font-weight: 400; }
+.prescription-cell-index { width: 7%; }
+.prescription-cell-name { width: 34%; }
+.prescription-cell-unit { width: 10%; }
+.prescription-cell-quantity { width: 11%; font-variant-numeric: tabular-nums; }
+.prescription-table :is(.prescription-cell-index, .prescription-cell-unit, .prescription-cell-quantity) { text-align: center; }
+.prescription-ingredient { display: block; margin-top: 3px; color: #475569; font-size: .9em; }
+.prescription-cell-directions > div + div { margin-top: 3px; color: #475569; }
+.prescription-mobile-label { display: none; }
+.prescription-advice { margin-top: 16px; }
+.prescription-advice + .prescription-general-notes { margin-top: 28px; }
+.prescription-advice h2 { margin: 0 0 5px; font-size: 15px; }
+.prescription-advice p { margin: 0; white-space: pre-wrap; }
+.prescription-advice ul { margin: 0; padding-inline-start: 1.1em; list-style-type: "– "; }
+.prescription-advice li + li { margin-top: 6px; }
+.print-document-signature {
     width: min(100%, 280px);
-    margin: 32px 0 8px auto;
+    margin: 24px 0 0 auto;
     text-align: center;
     break-inside: avoid;
     page-break-inside: avoid;
 }
-.prescription-doctor-signature h2 { margin: 12px 0 2px; font-size: 14px; font-weight: 700; }
-.prescription-sign-date { margin: 0; font-size: 13px; }
-.prescription-sign-note { margin: 0; color: #64748b; font-size: 12px; font-style: italic; }
-.prescription-sign-space { height: 80px; }
-.prescription-sign-name { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.print-document-signature h2 { margin: 12px 0 2px; font-size: 14px; font-weight: 700; }
+.print-sign-date { margin: 0; font-size: 13px; }
+.print-sign-note { margin: 0; color: #64748b; font-size: 12px; font-style: italic; }
+.print-sign-space { height: 56px; }
+.print-sign-name { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+@media screen and (min-width: calc(210mm + 24px)) {
+    .print-document-paper { min-height: 297mm; padding: 12mm; }
+}
+@media screen and (max-width: 580px) {
+    .print-document-paper .document-title { padding-top: 18px; }
+    .print-facts { gap: 10px 12px; }
+    .prescription-table, .prescription-table tbody { display: block; }
+    .prescription-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .prescription-table tbody tr {
+        display: grid;
+        grid-template-columns: 26px repeat(2, minmax(0, 1fr));
+        gap: 8px 10px;
+        padding: 12px;
+        border: 1px solid #dbe3ed;
+        border-radius: 8px;
+    }
+    .prescription-table tbody tr + tr { margin-top: 8px; }
+    .prescription-table :is(th, td) { width: auto; padding: 0; border: 0; text-align: start; }
+    .prescription-table :is(.prescription-cell-unit, .prescription-cell-quantity) { text-align: start; }
+    .prescription-table .prescription-cell-index { align-self: start; text-align: center; font-weight: 700; color: #1d4ed8; background: #eef4ff; border-radius: 4px; }
+    .prescription-cell-name { grid-column: 2 / -1; }
+    .prescription-cell-unit { grid-column: 1 / 3; }
+    .prescription-cell-quantity { grid-column: 3; }
+    .prescription-cell-directions, .prescription-table-empty { grid-column: 1 / -1; }
+    .prescription-table .prescription-cell-directions { border-top: 1px solid #dbe3ed; padding-top: 8px; }
+    .prescription-mobile-label { display: block; font-size: .85em; color: #475569; }
+}
+@media screen and (max-width: 480px) {
+    .print-facts { grid-template-columns: minmax(0, 1fr); }
+}
 @media print {
-    .prescription-doctor-signature { width: 80mm; }
-    .prescription-sign-space { height: 22mm; }
+    .print-document-wrap { width: auto; }
+    .print-document-paper { box-shadow: none; font-size: 10pt; line-height: 1.35; }
+    .print-document-paper .document-head { padding-bottom: 3mm; }
+    .print-document-paper .document-title { padding-top: 5mm; }
+    .print-document-paper .document-title h1 { font-size: 21pt; }
+    .print-section { margin-top: 4mm; }
+    .print-table-wrap { overflow: visible; }
+    .print-table :is(th, td) { padding: 1.5mm; }
+    .print-table tfoot { display: table-row-group; }
+    .print-document-paper .sign-date { margin-top: 4mm; }
+    .print-document-paper .signature-grid { margin-top: 2mm; }
+    .print-document-paper .receipt-footer { margin-top: 3mm; padding-top: 1.5mm; font-size: 9pt; }
+    .medicine-receipt .print-section { margin-top: 3mm; }
+    .medicine-receipt .print-facts { row-gap: 1mm; }
+    .medicine-receipt .print-table :is(th, td) { padding-block: 1.2mm; }
+    .medicine-receipt .prescription-advice + .prescription-general-notes { margin-top: 5mm; }
+    .medicine-receipt .signature-grid--medicine .signature-title { min-height: 2.5em; font-size: 9pt; line-height: 1.25; }
+    .medicine-receipt .signature-grid--medicine .signature-space { flex-basis: 12mm; }
+    .print-facts { gap: 2mm 4mm; }
+    .print-facts { break-inside: avoid; }
+    .prescription-table :is(th, td) { padding: 1.5mm; }
+    .print-heading, .print-section-head, .prescription-advice h2 { break-after: avoid; }
+    .prescription-advice { margin-top: 3mm; }
+    .prescription-advice + .prescription-general-notes { margin-top: 6mm; }
+    .prescription-general-notes { break-inside: avoid; }
+    .print-document-signature { width: 72mm; margin-top: 4mm; }
+    .print-sign-space { height: 18mm; }
 }

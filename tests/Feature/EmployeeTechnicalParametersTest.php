@@ -66,7 +66,8 @@ class EmployeeTechnicalParametersTest extends TestCase
             ->assertSee('Mediway')->assertSee('Tên &lt;mục&gt;', false)->assertSee('>0<', false)
             ->assertSee('Mã chỉ định')->assertSee($item->serviceOrder->service_order_code)
             ->assertSee('Mã lượt khám')->assertSee($item->serviceOrder->medicalVisit->visit_code)
-            ->assertSee('In / Lưu PDF')->assertDontSee('Trạng thái xác minh')->assertDontSee('Chưa xác minh');
+            ->assertSee('In / Lưu PDF')->assertSee('data-print-document', false)->assertDontSee('data-print-preview', false)
+            ->assertDontSee('Trạng thái xác minh')->assertDontSee('Chưa xác minh');
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
         $this->assertSame($before, $item->fresh()->result->getAttributes());
         $this->assertSame('PROCESSING', $item->fresh()->serviceStatus->name);
@@ -110,8 +111,13 @@ class EmployeeTechnicalParametersTest extends TestCase
 
         $patient = $item->serviceOrder->medicalVisit->patient->user;
         $visit = $item->serviceOrder->medicalVisit;
+        $result = $item->fresh()->result;
         $this->flushSession();
+        $printUrl = route('patient.results.service-print', $result);
+        $this->actingAs($patient)->get($printUrl)->assertNotFound();
+        ServiceResult::whereKey($result->id)->update(['patient_publication_status' => 'PUBLIC']);
         $this->actingAs($patient)->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'dich-vu']))->assertOk()->assertSee('Thông tin thử nghiệm')->assertSee('Giá trị &lt;mẫu&gt;', false);
+        $this->get($printUrl)->assertOk()->assertSee('Thông tin thử nghiệm')->assertSee('Giá trị &lt;mẫu&gt;', false);
         $other = User::where('business_code', 'BN000001')->firstOrFail();
         if ($other->id === $patient->id) $other = User::where('business_code', 'BN000002')->firstOrFail();
         $this->flushSession();
@@ -177,6 +183,7 @@ class EmployeeTechnicalParametersTest extends TestCase
         $patient = $item->serviceOrder->medicalVisit->patient->user;
         $this->flushSession();
         $resultUrl = route('patient.results.visit', ['visit' => $item->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $item->id]);
+        ServiceResult::whereKey($result->id)->update(['patient_publication_status' => 'PUBLIC']);
         $this->actingAs($patient)->get($resultUrl)->assertOk()->assertSee('Đường huyết')->assertSee('5,4 mmol/L');
         $this->flushSession();
         $other = User::where('business_code', 'BN000001')->firstOrFail();

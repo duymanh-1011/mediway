@@ -21,7 +21,7 @@ class EmployeePaymentReceiptTest extends TestCase
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')->whereHas('payable')->firstOrFail();
         $this->actingAs($cashier);
         $checkHeader = function ($response, array $expected): void {
-            $response->assertOk();
+            $response->assertOk()->assertSee('data-print-document', false)->assertDontSee('data-print-preview', false);
             $document = new \DOMDocument();
             $previous = libxml_use_internal_errors(true);
             $document->loadHTML('<?xml encoding="UTF-8">'.$response->getContent(), LIBXML_NONET);
@@ -80,7 +80,7 @@ class EmployeePaymentReceiptTest extends TestCase
             ->get(route('employee.payments.receipt', $transaction))->assertOk()
             ->assertSee('Địa chỉ kiểm thử riêng')->assertSee('0999999432')->assertSee('Chẩn đoán đúng lượt khám')
             ->assertDontSee('Chẩn đoán của lượt khác')->assertSeeText('Nữ');
-        $this->assertMatchesRegularExpression('/Tuổi:<\/strong>\s*35/u', $response->getContent());
+        $this->assertMatchesRegularExpression('/Tuổi:\s*35/u', strip_tags($response->getContent()));
         $this->assertEquals($before, DB::table('payment_transactions')->where('id', $transaction->id)->first());
     }
 
@@ -99,7 +99,7 @@ class EmployeePaymentReceiptTest extends TestCase
         $html = $this->actingAs(User::where('business_code', 'NV000004')->firstOrFail())
             ->get(route('employee.payments.receipt', $transaction))->assertOk()->getContent();
         foreach (['Tuổi:', 'Giới tính:', 'Địa chỉ:', 'Số điện thoại:', 'Chẩn đoán:'] as $label) {
-            $this->assertMatchesRegularExpression('/'.preg_quote($label, '/').'<\/strong>\s*—/u', $html);
+            $this->assertMatchesRegularExpression('/'.preg_quote($label, '/').'\s*—/u', strip_tags($html));
         }
     }
 
@@ -169,16 +169,15 @@ class EmployeePaymentReceiptTest extends TestCase
             $this->assertStringNotContainsString('Ngày thu:', $header);
             $this->assertStringNotContainsString('Giờ thu:', $header);
             $this->assertSame('HÓA ĐƠN', trim($xpath->query('//h1')->item(0)->textContent));
-            $this->assertStringContainsString('I. HÀNH CHÍNH', $html);
-            $this->assertStringContainsString('II. CHI PHÍ KHÁM, CHỮA BỆNH', $html);
+            $this->assertStringContainsString('I. Thông tin bệnh nhân', strip_tags($html));
+            $this->assertStringContainsString('II. Chi phí khám, chữa bệnh', strip_tags($html));
             $this->assertStringNotContainsString('PHIẾU THU TIỀN KIÊM BẢNG KÊ', $html);
             $this->assertStringContainsString('Phí khám bệnh', $html);
-            $this->assertStringContainsString('999.999', $xpath->query("//*[contains(@class,'mw-exam-summary')]")->item(0)->textContent);
-            $this->assertStringContainsString('Chín trăm chín mươi chín nghìn chín trăm chín mươi chín đồng', $xpath->query("//*[contains(@class,'mw-exam-summary')]")->item(0)->textContent);
-            $this->assertSame(6, $xpath->query("//table[contains(@class,'mw-exam-table')][1]/thead/tr/th")->length);
-            $this->assertSame(6, $xpath->query("//table[contains(@class,'mw-exam-table')][1]/tbody/tr[2]/td")->length);
-            $this->assertSame(3, $xpath->query("//table[contains(@class,'mw-exam-table')][1]/tbody/tr")->length);
-            $this->assertStringContainsString('KHÁM', $html);
+            $this->assertStringContainsString('999.999', $xpath->query("//table[contains(@class,'print-table')]/tfoot")->item(0)->textContent);
+            $this->assertStringContainsString('Chín trăm chín mươi chín nghìn chín trăm chín mươi chín đồng', $html);
+            $this->assertSame(6, $xpath->query("//table[contains(@class,'print-table')]/thead/tr/th")->length);
+            $this->assertSame(6, $xpath->query("//table[contains(@class,'print-table')]/tbody/tr[1]/*")->length);
+            $this->assertSame(1, $xpath->query("//table[contains(@class,'print-table')]/tbody/tr")->length);
             $this->assertStringContainsString('TỔNG CHI PHÍ KHÁM, CHỮA BỆNH', $html);
             $this->assertStringNotContainsString('Cộng 1', $html);
             $this->assertStringNotContainsString('Mã lượt khám', $html);
@@ -204,11 +203,11 @@ class EmployeePaymentReceiptTest extends TestCase
         DB::table('users')->where('id', $patient->user_id)->update(['phone' => '0999999433']);
         $response = $this->actingAs(User::where('business_code', 'NV000004')->firstOrFail())
             ->get(route('employee.payments.receipt', $transaction))->assertOk()->assertSee('HÓA ĐƠN')->assertSee('Hóa đơn dịch vụ')
-            ->assertSee($item->medicalService->name)->assertSee('Hình thức nộp tiền:')->assertDontSee('Tổng số tiền đã thu:')
+            ->assertSee($item->medicalService->name)->assertSeeText('Hình thức nộp tiền:')->assertDontSee('Tổng số tiền đã thu:')
             ->assertSee('Địa chỉ dịch vụ thử nghiệm')->assertSee('0999999433')->assertSeeText('Nữ')
             ->assertSee(number_format((float) $item->price_at_order, 0, ',', '.'))
             ->assertSee(number_format((float) $transaction->amount, 0, ',', '.'))->assertDontSee('Ngày chỉ định:')->assertDontSee('Mã chỉ định dịch vụ:')
-            ->assertDontSee('Mã lượt khám')->assertSee('I. THÔNG TIN BỆNH NHÂN')->assertSee('II. THÔNG TIN CHỈ ĐỊNH')->assertSee('III. CHI TIẾT DỊCH VỤ')->assertDontSee('Hóa đơn thuốc');
+            ->assertDontSee('Mã lượt khám')->assertSeeText('I. Thông tin bệnh nhân')->assertSeeText('II. Chi tiết dịch vụ')->assertSeeText('III. Thông tin giao dịch')->assertDontSee('Hóa đơn thuốc');
         if ($item->serviceOrder->orderedByDoctor) $response->assertSee($item->serviceOrder->orderedByDoctor->full_name);
         if ($item->medicalService->unit) $response->assertSee($item->medicalService->unit);
         if ($item->payable->medicalVisit->specialty) $response->assertSee($item->payable->medicalVisit->specialty->name);
@@ -230,10 +229,10 @@ class EmployeePaymentReceiptTest extends TestCase
         $this->assertStringContainsString($transaction->transaction_code, $header);
         $this->assertStringNotContainsString('Ngày thu:', $header);
         $this->assertStringNotContainsString('Giờ thu:', $header);
-        $this->assertSame(1, $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' ms-service-heading ')]//*[contains(., 'Hình thức nộp tiền') and contains(@class, 'ms-payment-method')]")->length);
-        $this->assertSame(6, $xpath->query("//table[contains(@class,'ms-table')]/thead/tr/th")->length);
-        $this->assertSame('—', trim($xpath->query("//table[contains(@class,'ms-table')]/tbody/tr[1]/td[4]")->item(0)->textContent));
-        $this->assertSame(1, substr_count($response->getContent(), 'Hình thức nộp tiền:'));
+        $this->assertSame(1, $xpath->query("//section[@aria-labelledby='receipt-transaction']//dt[contains(., 'Hình thức nộp tiền')]")->length);
+        $this->assertSame(6, $xpath->query("//table[contains(@class,'print-table')]/thead/tr/th")->length);
+        $this->assertSame('—', trim($xpath->query("//table[contains(@class,'print-table')]/tbody/tr[1]/*[4]")->item(0)->textContent));
+        $this->assertSame(1, substr_count(strip_tags($response->getContent()), 'Hình thức nộp tiền:'));
         DB::table('patients')->where('id', $patient->id)->update(['date_of_birth' => null, 'gender' => null, 'user_id' => null]);
         $patient->detail()->update(['current_address' => null]);
         $missingHtml = $this->get(route('employee.payments.receipt', $transaction))->assertOk()->getContent();
@@ -267,9 +266,9 @@ class EmployeePaymentReceiptTest extends TestCase
         foreach ($prescription->items as $item) $response->assertSee($item->medicine->name)->assertSee(number_format((float) $item->quantity * 2000, 0, ',', '.'));
         $response->assertSee('Bác sĩ kê đơn')->assertSee('Chẩn đoán')
             ->assertSee('NGƯỜI GIAO THUỐC')->assertSee('BỆNH NHÂN / NGƯỜI NHẬN THUỐC')->assertSee('NGƯỜI THU TIỀN')
-            ->assertSee('LƯU Ý KHI SỬ DỤNG THUỐC')->assertSee('LỜI DẶN CỦA BÁC SĨ')
+            ->assertSee('Lưu ý chung')->assertSee('Lời dặn của bác sĩ')
             ->assertSee('Lời dặn đúng đơn.')->assertSee('Dòng thứ hai.')->assertDontSee('Lời dặn của đơn khác.')
-            ->assertDontSee('I. THÔNG TIN BỆNH NHÂN');
+            ->assertSeeText('I. Thông tin bệnh nhân');
         $this->assertEquals($transactionBefore, DB::table('payment_transactions')->where('id', $transaction->id)->first());
         $document = new \DOMDocument();
         $previous = libxml_use_internal_errors(true);
@@ -277,18 +276,18 @@ class EmployeePaymentReceiptTest extends TestCase
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
         $xpath = new \DOMXPath($document);
-        $info = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' medicine-info ')]")->item(0)->textContent;
+        $info = $xpath->query("//section[@aria-labelledby='receipt-patient']//dl")->item(0)->textContent;
         foreach (['Nhân viên thu tiền:', 'Phương thức:', 'Ngày thanh toán:', 'Giờ thanh toán:', 'Mã bệnh nhân:', 'Ngày kê đơn:', 'Mã đơn thuốc:'] as $label) {
             $this->assertStringNotContainsString($label, $info);
         }
-        $cells = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' medicine-info ')]/div");
-        foreach (['Họ và tên:', 'Tuổi:', 'Địa chỉ:', 'Giới tính:', 'Chẩn đoán:', 'Bác sĩ kê đơn:'] as $index => $label) {
+        $cells = $xpath->query("//section[@aria-labelledby='receipt-patient']//dt");
+        foreach (['Họ và tên:', 'Ngày sinh:', 'Giới tính:', 'Tuổi:', 'Số điện thoại:', 'Địa chỉ:', 'Chẩn đoán:', 'Bác sĩ kê đơn:'] as $index => $label) {
             $this->assertStringContainsString($label, $cells->item($index)->textContent);
         }
         $meta = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' document-meta ')]")->item(0)->textContent;
         $this->assertStringContainsString('Mã đơn thuốc:', $meta);
         $this->assertStringContainsString($prescription->prescription_code, $meta);
-        $this->assertLessThan(strpos($response->getContent(), 'LƯU Ý KHI SỬ DỤNG THUỐC'), strpos($response->getContent(), 'LỜI DẶN CỦA BÁC SĨ'));
+        $response->assertSeeInOrder(['</table>', 'Lời dặn của bác sĩ', 'Lưu ý chung', 'NGƯỜI GIAO THUỐC'], false);
         $this->assertStringContainsString('Số giao dịch:', $response->getContent());
         $this->assertStringContainsString($transaction->transaction_code, $meta);
         $this->assertStringNotContainsString('Ngày thu:', $meta);

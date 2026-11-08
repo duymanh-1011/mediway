@@ -44,6 +44,11 @@
                     @if ($result->hasDocument('pdf') || $result->hasDocument('image'))
                         <a href="{{ route('patient.results.visit', ['visit' => $record->id, 'tab' => 'giay-to']) }}">Xem tệp kết quả trong mục Giấy tờ</a>
                     @endif
+                    @if ($result->hasContent())
+                        <div class="portal-visit-actions">
+                            <x-portal.button :href="route('patient.results.service-print', $result)">Xem và in phiếu kết quả</x-portal.button>
+                        </div>
+                    @endif
                 </div>
             @elseif ($entry['key'] !== 'kham-benh')
                 <p>Chưa có kết quả dịch vụ.</p>

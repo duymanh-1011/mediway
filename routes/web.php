@@ -141,6 +141,8 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::middleware(PatientMiddleware::class)->get('/tai-lieu/{type}', [\App\Http\Controllers\Portal\PatientDocumentController::class, 'show'])->where('type', 'avatar|citizen-id-front|citizen-id-back|profile-pdf')->name('documents.show');
     Route::middleware(PatientMiddleware::class)->get('/ket-qua', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'results'])->name('results');
     Route::middleware(PatientMiddleware::class)->get('/ket-qua/{visit}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'visit'])->whereNumber('visit')->name('results.visit');
+    Route::middleware(PatientMiddleware::class)->get('/ket-qua/{visit}/phieu-kham', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'printVisitResult'])->whereNumber('visit')->name('results.visit-print');
+    Route::middleware(PatientMiddleware::class)->get('/ket-qua/dich-vu/{result}/phieu-ket-qua', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'printServiceResult'])->whereNumber('result')->name('results.service-print');
     Route::middleware(PatientMiddleware::class)->get('/ket-qua/{visit}/phieu-thu/{transaction}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'receipt'])->whereNumber(['visit', 'transaction'])->name('results.receipt');
     Route::middleware(PatientMiddleware::class)->get('/ket-qua/{result}/tai-lieu/{type}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'resultDocument'])->where('type', 'result_pdf|result_image')->name('results.document');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptions'])->name('prescriptions');

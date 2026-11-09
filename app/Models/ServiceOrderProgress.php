@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ExaminationQueueNumber;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -150,18 +151,22 @@ final class ServiceOrderProgress
             if (! $waitingStatus) {
                 throw new \UnexpectedValueException('Chưa có trạng thái “Đang chờ” đang được sử dụng. Vui lòng kiểm tra mục Trạng thái hàng đợi.');
             }
-            ExaminationRoom::whereKey($visit->examination_room_id)->lockForUpdate()->firstOrFail();
-            $lastNumber = ExaminationRoomQueue::whereDate('queued_at', now()->toDateString())
-                ->whereHas('medicalVisit', fn (Builder $query): Builder => $query->where('examination_room_id', $visit->examination_room_id))
-                ->orderByDesc('queue_number')->lockForUpdate()->value('queue_number');
-
-            ExaminationRoomQueue::create([
-                'medical_visit_id' => $visit->id, 'queue_status_id' => $waitingStatus->id,
-                'queue_number' => ((int) $lastNumber) + 1, 'queue_type' => 'RETURN_AFTER_SERVICE',
+            $queue = $visit->queues()->oldest('id')->lockForUpdate()->first();
+            $number = app(ExaminationQueueNumber::class)->reserve($visit);
+            if ($visit->reception_queue_number === null) {
+                $visit->update(['reception_queue_number' => $number]);
+            }
+            $attributes = [
+                'queue_status_id' => $waitingStatus->id, 'queue_number' => $number, 'queue_type' => 'RETURN_AFTER_SERVICE',
                 'queued_at' => now(), 'called_at' => null, 'service_started_at' => null,
                 'completed_at' => null, 'call_count' => 0,
                 'notes' => 'Quay lại bác sĩ khi các dịch vụ còn lại đã hoàn tất hoặc toàn bộ dịch vụ đã hủy.',
-            ]);
+            ];
+            if ($queue) {
+                $queue->update($attributes);
+            } else {
+                $visit->queues()->create($attributes);
+            }
         }, 3);
     }
 }

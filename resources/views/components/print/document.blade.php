@@ -7,7 +7,6 @@
     'printLabel' => 'In / Lưu PDF',
     'identifiers' => [],
     'facility' => [],
-    'medicineReceipt' => false,
 ])
 <!doctype html>
 <html lang="vi">
@@ -18,8 +17,8 @@
     <title>{{ $title }} - Mediway</title>
     @vite(['resources/css/payment-receipt.css', 'resources/js/print-document.js'])
 </head>
-<body @class(['medicine-receipt' => $medicineReceipt])>
-    <div class="screen-wrap print-document-wrap">
+<body>
+    <div {{ $attributes->class(['screen-wrap', 'print-document-wrap']) }}>
         <nav class="toolbar print-document-toolbar" aria-label="Thao tác tài liệu">
             <a href="{{ $backUrl }}"><span aria-hidden="true">←</span> {{ $backLabel }}</a>
             <div class="print-document-actions">

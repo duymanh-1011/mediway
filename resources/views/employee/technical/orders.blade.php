@@ -12,14 +12,7 @@
 
     <form class="employee-card tech-filter" method="get" action="{{ $ordersUrl }}" aria-label="Lọc chỉ định dịch vụ">
         <label class="tech-filter__search">Tìm chỉ định
-            <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" maxlength="100" placeholder="Mã phiếu, tên hoặc mã bệnh nhân">
-        </label>
-        <label>Người thực hiện
-            <select name="assignee">
-                <option value="">Tất cả công việc hiển thị</option>
-                <option value="mine" @selected(($filters['assignee'] ?? '') === 'mine')>Việc của tôi</option>
-                <option value="unassigned" @selected(($filters['assignee'] ?? '') === 'unassigned')>Chưa có người thực hiện</option>
-            </select>
+            <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" maxlength="100" placeholder="Mã phiếu, tên, mã hoặc SĐT bệnh nhân">
         </label>
         <label>Trạng thái
             <select name="status">

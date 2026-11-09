@@ -106,10 +106,12 @@ class FinalAuditRepairsTest extends TestCase
         $this->post(route('admin.service-order-items.complete', $item))->assertSessionHasNoErrors()->assertSessionMissing('error');
     }
 
-    public function test_multiple_service_rounds_and_a_cancelled_round_each_get_one_new_return_queue(): void
+    public function test_multiple_service_rounds_and_a_cancelled_round_reuse_the_same_queue(): void
     {
         $visit = $this->receive();
         $queue = $this->begin($visit);
+        $originalQueueId = $queue->id;
+        $originalQueueNumber = $queue->queue_number;
         for ($round = 1; $round <= 3; $round++) {
             $order = $this->order($visit);
             $this->assertSame('COMPLETED', $queue->fresh()->status->name);
@@ -122,7 +124,10 @@ class FinalAuditRepairsTest extends TestCase
             }
             app(ServiceOrderProgress::class)->synchronize($order->id);
             app(ServiceOrderProgress::class)->synchronize($order->id);
-            $this->assertSame($round, $visit->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')->count());
+            $returnQueue = $visit->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')->sole();
+            $this->assertSame($originalQueueId, $returnQueue->id);
+            $this->assertSame($originalQueueNumber, $returnQueue->queue_number);
+            $this->assertSame(1, $visit->queues()->count());
             $this->assertSame(1, $visit->queues()->whereHas('status', fn ($q) => $q->where('name', 'WAITING'))->count());
             $queue = $this->begin($visit);
             $this->assertSame('RETURNING', $visit->fresh()->status->name);

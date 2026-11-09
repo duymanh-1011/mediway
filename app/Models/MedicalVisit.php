@@ -24,6 +24,8 @@ class MedicalVisit extends Model
         'examination_room_id',
         'visit_status_id',
         'checked_in_at',
+        'reception_queue_number',
+        'reason_for_visit',
         'examination_started_at',
         'examination_ended_at',
         'reception_source',
@@ -35,6 +37,7 @@ class MedicalVisit extends Model
     {
         return [
             'checked_in_at' => 'datetime',
+            'reception_queue_number' => 'integer',
             'examination_started_at' => 'datetime',
             'examination_ended_at' => 'datetime',
         ];
@@ -126,6 +129,13 @@ class MedicalVisit extends Model
         if ($this->hasUnpaidExaminationFee()) {
             throw ValidationException::withMessages(['visit' => 'Vui lòng thanh toán phí khám trước khi vào khám.']);
         }
+    }
+
+    public function issuedQueueNumber(): ?int
+    {
+        $number = $this->reception_queue_number ?? $this->queues()->oldest('id')->value('queue_number');
+
+        return $number === null ? null : (int) $number;
     }
 
     /** Acquire inside a transaction, before writing clinical child records. */

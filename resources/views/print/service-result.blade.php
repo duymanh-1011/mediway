@@ -5,6 +5,20 @@
     $patient = $visit->patient;
     $parameterRows = $result->parameterDisplayRows();
     $availableAttachments = array_filter($attachmentUrls, fn ($type) => $result->hasDocument($type), ARRAY_FILTER_USE_KEY);
+    [$techniqueRows, $detailRows] = collect($result->technicalDetailRows())->partition(
+        fn ($row) => in_array($row['label'], [\App\Models\ServiceResult::TECHNIQUE_DETAIL_NAME, 'Kỹ thuật'], true)
+    );
+    $technique = $techniqueRows->pluck('value')->filter(fn ($value) => filled($value))->implode("\n");
+    if (filled($result->result_summary) && $result->result_summary !== $result->result_conclusion) {
+        $detailRows->push(['label' => 'Mô tả kết quả', 'value' => $result->result_summary]);
+    }
+    $detailRows = $detailRows->concat($parameterRows);
+    $conclusion = $result->result_conclusion;
+    if (blank($conclusion)) {
+        $conclusion = blank($result->result_summary) && ! $parameterRows && $availableAttachments
+            ? 'Nội dung kết quả nằm trong tệp đính kèm đã lưu. Vui lòng xem tệp trong trang chi tiết.'
+            : 'Chưa ghi nhận kết luận.';
+    }
 @endphp
 
 <x-print.document
@@ -29,30 +43,20 @@
 
     <section class="print-section" aria-labelledby="result-content">
         <h2 class="print-heading" id="result-content"><span>II.</span> Nội dung kết quả</h2>
+        <h3 class="print-heading print-result-title">Kết quả {{ $record->medicalService?->name ?: 'dịch vụ' }}</h3>
         <section aria-labelledby="result-technique">
-            <h3 class="print-heading print-subheading" id="result-technique">1. Kỹ thuật</h3>
-            <p class="print-document-text">{{ $record->medicalService?->name ?: 'Chưa ghi nhận kỹ thuật.' }}</p>
-            @foreach ($result->technicalDetailRows() as $row)
-                <p class="print-document-text"><strong>{{ $row['label'] }}:</strong> <span>{{ $row['value'] }}</span></p>
-            @endforeach
+            <p class="print-document-text"><strong id="result-technique">Kỹ thuật:</strong> {{ filled($technique) ? $technique : 'Chưa ghi nhận kỹ thuật.' }}</p>
+            @if ($detailRows->isNotEmpty())
+                <div class="print-result-details">
+                    @foreach ($detailRows as $row)
+                        <p class="print-document-text"><strong>{{ $row['label'] }}:</strong> <span>{{ $row['value'] }}</span></p>
+                    @endforeach
+                </div>
+            @endif
         </section>
 
         <section aria-labelledby="result-conclusion">
-            <h3 class="print-heading print-subheading" id="result-conclusion">2. Kết luận</h3>
-            @if (filled($result->result_conclusion))
-                <p class="print-document-text">{{ $result->result_conclusion }}</p>
-            @elseif (! filled($result->result_summary) && ! $parameterRows && $availableAttachments)
-                <p class="print-document-text">Nội dung kết quả nằm trong tệp đính kèm đã lưu. Vui lòng xem tệp trong trang chi tiết.</p>
-            @else
-                <p class="print-document-text">Chưa ghi nhận kết luận.</p>
-            @endif
-
-            @if (filled($result->result_summary) && $result->result_summary !== $result->result_conclusion)
-                <p class="print-document-text"><strong>Mô tả kết quả:</strong> {{ $result->result_summary }}</p>
-            @endif
-            @foreach ($parameterRows as $row)
-                <p class="print-document-text"><strong>{{ $row['label'] }}:</strong> {{ $row['value'] }}</p>
-            @endforeach
+            <p class="print-document-text"><strong id="result-conclusion">Kết luận:</strong> {{ $conclusion }}</p>
         </section>
     </section>
 

@@ -74,6 +74,9 @@ class AdminTableNumberingTest extends TestCase
                 $tableCount += substr_count(file_get_contents(resource_path('views/admin/visits/_related-records.blade.php')), '<table');
             }
             $parameters = $action === 'show' ? [DB::table($detailTables[$module])->value('id')] : [];
+            if ($name === 'admin.queues.index') {
+                $parameters['date'] = '2026-10-15';
+            }
             $html = $this->get(route($name, $parameters))->assertOk()->getContent();
             $xpath = $this->xpath($html);
             $this->assertCount($tableCount, $xpath->query('//main//table'), $name.': cần fixture hiển thị đủ các bảng');
@@ -125,9 +128,9 @@ class AdminTableNumberingTest extends TestCase
 
     public function test_queue_number_remains_separate_from_display_sequence(): void
     {
-        $queue = ExaminationRoomQueue::firstOrFail();
+        $queue = ExaminationRoomQueue::whereHas('status', fn ($status) => $status->where('name', 'IN_SERVICE'))->firstOrFail();
         $queue->update(['queue_number' => 512]);
-        $response = $this->get(route('admin.queues.index', ['search' => '512']))->assertOk();
+        $response = $this->get(route('admin.queues.index', ['search' => '512', 'date' => $queue->queued_at->toDateString()]))->assertOk();
         $this->assertSame([1], $this->rowNumbers($response->getContent()));
         $xpath = $this->xpath($response->getContent());
         $this->assertCount(1, $xpath->query('//table/thead/tr/th[normalize-space(.)="Số hàng đợi"]'));

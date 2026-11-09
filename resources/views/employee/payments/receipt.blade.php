@@ -33,12 +33,6 @@
     $clinicAddress = config('mediway.clinic_address');
     $clinicPhone = config('mediway.clinic_phone');
 
-    $receiptSubtitle = match ($receiptType) {
-        'exam' => 'Hóa đơn khám bệnh',
-        'service' => 'Hóa đơn dịch vụ',
-        'prescription' => 'HÓA ĐƠN TIỀN THUỐC',
-    };
-
     /*
      * Đọc tiền thành chữ.
      *
@@ -186,50 +180,23 @@
         'Họ và tên' => $patient->full_name,
         'Ngày sinh' => $patient->date_of_birth?->format('d/m/Y'),
         'Giới tính' => $patient->gender ? \App\Models\AdminDisplay::label($patient->gender) : null,
-        'Tuổi' => match ($receiptType) {
-            'exam' => $examPatient['age'],
-            'service' => $serviceReceipt['patient_age'],
-            'prescription' => $patient->date_of_birth && $paidAt ? (int) $patient->date_of_birth->diffInYears($paidAt) : null,
-        },
+        'Số CCCD' => $patient->detail?->citizen_id_number,
         'Số điện thoại' => $patient->user?->phone,
         'Địa chỉ' => $patient->detail?->current_address ?: $patient->detail?->permanent_address,
     ];
-    if ($isExam) {
-        $patientFields['Ngày khám'] = $examPatient['exam_date']?->format('d/m/Y H:i');
-        $patientFields['Chẩn đoán'] = $examPatient['diagnosis'];
-    }
-    if ($isMedicine) {
-        $patientFields['Chẩn đoán'] = $visit->diagnoses
-            ->map(fn ($diagnosis) => $diagnosis->diagnosis_description ?: $diagnosis->disease?->name)->filter()->join('; ');
-        $patientFields['Bác sĩ kê đơn'] = $prescription->doctor?->full_name;
-    }
     $identifiers = ['Số giao dịch:' => $transaction->transaction_code, 'Mã bệnh nhân:' => $patient->patient_code];
     if ($isMedicine) {
         $identifiers['Mã đơn thuốc:'] = $prescription->prescription_code;
     }
-    $contentHeading = match ($receiptType) {
-        'exam' => 'Chi phí khám, chữa bệnh',
-        'service' => 'Chi tiết dịch vụ',
-        'prescription' => 'Chi tiết tiền thuốc',
-    };
-    $rowLabel = match ($receiptType) {
-        'exam' => 'Nội dung',
-        'service' => 'Dịch vụ',
-        'prescription' => 'Tên thuốc / Hàm lượng',
-    };
     $rows = match ($receiptType) {
         'exam' => [['Phí khám bệnh', 'Lần', 1, $examFee, $examFee]],
-        'service' => [[$serviceReceipt['service_name'], $serviceReceipt['service_unit'], $serviceReceipt['quantity'],
-            $serviceReceipt['unit_price'], $serviceReceipt['line_total']]],
+        // Mỗi khoản thu dịch vụ lưu giá chỉ định, không có số lượng riêng.
+        'service' => [[$serviceItem->medicalService->name, $serviceItem->medicalService->unit, null,
+            $serviceItem->price_at_order, $serviceItem->price_at_order]],
         'prescription' => $prescription->items->map(fn ($item) => [
             $item->medicine->name.($item->medicine->strength ? ' · '.$item->medicine->strength : ''),
             $item->usage_unit, $item->quantity, $item->unit_price, $item->line_total,
         ]),
-    };
-    $totalLabel = match ($receiptType) {
-        'exam' => 'TỔNG CHI PHÍ KHÁM, CHỮA BỆNH',
-        'service' => 'TỔNG TIỀN GIAO DỊCH',
-        'prescription' => 'TỔNG TIỀN BỆNH NHÂN THANH TOÁN',
     };
 @endphp
 
@@ -242,40 +209,28 @@
     :back-url="$receiptBackUrl ?? route('employee.payments.show', ['payable' => $payable->id])"
     :back-label="$receiptBackLabel ?? 'Quay lại chi tiết'"
     print-label="In phiếu thu A4"
-    :medicine-receipt="$isMedicine"
 >
     <x-slot:titleDetails>
         <div class="print-receipt-title-details">
-            <p>{{ $receiptSubtitle }}</p>
             <span class="status">ĐÃ THANH TOÁN</span>
         </div>
     </x-slot:titleDetails>
 
     <section class="print-section" aria-labelledby="receipt-patient">
         <h2 class="print-heading" id="receipt-patient"><span>I.</span> Thông tin bệnh nhân</h2>
-        <x-print.fields :values="$patientFields" :wide="['Họ và tên', 'Địa chỉ', 'Chẩn đoán', 'Bác sĩ kê đơn']" />
+        <x-print.fields :values="$patientFields" :wide="['Họ và tên', 'Địa chỉ']" />
     </section>
 
     <section class="print-section" aria-labelledby="receipt-details">
         <div class="print-section-head">
-            <h2 class="print-heading" id="receipt-details"><span>II.</span> {{ $contentHeading }}</h2>
+            <h2 class="print-heading" id="receipt-details"><span>II.</span> Chi phí khám, chữa bệnh</h2>
         </div>
-        @if ($receiptType === 'service')
-            <x-print.fields class="print-facts--wide print-facts--before-table"
-                :values="[
-                    'Bác sĩ chỉ định' => $serviceReceipt['doctor_name'],
-                    'Chuyên khoa / phòng khám' => collect([$serviceReceipt['department_name'], $serviceReceipt['room_name']])->filter()->join(' / '),
-                    'Nhóm dịch vụ' => $serviceReceipt['service_group'],
-                ]"
-                :wide="['Chuyên khoa / phòng khám', 'Nhóm dịch vụ']"
-            />
-        @endif
         <div class="print-table-wrap" tabindex="0" role="region" aria-labelledby="receipt-details">
             <table class="print-table" aria-labelledby="receipt-details">
                 <thead>
                     <tr>
                         <th class="print-table-index" scope="col">STT</th>
-                        <th class="print-table-label" scope="col">{{ $rowLabel }}</th>
+                        <th class="print-table-label" scope="col">Nội dung</th>
                         <th class="print-table-unit" scope="col">Đơn vị</th>
                         <th class="print-table-quantity" scope="col">Số lượng</th>
                         <th scope="col">Đơn giá (đ)</th>
@@ -296,7 +251,7 @@
                 </tbody>
                 <tfoot>
                     <tr class="total-row">
-                        <th scope="row" colspan="5">{{ $totalLabel }}</th>
+                        <th scope="row" colspan="5">TỔNG CHI PHÍ KHÁM, CHỮA BỆNH</th>
                         <td class="print-table-number">{{ $amountFormatted }} đ</td>
                     </tr>
                 </tfoot>
@@ -313,42 +268,17 @@
         @endif
     </section>
 
-    <section class="print-section" aria-labelledby="receipt-transaction">
-        <h2 class="print-heading" id="receipt-transaction"><span>III.</span> Thông tin giao dịch</h2>
-        <x-print.fields class="print-facts--wide"
-            :values="[
-                'Mã khoản thu' => $payable->payable_code,
-                'Hình thức nộp tiền' => \App\Models\AdminDisplay::label($transaction->payment_method),
-                'Nhân viên thu tiền' => $collectorName,
-                'Mã nhân viên' => $collector?->employee_code,
-                'Nội dung thu' => $payable->displayContent(),
-            ]"
-            :wide="['Nội dung thu']"
-        />
-    </section>
-
-    @if ($isMedicine)
-        <x-print.medication-notes :prescription="$prescription" :always-show-advice="true" />
-    @endif
-
     @if ($paidAt)
         <p class="sign-date">Ngày {{ $paidAt->format('d') }} tháng {{ $paidAt->format('m') }} năm {{ $paidAt->format('Y') }}</p>
     @endif
-    <section @class(['signature-grid', 'signature-grid--medicine' => $isMedicine]) aria-label="Khu vực chữ ký">
-        @if ($isMedicine)
-            <div>
-                <div class="signature-title">NGƯỜI GIAO THUỐC</div>
-                <div class="signature-note">(Ký, ghi rõ họ tên)</div>
-                <div class="signature-space" aria-hidden="true"></div>
-            </div>
-        @endif
+    <section class="signature-grid" aria-label="Khu vực chữ ký">
         <div>
-            <div class="signature-title">{{ $isMedicine ? 'BỆNH NHÂN / NGƯỜI NHẬN THUỐC' : ($isExam ? 'XÁC NHẬN CỦA NGƯỜI BỆNH' : 'NGƯỜI NỘP TIỀN') }}</div>
+            <div class="signature-title">XÁC NHẬN CỦA NGƯỜI BỆNH</div>
             <div class="signature-note">(Ký, ghi rõ họ tên)</div>
             <div class="signature-space" aria-hidden="true"></div>
         </div>
         <div>
-            <div class="signature-title">{{ $isExam ? 'NGƯỜI LẬP BẢNG KÊ / NGƯỜI THU TIỀN' : 'NGƯỜI THU TIỀN' }}</div>
+            <div class="signature-title">NGƯỜI LẬP BẢNG KÊ / NGƯỜI THU TIỀN</div>
             <div class="signature-note">(Ký, ghi rõ họ tên)</div>
             <div class="signature-space" aria-hidden="true"></div>
             <div class="signature-name">{{ $collectorName }}</div>

@@ -163,7 +163,8 @@ class PaymentReadOnlyTest extends TestCase
         $url = route('patient.results.receipt', [$payable->medical_visit_id, $transaction->id]);
         $this->actingAs($payable->medicalVisit->patient->user)->get($url)->assertOk()
             ->assertViewIs('employee.payments.receipt')->assertViewHas('receiptType', 'service')
-            ->assertSee($payable->serviceOrderItem->medicalService->name);
+            ->assertSee($payable->serviceOrderItem->medicalService->name)
+            ->assertSeeText('II. Chi phí khám, chữa bệnh')->assertDontSeeText('III. Thông tin giao dịch');
         $transaction->update(['amount' => (float) $transaction->amount + 1]);
         $this->get($url)->assertStatus(422);
     }
@@ -190,6 +191,7 @@ class PaymentReadOnlyTest extends TestCase
         $visit->update(['visit_status_id' => \App\Models\VisitStatus::where('name', 'COMPLETED')->value('id')]);
         $this->get($url)->assertOk()->assertViewIs('employee.payments.receipt')
             ->assertViewHas('receiptType', 'prescription')->assertSee($prescription->prescription_code)
-            ->assertSee('signature-grid--medicine');
+            ->assertSeeText('II. Chi phí khám, chữa bệnh')->assertDontSeeText('III. Thông tin giao dịch')
+            ->assertSeeText('XÁC NHẬN CỦA NGƯỜI BỆNH')->assertSeeText('NGƯỜI LẬP BẢNG KÊ / NGƯỜI THU TIỀN');
     }
 }

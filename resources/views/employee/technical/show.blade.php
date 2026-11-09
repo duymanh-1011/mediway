@@ -8,9 +8,10 @@
     $stage = $record->technicalStage();
     $displayStatus = \App\Support\TechnicalServiceStatus::for($record);
     $isWorking = $stage === 'PROCESSING' && (int) $record->performed_by_employee_id === (int) $employee->id;
-    $canEdit = $isWorking && ! $result?->verified_by_user_id && $result?->patient_publication_status !== 'PUBLISHED';
     $hasResult = $result?->hasContent();
     $isClosedVisit = $order?->medicalVisit?->status?->name === 'COMPLETED';
+    $canEnterResult = $isWorking && ! $isClosedVisit && ! $hasResult
+        && ! $result?->verified_by_user_id && $result?->patient_publication_status !== 'PUBLISHED';
     $detailQuery = ['item' => $record->id, ...$listQuery];
     $currentVersion = \App\Models\ServiceResult::editVersion($result);
     $submittedVersion = old('result_version');
@@ -58,7 +59,7 @@
         </section>
     @endif
 
-    @if ($canEdit && ! $isClosedVisit)
+    @if ($canEnterResult)
         @php
             $existingDetails = \App\Models\ServiceResult::editableTechnicalDetails($result?->technical_details);
             $techniqueName = \App\Models\ServiceResult::TECHNIQUE_DETAIL_NAME;
@@ -72,7 +73,7 @@
             $submittedSummary = old('result_summary', $result?->result_summary);
         @endphp
         <section class="tech-panel tech-detail-panel tech-entry-panel">
-            <h2>{{ $hasResult ? 'Cập nhật kết quả kỹ thuật' : 'Nhập kết quả kỹ thuật' }}</h2>
+            <h2>Nhập kết quả kỹ thuật</h2>
             <p>Lưu kết quả để xem lại phiếu. Bệnh nhân có thể xem kết quả sau khi bạn xác nhận hoàn tất dịch vụ.</p>
             @if (! $groupCode)<p>Dịch vụ cần có một nhóm xác định để xem trước phiếu và dùng các trường riêng theo nhóm.</p>@endif
             <form method="post" enctype="multipart/form-data" action="{{ route($routePrefix.'.save', $detailQuery) }}" class="tech-form">
@@ -83,7 +84,7 @@
                     <p>Phiếu hiển thị tên dịch vụ và thông tin thực hiện đã ghi nhận.</p>
                     @if ($existingDetails !== null)
                         <label>Cách thức và vị trí thực hiện
-                            <textarea name="technique" rows="3" maxlength="2000" placeholder="Ví dụ: Chụp X-quang xương đùi trái, tư thế thẳng và nghiêng">{{ is_string($submittedTechnique) ? $submittedTechnique : '' }}</textarea>
+                            <textarea name="technique" rows="3" maxlength="2000" placeholder="Nhập phương pháp thực hiện, vị trí hoặc loại mẫu nếu có">{{ is_string($submittedTechnique) ? $submittedTechnique : '' }}</textarea>
                         </label>
                         @if ($supportsDetails)
                             <div class="tech-entry-fields" data-detail-editor>
@@ -162,12 +163,14 @@
                     <label>Ảnh kết quả (tối đa 2 MB)<input type="file" name="result_image" accept=".jpg,.jpeg,.png,.webp"></label>
                 </div>
                 @endif
+                <label class="tech-result-confirmation">
+                    <input type="checkbox" name="confirm_result" value="1" required>
+                    <span>Tôi đã kiểm tra thông tin và xác nhận lưu kết quả. Sau khi lưu, kết quả sẽ được khóa chỉnh sửa.</span>
+                </label>
                 <button type="submit" class="portal-btn portal-btn--primary" data-pending-label="Đang lưu…">Lưu kết quả</button>
             </form>
         </section>
-    @endif
-
-    @if ($result)
+    @elseif ($result)
         <section class="tech-panel tech-detail-panel tech-result-panel">
             <h2>Kết quả đã lưu</h2>
             <section class="tech-result-section" aria-labelledby="saved-details-title">

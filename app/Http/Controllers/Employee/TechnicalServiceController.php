@@ -64,7 +64,7 @@ class TechnicalServiceController extends Controller
     private function listQuery(Request $request): array
     {
         return array_filter(
-            Arr::only($request->query(), ['q', 'group', 'status', 'assignee', 'date', 'page']),
+            Arr::only($request->query(), ['q', 'group', 'status', 'date', 'page']),
             fn ($value) => is_string($value) && $value !== ''
         );
     }
@@ -132,22 +132,23 @@ class TechnicalServiceController extends Controller
             'q' => ['nullable', 'string', 'max:100'],
             'date' => ['nullable', 'date_format:Y-m-d'],
             'status' => ['nullable', 'in:PENDING,READY,WAITING_PAYMENT,PROCESSING,COMPLETED,CANCELLED'],
-            'assignee' => ['nullable', 'in:mine,unassigned'],
         ]);
-        // Tìm theo mã phiếu, tên hoặc mã bệnh nhân trong phạm vi nhân viên được xem.
+        // Tìm chỉ định theo mã phiếu hoặc thông tin bệnh nhân trong phạm vi nhân viên được xem.
         $items = $service->serviceOrderItems()->visibleToTechnician($employee)
             ->with(['serviceStatus', 'serviceOrder.medicalVisit.patient', 'payable.paymentStatus'])
             ->when($filters['q'] ?? null, function (Builder $items, string $search) {
-                $keyword = '%'.trim($search).'%';
+                $term = trim($search);
+                $keyword = '%'.$term.'%';
                 $items->where(fn (Builder $matches) => $matches
                     ->whereHas('serviceOrder', fn ($query) => $query->whereLike('service_order_code', $keyword))
-                    ->orWhereHas('serviceOrder.medicalVisit.patient', fn ($query) => $query->whereLike('full_name', $keyword)->orWhereLike('patient_code', $keyword)));
+                    ->orWhereHas('serviceOrder.medicalVisit.patient', fn ($patient) => $patient
+                        ->whereLike('full_name', $keyword)
+                        ->orWhereLike('patient_code', $keyword)
+                        ->orWhereHas('user', fn ($user) => $user->where('phone', $term))));
             })
-            ->when(($filters['assignee'] ?? null) === 'mine', fn ($query) => $query->where('performed_by_employee_id', $employee->id))
-            ->when(($filters['assignee'] ?? null) === 'unassigned', fn ($query) => $query->whereNull('performed_by_employee_id'))
             ->when($filters['date'] ?? null, fn ($q, $date) => $q->whereHas('serviceOrder', fn ($order) => $order->whereDate('ordered_at', $date)))
             ->when($filters['status'] ?? null, fn (Builder $query, string $stage) => $this->filterStage($query, $stage))
-            ->orderByDesc('id')->paginate(15)->withQueryString();
+            ->orderByDesc('id')->paginate(15)->appends($filters);
         $listQuery = ['group' => $group, ...Arr::except($this->listQuery($request), ['group'])];
         $ordersUrl = route('employee.services.orders', ['group' => $group, 'service' => $service->service_code]);
         $catalogueUrl = route('employee.services.index', ['group' => $group]).'#nhom-'.rawurlencode($group);
@@ -258,6 +259,7 @@ class TechnicalServiceController extends Controller
     {
         $routePrefix = $this->routePrefix($request);
         $data = $request->validate([
+            'confirm_result' => ['accepted'],
             'result_version' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/'],
             'technique' => ['nullable', 'string', 'max:2000'],
             'result_conclusion' => ['nullable', 'string', 'max:10000'],
@@ -284,7 +286,9 @@ class TechnicalServiceController extends Controller
             }],
             'result_pdf' => ClinicalDocument::pdfRules(),
             'result_image' => ClinicalDocument::imageRules(),
-        ], [], [
+        ], [
+            'confirm_result.accepted' => 'Vui lòng xác nhận đã kiểm tra thông tin trước khi lưu kết quả.',
+        ], [
             'technique' => 'cách thức và vị trí thực hiện',
             'result_conclusion' => 'kết luận dịch vụ',
             'result_summary' => 'mô tả kết quả',
@@ -332,12 +336,12 @@ class TechnicalServiceController extends Controller
                 throw ValidationException::withMessages(['service' => 'Dịch vụ này nhập kết quả bằng văn bản, chỉ số hoặc thông tin bổ sung.']);
             }
             $result = ServiceResult::where('service_order_item_id', $record->id)->lockForUpdate()->first();
+            if ($result?->hasContent() || $result?->verified_by_user_id || $result?->patient_publication_status === 'PUBLISHED') {
+                throw ValidationException::withMessages(['service' => 'Kết quả đã được lưu và đã khóa chỉnh sửa.']);
+            }
             // Sau khi khóa chỉ định, từ chối nội dung gửi từ biểu mẫu đã bị thay đổi.
             if (! hash_equals(ServiceResult::editVersion($result), $data['result_version'])) {
                 throw ValidationException::withMessages(['service' => 'Kết quả đã thay đổi. Vui lòng tải lại trang trước khi lưu.']);
-            }
-            if ($result && ($result->verified_by_user_id || $result->patient_publication_status === 'PUBLISHED')) {
-                throw ValidationException::withMessages(['service' => 'Kết quả đã xác minh hoặc đã công bố, không thể sửa trực tiếp.']);
             }
             // Không ghi đè dữ liệu chỉ số cũ có cấu trúc chưa được nhận diện.
             if ($request->has('parameters_present') && $result && ServiceResult::editableParameters($result->result_parameters) === null) {

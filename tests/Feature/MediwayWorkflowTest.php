@@ -140,6 +140,8 @@ class MediwayWorkflowTest extends TestCase
         }
         $this->assertSame('COMPLETED', $order->fresh()->status);
         $returnQueue = $visit->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')->sole();
+        $this->assertSame($queue->id, $returnQueue->id);
+        $this->assertSame($queue->queue_number, $returnQueue->queue_number);
         $this->assertSame('WAITING', $returnQueue->status->name);
         $this->assertSame('WAITING_FOR_SERVICE', $visit->fresh()->status->name);
         $this->assertSame('WAITING_FOR_RETURN', $visit->fresh()->displayStatus());

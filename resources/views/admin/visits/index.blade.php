@@ -13,18 +13,12 @@
 
 @section('content')
 
-    <div class="admin-u-ed1667a9">
-
-        <h1 class="page-title">
-            Lượt khám
-        </h1>
-
-        <p class="page-description">
-            Theo dõi toàn bộ lượt khám,
-            bệnh nhân, bác sĩ, phòng khám
-            và trạng thái xử lý.
-        </p>
-
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Lượt khám</h1>
+            <p class="page-description">Theo dõi toàn bộ lượt khám, bệnh nhân, bác sĩ, phòng khám và trạng thái xử lý.</p>
+        </div>
+        <a href="{{ route('admin.visits.walk-in.create') }}" class="admin-btn admin-btn-primary">Tiếp nhận khám trực tiếp</a>
     </div>
 
 

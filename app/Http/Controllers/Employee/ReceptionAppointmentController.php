@@ -72,6 +72,6 @@ class ReceptionAppointmentController extends Controller
             logger()->error('Không thể hoàn tất tiếp nhận lịch hẹn.', ['exception' => get_class($exception)]);
             return back()->withErrors(['appointment' => 'Không thể tiếp nhận lúc này. Vui lòng thử lại hoặc liên hệ hỗ trợ.']);
         }
-        return redirect()->route('employee.appointments.show', $appointment)->with('success', 'Tiếp nhận thành công. Bệnh nhân cần thanh toán phí khám trước khi được xếp hàng.');
+        return redirect()->route('employee.appointments.show', $appointment)->with('success', 'Đã tiếp nhận và cấp số khám. Bệnh nhân cần thanh toán phí khám trước khi được gọi.');
     }
 }

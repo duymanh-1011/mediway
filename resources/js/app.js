@@ -5,6 +5,7 @@ import { initializeDoctorSpecialtyPairs } from './doctor-specialty';
 import { initializeAdminSidebar } from './admin-sidebar';
 import { initializeResponsiveTables } from './responsive-tables';
 import { initializeConfirmations } from './admin-confirm';
+import './walk-in-reception';
 
 const initializeAdmin = () => {
     initializeAdminSidebar();
@@ -13,7 +14,7 @@ const initializeAdmin = () => {
     initializeResponsiveTables('.admin-content table');
     initializeConfirmations();
 
-    document.querySelectorAll('.admin-content form, .login-card form').forEach((form) => {
+    document.querySelectorAll('.admin-content form:not([data-walk-in-form]), .login-card form').forEach((form) => {
         if (form.method.toLowerCase() === 'get') return;
         form.noValidate = true;
         const controls = [...form.querySelectorAll('input, select, textarea')]

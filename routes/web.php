@@ -57,6 +57,8 @@ use App\Http\Controllers\Portal\AppointmentController as PortalAppointmentContro
 use App\Http\Controllers\Portal\QueueController as PortalQueueController;
 use App\Http\Controllers\Portal\PaymentController as PortalPaymentController;
 use App\Http\Controllers\Portal\AppointmentChangeController as PortalAppointmentChangeController;
+use App\Http\Controllers\WalkInReceptionController;
+use App\Http\Controllers\ReceptionSlipController;
 
 /*
 |--------------------------------------------------------------------------
@@ -122,6 +124,8 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     });
 
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->middleware(PatientMiddleware::class)->name('logout');
+    Route::get('/doi-mat-khau-lan-dau', [PortalAuthController::class, 'initialPassword'])->middleware(PatientMiddleware::class)->name('password.initial');
+    Route::put('/doi-mat-khau-lan-dau', [PortalAuthController::class, 'updateInitialPassword'])->middleware([PatientMiddleware::class, 'throttle:5,1'])->name('password.initial.update');
     Route::middleware(PatientMiddleware::class)->get('/', [PortalController::class, 'placeholder'])->name('home');
     Route::middleware(PatientMiddleware::class)->get('/lich-kham', [PortalController::class, 'appointments'])->name('appointments');
     Route::middleware(PatientMiddleware::class)->group(function () {
@@ -602,6 +606,14 @@ Route::prefix('admin')
             | Lượt khám
             |--------------------------------------------------------------------------
             */
+
+            Route::get('/visits/walk-in', [WalkInReceptionController::class, 'create'])->name('visits.walk-in.create');
+            Route::post('/visits/walk-in/search', [WalkInReceptionController::class, 'search'])->name('visits.walk-in.search');
+            Route::post('/visits/walk-in/{patient}/activation-code', [WalkInReceptionController::class, 'issueActivation'])->whereNumber('patient')->name('visits.walk-in.activation');
+            Route::post('/visits/walk-in', [WalkInReceptionController::class, 'store'])->block()->name('visits.walk-in.store');
+            Route::get('/visits/walk-in/{visit}/credentials', static fn (string $visit) => redirect()->route('admin.visits.show', $visit))
+                ->whereNumber('visit')->name('visits.walk-in.credentials');
+            Route::get('/visits/{visit}/reception-slip', ReceptionSlipController::class)->whereNumber('visit')->name('visits.reception-slip');
 
             Route::patch(
                 '/visits/{medicalVisit}/status',

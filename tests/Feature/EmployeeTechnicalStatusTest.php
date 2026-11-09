@@ -78,7 +78,7 @@ class EmployeeTechnicalStatusTest extends TestCase
         $this->get(route('employee.imaging.show', $labItem->id))->assertNotFound();
         $this->get(route('employee.laboratory.index'))->assertOk();
     }
-    public function test_lab_searches_patient_name_or_code_with_other_filters(): void
+    public function test_lab_searches_patient_name_code_or_phone_with_other_filters(): void
     {
         $item = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail()->items()->firstOrFail();
         $patient = $item->serviceOrder->medicalVisit->patient;
@@ -87,6 +87,9 @@ class EmployeeTechnicalStatusTest extends TestCase
         $this->get(route('employee.services.orders', [...$service, 'q' => $patient->patient_code, 'status' => 'PENDING', 'date' => $item->serviceOrder->ordered_at->format('Y-m-d')]))
             ->assertOk()->assertSee($patient->full_name)->assertSee($patient->patient_code);
         $this->get(route('employee.services.orders', [...$service, 'q' => $patient->full_name]))->assertOk()->assertSee($patient->patient_code);
+        $this->get(route('employee.services.orders', [...$service, 'q' => $patient->user->phone, 'status' => 'PENDING',
+            'date' => $item->serviceOrder->ordered_at->format('Y-m-d')]))
+            ->assertOk()->assertSee($item->serviceOrder->service_order_code);
         $this->get(route('employee.services.orders', [...$service, 'q' => 'BN-KHONG-TON-TAI']))->assertOk()->assertSee('Không tìm thấy phiếu chỉ định');
         $this->get(route('employee.services.orders', $service))->assertOk()->assertSee($patient->patient_code);
     }
@@ -102,6 +105,8 @@ class EmployeeTechnicalStatusTest extends TestCase
         $this->get(route('employee.services.orders', [...$service, 'group' => 'XN']))->assertNotFound();
         $item->update(['performed_by_employee_id' => User::where('business_code', 'NV000002')->firstOrFail()->employee->id]);
         $this->get(route('employee.services.orders', $service))->assertOk()->assertDontSee($item->serviceOrder->service_order_code);
+        $this->get(route('employee.services.orders', [...$service, 'q' => $patient->user->phone]))
+            ->assertOk()->assertDontSee($item->serviceOrder->service_order_code);
     }
 
 }

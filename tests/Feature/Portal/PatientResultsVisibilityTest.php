@@ -135,7 +135,10 @@ class PatientResultsVisibilityTest extends TestCase
         $own->update([
             'result_summary' => 'Kết quả dịch vụ của bệnh nhân A',
             'result_conclusion' => 'Kết luận dịch vụ của bệnh nhân A',
-            'technical_details' => [['name' => 'Vị trí thực hiện', 'value' => 'Vị trí kiểm thử']],
+            'technical_details' => [
+                ['name' => ServiceResult::TECHNIQUE_DETAIL_NAME, 'value' => 'Cách thực hiện kiểm thử'],
+                ['name' => 'Vị trí thực hiện', 'value' => 'Vị trí kiểm thử'],
+            ],
             'verified_by_user_id' => null,
         ]);
         $servicePrint = route('patient.results.service-print', $own);
@@ -157,9 +160,10 @@ class PatientResultsVisibilityTest extends TestCase
         $this->get($servicePrint)->assertOk()->assertSee('PHIẾU KẾT QUẢ DỊCH VỤ')->assertSee('data-print-document', false)
             ->assertSeeInOrder([
                 'Thông tin bệnh nhân', 'Số CCCD', $patient->patient->detail->citizen_id_number, 'Số điện thoại', $patient->phone,
-                'Địa chỉ', 'Chẩn đoán', 'Nội dung kết quả', '1. Kỹ thuật', $own->serviceOrderItem->medicalService->name,
-                'Vị trí thực hiện', 'Vị trí kiểm thử', '2. Kết luận', 'Kết luận dịch vụ của bệnh nhân A',
-                'Mô tả kết quả', 'Kết quả dịch vụ của bệnh nhân A', 'NHÂN VIÊN THỰC HIỆN',
+                'Địa chỉ', 'Chẩn đoán', 'Nội dung kết quả', 'Kết quả '.$own->serviceOrderItem->medicalService->name,
+                'Kỹ thuật:', 'Cách thực hiện kiểm thử', 'Vị trí thực hiện:', 'Vị trí kiểm thử',
+                'Mô tả kết quả:', 'Kết quả dịch vụ của bệnh nhân A', 'Kết luận:', 'Kết luận dịch vụ của bệnh nhân A',
+                'NHÂN VIÊN THỰC HIỆN',
             ])
             ->assertDontSee('Kết quả riêng của bệnh nhân B')->assertDontSee('Thời điểm in');
         $this->get(route('patient.results.visit-print', $visit))->assertOk()

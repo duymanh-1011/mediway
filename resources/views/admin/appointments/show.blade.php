@@ -72,6 +72,9 @@
                 class="admin-btn admin-btn-secondary"
             >← Quay lại</a>
 
+            @if ($medicalVisit?->checked_in_at)
+                <a class="admin-btn admin-btn-detail" href="{{ route('admin.visits.reception-slip', $medicalVisit) }}">Xem phiếu khám</a>
+            @endif
 
             @if ($canEdit)
 

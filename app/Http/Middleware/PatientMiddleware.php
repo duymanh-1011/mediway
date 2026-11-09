@@ -18,13 +18,26 @@ class PatientMiddleware
                 : redirect()->route('patient.login');
         }
 
-        if (! Auth::user()->canAccessPortal()) {
+        $user = Auth::user();
+        if (! $user->canAccessPortal()) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
             return redirect()->route('patient.login')
                 ->withErrors(['auth' => 'Tài khoản không có quyền truy cập khu vực bệnh nhân hoặc đã ngừng hoạt động.']);
+        }
+
+        $sessionHash = $request->session()->get('patient_temporary_password_hash');
+        if (is_string($sessionHash) && ! hash_equals(Auth::guard()->hashPasswordForCookie($user->getAuthPassword()), $sessionHash)) {
+            Auth::guard()->logoutCurrentDevice();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('patient.login');
+        }
+        if ($user->must_change_password && ! $request->routeIs('patient.password.initial', 'patient.password.initial.update', 'patient.logout')) {
+            return redirect()->route('patient.password.initial');
         }
 
         $response = $next($request);

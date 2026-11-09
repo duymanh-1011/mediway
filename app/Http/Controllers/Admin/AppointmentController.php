@@ -12,7 +12,6 @@ use App\Models\AppointmentTimeSlot;
 use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\ExaminationRoom;
-use App\Models\ExaminationRoomQueue;
 use App\Models\MedicalVisit;
 use App\Models\Patient;
 use App\Models\Payable;
@@ -619,7 +618,7 @@ class AppointmentController extends Controller
             )
             ->with(
                 'success',
-                'Tiếp nhận thành công. Vui lòng thanh toán phí khám để được xếp vào hàng đợi.'
+                'Đã tiếp nhận và cấp số khám. Bệnh nhân cần thanh toán phí khám trước khi được gọi.'
             );
     }
 
@@ -1351,47 +1350,6 @@ class AppointmentController extends Controller
         );
 
         return $code;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Sinh số thứ tự hàng đợi theo phòng và ngày
-    |--------------------------------------------------------------------------
-    */
-
-    private function nextQueueNumber(
-        int $examinationRoomId
-    ): int {
-        ExaminationRoom::whereKey($examinationRoomId)->lockForUpdate()->firstOrFail();
-        $lastQueueNumber =
-            ExaminationRoomQueue::query()
-                ->whereDate(
-                    'queued_at',
-                    now()->toDateString()
-                )
-                ->whereHas(
-                    'medicalVisit',
-                    function ($query) use (
-                        $examinationRoomId
-                    ) {
-                        $query->where(
-                            'examination_room_id',
-                            $examinationRoomId
-                        );
-                    }
-                )
-                ->orderByDesc(
-                    'queue_number'
-                )
-                ->lockForUpdate()
-                ->value(
-                    'queue_number'
-                );
-
-        return
-            ((int) $lastQueueNumber)
-            +
-            1;
     }
 
     private function lockBookableSlot(int $slotId, int $doctorScheduleId, ?int $ignoreAppointmentId = null): AppointmentTimeSlot

@@ -36,48 +36,6 @@ th, .group-row, .total-row, .ms-total-row, .medicine-total { background: #f1f5f9
 .signature-grid { text-align: center; margin-top: 24px; }
 .signature-space { min-height: 34px; }
 .signature-title, .signature-name { font-weight: 600; }
-/* Medicine receipts have three signers, unlike the two-signer exam/service forms. */
-.medicine-receipt .signature-grid--medicine {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 20px;
-    align-items: stretch;
-    break-inside: avoid;
-}
-.medicine-receipt .signature-grid--medicine > div {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 0;
-    text-align: center;
-}
-.medicine-receipt .signature-grid--medicine .signature-title {
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    min-height: 3em;
-    width: 100%;
-    font-size: 13px;
-    line-height: 1.5;
-}
-.medicine-receipt .signature-grid--medicine .signature-note {
-    font-size: 12px;
-    font-style: italic;
-    line-height: 1.5;
-}
-.medicine-receipt .signature-grid--medicine .signature-space {
-    flex: 1 0 64px;
-    width: 100%;
-}
-.medicine-receipt .signature-grid--medicine .signature-name {
-    min-height: 1.5em;
-    font-size: 13px;
-    line-height: 1.5;
-    overflow-wrap: anywhere;
-}
-@media screen and (max-width: 480px) {
-    .medicine-receipt .signature-grid--medicine { grid-template-columns: 1fr; gap: 24px; }
-    .medicine-receipt .signature-grid--medicine .signature-title { min-height: 0; }
-}
 .receipt-footer { margin-top: 16px; border-top: 1px solid #dbe3ed; padding-top: 8px; }
 :is(.medicine-table-wrap, .ms-table-wrap, .receipt-table-scroll) { max-width: 100%; overflow: auto; }
 @media screen and (max-width: 620px) {
@@ -142,7 +100,6 @@ th, .group-row, .total-row, .ms-total-row, .medicine-total { background: #f1f5f9
 .print-fact-wide { grid-column: 1 / -1; }
 .print-fact-divider { border-top: 1px solid #dbe3ed; padding-top: 10px; }
 .print-facts--wide { --print-label-width: 9rem; }
-.print-facts--before-table { margin-bottom: 12px; }
 .print-subheading { margin: 12px 0 0; font-size: 14px; }
 .print-table-wrap { max-width: 100%; overflow-x: auto; }
 .print-table { table-layout: fixed; }
@@ -155,6 +112,8 @@ th, .group-row, .total-row, .ms-total-row, .medicine-total { background: #f1f5f9
 .print-table-index { width: 8%; }
 .print-table-unit, .print-table-quantity { width: 11%; }
 .print-document-text { white-space: pre-wrap; margin: 8px 0 0; }
+.print-result-title { margin: 12px 0 0; font-size: clamp(19px, 3vw, 24px); text-align: center; }
+.print-result-details { margin-inline-start: 1em; }
 .print-document-paper .sign-date { text-align: end; margin-top: 24px; }
 .print-document-paper .signature-grid { margin-top: 12px; }
 .print-document-paper .signature-note { color: #64748b; font-size: 12px; font-style: italic; }
@@ -225,6 +184,7 @@ th, .group-row, .total-row, .ms-total-row, .medicine-total { background: #f1f5f9
     .print-document-paper .document-head { padding-bottom: 3mm; }
     .print-document-paper .document-title { padding-top: 5mm; }
     .print-document-paper .document-title h1 { font-size: 21pt; }
+    .print-result-title { font-size: 16pt; }
     .print-section { margin-top: 4mm; }
     .print-table-wrap { overflow: visible; }
     .print-table :is(th, td) { padding: 1.5mm; }
@@ -232,12 +192,6 @@ th, .group-row, .total-row, .ms-total-row, .medicine-total { background: #f1f5f9
     .print-document-paper .sign-date { margin-top: 4mm; }
     .print-document-paper .signature-grid { margin-top: 2mm; }
     .print-document-paper .receipt-footer { margin-top: 3mm; padding-top: 1.5mm; font-size: 9pt; }
-    .medicine-receipt .print-section { margin-top: 3mm; }
-    .medicine-receipt .print-facts { row-gap: 1mm; }
-    .medicine-receipt .print-table :is(th, td) { padding-block: 1.2mm; }
-    .medicine-receipt .prescription-advice + .prescription-general-notes { margin-top: 5mm; }
-    .medicine-receipt .signature-grid--medicine .signature-title { min-height: 2.5em; font-size: 9pt; line-height: 1.25; }
-    .medicine-receipt .signature-grid--medicine .signature-space { flex-basis: 12mm; }
     .print-facts { gap: 2mm 4mm; }
     .print-facts { break-inside: avoid; }
     .prescription-table :is(th, td) { padding: 1.5mm; }
@@ -247,4 +201,32 @@ th, .group-row, .total-row, .ms-total-row, .medicine-total { background: #f1f5f9
     .prescription-general-notes { break-inside: avoid; }
     .print-document-signature { width: 72mm; margin-top: 4mm; }
     .print-sign-space { height: 18mm; }
+}
+.reception-slip { width: min(100% - 24px, 105mm); }
+.reception-slip .print-document-paper { min-height: 0; padding: 6mm; font-size: 12px; line-height: 1.35; }
+.reception-slip .document-head { flex-direction: column; align-items: center; gap: 8px; padding-bottom: 2mm; text-align: center; }
+.reception-slip .brand-line { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 4px; }
+.reception-slip .brand-icon { width: 26px; height: 26px; font-size: 16px; }
+.reception-slip .brand-name { font-size: 15px; }
+.reception-slip .document-meta { grid-template-columns: max-content minmax(0, 1fr); gap: 2px 8px; text-align: start; }
+.reception-slip .print-document-paper .document-title { padding: 3mm 0 2mm; }
+.reception-slip .print-document-paper .document-title h1 { font-size: 18px; }
+.reception-slip .print-facts { --print-label-width: 25mm; grid-template-columns: minmax(0, 1fr); gap: 1mm; margin: 0 clamp(8px, 5%, 5mm); }
+.reception-slip-end { break-inside: avoid; }
+.reception-slip-number { margin-top: 3mm; text-align: center; }
+.reception-slip-number .print-heading { font-size: 14px; }
+.reception-slip-number__value { display: block; font-size: 6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.reception-slip-footer { margin-top: 3mm; text-align: center; }
+.reception-slip-footer p { margin: 0; }
+.reception-slip-footer p + p { margin-top: 2mm; }
+
+@page reception-slip { size: 105mm 148mm; margin: 6mm; }
+@media print {
+    .reception-slip { page: reception-slip; width: auto; }
+    .reception-slip .print-document-paper { padding: 0; font-size: 9.5pt; }
+    .reception-slip .print-document-paper .document-title { padding: 2mm 0 1mm; }
+    .reception-slip .print-facts { row-gap: .5mm; break-inside: auto; }
+    .reception-slip .print-facts > div { break-inside: avoid; }
+    .reception-slip-number, .reception-slip-footer { margin-top: 2mm; }
+    .reception-slip-number__value { line-height: .9; }
 }

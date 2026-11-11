@@ -300,7 +300,7 @@
 
                         <div class="form-group">
 
-                            <p>Thời điểm trả kết quả và hoàn tất dịch vụ được ghi tự động khi bạn xác nhận.</p>
+                            <p>Khi bạn xác nhận, hệ thống ghi thời điểm hoàn tất và cho bệnh nhân xem kết quả trên cổng Mediway.</p>
 
                         </div>
 

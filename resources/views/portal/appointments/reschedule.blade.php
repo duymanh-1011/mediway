@@ -121,7 +121,7 @@
                             @empty
 
                                 <p class="mw-slot-empty">
-                                    Hiện chưa có khung giờ phù hợp còn chỗ.
+                                    Hiện chưa có khung giờ phù hợp để đổi lịch.
                                     Vui lòng quay lại sau.
                                 </p>
 

@@ -136,16 +136,21 @@ class MediwayWorkflowTest extends TestCase
             if ($index === 0) {
                 $this->assertFalse($visit->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')->exists());
                 $this->assertSame('WAITING_FOR_SERVICE', $visit->fresh()->displayStatus());
+                $this->get(route('admin.queues.show', $queue))->assertOk()->assertSee('data-status="WAITING_FOR_SERVICE"', false);
             }
         }
         $this->assertSame('COMPLETED', $order->fresh()->status);
         $returnQueue = $visit->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')->sole();
+        $this->assertSame($queue->id, $returnQueue->id);
+        $this->assertSame($queue->queue_number, $returnQueue->queue_number);
         $this->assertSame('WAITING', $returnQueue->status->name);
         $this->assertSame('WAITING_FOR_SERVICE', $visit->fresh()->status->name);
         $this->assertSame('WAITING_FOR_RETURN', $visit->fresh()->displayStatus());
-        $this->get(route('admin.visits.show', $visit))->assertOk()->assertSee('Chờ khám lại')
-            ->assertSee('Bệnh nhân đang chờ quay lại bác sĩ')->assertDontSee('Lượt khám không còn trạng thái tiếp theo.');
-        $this->get(route('admin.visits.index'))->assertOk()->assertSee('Chờ khám lại');
+        $this->get(route('admin.queues.show', $returnQueue))->assertOk()->assertSee('Quay lại phòng khám')
+            ->assertDontSee('data-status="WAITING_FOR_SERVICE"', false);
+        $this->get(route('admin.visits.show', $visit))->assertOk()->assertSee('Quay lại phòng khám')
+            ->assertSee('Hãy gọi bệnh nhân từ hàng đợi để quay lại phòng khám.')->assertDontSee('Lượt khám không còn trạng thái tiếp theo.');
+        $this->get(route('admin.visits.index'))->assertOk()->assertSee('Quay lại phòng khám')->assertSee('bao gồm quay lại phòng khám');
         $this->post(route('admin.service-order-items.complete', $order->items->last()))->assertSessionHasNoErrors();
         $this->assertSame(1, $visit->queues()->where('queue_type', 'RETURN_AFTER_SERVICE')->count());
         $this->post(route('admin.queues.call', $returnQueue))->assertSessionHasNoErrors();
@@ -226,12 +231,14 @@ class MediwayWorkflowTest extends TestCase
         $this->assertSame('PROCESSING', $item->fresh()->serviceStatus->name);
     }
 
-    public function test_full_inactive_past_or_outside_schedule_slots_cannot_be_booked(): void
+    public function test_legacy_capacity_does_not_block_booking_but_invalid_slots_do(): void
     {
         $slot = $this->slot();
         $this->book($slot);
         $data = ['patient_id' => Patient::where('patient_code', 'BN000001')->value('id'), 'appointment_time_slot_id' => $slot->id, 'reason_for_visit' => 'Kiểm thử'];
-        $this->post(route('admin.appointments.store'), $data)->assertSessionHasErrors('appointment_time_slot_id');
+        $this->post(route('admin.appointments.store'), $data)->assertSessionHasNoErrors();
+        $this->assertSame(2, $slot->appointments()->count());
+        $data['patient_id'] = Patient::where('patient_code', 'BN000002')->value('id');
         $slot->update(['max_patients' => 2, 'status' => 'INACTIVE']);
         $this->post(route('admin.appointments.store'), $data)->assertSessionHasErrors('appointment_time_slot_id');
         $slot->update(['status' => 'ACTIVE', 'start_time' => '06:00:00', 'end_time' => '06:30:00']);

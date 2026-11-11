@@ -57,6 +57,8 @@ use App\Http\Controllers\Portal\AppointmentController as PortalAppointmentContro
 use App\Http\Controllers\Portal\QueueController as PortalQueueController;
 use App\Http\Controllers\Portal\PaymentController as PortalPaymentController;
 use App\Http\Controllers\Portal\AppointmentChangeController as PortalAppointmentChangeController;
+use App\Http\Controllers\WalkInReceptionController;
+use App\Http\Controllers\ReceptionSlipController;
 
 /*
 |--------------------------------------------------------------------------
@@ -88,6 +90,7 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
             Route::get('/', [$controller, 'index'])->middleware($viewPermission)->name('index');
             if ($routeName === 'services') {
                 Route::get('/nhom/{group}/{service}', [$controller, 'orders'])->middleware($viewPermission)->name('orders');
+                Route::post('/nhom/{group}/{service}', [$controller, 'filterOrders'])->middleware($viewPermission)->name('orders.filter');
             }
             Route::get('/{item}', [$controller, 'show'])->whereNumber('item')->middleware($viewPermission)->name('show');
             Route::get('/{item}/phieu-ket-qua', [$controller, 'printResult'])->whereNumber('item')->middleware($viewPermission)->name('print');
@@ -100,6 +103,7 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->name('logout');
 
     Route::get('/thanh-toan', [\App\Http\Controllers\Employee\PayableController::class, 'index'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.index');
+    Route::post('/thanh-toan/loc', [\App\Http\Controllers\Employee\PayableController::class, 'filter'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.filter');
     Route::get('/thanh-toan/{payable}/ghi-nhan', [\App\Http\Controllers\Employee\PaymentCollectionController::class, 'create'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.collect')->name('payments.collect.create');
     Route::post('/thanh-toan/{payable}/ghi-nhan', [\App\Http\Controllers\Employee\PaymentCollectionController::class, 'store'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.collect')->name('payments.collect.store');
     Route::get('/thanh-toan/{payable}', [\App\Http\Controllers\Employee\PayableController::class, 'show'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.show');
@@ -122,6 +126,8 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     });
 
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->middleware(PatientMiddleware::class)->name('logout');
+    Route::get('/doi-mat-khau-lan-dau', [PortalAuthController::class, 'initialPassword'])->middleware(PatientMiddleware::class)->name('password.initial');
+    Route::put('/doi-mat-khau-lan-dau', [PortalAuthController::class, 'updateInitialPassword'])->middleware([PatientMiddleware::class, 'throttle:5,1'])->name('password.initial.update');
     Route::middleware(PatientMiddleware::class)->get('/', [PortalController::class, 'placeholder'])->name('home');
     Route::middleware(PatientMiddleware::class)->get('/lich-kham', [PortalController::class, 'appointments'])->name('appointments');
     Route::middleware(PatientMiddleware::class)->group(function () {
@@ -141,6 +147,8 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::middleware(PatientMiddleware::class)->get('/tai-lieu/{type}', [\App\Http\Controllers\Portal\PatientDocumentController::class, 'show'])->where('type', 'avatar|citizen-id-front|citizen-id-back|profile-pdf')->name('documents.show');
     Route::middleware(PatientMiddleware::class)->get('/ket-qua', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'results'])->name('results');
     Route::middleware(PatientMiddleware::class)->get('/ket-qua/{visit}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'visit'])->whereNumber('visit')->name('results.visit');
+    Route::middleware(PatientMiddleware::class)->get('/ket-qua/{visit}/phieu-kham', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'printVisitResult'])->whereNumber('visit')->name('results.visit-print');
+    Route::middleware(PatientMiddleware::class)->get('/ket-qua/dich-vu/{result}/phieu-ket-qua', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'printServiceResult'])->whereNumber('result')->name('results.service-print');
     Route::middleware(PatientMiddleware::class)->get('/ket-qua/{visit}/phieu-thu/{transaction}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'receipt'])->whereNumber(['visit', 'transaction'])->name('results.receipt');
     Route::middleware(PatientMiddleware::class)->get('/ket-qua/{result}/tai-lieu/{type}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'resultDocument'])->where('type', 'result_pdf|result_image')->name('results.document');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptions'])->name('prescriptions');
@@ -309,6 +317,8 @@ Route::prefix('admin')
 
             Route::get('patient-medical-history', [PatientMedicalHistoryController::class, 'index'])
                 ->name('patient-medical-history.index');
+
+            Route::post('patients/filter', [PatientController::class, 'filter'])->name('patients.filter');
 
             Route::resource(
                 'patients',
@@ -480,6 +490,17 @@ Route::prefix('admin')
             |--------------------------------------------------------------------------
             */
 
+            Route::prefix('doctor-schedules/month')->name('doctor-schedules.month.')->controller(\App\Http\Controllers\Admin\DoctorMonthlyScheduleController::class)->group(function (): void {
+                Route::get('/', 'index')->name('index');
+                Route::get('/template', 'template')->name('template');
+                Route::get('/{doctor}', 'show')->whereNumber('doctor')->name('show');
+                Route::put('/{doctor}', 'update')->whereNumber('doctor')->name('update');
+                Route::post('/{doctor}/import', 'preview')->whereNumber('doctor')->name('import.preview');
+                Route::get('/{doctor}/import/{token}', 'review')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.show');
+                Route::put('/{doctor}/import/{token}', 'assignments')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.assignments');
+                Route::post('/{doctor}/import/{token}', 'confirm')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.confirm');
+            });
+
             Route::get(
                 '/doctor-schedules/calendar',
                 [DoctorScheduleController::class, 'calendar']
@@ -600,6 +621,14 @@ Route::prefix('admin')
             | Lượt khám
             |--------------------------------------------------------------------------
             */
+
+            Route::get('/visits/walk-in', [WalkInReceptionController::class, 'create'])->name('visits.walk-in.create');
+            Route::post('/visits/walk-in/search', [WalkInReceptionController::class, 'search'])->name('visits.walk-in.search');
+            Route::post('/visits/walk-in/{patient}/activation-code', [WalkInReceptionController::class, 'issueActivation'])->whereNumber('patient')->name('visits.walk-in.activation');
+            Route::post('/visits/walk-in', [WalkInReceptionController::class, 'store'])->block()->name('visits.walk-in.store');
+            Route::get('/visits/walk-in/{visit}/credentials', static fn (string $visit) => redirect()->route('admin.visits.show', $visit))
+                ->whereNumber('visit')->name('visits.walk-in.credentials');
+            Route::get('/visits/{visit}/reception-slip', ReceptionSlipController::class)->whereNumber('visit')->name('visits.reception-slip');
 
             Route::patch(
                 '/visits/{medicalVisit}/status',

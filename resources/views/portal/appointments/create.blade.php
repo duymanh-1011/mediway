@@ -97,7 +97,7 @@
 
                     <p>
                         Kiểm tra thông tin người khám, bác sĩ và thời gian trước khi xác nhận.
-                        Phí khám là {{ number_format(config('patient_appointments.examination_fee'), 0, ',', '.') }} đ, thanh toán tại quầy sau khi tiếp nhận để được cấp số thứ tự.
+                        Phí khám là {{ number_format(config('patient_appointments.examination_fee'), 0, ',', '.') }} đ. Số khám được cấp khi tiếp nhận. Vui lòng thanh toán tại quầy trước khi được gọi.
                     </p>
                 </header>
 

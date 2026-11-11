@@ -4,12 +4,17 @@ namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\LoginRequest;
+use App\Http\Requests\Portal\ResetPasswordRequest;
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Support\EmployeeAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller
@@ -66,7 +71,55 @@ class AuthController extends Controller
             return back()->withErrors(['phone' => 'Tài khoản chưa có khu vực làm việc phù hợp hoặc không còn hoạt động.'])->onlyInput('phone');
         }
         RateLimiter::clear($key);
+        if ($user->must_change_password) {
+            $request->session()->put('patient_temporary_password_hash', Auth::guard()->hashPasswordForCookie($user->getAuthPassword()));
+
+            return redirect()->route('patient.password.initial');
+        }
+        $request->session()->forget('patient_temporary_password_hash');
+
         return redirect()->intended(route('patient.home'))->with('success', 'Đăng nhập thành công.');
+    }
+
+    public function initialPassword(Request $request)
+    {
+        return $request->user()->must_change_password
+            ? view('portal.auth.password-initial')
+            : redirect()->route('patient.home');
+    }
+
+    public function updateInitialPassword(ResetPasswordRequest $request)
+    {
+        if (! $request->user()->must_change_password) {
+            return redirect()->route('patient.home');
+        }
+
+        $sessionHash = $request->session()->get('patient_temporary_password_hash');
+        $user = DB::transaction(function () use ($request, $sessionHash): User {
+            $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+            abort_unless($user->canAccessPortal() && $user->must_change_password && is_string($sessionHash)
+                && hash_equals(Auth::guard()->hashPasswordForCookie($user->getAuthPassword()), $sessionHash), 403);
+
+            $password = $request->validated('password');
+            if (Hash::check($password, $user->password)) {
+                throw ValidationException::withMessages(['password' => 'Mật khẩu mới phải khác mật khẩu tạm.']);
+            }
+            $user->update(['password' => $password, 'must_change_password' => false]);
+            AuditLog::create([
+                'user_id' => $user->id, 'role_name_snapshot' => 'Patient', 'action' => 'UPDATE',
+                'entity_type' => 'users', 'entity_id' => $user->id, 'entity_business_code' => $user->business_code,
+                'new_values' => ['credential_changed' => true], 'description' => 'Bệnh nhân đổi mật khẩu tạm khi đăng nhập lần đầu.',
+                'ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'performed_at' => now(),
+            ]);
+
+            return $user;
+        });
+
+        Auth::setUser($user);
+        $request->session()->forget('patient_temporary_password_hash');
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('patient.home'))->with('success', 'Đã đổi mật khẩu. Bạn có thể sử dụng tài khoản Mediway.');
     }
 
     public function destroy(Request $request)

@@ -87,8 +87,10 @@ class AppointmentReceptionService
                 'visit_code' => $code, 'appointment_id' => $locked->id, 'patient_id' => $locked->patient_id,
                 'doctor_id' => $locked->doctor_id, 'specialty_id' => $locked->specialty_id, 'examination_room_id' => $locked->examination_room_id,
                 'visit_status_id' => $waiting->id, 'checked_in_at' => now(), 'reception_source' => 'COUNTER',
+                'reason_for_visit' => $locked->reason_for_visit,
                 'reception_notes' => 'Tiếp nhận từ lịch hẹn '.$locked->appointment_code.'.',
             ]);
+            app(ExaminationQueueNumber::class)->reserve($visit);
             app(ExaminationFeeService::class)->createForVisit($visit);
             $locked->update(['appointment_status_id' => $checkedIn->id]);
             $new = $old;

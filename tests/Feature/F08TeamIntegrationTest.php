@@ -34,7 +34,9 @@ class F08TeamIntegrationTest extends TestCase
         $this->assertSame('UNPAID', $fee->paymentStatus->name);
         $cashier = User::where('business_code', 'NV000004')->firstOrFail();
         $originalPrice = $item->price_at_order;
-        foreach ([0, -1] as $invalidPrice) {
+        // MySQL's CHECK prevents persisting a negative price for this HTTP test.
+        $invalidPrices = DB::getDriverName() === 'mysql' ? [0] : [0, -1];
+        foreach ($invalidPrices as $invalidPrice) {
             $item->update(['price_at_order' => $invalidPrice]);
             $fee->update(['amount' => $invalidPrice]);
             $this->post(route('admin.payables.payment-transactions.store', $fee), [

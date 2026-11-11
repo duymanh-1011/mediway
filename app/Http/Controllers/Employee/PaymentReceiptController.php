@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PaymentTransaction;
 use App\Support\EmployeeAccess;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Illuminate\Http\Response;
 
 class PaymentReceiptController extends Controller
 {
@@ -19,7 +19,7 @@ class PaymentReceiptController extends Controller
     public function show(
         Request $request,
         PaymentTransaction $transaction
-    ): View {
+    ): Response {
         $user = $request->user();
         $access = app(EmployeeAccess::class);
 
@@ -43,9 +43,9 @@ class PaymentReceiptController extends Controller
         );
 
         // Chỉ đọc những quan hệ đã được khai báo trong model.
-        return view('employee.payments.receipt', [
+        return response()->view('employee.payments.receipt', [
             ...app(\App\Support\Payments\ReceiptViewData::class)->build($transaction),
             'employee' => $employee,
-        ]);
+        ])->header('Cache-Control', 'private, no-store');
     }
 }

@@ -135,7 +135,7 @@
                     <input class="admin-u-19b29622"
                         type="date"
                         name="date"
-                        value="{{ request('date') }}"
+                        value="{{ $queueDate }}"
 
                     >
 @error('date')<div class="field-error">{{ $message }}</div>@enderror
@@ -265,6 +265,9 @@
                                 <strong>
                                     {{ $queue->queue_number }}
                                 </strong>
+                                @if ($queue->medicalVisit?->checked_in_at && $queue->queued_at && ! $queue->medicalVisit->checked_in_at->isSameDay($queue->queued_at))
+                                    <small class="block">Ngày cấp {{ $queue->medicalVisit->checked_in_at->format('d/m/Y') }}</small>
+                                @endif
                             </td>
 
                             <td>

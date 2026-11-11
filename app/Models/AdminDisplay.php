@@ -22,7 +22,7 @@ final class AdminDisplay
         'WAITING' => 'Đang chờ', 'CALLED' => 'Đã gọi', 'IN_SERVICE' => 'Đang phục vụ', 'SKIPPED' => 'Đã bỏ qua',
         'RETURN_AFTER_SERVICE' => 'Quay lại sau dịch vụ', 'INITIAL_EXAM' => 'Khám ban đầu',
         'IN_EXAMINATION' => 'Đang khám', 'WAITING_FOR_SERVICE' => 'Chờ thực hiện dịch vụ', 'RETURNING' => 'Quay lại bác sĩ',
-        'WAITING_FOR_PAYMENT' => 'Chờ thanh toán phí khám', 'WAITING_FOR_RETURN' => 'Chờ khám lại', 'SERVICES_RESOLVED' => 'Không còn dịch vụ cần chờ',
+        'WAITING_FOR_PAYMENT' => 'Chờ thanh toán phí khám', 'WAITING_FOR_RETURN' => 'Quay lại phòng khám', 'SERVICES_RESOLVED' => 'Không còn dịch vụ cần chờ',
         'BOOKED' => 'Đã đặt lịch', 'CHECKED_IN' => 'Đã tiếp nhận',
         'APPOINTMENT_LATE' => 'Trễ giờ hẹn', 'APPOINTMENT_PAST_DAY' => 'Quá ngày hẹn',
         'Administrator' => 'Quản trị viên', 'Doctor' => 'Bác sĩ', 'Employee' => 'Nhân viên', 'Patient' => 'Bệnh nhân',

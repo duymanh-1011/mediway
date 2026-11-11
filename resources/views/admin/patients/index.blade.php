@@ -36,16 +36,18 @@
         'title' => 'Bộ lọc bệnh nhân',
         'description' => 'Lọc theo từ khóa và trạng thái hồ sơ.',
     ])
-        <form data-filter-fields="2" method="GET"
-              action="{{ route('admin.patients.index') }}"
-              class="pt-filters admin-filter-form">
+        <form data-filter-fields="2" method="POST"
+              action="{{ route('admin.patients.filter') }}"
+              class="pt-filters admin-filter-form" autocomplete="off">
+            @csrf
 
             <div class="pt-field pt-search admin-filter-field">
                 <label for="search">Tìm kiếm</label>
                 <input type="text"
                        id="search"
                        name="search"
-                       value="{{ $search }}"
+                       value="{{ old('search', $search) }}"
+                       maxlength="500"
                        placeholder="Mã bệnh nhân, họ tên, SĐT hoặc CCCD...">
 @error('search')<div class="field-error">{{ $message }}</div>@enderror
             </div>

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Portal;
 
-use App\Models\Appointment;
 use App\Models\Doctor;
+use App\Support\Portal\PatientBookingWindow;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -53,13 +53,8 @@ class BrowseDoctorScheduleRequest extends FormRequest
             'date' => [
                 'nullable',
                 'date_format:Y-m-d',
-                'after_or_equal:today',
-                'before_or_equal:'
-                    . today()
-                    ->addDays(
-                        Appointment::BOOKING_ADVANCE_DAYS
-                    )
-                    ->toDateString(),
+                'after_or_equal:'.PatientBookingWindow::firstDate(),
+                'before_or_equal:'.PatientBookingWindow::lastDate(),
             ],
         ];
     }
@@ -132,7 +127,7 @@ class BrowseDoctorScheduleRequest extends FormRequest
             'Ngày khám không đúng định dạng.',
 
             'date.after_or_equal' =>
-            'Ngày khám không được trước ngày hiện tại.',
+            'Ngày khám đã chọn nằm trước thời điểm bắt đầu nhận đặt lịch.',
 
             'date.before_or_equal' =>
             'Ngày khám chỉ được tra cứu '

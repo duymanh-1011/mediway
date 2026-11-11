@@ -14,8 +14,8 @@ class RegistrationController extends Controller
     public function store(RegisterPatientRequest $request, PatientAccountRegistrationService $registration)
     {
         try {
-            $data = $request->safe()->only(['full_name', 'phone', 'password']);
-            $registration->register($data['full_name'], $data['phone'], $data['password']);
+            $data = $request->validated();
+            $registration->register($data['full_name'], $data['phone'], $data['password'], $data['citizen_id_number'], $data['activation_code'] ?? null);
         } catch (UniqueConstraintViolationException) {
             return back()->withErrors(['phone' => 'Không thể hoàn tất đăng ký. Vui lòng kiểm tra lại thông tin và thử lại.'])->onlyInput('full_name', 'phone');
         }

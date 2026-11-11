@@ -91,6 +91,7 @@ class PatientPortalTest extends TestCase
     {
         $this->post(route('patient.register.store'), [
             'full_name' => 'Bệnh nhân mới', 'phone' => '0909888999', 'password' => 'AnToan@123', 'password_confirmation' => 'AnToan@123',
+            'citizen_id_number' => '123456789012',
             'role_id' => 1, 'status' => 'LOCKED', 'business_code' => 'HACK', 'patient_code' => 'HACK', 'user_id' => 1,
         ])->assertRedirect(route('patient.login'));
 
@@ -99,6 +100,7 @@ class PatientPortalTest extends TestCase
         $this->assertSame('Patient', $user->role->name);
         $this->assertSame('ACTIVE', $user->status);
         $this->assertSame('ACTIVE', $patient->status);
+        $this->assertNull($patient->detail?->citizen_id_number);
         $this->assertSame($user->business_code, $patient->patient_code);
         $this->assertNotSame('HACK', $user->business_code);
         $this->assertTrue(Hash::check('AnToan@123', $user->password));
@@ -110,7 +112,27 @@ class PatientPortalTest extends TestCase
         $patients = Patient::count();
         $this->from(route('patient.register'))->post(route('patient.register.store'), [
             'full_name' => 'Trùng số', 'phone' => '0902000001', 'password' => 'AnToan@123', 'password_confirmation' => 'AnToan@123',
+            'citizen_id_number' => '123456789012',
         ])->assertRedirect(route('patient.register'))->assertSessionHasErrors('phone');
+        $this->assertSame($patients, Patient::count());
+    }
+
+    public function test_registration_reports_an_existing_account_when_citizen_id_is_already_linked(): void
+    {
+        $patient = Patient::where('patient_code', 'BN000001')->firstOrFail();
+        $citizenId = '123456789012';
+        $patient->detail()->updateOrCreate([], ['citizen_id_number' => $citizenId]);
+        $patients = Patient::count();
+
+        $this->from(route('patient.register'))->post(route('patient.register.store'), [
+            'full_name' => $patient->full_name, 'phone' => '0909888999', 'citizen_id_number' => $citizenId,
+            'password' => 'AnToan@123', 'password_confirmation' => 'AnToan@123',
+        ])->assertRedirect(route('patient.register'))->assertSessionHasErrors([
+            'citizen_id_number' => 'Tài khoản đã tồn tại. Vui lòng đăng nhập hoặc chọn Quên mật khẩu.',
+        ]);
+
+        $this->assertDatabaseMissing('users', ['phone' => '0909888999']);
+        $this->assertSame($patient->user_id, $patient->fresh()->user_id);
         $this->assertSame($patients, Patient::count());
     }
 
@@ -277,7 +299,7 @@ class PatientPortalTest extends TestCase
     public function test_registration_name_is_escaped_on_patient_page(): void
     {
         $name = '<script>alert(1)</script>';
-        $this->post(route('patient.register.store'), ['full_name' => $name, 'phone' => '0909888999', 'password' => 'AnToan@123', 'password_confirmation' => 'AnToan@123'])->assertRedirect(route('patient.login'));
+        $this->post(route('patient.register.store'), ['full_name' => $name, 'phone' => '0909888999', 'password' => 'AnToan@123', 'password_confirmation' => 'AnToan@123', 'citizen_id_number' => '123456789012'])->assertRedirect(route('patient.login'));
         $user = User::where('phone', '0909888999')->firstOrFail();
         $this->actingAs($user)->get(route('patient.home'))->assertOk()->assertDontSee($name, false)->assertSee(e($name), false);
     }
@@ -297,7 +319,7 @@ class PatientPortalTest extends TestCase
         $patients = Patient::count();
         Patient::creating(static function (): void { throw new \RuntimeException('Simulated failure'); });
         try {
-            app(\App\Services\PatientAccountRegistrationService::class)->register('Bệnh nhân mới', '0909888999', 'AnToan@123');
+            app(\App\Services\PatientAccountRegistrationService::class)->register('Bệnh nhân mới', '0909888999', 'AnToan@123', '123456789012');
             $this->fail('The simulated patient creation failure did not occur.');
         } catch (\RuntimeException $exception) {
             $this->assertSame('Simulated failure', $exception->getMessage());

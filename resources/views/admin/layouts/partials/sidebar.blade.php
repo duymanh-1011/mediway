@@ -332,7 +332,7 @@
 
             <a
                 href="{{ route(
-                    'admin.doctor-schedules.index'
+                    'admin.doctor-schedules.month.index'
                 ) }}"
                 class="sidebar-link
                     {{ request()->routeIs(

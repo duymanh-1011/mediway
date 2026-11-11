@@ -502,85 +502,21 @@ class DoctorBrowseTest extends TestCase
     |--------------------------------------------------------------------------
     */
 
-    public function test_past_time_slot_is_shown_but_cannot_be_booked(): void
+    public function test_browse_only_offers_afternoon_slots_today_before_the_cutoff(): void
     {
-        $doctor =
-            $this
-            ->activeDoctors(1)
-            ->firstOrFail();
+        $doctor = $this->activeDoctors(1)->firstOrFail();
+        $schedule = $this->createSchedule($doctor, 0, 'ACTIVE', '06:00', '17:00');
+        $past = $this->createSlot($schedule, '06:30', '07:00');
+        $morning = $this->createSlot($schedule, '09:00', '09:30');
+        $afternoon = $this->createSlot($schedule, '13:30', '14:00');
 
-        /*
-         * Hiện tại test đang là 08:00.
-         * Slot 06:30 - 07:00 đã qua.
-         */
-
-        $schedule =
-            $this->createSchedule(
-                $doctor,
-                0,
-                'ACTIVE',
-                '06:00',
-                '10:00'
-            );
-
-        $pastSlot =
-            $this->createSlot(
-                $schedule,
-                '06:30',
-                '07:00'
-            );
-
-        $futureSlot =
-            $this->createSlot(
-                $schedule,
-                '09:00',
-                '09:30'
-            );
-
-        $response =
-            $this->get(
-                route(
-                    'patient.doctors.index'
-                )
-            );
-
-        $response->assertOk();
-
-        $returnedSchedule =
-            $response
-            ->viewData(
-                'schedules'
-            )
-            ->firstWhere(
-                'id',
-                $schedule->id
-            );
-
-        $this->assertNotNull(
-            $returnedSchedule
-        );
-
-        $slotIds =
-            $returnedSchedule
-            ->appointmentTimeSlots
-            ->pluck(
-                'id'
-            )
-            ->all();
-
-        $this->assertContains($pastSlot->id, $slotIds);
-        $response->assertSeeText('Đã qua giờ');
-        $this->assertStringNotContainsString(
-            'data-book-url="' .
-                route('patient.appointments.create', $pastSlot) .
-                '"',
-            $response->getContent()
-        );
-
-        $this->assertContains(
-            $futureSlot->id,
-            $slotIds
-        );
+        $response = $this->get(route('patient.doctors.index'))->assertOk();
+        $returned = $response->viewData('schedules')->firstWhere('id', $schedule->id);
+        $this->assertNotNull($returned);
+        $this->assertSame([$afternoon->id], $returned->appointmentTimeSlots->modelKeys());
+        $response->assertDontSee(route('patient.appointments.create', $past))
+            ->assertDontSee(route('patient.appointments.create', $morning))
+            ->assertSee(route('patient.appointments.create', $afternoon));
     }
 
     /*
@@ -806,98 +742,24 @@ class DoctorBrowseTest extends TestCase
     |--------------------------------------------------------------------------
     */
 
-    public function test_full_time_slot_is_shown_but_cannot_be_booked(): void
+    public function test_browse_displays_registration_count_and_keeps_the_slot_bookable(): void
     {
-        $doctor =
-            $this
-            ->activeDoctors(1)
-            ->firstOrFail();
+        $doctor = $this->activeDoctors(1)->firstOrFail();
+        $schedule = $this->createSchedule($doctor, 1);
+        $slot = $this->createSlot($schedule, '09:00', '09:30', 1);
 
-        $schedule =
-            $this->createSchedule(
-                $doctor,
-                1
-            );
-
-        /*
-         * Chỉ có đúng 1 chỗ.
-         */
-
-        $slot =
-            $this->createSlot(
-                $schedule,
-                '09:00',
-                '09:30',
-                1
-            );
-
-        /*
-         * Patient BN000002 đặt suất duy nhất.
-         * Dùng đúng luồng Portal M06 thay vì tự insert Appointment.
-         */
-
-        $this->actingAs(
-            $this->patientUser(
-                'BN000002'
-            )
-        );
-
-        $this->post(
-            route(
-                'patient.appointments.store'
-            ),
-            [
-                'appointment_time_slot_id' =>
-                $slot->id,
-
+        $this->actingAs($this->patientUser('BN000002'))
+            ->post(route('patient.appointments.store'), [
+                'appointment_time_slot_id' => $slot->id,
                 'reason_for_visit' => 'Đau họng và ho nhiều.',
                 'confirmed_information' => '1',
-            ]
-        )
-            ->assertSessionHasNoErrors();
+            ])->assertSessionHasNoErrors();
 
-        /*
-         * Đổi lại BN000001 để tra cứu M05.
-         */
-
-        $this->actingAs(
-            $this->patientUser(
-                'BN000001'
-            )
-        );
-
-        $response =
-            $this->get(
-                route(
-                    'patient.doctors.index'
-                )
-            );
-
-        $response->assertOk();
-
-        /*
-         * Schedule không còn slot khả dụng,
-         * vì vậy cả schedule phải bị loại.
-         */
-
-        $scheduleIds =
-            $response
-            ->viewData(
-                'schedules'
-            )
-            ->pluck(
-                'id'
-            )
-            ->all();
-
-        $this->assertContains($schedule->id, $scheduleIds);
-        $response->assertSeeText('Hết chỗ');
-        $this->assertStringNotContainsString(
-            'data-book-url="' .
-                route('patient.appointments.create', $slot) .
-                '"',
-            $response->getContent()
-        );
+        $response = $this->actingAs($this->patientUser('BN000001'))
+            ->get(route('patient.doctors.index'))->assertOk();
+        $returned = $response->viewData('schedules')->firstWhere('id', $schedule->id);
+        $this->assertEquals(1, $returned->appointmentTimeSlots->firstWhere('id', $slot->id)->booked_count);
+        $response->assertSeeText('Đã đăng ký')->assertSee(route('patient.appointments.create', $slot));
     }
 
     /*

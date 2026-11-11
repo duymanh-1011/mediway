@@ -78,16 +78,25 @@ class EmployeeTechnicalStatusTest extends TestCase
         $this->get(route('employee.imaging.show', $labItem->id))->assertNotFound();
         $this->get(route('employee.laboratory.index'))->assertOk();
     }
-    public function test_lab_searches_patient_name_or_code_with_other_filters(): void
+    public function test_lab_searches_patient_name_code_or_phone_with_other_filters(): void
     {
         $item = ServiceOrder::where('service_order_code', 'CD000004')->firstOrFail()->items()->firstOrFail();
         $patient = $item->serviceOrder->medicalVisit->patient;
         $this->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
         $service = ['group' => 'XN', 'service' => $item->medicalService->service_code];
-        $this->get(route('employee.services.orders', [...$service, 'q' => $patient->patient_code, 'status' => 'PENDING', 'date' => $item->serviceOrder->ordered_at->format('Y-m-d')]))
+        $filter = route('employee.services.orders.filter', $service);
+        $this->followingRedirects()->post($filter, ['q' => $patient->patient_code, 'status' => 'PENDING', 'date' => $item->serviceOrder->ordered_at->format('Y-m-d')])
             ->assertOk()->assertSee($patient->full_name)->assertSee($patient->patient_code);
-        $this->get(route('employee.services.orders', [...$service, 'q' => $patient->full_name]))->assertOk()->assertSee($patient->patient_code);
-        $this->get(route('employee.services.orders', [...$service, 'q' => 'BN-KHONG-TON-TAI']))->assertOk()->assertSee('Không tìm thấy phiếu chỉ định');
+        $this->followingRedirects()->post($filter, ['q' => $patient->full_name])->assertOk()->assertSee($patient->patient_code);
+        $url = $this->post($filter, ['q' => $patient->user->phone, 'status' => 'PENDING',
+            'date' => $item->serviceOrder->ordered_at->format('Y-m-d')])->assertRedirect()->headers->get('Location');
+        $this->assertStringNotContainsString($patient->user->phone, $url);
+        $this->assertStringContainsString('search_ref=', $url);
+        $this->get($url)->assertOk()->assertSee($item->serviceOrder->service_order_code);
+        $this->get(route('employee.services.orders', [...$service, 'q' => $patient->user->phone, 'status' => 'PENDING']))
+            ->assertRedirect(route('employee.services.orders', [...$service, 'status' => 'PENDING']));
+        $this->followingRedirects()->post($filter, ['q' => 'BN-KHONG-TON-TAI'])->assertOk()->assertSee('Không tìm thấy phiếu chỉ định');
+        $this->get($url)->assertOk()->assertSee($item->serviceOrder->service_order_code);
         $this->get(route('employee.services.orders', $service))->assertOk()->assertSee($patient->patient_code);
     }
 
@@ -97,11 +106,18 @@ class EmployeeTechnicalStatusTest extends TestCase
             ->whereHas('performer', fn ($q) => $q->where('employee_code', 'NV000003'))->firstOrFail();
         $patient = $item->serviceOrder->medicalVisit->patient;
         $this->actingAs(User::where('business_code', 'NV000003')->firstOrFail());
-        $service = ['group' => 'CDHA', 'service' => $item->medicalService->service_code, 'q' => $patient->patient_code];
-        $this->get(route('employee.services.orders', $service))->assertOk()->assertSee($patient->full_name)->assertSee($patient->patient_code);
+        $service = ['group' => 'CDHA', 'service' => $item->medicalService->service_code];
+        $filter = route('employee.services.orders.filter', $service);
+        $url = $this->post($filter, ['q' => $patient->patient_code])->assertRedirect()->headers->get('Location');
+        $this->get($url)->assertOk()->assertSee($patient->full_name)->assertSee($patient->patient_code);
         $this->get(route('employee.services.orders', [...$service, 'group' => 'XN']))->assertNotFound();
         $item->update(['performed_by_employee_id' => User::where('business_code', 'NV000002')->firstOrFail()->employee->id]);
-        $this->get(route('employee.services.orders', $service))->assertOk()->assertDontSee($item->serviceOrder->service_order_code);
+        $this->get($url)->assertOk()->assertDontSee($item->serviceOrder->service_order_code);
+        $this->followingRedirects()->post($filter, ['q' => $patient->user->phone])
+            ->assertOk()->assertDontSee($item->serviceOrder->service_order_code);
+        $this->flushSession();
+        $this->actingAs(User::where('business_code', 'NV000002')->firstOrFail())
+            ->get($url)->assertRedirect(route('employee.services.orders', $service));
     }
 
 }

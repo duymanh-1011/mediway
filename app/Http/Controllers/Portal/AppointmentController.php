@@ -11,7 +11,8 @@ use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\Patient;
 use App\Support\Portal\BookingProfileGate;
-use Carbon\Carbon;
+use App\Services\AppointmentOverlap;
+use App\Support\Portal\PatientBookingWindow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -47,7 +48,7 @@ class AppointmentController extends Controller
 
         $slot = $this->getValidatedSlot((int) $slot->id);
 
-        if (! $slot || ! $this->slotHasCapacity((int) $slot->id)) {
+        if (! $slot) {
             return redirect()
                 ->route('patient.doctors.index')
                 ->withErrors([
@@ -102,14 +103,6 @@ class AppointmentController extends Controller
                 ]);
         }
 
-        if (! $this->slotHasCapacity((int) $slot->id)) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'appointment_time_slot_id' =>
-                    'Khung giờ đã đầy. Vui lòng chọn khung giờ khác.',
-                ]);
-        }
 
         $bookedStatus = AppointmentStatus::query()
             ->where('name', 'BOOKED')
@@ -159,12 +152,10 @@ class AppointmentController extends Controller
             }
 
             // Không cho bệnh nhân đặt trùng suất.
-            $this->assertNoDuplicateBooking(
-                (int) $lockedPatient->id,
-                (int) $lockedSlot->id
-            );
+            AppointmentOverlap::ensureAvailable($lockedPatient->id, $lockedSlot);
 
             $schedule = $lockedSlot->doctorSchedule;
+            PatientBookingWindow::ensureAllows($schedule, $lockedSlot);
 
             // Chỉ tạo Appointment.
             // KHÔNG sửa thông tin hồ sơ bệnh nhân.
@@ -259,61 +250,12 @@ class AppointmentController extends Controller
             || $schedule->specialty?->status !== 'ACTIVE'
             || $schedule->examinationRoom?->status !== 'ACTIVE'
             || ! $schedule->doctor->canPracticeSpecialty((int) $schedule->specialty_id)
-            || ! $schedule->work_date->betweenIncluded(today(), today()->addDays(Appointment::BOOKING_ADVANCE_DAYS))
-            || $slot->start_time >= $slot->end_time
-            || $slot->start_time < $schedule->start_time
-            || $slot->end_time > $schedule->end_time
-            || (int) $slot->max_patients < 1
+            || ! PatientBookingWindow::allows($schedule, $slot)
         ) {
             return null;
         }
 
-        return $this->isSlotFuture($schedule, $slot)
-            ? $slot
-            : null;
-    }
-
-    private function isSlotFuture(
-        DoctorSchedule $schedule,
-        AppointmentTimeSlot $slot
-    ): bool {
-        $startsAt = Carbon::parse(
-            $schedule->work_date->format('Y-m-d')
-                . ' '
-                . substr((string) $slot->start_time, 0, 8)
-        );
-
-        return $startsAt->isFuture();
-    }
-
-    private function slotHasCapacity(int $slotId): bool
-    {
-        $slot = AppointmentTimeSlot::find($slotId);
-
-        return $slot !== null
-            && $this->getActiveBookingCount($slotId)
-            < (int) $slot->max_patients;
-    }
-
-    private function getActiveBookingCount(int $slotId): int
-    {
-        return DB::table('appointments')
-            ->join(
-                'appointment_statuses',
-                'appointment_statuses.id',
-                '=',
-                'appointments.appointment_status_id'
-            )
-            ->where(
-                'appointments.appointment_time_slot_id',
-                $slotId
-            )
-            ->where(
-                'appointment_statuses.name',
-                '!=',
-                'CANCELLED'
-            )
-            ->count();
+        return $slot;
     }
 
     private function lockBookableSlot(
@@ -351,71 +293,19 @@ class AppointmentController extends Controller
         }
 
         if (
-            ! $schedule->work_date->betweenIncluded(
-                today(),
-                today()->addDays(Appointment::BOOKING_ADVANCE_DAYS)
-            )
-        ) {
-            throw ValidationException::withMessages([
-                'appointment_time_slot_id' =>
-                'Ngày khám không nằm trong khoảng thời gian cho phép đặt trước.',
-            ]);
-        }
-
-        // Đếm lại sau khi khóa database.
-        $bookings = Appointment::query()
-            ->where('appointment_time_slot_id', $slotId)
-            ->whereHas(
-                'appointmentStatus',
-                fn($query) =>
-                $query->where('name', '!=', 'CANCELLED')
-            )
-            ->count();
-
-        if (
-            $slot->status !== 'ACTIVE'
-            || $schedule->status !== 'ACTIVE'
-            || ! $this->isSlotFuture($schedule, $slot)
-            || $slot->start_time >= $slot->end_time
-            || $slot->start_time < $schedule->start_time
-            || $slot->end_time > $schedule->end_time
-            || $bookings >= (int) $slot->max_patients
+            (int) $slot->doctor_schedule_id !== (int) $schedule->id
+            || ! PatientBookingWindow::allows($schedule, $slot)
             || $doctor->status !== 'ACTIVE'
             || $schedule->specialty?->status !== 'ACTIVE'
             || $schedule->examinationRoom?->status !== 'ACTIVE'
         ) {
             throw ValidationException::withMessages([
                 'appointment_time_slot_id' =>
-                'Khung giờ không hợp lệ, đã qua, đã đầy hoặc đã ngừng nhận lịch.',
+                'Khung giờ nằm ngoài thời gian đặt lịch hoặc đã ngừng nhận lịch.',
             ]);
         }
 
         return $slot;
-    }
-
-    private function assertNoDuplicateBooking(
-        int $patientId,
-        int $slotId
-    ): void {
-        $duplicate = Appointment::query()
-            ->where('patient_id', $patientId)
-            ->where('appointment_time_slot_id', $slotId)
-            ->whereHas(
-                'appointmentStatus',
-                fn($query) =>
-                $query->where('name', '!=', 'CANCELLED')
-            )
-            ->lockForUpdate()
-            ->first();
-
-        if ($duplicate) {
-            throw ValidationException::withMessages([
-                'appointment_time_slot_id' =>
-                'Bạn đã có lịch hẹn '
-                    . $duplicate->appointment_code
-                    . ' trong khung giờ này.',
-            ]);
-        }
     }
 
     private function generateAppointmentCode(): string

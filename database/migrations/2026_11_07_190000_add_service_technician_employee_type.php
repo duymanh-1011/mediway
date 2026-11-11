@@ -16,7 +16,12 @@ return new class extends Migration
 
     public function down(): void
     {
-        // The existing foreign key prevents deleting a type already assigned to employees.
-        DB::table('employee_types')->where('code', 'SERVICE_TECHNICIAN')->delete();
+        // The merge preserves assigned technicians on rollback, so keep their catalog entry.
+        DB::table('employee_types')->where('code', 'SERVICE_TECHNICIAN')
+            ->whereNotExists(function ($details): void {
+                $details->selectRaw('1')->from('employee_details')
+                    ->whereColumn('employee_details.employee_type', 'employee_types.code');
+            })
+            ->delete();
     }
 };

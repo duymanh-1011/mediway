@@ -13,18 +13,12 @@
 
 @section('content')
 
-    <div class="admin-u-ed1667a9">
-
-        <h1 class="page-title">
-            Lượt khám
-        </h1>
-
-        <p class="page-description">
-            Theo dõi toàn bộ lượt khám,
-            bệnh nhân, bác sĩ, phòng khám
-            và trạng thái xử lý.
-        </p>
-
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Lượt khám</h1>
+            <p class="page-description">Theo dõi toàn bộ lượt khám, bệnh nhân, bác sĩ, phòng khám và trạng thái xử lý.</p>
+        </div>
+        <a href="{{ route('admin.visits.walk-in.create') }}" class="admin-btn admin-btn-primary">Tiếp nhận khám trực tiếp</a>
     </div>
 
 
@@ -82,7 +76,10 @@
                                     (string) $status->id
                                 )
                             >
-                                {{ \App\Models\AdminDisplay::label($status->name) }}{{ $status->name === 'WAITING_FOR_SERVICE' ? ' (bao gồm chờ khám lại)' : '' }}
+                                {{ \App\Models\AdminDisplay::label($status->name) }}
+                                @if ($status->name === 'WAITING_FOR_SERVICE')
+                                    (bao gồm {{ mb_strtolower(\App\Models\AdminDisplay::label('WAITING_FOR_RETURN')) }})
+                                @endif
                             </option>
 
                         @endforeach

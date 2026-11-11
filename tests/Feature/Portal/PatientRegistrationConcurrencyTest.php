@@ -84,7 +84,7 @@ Illuminate\Support\Facades\DB::listen(function ($event) use ($first, $ready, $re
     while (! is_file($release) && microtime(true) < $deadline) { clearstatcache(true, $release); usleep(10000); }
     if (! is_file($release)) throw new RuntimeException('Barrier timeout.');
 });
-$request = Illuminate\Http\Request::create('/tai-khoan/dang-ky', 'POST', ['full_name' => 'Kiểm thử', 'phone' => $argv[1], 'password' => 'AnToan@123', 'password_confirmation' => 'AnToan@123'], [], [], ['HTTP_ACCEPT' => 'application/json']);
+$request = Illuminate\Http\Request::create('/tai-khoan/dang-ky', 'POST', ['full_name' => 'Kiểm thử', 'phone' => $argv[1], 'password' => 'AnToan@123', 'password_confirmation' => 'AnToan@123', 'citizen_id_number' => '123456789012'], [], [], ['HTTP_ACCEPT' => 'application/json']);
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $response = $kernel->handle($request);
 echo json_encode(['status' => $response->getStatusCode()], JSON_THROW_ON_ERROR);

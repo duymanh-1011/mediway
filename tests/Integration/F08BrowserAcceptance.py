@@ -55,6 +55,15 @@ try:
     call('Page.enable');call('Network.enable');call('Runtime.enable')
     for cookie in jar: call('Network.setCookie',{'name':cookie.name,'value':cookie.value,'url':base,'path':cookie.path})
     paths={'index':base+'/nhan-vien/thanh-toan','detail':base+'/nhan-vien/thanh-toan/'+str(info['id']),'collect':base+'/nhan-vien/thanh-toan/'+str(info['id'])+'/ghi-nhan'}
+    def submit_filter(keyword):
+        val("(()=>{const f=document.querySelector('#f08-payable-filter'); f.elements.q.value="+json.dumps(keyword)+"; f.requestSubmit();})()")
+        for _ in range(50):
+            url=val('location.href')
+            query=urllib.parse.parse_qs(urllib.parse.urlparse(url).query) if url else {}
+            if 'search' in query and 'q' not in query and val("document.querySelector('#f08-payable-filter [name=q]')?.defaultValue")==keyword:
+                return url
+            time.sleep(.1)
+        raise RuntimeError('The search did not redirect to its session reference.')
     for name in ('exam','service','medicine'): paths[name]='file:///C:/laragon/www/mediway/storage/app/f08-acceptance-final-'+name+'.html'
     summary={}
     for name,url in paths.items():
@@ -75,7 +84,7 @@ try:
         if name=='index':
             call('Emulation.setDeviceMetricsOverride',{'width':320,'height':1000,'deviceScaleFactor':1,'mobile':False});time.sleep(.1)
             # Use the freshly created UNPAID fixture, not the first arbitrary row.
-            filtered=paths['index']+'?'+urllib.parse.urlencode({'q':info['code']})
+            filtered=submit_filter(info['code'])
             for action,selector,expected in (
                 ('detail','.f08-detail-btn','/nhan-vien/thanh-toan/'+str(info['id'])),
                 ('pay','.f08-pay-btn','/nhan-vien/thanh-toan/'+str(info['id'])+'/ghi-nhan'),
@@ -114,12 +123,14 @@ try:
                     (ARTIFACTS/('f08-mobile-'+action+'-failure.png')).write_bytes(base64.b64decode(shot))
                     raise
         print(name,json.dumps(summary[name]),flush=True)
-    call('Page.navigate',{'url':paths['index']+'?q=fixtureA'});time.sleep(.7)
-    initial=val("document.querySelector('#f08-payable-filter [name=q]').value")
-    val("history.pushState({},'', '?q=fixtureB'); document.querySelector('#f08-payable-filter [name=q]').value='stale'; history.back()")
-    time.sleep(.9); back=val("location.search+' '+document.querySelector('#f08-payable-filter [name=q]').value")
-    val('history.forward()');time.sleep(.9); forward=val("location.search+' '+document.querySelector('#f08-payable-filter [name=q]').value")
-    assert initial=='fixtureA' and back=='?q=fixtureA fixtureA' and forward=='?q=fixtureB fixtureB', (initial,back,forward)
+    call('Page.navigate',{'url':paths['index']});time.sleep(.7)
+    first_url=submit_filter('fixtureA')
+    second_url=submit_filter('fixtureB')
+    assert first_url!=second_url and 'fixtureA' not in first_url and 'fixtureB' not in second_url
+    val('history.back()');time.sleep(.9)
+    assert val('location.href')==first_url and val("document.querySelector('#f08-payable-filter [name=q]').value")=='fixtureA'
+    val('history.forward()');time.sleep(.9)
+    assert val('location.href')==second_url and val("document.querySelector('#f08-payable-filter [name=q]').value")=='fixtureB'
     print('filter_back_forward PASS',flush=True)
     call('Page.navigate',{'url':paths['collect']});time.sleep(.7)
     formResult=val("(()=>{const f=document.querySelector('#f08-payment-form'),b=document.querySelector('#f08-submit'); f.querySelector('[name=confirm_payment]').checked=true; f.addEventListener('submit', e=>e.preventDefault()); f.requestSubmit(); const sent=b.disabled&&f.dataset.submitting==='1'; window.dispatchEvent(new PageTransitionEvent('pageshow')); return JSON.stringify({sent,reset:!b.disabled&&f.dataset.submitting==='0'});})()")

@@ -127,9 +127,12 @@ class PortalController extends Controller
                     ->orWhereNotNull('result_parameters')->orWhereNotNull('technical_details')->orWhereNotNull('result_pdf_path')->orWhereNotNull('result_image_path'))
                 ->with(['serviceOrderItem.medicalService', 'serviceOrderItem.serviceOrder'])->orderByDesc('updated_at')->limit(20)->get();
             foreach ($results as $result) {
+                if (! $result->hasContent()) {
+                    continue;
+                }
                 $items->push(['key' => $this->notificationKey('result', $result->id, $result->updated_at), 'category' => 'Kết quả', 'title' => 'Có kết quả dịch vụ',
                     'description' => $result->serviceOrderItem?->medicalService?->name ?? 'Kết quả khám bệnh',
-                    'time' => $result->resulted_at ?? $result->updated_at,
+                    'time' => $result->serviceOrderItem->completed_at ?? $result->resulted_at ?? $result->updated_at,
                     'url' => route('patient.results.visit', ['visit' => $result->serviceOrderItem->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $result->service_order_item_id]).'#dich-vu-'.$result->service_order_item_id]);
             }
             $conclusions = VisitConclusion::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))

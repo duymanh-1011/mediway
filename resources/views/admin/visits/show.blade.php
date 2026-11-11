@@ -48,6 +48,9 @@
                 class="admin-btn admin-btn-secondary"
             >← Quay lại</a>
 
+            @if ($medicalVisit->checked_in_at && ($medicalVisit->appointment_id || $medicalVisit->reception_source === 'WALK_IN'))
+                <a class="admin-btn admin-btn-detail" href="{{ route('admin.visits.reception-slip', $medicalVisit) }}">Xem phiếu khám</a>
+            @endif
 
             @if ($medicalVisit->appointment)
 
@@ -184,9 +187,9 @@
 
             <p class="muted-text">
                 @if ($displayStatus === 'WAITING_FOR_PAYMENT')
-                    Vui lòng ghi nhận thanh toán phí khám trong danh sách khoản thu bên dưới để cấp số thứ tự.
+                    Vui lòng ghi nhận thanh toán phí khám trong danh sách khoản thu bên dưới trước khi gọi bệnh nhân.
                 @elseif ($displayStatus === 'WAITING_FOR_RETURN')
-                    Dịch vụ đã được xử lý. Bệnh nhân đang chờ quay lại bác sĩ; hãy gọi và bắt đầu phục vụ trong hàng đợi phòng khám.
+                    Dịch vụ đã được xử lý. Hãy gọi bệnh nhân từ hàng đợi để quay lại phòng khám.
                 @elseif ($displayStatus === 'SERVICES_RESOLVED')
                     Không còn dịch vụ cần chờ. Vui lòng kiểm tra hàng đợi quay lại bác sĩ.
                 @elseif ($currentStatus === 'WAITING_FOR_SERVICE')

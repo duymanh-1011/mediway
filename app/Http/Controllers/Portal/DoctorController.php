@@ -4,11 +4,10 @@ namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\BrowseDoctorScheduleRequest;
-use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\Specialty;
-use Carbon\Carbon;
+use App\Support\Portal\PatientBookingWindow;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -55,31 +54,7 @@ class DoctorController extends Controller
                 'status',
             ]);
 
-        /*
-         * Trang tra cuu:
-         * Giu lai cac slot da day hoac da qua gio
-         * TRONG NGAY HOM NAY de hien thi trang thai.
-         *
-         * Ngay truoc hom nay duoc loai bo tai query.
-         */
-        $schedules = $this->scheduleQuery(
-            $specialtyId,
-            $doctorId,
-            $date
-        )
-            ->get()
-            ->filter(function (DoctorSchedule $schedule) {
-                // Do not advertise malformed slots that booking will reject.
-                $schedule->setRelation('appointmentTimeSlots', $schedule->appointmentTimeSlots
-                    ->filter(fn ($slot) => $slot->start_time < $slot->end_time
-                        && $slot->start_time >= $schedule->start_time
-                        && $slot->end_time <= $schedule->end_time
-                        && (int) $slot->max_patients > 0)
-                    ->values());
-
-                return $schedule->appointmentTimeSlots->isNotEmpty();
-            })
-            ->values();
+        $schedules = $this->availableSchedules($specialtyId, $doctorId, $date);
 
         return view(
             'portal.doctors.index',
@@ -180,7 +155,7 @@ class DoctorController extends Controller
      * - Khong lay ngay truoc hom nay
      * - Gioi han so ngay duoc dat truoc
      * - Dem so lich chua bi huy
-     * - Giu ACTIVE va FULL de hien thi trang thai
+     * - Chi hien thi khung ACTIVE hop le theo cua so dat lich
      */
     private function scheduleQuery(
         ?int $specialtyId,
@@ -196,6 +171,7 @@ class DoctorController extends Controller
                 'work_date',
                 'start_time',
                 'end_time',
+                'shift_code',
                 'status',
             ])
             ->withQualifiedDoctor()
@@ -211,13 +187,9 @@ class DoctorController extends Controller
                         'doctor_schedule_id',
                         'start_time',
                         'end_time',
-                        'max_patients',
                         'status',
                     ])
-                    ->whereIn(
-                        'status',
-                        ['ACTIVE', 'FULL']
-                    )
+                    ->where('status', 'ACTIVE')
                     ->withCount([
                         'appointments as booked_count' =>
                         fn($bookings) =>
@@ -249,17 +221,8 @@ class DoctorController extends Controller
                 fn(Builder $q) =>
                 $q->where('status', 'ACTIVE')
             )
-            ->whereBetween(
-                'work_date',
-                [
-                    today()->toDateString(),
-                    today()
-                        ->addDays(
-                            Appointment::BOOKING_ADVANCE_DAYS
-                        )
-                        ->toDateString(),
-                ]
-            )
+            ->whereDate('work_date', '>=', PatientBookingWindow::firstDate())
+            ->whereDate('work_date', '<=', PatientBookingWindow::lastDate())
             ->when(
                 $specialtyId !== null,
                 fn(Builder $q) =>
@@ -297,27 +260,7 @@ class DoctorController extends Controller
             ->filter(function (DoctorSchedule $schedule) {
                 $available = $schedule
                     ->appointmentTimeSlots
-                    ->filter(function ($slot) use ($schedule) {
-                        $startsAt = Carbon::parse(
-                            $schedule->work_date
-                                ->format('Y-m-d')
-                                . ' '
-                                . substr(
-                                    (string) $slot->start_time,
-                                    0,
-                                    8
-                                )
-                        );
-
-                        return $slot->start_time < $slot->end_time
-                            && $slot->start_time >= $schedule->start_time
-                            && $slot->end_time <= $schedule->end_time
-                            && $slot->status === 'ACTIVE'
-                            && $startsAt->isFuture()
-                            && (int) $slot->max_patients > 0
-                            && (int) $slot->booked_count
-                            < (int) $slot->max_patients;
-                    })
+                    ->filter(fn ($slot) => PatientBookingWindow::allows($schedule, $slot))
                     ->values();
 
                 $schedule->setRelation(

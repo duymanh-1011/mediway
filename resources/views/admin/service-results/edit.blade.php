@@ -367,7 +367,7 @@
                         <div class="result-form-group">
 
                             @if ($serviceStatus?->name === 'PROCESSING')
-                                <p>Thời điểm trả kết quả và hoàn tất dịch vụ được ghi tự động khi bạn xác nhận.</p>
+                                <p>Khi bạn xác nhận, hệ thống ghi thời điểm hoàn tất và cho bệnh nhân xem kết quả trên cổng Mediway.</p>
                             @else
                                 <p>Thời điểm trả kết quả</p>
                                 <strong>{{ $result->resulted_at?->format('d/m/Y H:i:s') ?? 'Chưa ghi nhận' }}</strong>

@@ -55,7 +55,8 @@ class AppointmentPaymentDateTest extends TestCase
         $queueBefore = $fee->medicalVisit->queues()->count();
         $auditBefore = DB::table('audit_logs')->where('entity_type', 'payment_transactions')->count();
         $this->actingAs(User::where('business_code', 'NV000004')->firstOrFail());
-        $this->get(route('employee.payments.index', ['q' => $fee->payable_code]))->assertOk()->assertSeeText('Chưa đến ngày hẹn khám');
+        $filter = $this->post(route('employee.payments.filter'), ['q' => $fee->payable_code])->assertRedirect();
+        $this->get($filter->headers->get('Location'))->assertOk()->assertSeeText('Chưa đến ngày hẹn khám');
         $this->get(route('employee.payments.show', $fee))->assertOk()->assertSeeText('Chưa đến ngày hẹn khám')
             ->assertDontSee(route('employee.payments.collect.create', $fee));
         $this->get(route('employee.payments.collect.create', $fee))

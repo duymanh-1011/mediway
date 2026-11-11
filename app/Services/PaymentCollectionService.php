@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\MedicalVisit;
-use App\Models\ExaminationRoom;
 use App\Models\ExaminationRoomQueue;
 use App\Models\QueueStatus;
 use App\Models\Payable;
@@ -205,13 +204,9 @@ class PaymentCollectionService
                         if (! $waiting) {
                             throw ValidationException::withMessages(['payment_method' => 'Chưa cấu hình trạng thái hàng đợi đang chờ.']);
                         }
-                        ExaminationRoom::whereKey($visit->examination_room_id)->lockForUpdate()->firstOrFail();
-                        $lastNumber = ExaminationRoomQueue::whereDate('queued_at', now()->toDateString())
-                            ->whereHas('medicalVisit', fn ($q) => $q->where('examination_room_id', $visit->examination_room_id))
-                            ->max('queue_number');
                         ExaminationRoomQueue::create([
                             'medical_visit_id' => $visit->id, 'queue_status_id' => $waiting->id,
-                            'queue_number' => ((int) $lastNumber) + 1, 'queue_type' => 'INITIAL_EXAM',
+                            'queue_number' => app(ExaminationQueueNumber::class)->reserve($visit), 'queue_type' => 'INITIAL_EXAM',
                             'queued_at' => now(), 'call_count' => 0,
                         ]);
                     }

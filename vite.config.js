@@ -9,7 +9,6 @@ export default defineConfig({
             'resources/css/employee/payments/index.css',
             'resources/css/employee/payments/show.css',
             'resources/css/employee/payments/collect.css',
-            'resources/js/employee/payments/index.js',
             'resources/js/employee/payments/collect.js',
             'resources/css/employee.css',
             'resources/js/employee.js',

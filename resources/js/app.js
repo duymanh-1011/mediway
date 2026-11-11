@@ -5,6 +5,7 @@ import { initializeDoctorSpecialtyPairs } from './doctor-specialty';
 import { initializeAdminSidebar } from './admin-sidebar';
 import { initializeResponsiveTables } from './responsive-tables';
 import { initializeConfirmations } from './admin-confirm';
+import { initializeServiceOrderPicker } from './service-order-picker';
 import './walk-in-reception';
 
 const initializeAdmin = () => {
@@ -13,6 +14,7 @@ const initializeAdmin = () => {
     new MutationObserver(() => initializeLookups()).observe(document.body, { childList: true, subtree: true });
     initializeResponsiveTables('.admin-content table');
     initializeConfirmations();
+    initializeServiceOrderPicker();
 
     document.querySelectorAll('.admin-content form:not([data-walk-in-form]), .login-card form').forEach((form) => {
         if (form.method.toLowerCase() === 'get') return;

@@ -83,13 +83,18 @@ class EmployeePaymentCollectionTest extends TestCase
 
     public function test_paid_and_cancelled_and_invalid_amount_are_rejected(): void
     {
+        $this->travelTo(\Carbon\Carbon::parse('2026-10-15 10:00:00', 'Asia/Ho_Chi_Minh'));
         $payable = $this->payable(); $this->actingAs($this->cashier());
         foreach (['PAID', 'CANCELLED'] as $status) {
             $payable->update(['payment_status_id' => PaymentStatus::where('name', $status)->value('id')]);
-            $this->post(route('employee.payments.collect.store', $payable), $this->payload())->assertSessionHasErrors();
+            $this->post(route('employee.payments.collect.store', $payable), $this->payload())
+                ->assertSessionHasErrors(['payment_method' => 'Khoản thu không ở trạng thái có thể thanh toán.']);
         }
-        $payable->update(['payment_status_id' => PaymentStatus::where('name', 'UNPAID')->value('id'), 'amount' => -1]);
-        $this->post(route('employee.payments.collect.store', $payable), $this->payload())->assertSessionHasErrors();
+        $payable->serviceOrderItem->update(['price_at_order' => 0]);
+        $payable->update(['payment_status_id' => PaymentStatus::where('name', 'UNPAID')->value('id'), 'amount' => 0]);
+        $this->post(route('employee.payments.collect.store', $payable), $this->payload())
+            ->assertSessionHasErrors(['payment_method' => 'Khoản thu không hợp lệ hoặc đã có giao dịch thành công.']);
+        $this->assertSame(0, $payable->transactions()->count());
     }
 
     public function test_missing_service_item_is_rejected_by_cashier_and_admin_without_financial_writes(): void

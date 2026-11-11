@@ -11,7 +11,8 @@ use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\Patient;
 use App\Support\Portal\AppointmentChangePolicy;
-use Carbon\Carbon;
+use App\Services\AppointmentOverlap;
+use App\Support\Portal\PatientBookingWindow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -123,20 +124,12 @@ class AppointmentChangeController extends Controller
                     ->where('doctor_id', $appointment->doctor_id)
                     ->where('specialty_id', $appointment->specialty_id)
                     ->where('status', 'ACTIVE')
-                    ->whereDate('work_date', '>=', today()->toDateString())
-                    ->whereDate(
-                        'work_date',
-                        '<=',
-                        today()
-                            ->addDays(Appointment::BOOKING_ADVANCE_DAYS)
-                            ->toDateString()
-                    );
+                    ->whereDate('work_date', '>=', PatientBookingWindow::firstDate())
+                    ->whereDate('work_date', '<=', PatientBookingWindow::lastDate());
             })
             ->get()
             ->filter(
-                fn(AppointmentTimeSlot $slot) =>
-                $this->validTarget($slot)
-                    && $this->remainingCapacity($slot) > 0
+                fn (AppointmentTimeSlot $slot) => $this->validTarget($slot)
             )
             ->sortBy(
                 fn(AppointmentTimeSlot $slot) =>
@@ -185,7 +178,7 @@ class AppointmentChangeController extends Controller
             $targetId,
             $targetScheduleId
         ): void {
-            // Khóa dữ liệu trước khi kiểm tra số chỗ.
+            // Khóa ca và khung giờ trước khi kiểm tra điều kiện đặt lại lịch.
             $schedule = DoctorSchedule::query()
                 ->whereKey($targetScheduleId)
                 ->lockForUpdate()
@@ -236,31 +229,15 @@ class AppointmentChangeController extends Controller
                 || (int) $schedule->doctor_id !== (int) $locked->doctor_id
                 || (int) $schedule->specialty_id !== (int) $locked->specialty_id
                 || ! $this->validTarget($slot)
-                || $this->remainingCapacity($slot) < 1
             ) {
                 throw ValidationException::withMessages([
                     'appointment_time_slot_id' =>
-                    'Khung giờ mới không còn hợp lệ hoặc đã hết chỗ.',
+                    'Khung giờ mới nằm ngoài thời gian đặt lịch hoặc đã ngừng nhận lịch.',
                 ]);
             }
 
-            $duplicate = Appointment::query()
-                ->where('patient_id', $locked->patient_id)
-                ->where('appointment_time_slot_id', $targetId)
-                ->where('id', '!=', $locked->id)
-                ->whereHas(
-                    'appointmentStatus',
-                    fn($query) =>
-                    $query->where('name', '!=', 'CANCELLED')
-                )
-                ->exists();
-
-            if ($duplicate) {
-                throw ValidationException::withMessages([
-                    'appointment_time_slot_id' =>
-                    'Bạn đã có lịch khác ở khung giờ này.',
-                ]);
-            }
+            AppointmentOverlap::ensureAvailable($patient->id, $slot, $locked->id);
+            PatientBookingWindow::ensureAllows($schedule, $slot);
 
             $old = $this->snapshot($locked);
 
@@ -324,37 +301,11 @@ class AppointmentChangeController extends Controller
             || ! $schedule->doctor->canPracticeSpecialty(
                 (int) $schedule->specialty_id
             )
-            || ! $schedule->work_date->betweenIncluded(
-                today(),
-                today()->addDays(Appointment::BOOKING_ADVANCE_DAYS)
-            )
-            || $slot->start_time >= $slot->end_time
-            || $slot->start_time < $schedule->start_time
-            || $slot->end_time > $schedule->end_time
-            || (int) $slot->max_patients < 1
         ) {
             return false;
         }
 
-        return Carbon::parse(
-            $schedule->work_date->format('Y-m-d')
-                . ' ' . $slot->start_time
-        )->isFuture();
-    }
-
-    private function remainingCapacity(
-        AppointmentTimeSlot $slot
-    ): int {
-        $bookings = Appointment::query()
-            ->where('appointment_time_slot_id', $slot->id)
-            ->whereHas(
-                'appointmentStatus',
-                fn($query) =>
-                $query->where('name', '!=', 'CANCELLED')
-            )
-            ->count();
-
-        return (int) $slot->max_patients - $bookings;
+        return PatientBookingWindow::allows($schedule, $slot);
     }
 
     private function snapshot(Appointment $appointment): array

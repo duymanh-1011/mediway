@@ -126,7 +126,10 @@ class ServiceOrderActionsTest extends TestCase
         $this->assertSame('WAITING_FOR_SERVICE', $visit->fresh()->status->name);
         $this->get(route('admin.visits.show', $visit))->assertOk()
             ->assertSee(route('admin.visits.service-orders.create', $visit));
-        $this->get(route('admin.visits.service-orders.create', $visit))->assertOk();
+        $this->get(route('admin.visits.service-orders.create', $visit))->assertOk()
+            ->assertSee('Tìm dịch vụ')
+            ->assertSee('aria-controls="service-order-list"', false)
+            ->assertSee('Không tìm thấy dịch vụ phù hợp.');
         $this->post(route('admin.visits.service-orders.store', $visit), ['medical_service_ids' => [$secondService]])
             ->assertSessionHasNoErrors()->assertSessionMissing('error');
         $second = $visit->serviceOrders()->whereKeyNot($first->id)->sole();

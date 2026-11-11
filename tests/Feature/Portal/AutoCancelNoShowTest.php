@@ -4,6 +4,7 @@ namespace Tests\Feature\Portal;
 
 use App\Models\Appointment;
 use App\Models\AppointmentStatus;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -56,23 +57,35 @@ class AutoCancelNoShowTest extends TestCase
         return $appointment->fresh();
     }
 
-    public function test_no_show_is_not_cancelled_on_appointment_day_even_after_slot_end(): void
+    public function test_no_show_expires_after_the_start_time_and_portal_pages_agree(): void
     {
+        $this->withoutVite();
         config()->set('appointments_auto_cancel.grace_minutes', 0);
         $appointment = $this->bookedFixture();
-        $end = \Carbon\Carbon::parse($appointment->appointment_date->format('Y-m-d').' '.$appointment->appointmentTimeSlot->end_time);
+        $start = \Carbon\Carbon::parse($appointment->appointment_date->toDateString().' '.$appointment->appointmentTimeSlot->start_time);
+        $this->actingAs($appointment->patient->user);
 
-        $this->travelTo($end->copy()->subSecond());
+        $this->travelTo($start->copy()->subSecond());
         $this->artisan('appointments:expire-unattended')->assertExitCode(0);
         $this->assertSame('BOOKED', $appointment->fresh()->appointmentStatus->name);
+        $this->get(route('patient.appointments'))->assertOk()->assertSee('Đã đặt lịch');
 
-        $this->travelTo($end->copy()->endOfDay());
+        $this->travelTo($start);
         $this->artisan('appointments:expire-unattended')->assertExitCode(0);
         $this->assertSame('BOOKED', $appointment->fresh()->appointmentStatus->name);
+        $this->assertNull($appointment->fresh()->receptionUnavailableReason());
 
-        $this->travelTo($end->copy()->addDay()->startOfDay());
+        $this->travelTo($start->copy()->addSecond());
+        $this->get(route('patient.appointments'))->assertOk()->assertSee($appointment->appointment_code)->assertSee('Trễ giờ hẹn');
+        $this->get(route('patient.appointments.show', $appointment))->assertOk()->assertSee('Trễ giờ hẹn');
+        $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
+        $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasErrors('appointment');
+        $this->assertFalse($appointment->medicalVisit()->exists());
         $this->artisan('appointments:expire-unattended')->assertExitCode(0);
         $this->assertSame('CANCELLED', $appointment->fresh()->appointmentStatus->name);
+        $this->actingAs($appointment->patient->user);
+        $this->get(route('patient.appointments'))->assertOk()->assertDontSee($appointment->appointment_code);
+        $this->get(route('patient.appointments.show', $appointment))->assertOk()->assertSee('Đã hủy');
     }
 
     public function test_expired_booked_appointment_is_cancelled_and_audited(): void
@@ -118,6 +131,7 @@ class AutoCancelNoShowTest extends TestCase
         $appointment = $this->bookedFixture(
             'LH000001'
         );
+        $this->travelTo($appointment->appointment_date->copy()->setTime(12, 0));
 
         $this->assertTrue(
             $appointment->medicalVisit()->exists()
@@ -166,23 +180,16 @@ class AutoCancelNoShowTest extends TestCase
 
     public function test_not_yet_past_grace_period_is_not_cancelled(): void
     {
-        $this->travelTo(
-            now()
-                ->setDate(2026, 10, 15)
-                ->setTime(9, 25, 0)
-        );
-
         $appointment = $this->bookedFixture();
+        $deadline = \Carbon\Carbon::parse($appointment->appointment_date->toDateString().' '.$appointment->appointmentTimeSlot->start_time)
+            ->addMinutes(30);
+        $this->travelTo($deadline);
+        $this->artisan('appointments:expire-unattended')->assertExitCode(0);
+        $this->assertSame('BOOKED', $appointment->fresh()->appointmentStatus->name);
 
-        $this->artisan(
-            'appointments:expire-unattended'
-        )->assertExitCode(0);
-
-        $this->assertSame(
-            'BOOKED',
-            $appointment->fresh()
-                ->appointmentStatus->name
-        );
+        $this->travelTo($deadline->copy()->addSecond());
+        $this->artisan('appointments:expire-unattended')->assertExitCode(0);
+        $this->assertSame('CANCELLED', $appointment->fresh()->appointmentStatus->name);
     }
 
     public function test_running_twice_does_not_duplicate_audit(): void

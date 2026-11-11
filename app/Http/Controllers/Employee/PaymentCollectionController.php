@@ -35,6 +35,7 @@ class PaymentCollectionController extends Controller
         AppointmentPaymentDateGuard $dateGuard
     ) {
         $employee = $this->cashier($request);
+        $backQuery = PayableController::navigationQuery($request);
 
         $payable->load([
             'medicalVisit.patient',
@@ -48,9 +49,6 @@ class PaymentCollectionController extends Controller
          * Chặn mở form khi không đúng ngày hẹn.
          */
         if ($reason = $dateGuard->unavailableReason($payable)) {
-            $backQuery = array_intersect_key($request->query->all(), array_flip([
-                'q', 'payment_type', 'payment_status_id', 'payment_method', 'date_from', 'date_to', 'page',
-            ]));
             return redirect()->route('employee.payments.show', array_merge(['payable' => $payable->id], $backQuery))
                 ->withErrors(['payment_date' => $reason]);
         }
@@ -76,18 +74,6 @@ class PaymentCollectionController extends Controller
             404,
             'Khoản thu không còn đủ điều kiện thanh toán.'
         );
-
-        $backQuery = $request->query->all();
-
-        $backQuery = array_intersect_key($backQuery, array_flip([
-            'q',
-            'payment_type',
-            'payment_status_id',
-            'payment_method',
-            'date_from',
-            'date_to',
-            'page',
-        ]));
 
         return view(
             'employee.payments.collect',
@@ -174,15 +160,7 @@ class PaymentCollectionController extends Controller
 
         $data['collected_by_employee_id'] = $employee->id;
 
-        $backQuery = array_intersect_key($request->query->all(), array_flip([
-            'q',
-            'payment_type',
-            'payment_status_id',
-            'payment_method',
-            'date_from',
-            'date_to',
-            'page',
-        ]));
+        $backQuery = PayableController::navigationQuery($request);
 
         try {
             $service->collect($request, $payable, $data);

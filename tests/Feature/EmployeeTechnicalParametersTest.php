@@ -384,9 +384,6 @@ class EmployeeTechnicalParametersTest extends TestCase
     {
         $order = ServiceOrder::where('service_order_code', 'CD-MAUDV-01')->firstOrFail();
         $endoscopy = $order->items()->whereHas('medicalService', fn ($query) => $query->where('service_code', 'DVNS001'))->sole();
-        $filters = ['q' => 'BN000006', 'status' => 'READY'];
-        $index = route('employee.services.orders', ['group' => 'NS', 'service' => 'DVNS001', ...$filters]);
-        $detail = ['item' => $endoscopy->id, 'group' => 'NS', ...$filters];
         $technician = User::where('business_code', 'NV000002')->firstOrFail();
         $catalogue = $this->actingAs($technician)->get(route('employee.services.index'))->assertOk()
             ->assertSee('Nhóm dịch vụ')->assertSee('Nội soi')->assertSee('Siêu âm')->assertDontSee('CD-MAUDV-01')
@@ -396,15 +393,20 @@ class EmployeeTechnicalParametersTest extends TestCase
         $this->assertSame(1, $services['DVTDCN002']->current_order_count);
         $this->assertSame(0, $services['DVNS002']->current_order_count);
 
+        $index = $this->post(route('employee.services.orders.filter', ['group' => 'NS', 'service' => 'DVNS001']),
+            ['q' => 'BN000006', 'status' => 'READY'])->assertRedirect()->headers->get('Location');
+        parse_str(parse_url($index, PHP_URL_QUERY), $filters);
+        $this->assertArrayNotHasKey('q', $filters);
+        $detail = ['item' => $endoscopy->id, 'group' => 'NS', ...$filters];
         $this->get($index)->assertOk()->assertSee(route('employee.services.show', $detail))->assertSee('Nội soi dạ dày')
             ->assertDontSee('name="assignee"', false)
             ->assertDontSee('Siêu âm ổ bụng')->assertDontSee('Tổng phân tích nước tiểu');
         $this->get(route('employee.services.orders', ['group' => 'NS', 'service' => 'DVNS001', ...$filters, 'assignee' => 'mine']))
             ->assertOk()->assertSee($order->service_order_code)->assertSee(route('employee.services.show', $detail))
             ->assertDontSee('assignee=');
-        $this->get(route('employee.services.orders', ['group' => 'NS', 'service' => 'DVTDCN002', 'q' => 'CD-MAUDV-02', 'status' => 'PROCESSING']))
+        $this->followingRedirects()->post(route('employee.services.orders.filter', ['group' => 'NS', 'service' => 'DVTDCN002']), ['q' => 'CD-MAUDV-02', 'status' => 'PROCESSING'])
             ->assertOk()->assertSee('CD-MAUDV-02')->assertSee('Nội soi Tai Mũi Họng')->assertDontSee('X-quang cột sống thắt lưng');
-        $this->get(route('employee.services.orders', ['group' => 'XN', 'service' => 'DVXN004', 'q' => 'CD-MAUDV-01', 'status' => 'WAITING_PAYMENT']))
+        $this->followingRedirects()->post(route('employee.services.orders.filter', ['group' => 'XN', 'service' => 'DVXN004']), ['q' => 'CD-MAUDV-01', 'status' => 'WAITING_PAYMENT'])
             ->assertOk()->assertSee('CD-MAUDV-01')->assertSee('Tổng phân tích nước tiểu')->assertDontSee('Nội soi dạ dày');
         $this->get(route('employee.services.orders', ['group' => 'NS', 'service' => 'DVNS002']))
             ->assertOk()->assertSee('Không tìm thấy phiếu chỉ định');

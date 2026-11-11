@@ -17,6 +17,7 @@ use App\Models\ServiceOrderProgress;
 use App\Models\ServiceResult;
 use App\Models\ServiceStatus;
 use App\Support\EmployeeAccess;
+use App\Support\SessionSearch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -63,10 +64,13 @@ class TechnicalServiceController extends Controller
 
     private function listQuery(Request $request): array
     {
-        return array_filter(
-            Arr::only($request->query(), ['q', 'group', 'status', 'date', 'page']),
-            fn ($value) => is_string($value) && $value !== ''
-        );
+        return [
+            ...array_filter(
+                Arr::only($request->query(), ['group', 'status', 'date', 'page']),
+                fn ($value) => is_string($value) && $value !== ''
+            ),
+            ...(new SessionSearch($request, 'employee.services'))->navigation(),
+        ];
     }
 
     private function filterStage(Builder $items, string $stage): void
@@ -120,6 +124,28 @@ class TechnicalServiceController extends Controller
         return view('employee.technical.index', compact('employee', 'groups', 'openGroup', 'shortcutGroups'));
     }
 
+    private function orderFilterRules(): array
+    {
+        return [
+            'date' => ['nullable', 'date_format:Y-m-d'],
+            'status' => ['nullable', 'in:PENDING,READY,WAITING_PAYMENT,PROCESSING,COMPLETED,CANCELLED'],
+        ];
+    }
+
+    public function filterOrders(Request $request, string $group, string $service)
+    {
+        $this->technician($request->user());
+        $filters = $request->validate(['q' => ['nullable', 'string', 'max:100'], ...$this->orderFilterRules()]);
+        $search = new SessionSearch($request, 'employee.services');
+
+        return redirect()->route('employee.services.orders', [
+            'group' => $group,
+            'service' => $service,
+            ...Arr::except($filters, 'q'),
+            ...$search->remember($filters['q'] ?? null),
+        ]);
+    }
+
     public function orders(Request $request, string $group, string $service)
     {
         $employee = $this->technician($request->user());
@@ -128,11 +154,15 @@ class TechnicalServiceController extends Controller
         $groupName = $groupRecord?->name ?? 'Chưa phân nhóm';
         $service = ($groupRecord?->medicalServices() ?? MedicalService::whereDoesntHave('serviceGroups'))
             ->where('medical_services.service_code', $service)->firstOrFail();
-        $filters = $request->validate([
-            'q' => ['nullable', 'string', 'max:100'],
-            'date' => ['nullable', 'date_format:Y-m-d'],
-            'status' => ['nullable', 'in:PENDING,READY,WAITING_PAYMENT,PROCESSING,COMPLETED,CANCELLED'],
-        ]);
+        $search = new SessionSearch($request, 'employee.services');
+        $urlFilters = [...$request->validate($this->orderFilterRules()), ...$search->navigation()];
+        $routeParameters = ['group' => $group, 'service' => $service->service_code];
+        if ($request->query->has('q') || ($request->query->has(SessionSearch::PARAMETER) && $search->keyword() === null)) {
+            return redirect()->route('employee.services.orders', [...$routeParameters, ...$urlFilters])
+                ->header('Referrer-Policy', 'no-referrer')
+                ->header('Cache-Control', 'private, no-store');
+        }
+        $filters = $urlFilters + ['q' => $search->keyword()];
         // Tìm chỉ định theo mã phiếu hoặc thông tin bệnh nhân trong phạm vi nhân viên được xem.
         $items = $service->serviceOrderItems()->visibleToTechnician($employee)
             ->with(['serviceStatus', 'serviceOrder.medicalVisit.patient', 'payable.paymentStatus'])
@@ -148,12 +178,14 @@ class TechnicalServiceController extends Controller
             })
             ->when($filters['date'] ?? null, fn ($q, $date) => $q->whereHas('serviceOrder', fn ($order) => $order->whereDate('ordered_at', $date)))
             ->when($filters['status'] ?? null, fn (Builder $query, string $stage) => $this->filterStage($query, $stage))
-            ->orderByDesc('id')->paginate(15)->appends($filters);
+            ->orderByDesc('id')->paginate(15)->appends($urlFilters);
         $listQuery = ['group' => $group, ...Arr::except($this->listQuery($request), ['group'])];
-        $ordersUrl = route('employee.services.orders', ['group' => $group, 'service' => $service->service_code]);
+        $ordersUrl = route('employee.services.orders', $routeParameters);
+        $filterUrl = route('employee.services.orders.filter', $routeParameters);
         $catalogueUrl = route('employee.services.index', ['group' => $group]).'#nhom-'.rawurlencode($group);
 
-        return view('employee.technical.orders', compact('employee', 'groupName', 'service', 'items', 'filters', 'listQuery', 'ordersUrl', 'catalogueUrl'));
+        return response()->view('employee.technical.orders', compact('employee', 'groupName', 'service', 'items', 'filters', 'listQuery', 'ordersUrl', 'filterUrl', 'catalogueUrl'))
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function show(Request $request, int $item)

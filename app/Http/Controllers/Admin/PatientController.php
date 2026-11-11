@@ -10,6 +10,7 @@ use App\Models\PatientDetail;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VisitStatus;
+use App\Support\SessionSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -52,10 +53,31 @@ class PatientController extends Controller
         'profile-pdf' => 'profile_pdf_path',
     ];
 
+    public function filter(Request $request)
+    {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:500'],
+            'status' => ['nullable', 'in:ACTIVE'],
+        ]);
+        $search = new SessionSearch($request, 'admin.patients');
+
+        return redirect()->route('admin.patients.index', [
+            'status' => $filters['status'] ?? null,
+            ...$search->remember($filters['search'] ?? null),
+        ]);
+    }
+
     public function index(Request $request)
     {
-        $search = trim((string) $request->query('search', ''));
+        $sessionSearch = new SessionSearch($request, 'admin.patients');
+        $search = $sessionSearch->keyword() ?? '';
         $status = (string) $request->query('status', '');
+        $urlFilters = ['status' => $status === 'ACTIVE' ? $status : null, ...$sessionSearch->navigation()];
+        if ($request->query->has('search') || ($request->query->has(SessionSearch::PARAMETER) && $search === '')) {
+            return redirect()->route('admin.patients.index', $urlFilters)
+                ->header('Referrer-Policy', 'no-referrer')
+                ->header('Cache-Control', 'private, no-store');
+        }
 
         $patients = Patient::query()
             ->with(['user', 'detail'])
@@ -93,13 +115,13 @@ class PatientController extends Controller
             )
             ->orderByDesc('id')
             ->paginate(10)
-            ->withQueryString();
+            ->appends($urlFilters);
 
-        return view('admin.patients.index', compact(
+        return response()->view('admin.patients.index', compact(
             'patients',
             'search',
             'status'
-        ));
+        ))->header('Cache-Control', 'private, no-store');
     }
 
     public function create()

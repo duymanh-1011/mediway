@@ -12,6 +12,27 @@ class Appointment extends Model
     public const BOOKING_ADVANCE_DAYS = 3;
     public const RECEPTION_ADVANCE_MINUTES = 30;
 
+    public static function lateTimeColumn(): string
+    {
+        return config('appointments_auto_cancel.enabled') ? 'start_time' : 'end_time';
+    }
+
+    public static function lateTimeOperator(): string
+    {
+        return config('appointments_auto_cancel.enabled') ? '<' : '<=';
+    }
+
+    public function noShowDeadline(): ?CarbonImmutable
+    {
+        $start = $this->appointmentTimeSlot?->start_time;
+        if (! $this->appointment_date || ! $start) {
+            return null;
+        }
+
+        return CarbonImmutable::parse($this->appointment_date->toDateString().' '.$start, config('app.timezone'))
+            ->addMinutes((int) config('appointments_auto_cancel.grace_minutes'));
+    }
+
     protected $fillable = [
         'appointment_code',
         'patient_id',
@@ -58,9 +79,12 @@ class Appointment extends Model
         if ($this->appointment_date->isBefore(today())) {
             return 'APPOINTMENT_PAST_DAY';
         }
-        if ($this->appointment_date->isToday() && $this->appointmentTimeSlot?->end_time
-            && now()->format('H:i:s') >= $this->appointmentTimeSlot->end_time) {
-            return 'APPOINTMENT_LATE';
+        if ($this->appointment_date->isToday() && ($time = $this->appointmentTimeSlot?->{self::lateTimeColumn()})) {
+            $currentTime = now()->format('H:i:s');
+            $time = CarbonImmutable::parse($time)->format('H:i:s');
+            if ($time < $currentTime || (self::lateTimeOperator() === '<=' && $time === $currentTime)) {
+                return 'APPOINTMENT_LATE';
+            }
         }
 
         return $status;
@@ -105,6 +129,9 @@ class Appointment extends Model
         }
         if (now()->greaterThanOrEqualTo($window['end'])) {
             return 'Ca làm việc của bác sĩ đã kết thúc lúc '.$window['end']->format('H:i').', không thể tiếp nhận lịch hẹn này.';
+        }
+        if (config('appointments_auto_cancel.enabled') && ($deadline = $this->noShowDeadline()) && now()->greaterThan($deadline)) {
+            return 'Đã quá hạn tiếp nhận lúc '.$deadline->format('H:i').'.';
         }
         return null;
     }

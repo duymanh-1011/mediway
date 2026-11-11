@@ -46,7 +46,7 @@ class AdminFilterLayoutTest extends TestCase
             libxml_clear_errors();
             libxml_use_internal_errors($previous);
             $xpath = new DOMXPath($document);
-            foreach ($xpath->query('//main//form[translate(@method,"get","GET")="GET"]') as $form) {
+            foreach ($xpath->query('//main//form[translate(@method,"get","GET")="GET" or @action="'.route('admin.patients.filter').'"]') as $form) {
                 $this->assertStringContainsString('admin-filter-form', $form->getAttribute('class'), $name);
                 $panel = $form->parentNode;
                 $this->assertSame('section', $panel->nodeName, $name);
@@ -111,6 +111,35 @@ class AdminFilterLayoutTest extends TestCase
         $this->assertStringNotContainsString('LAB_TECHNICIAN', $text);
         $this->assertStringContainsString('Nhân viên thu ngân', $text);
         $this->assertStringContainsString('value="CASHIER"', $html);
+    }
+
+    public function test_patient_search_uses_session_references_for_phone_and_citizen_id(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->withoutVite();
+        $patient = Patient::where('patient_code', 'BN000001')->firstOrFail();
+        $index = route('admin.patients.index');
+        $filter = route('admin.patients.filter');
+        $this->post($filter, ['search' => $patient->user->phone])->assertRedirect(route('admin.login'));
+        $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
+        $this->get($index)->assertOk()->assertSee('method="POST"', false)->assertSee($filter);
+
+        $urls = [];
+        foreach ([$patient->user->phone, $patient->detail->citizen_id_number] as $keyword) {
+            $url = $this->post($filter, ['search' => $keyword, 'status' => 'ACTIVE'])
+                ->assertRedirect()->headers->get('Location');
+            $this->assertStringContainsString('search_ref=', $url);
+            $this->assertStringNotContainsString($keyword, $url);
+            $this->get($url)->assertOk()
+                ->assertViewHas('patients', fn ($patients) => $patients->total() === 1 && $patients->first()->is($patient))
+                ->assertViewHas('patients', fn ($patients) => ! str_contains($patients->url(2), $keyword));
+            $urls[] = $url;
+        }
+        $this->assertNotSame(...$urls);
+        $this->get($urls[0])->assertOk()->assertViewHas('search', $patient->user->phone);
+        $this->get(route('admin.patients.index', ['search' => $patient->user->phone, 'status' => 'ACTIVE']))
+            ->assertRedirect(route('admin.patients.index', ['status' => 'ACTIVE']));
+        $this->get($index.'?search_ref=expired')->assertRedirect($index);
     }
 
     public function test_employee_form_displays_vietnamese_but_persists_the_original_code(): void

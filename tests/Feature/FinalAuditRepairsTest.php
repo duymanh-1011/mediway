@@ -152,7 +152,7 @@ class FinalAuditRepairsTest extends TestCase
     public function test_inactive_reception_dependencies_do_not_create_partial_visits_or_audit_logs(): void
     {
         foreach (['schedule', 'slot', 'doctor', 'patient', 'specialty', 'room'] as $kind) {
-            $this->travelTo(today()->setTime(7, 0));
+            $this->travelTo(today()->addDay()->setTime(7, 0));
             $appointment = $this->appointment();
             $this->travelTo(today()->setTime(9, 0));
             $slot = $appointment->appointmentTimeSlot;
@@ -189,6 +189,7 @@ class FinalAuditRepairsTest extends TestCase
     public function test_missing_appointment_target_rolls_back_both_start_paths(): void
     {
         foreach (['direct', 'queue'] as $path) {
+            $this->travelTo(today()->addDay()->setTime(7, 0));
             $visit = $this->receive();
             $queue = $visit->queues()->sole();
             $this->post(route('admin.queues.call', $queue))->assertSessionHasNoErrors();

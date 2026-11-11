@@ -189,7 +189,7 @@
                 @if ($displayStatus === 'WAITING_FOR_PAYMENT')
                     Vui lòng ghi nhận thanh toán phí khám trong danh sách khoản thu bên dưới trước khi gọi bệnh nhân.
                 @elseif ($displayStatus === 'WAITING_FOR_RETURN')
-                    Dịch vụ đã được xử lý. Bệnh nhân đang chờ quay lại bác sĩ; hãy gọi và bắt đầu phục vụ trong hàng đợi phòng khám.
+                    Dịch vụ đã được xử lý. Hãy gọi bệnh nhân từ hàng đợi để quay lại phòng khám.
                 @elseif ($displayStatus === 'SERVICES_RESOLVED')
                     Không còn dịch vụ cần chờ. Vui lòng kiểm tra hàng đợi quay lại bác sĩ.
                 @elseif ($currentStatus === 'WAITING_FOR_SERVICE')

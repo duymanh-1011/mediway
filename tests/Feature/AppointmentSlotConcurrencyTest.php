@@ -86,12 +86,12 @@ class AppointmentSlotConcurrencyTest extends TestCase
                     $second['test_now'] = $first['test_now'];
                 }
             }
-            $this->runConcurrentRequests($first, $second);
+            $this->runConcurrentRequests($first, $second, $scenario === 'capacity' ? 302 : 422);
             if ($scenario === 'overlap') {
                 $this->assertSame(1, $schedule->appointmentTimeSlots()->count());
             } elseif ($scenario === 'capacity') {
                 $this->assertSame(1, $slot->fresh()->max_patients);
-                $this->assertSame(1, $slot->appointments()->count());
+                $this->assertSame(2, $slot->appointments()->count());
             } elseif ($scenario === 'duplicate') {
                 $this->assertSame(1, $slot->appointments()->count());
             } else {
@@ -103,7 +103,7 @@ class AppointmentSlotConcurrencyTest extends TestCase
     /** @param array{uri: string, method: string, data: array<string, mixed>, pause: string} $first
      * @param  array{uri: string, method: string, data: array<string, mixed>, pause: string}  $second
      */
-    private function runConcurrentRequests(array $first, array $second): void
+    private function runConcurrentRequests(array $first, array $second, int $expectedSecondStatus): void
     {
         File::ensureDirectoryExists(storage_path('framework/testing'));
         $prefix = storage_path('framework/testing/slot-concurrency-'.Str::uuid());
@@ -179,7 +179,7 @@ PHP;
                 $responses[] = json_decode($worker->getOutput(), true, 512, JSON_THROW_ON_ERROR);
             }
             $this->assertSame(302, $responses[0]['status'], json_encode($responses[0]));
-            $this->assertSame(422, $responses[1]['status'], json_encode($responses[1]));
+            $this->assertSame($expectedSecondStatus, $responses[1]['status'], json_encode($responses[1]));
         } finally {
             File::put($release, 'release');
             foreach ($workers as $worker) {

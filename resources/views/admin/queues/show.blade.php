@@ -186,7 +186,7 @@
             <div>
                 <strong>Trạng thái lượt khám</strong>
 
-                <div>@include('admin.layouts.partials.status-badge', ['badgeCode' => $queue->medicalVisit?->status?->name ?: '—'])</div>
+                <div>@include('admin.layouts.partials.status-badge', ['badgeCode' => $queue->medicalVisit?->displayStatus() ?? '—'])</div>
             </div>
 
         </div>

@@ -164,6 +164,7 @@
             $visit
         ) }}"
         class="card section-spacing"
+        data-service-order-picker
     >
 
         @csrf
@@ -226,7 +227,7 @@
                 </p>
             </div>
 
-            <div class="selected-summary">
+            <div class="selected-summary" role="status">
                 Đã chọn:
                 <strong id="selected-count">
                     0
@@ -239,7 +240,13 @@
 
         @if ($services->isNotEmpty())
 
-            <div class="service-list">
+            <div class="form-group" data-service-search-field hidden>
+                <label for="service-order-search">Tìm dịch vụ</label>
+                <input id="service-order-search" type="search" autocomplete="off" placeholder="Nhập tên, mã hoặc nhóm dịch vụ…"
+                    aria-controls="service-order-list" data-lookup-input>
+            </div>
+
+            <div id="service-order-list" class="service-list">
 
                 @foreach ($services as $service)
 
@@ -338,6 +345,8 @@
 
             </div>
 
+            <p class="empty-state" data-service-search-empty role="status" hidden>Không tìm thấy dịch vụ phù hợp.</p>
+
         @else
 
             <div class="empty-state">
@@ -367,42 +376,3 @@
     </form>
 
 @endsection
-
-
-
-
-
-@push('scripts')
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const checkboxes =
-            document.querySelectorAll('.service-checkbox');
-
-        const counter =
-            document.getElementById('selected-count');
-
-        function updateSelectedCount() {
-            let count = 0;
-
-            checkboxes.forEach(function (checkbox) {
-                if (checkbox.checked) {
-                    count++;
-                }
-            });
-
-            counter.textContent = count;
-        }
-
-        checkboxes.forEach(function (checkbox) {
-            checkbox.addEventListener(
-                'change',
-                updateSelectedCount
-            );
-        });
-
-        updateSelectedCount();
-    });
-</script>
-
-@endpush

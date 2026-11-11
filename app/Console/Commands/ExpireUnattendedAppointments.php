@@ -6,7 +6,6 @@ use App\Models\Appointment;
 use App\Models\AppointmentStatus;
 use App\Models\AppointmentTimeSlot;
 use App\Models\DoctorSchedule;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +15,7 @@ class ExpireUnattendedAppointments extends Command
         {--dry-run : Chỉ liệt kê số ứng viên, không ghi dữ liệu}
         {--limit=200 : Số lịch tối đa trong một lượt}';
 
-    protected $description = 'Tự hủy lịch BOOKED từ ngày trước, chưa được tiếp nhận (có audit).';
+    protected $description = 'Tự hủy lịch đã quá giờ bắt đầu và chưa được tiếp nhận.';
 
     public function handle(): int
     {
@@ -71,18 +70,7 @@ class ExpireUnattendedAppointments extends Command
             return self::FAILURE;
         }
 
-        $graceMinutes = max(
-            0,
-            min(
-                1440,
-                (int) config(
-                    'appointments_auto_cancel.grace_minutes',
-                    30
-                )
-            )
-        );
-
-        $cutoff = now()->subMinutes($graceMinutes);
+        $cutoff = now()->subMinutes((int) config('appointments_auto_cancel.grace_minutes'));
 
         /*
          * Chỉ chọn ứng viên.
@@ -118,7 +106,6 @@ class ExpireUnattendedAppointments extends Command
                         'a.id'
                     );
             })
-            ->whereDate('a.appointment_date', '<', today()->toDateString())
             ->where(function ($query) use ($cutoff) {
                 $query
                     ->whereDate(
@@ -134,8 +121,8 @@ class ExpireUnattendedAppointments extends Command
                                 $cutoff->toDateString()
                             )
                             ->whereTime(
-                                's.end_time',
-                                '<=',
+                                's.start_time',
+                                '<',
                                 $cutoff->format('H:i:s')
                             );
                     });
@@ -163,8 +150,7 @@ class ExpireUnattendedAppointments extends Command
                 function () use (
                     $id,
                     $booked,
-                    $cancelled,
-                    $graceMinutes
+                    $cancelled
                 ) {
                     /*
                      * Khóa theo thứ tự:
@@ -224,7 +210,6 @@ class ExpireUnattendedAppointments extends Command
                         || (int) $appointment->appointment_time_slot_id
                         !== (int) $slot->id
                         || ! $appointment->appointment_date
-                        || ! $appointment->appointment_date->isBefore(today())
                         || $appointment->appointment_date
                         ->format('Y-m-d')
                         !== $schedule->work_date
@@ -237,30 +222,9 @@ class ExpireUnattendedAppointments extends Command
 
                     $now = now();
 
-                    $endsAt = Carbon::parse(
-                        $appointment->appointment_date
-                            ->format('Y-m-d')
-                            . ' '
-                            . substr(
-                                (string) $slot->end_time,
-                                0,
-                                8
-                            ),
-                        config(
-                            'app.timezone',
-                            'Asia/Ho_Chi_Minh'
-                        )
-                    );
-
-                    /*
-                     * Lịch vừa đổi giờ trong lúc chạy
-                     * phải được kiểm tra lại.
-                     */
-                    if (
-                        $endsAt
-                        ->addMinutes($graceMinutes)
-                        ->greaterThan($now)
-                    ) {
+                    $appointment->setRelation('appointmentTimeSlot', $slot);
+                    $deadline = $appointment->noShowDeadline();
+                    if (! $deadline || $now->lessThanOrEqualTo($deadline)) {
                         return false;
                     }
 

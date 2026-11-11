@@ -90,6 +90,7 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
             Route::get('/', [$controller, 'index'])->middleware($viewPermission)->name('index');
             if ($routeName === 'services') {
                 Route::get('/nhom/{group}/{service}', [$controller, 'orders'])->middleware($viewPermission)->name('orders');
+                Route::post('/nhom/{group}/{service}', [$controller, 'filterOrders'])->middleware($viewPermission)->name('orders.filter');
             }
             Route::get('/{item}', [$controller, 'show'])->whereNumber('item')->middleware($viewPermission)->name('show');
             Route::get('/{item}/phieu-ket-qua', [$controller, 'printResult'])->whereNumber('item')->middleware($viewPermission)->name('print');
@@ -102,6 +103,7 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->name('logout');
 
     Route::get('/thanh-toan', [\App\Http\Controllers\Employee\PayableController::class, 'index'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.index');
+    Route::post('/thanh-toan/loc', [\App\Http\Controllers\Employee\PayableController::class, 'filter'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.filter');
     Route::get('/thanh-toan/{payable}/ghi-nhan', [\App\Http\Controllers\Employee\PaymentCollectionController::class, 'create'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.collect')->name('payments.collect.create');
     Route::post('/thanh-toan/{payable}/ghi-nhan', [\App\Http\Controllers\Employee\PaymentCollectionController::class, 'store'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.collect')->name('payments.collect.store');
     Route::get('/thanh-toan/{payable}', [\App\Http\Controllers\Employee\PayableController::class, 'show'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.show');
@@ -316,6 +318,8 @@ Route::prefix('admin')
             Route::get('patient-medical-history', [PatientMedicalHistoryController::class, 'index'])
                 ->name('patient-medical-history.index');
 
+            Route::post('patients/filter', [PatientController::class, 'filter'])->name('patients.filter');
+
             Route::resource(
                 'patients',
                 PatientController::class
@@ -485,6 +489,17 @@ Route::prefix('admin')
             | Lịch làm việc bác sĩ
             |--------------------------------------------------------------------------
             */
+
+            Route::prefix('doctor-schedules/month')->name('doctor-schedules.month.')->controller(\App\Http\Controllers\Admin\DoctorMonthlyScheduleController::class)->group(function (): void {
+                Route::get('/', 'index')->name('index');
+                Route::get('/template', 'template')->name('template');
+                Route::get('/{doctor}', 'show')->whereNumber('doctor')->name('show');
+                Route::put('/{doctor}', 'update')->whereNumber('doctor')->name('update');
+                Route::post('/{doctor}/import', 'preview')->whereNumber('doctor')->name('import.preview');
+                Route::get('/{doctor}/import/{token}', 'review')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.show');
+                Route::put('/{doctor}/import/{token}', 'assignments')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.assignments');
+                Route::post('/{doctor}/import/{token}', 'confirm')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.confirm');
+            });
 
             Route::get(
                 '/doctor-schedules/calendar',

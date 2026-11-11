@@ -81,7 +81,7 @@
             </div>
 
             <div class="stat-value">
-                {{ $totalCapacity }}
+                {{ $totalCapacity === null ? 'Không giới hạn' : $totalCapacity }}
             </div>
 
         </div>
@@ -258,7 +258,7 @@
                     </h3>
 
                     <p class="section-description">
-                        Quản lý khung giờ và sức chứa của lịch làm việc.
+                        Quản lý các khung giờ của lịch làm việc.
                     </p>
 
                 </div>
@@ -298,7 +298,7 @@
 
                         @php
 
-                            $remaining =
+                            $remaining = $slot->max_patients === null ? null :
                                 max(
                                     0,
                                     $slot->max_patients
@@ -330,7 +330,7 @@
                             </td>
 
                             <td>
-                                {{ $slot->max_patients }}
+                                {{ $slot->max_patients === null ? 'Không giới hạn' : $slot->max_patients }}
                             </td>
 
                             <td>
@@ -338,7 +338,7 @@
                             </td>
 
                             <td>
-                                {{ $remaining }}
+                                {{ $remaining === null ? 'Không giới hạn' : $remaining }}
                             </td>
 
                             <td>

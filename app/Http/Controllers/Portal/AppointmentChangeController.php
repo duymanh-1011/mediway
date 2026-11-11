@@ -123,20 +123,13 @@ class AppointmentChangeController extends Controller
                     ->where('doctor_id', $appointment->doctor_id)
                     ->where('specialty_id', $appointment->specialty_id)
                     ->where('status', 'ACTIVE')
-                    ->whereDate('work_date', '>=', today()->toDateString())
-                    ->whereDate(
-                        'work_date',
-                        '<=',
-                        today()
-                            ->addDays(Appointment::BOOKING_ADVANCE_DAYS)
-                            ->toDateString()
-                    );
+                    ->whereDate('work_date', '>=', today()->toDateString());
             })
             ->get()
             ->filter(
                 fn(AppointmentTimeSlot $slot) =>
                 $this->validTarget($slot)
-                    && $this->remainingCapacity($slot) > 0
+                    && ($this->remainingCapacity($slot) === null || $this->remainingCapacity($slot) > 0)
             )
             ->sortBy(
                 fn(AppointmentTimeSlot $slot) =>
@@ -236,7 +229,7 @@ class AppointmentChangeController extends Controller
                 || (int) $schedule->doctor_id !== (int) $locked->doctor_id
                 || (int) $schedule->specialty_id !== (int) $locked->specialty_id
                 || ! $this->validTarget($slot)
-                || $this->remainingCapacity($slot) < 1
+                || ($this->remainingCapacity($slot) !== null && $this->remainingCapacity($slot) < 1)
             ) {
                 throw ValidationException::withMessages([
                     'appointment_time_slot_id' =>
@@ -324,14 +317,11 @@ class AppointmentChangeController extends Controller
             || ! $schedule->doctor->canPracticeSpecialty(
                 (int) $schedule->specialty_id
             )
-            || ! $schedule->work_date->betweenIncluded(
-                today(),
-                today()->addDays(Appointment::BOOKING_ADVANCE_DAYS)
-            )
+            || $schedule->work_date->isBefore(today())
             || $slot->start_time >= $slot->end_time
             || $slot->start_time < $schedule->start_time
             || $slot->end_time > $schedule->end_time
-            || (int) $slot->max_patients < 1
+            || ($slot->max_patients !== null && (int) $slot->max_patients < 1)
         ) {
             return false;
         }
@@ -344,7 +334,8 @@ class AppointmentChangeController extends Controller
 
     private function remainingCapacity(
         AppointmentTimeSlot $slot
-    ): int {
+    ): ?int {
+        if ($slot->max_patients === null) return null;
         $bookings = Appointment::query()
             ->where('appointment_time_slot_id', $slot->id)
             ->whereHas(

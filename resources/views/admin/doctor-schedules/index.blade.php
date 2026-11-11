@@ -54,6 +54,20 @@
     </div>
 
 
+    <section class="card" aria-labelledby="schedule-import-title">
+        <h2 id="schedule-import-title">Nhập lịch bác sĩ từ Excel</h2>
+        <p>Mỗi dòng là một bác sĩ, một ngày và một ca. Nhập ngày theo dạng dd/mm/yyyy và ca Sáng hoặc Chiều; bác sĩ làm cả ngày cần hai dòng. Tệp sai hoặc trùng sẽ không được nhập.</p>
+        <p><a href="{{ route('admin.doctor-schedules.import.template') }}">Tải mẫu Excel</a></p>
+        <form method="post" enctype="multipart/form-data" action="{{ route('admin.doctor-schedules.import') }}">
+            @csrf
+            <label for="schedule-import-file">Chọn tệp Excel (.xlsx, tối đa 2 MB)</label>
+            <input id="schedule-import-file" type="file" name="file" accept=".xlsx" required>
+            <button class="admin-btn admin-btn-primary" type="submit">Nhập lịch</button>
+            @if ($errors->has('file'))<ul class="field-error">@foreach ($errors->get('file') as $message)<li>{{ $message }}</li>@endforeach</ul>@endif
+            @if ($errors->has('shift'))<div class="field-error">{{ $errors->first('shift') }}</div>@endif
+        </form>
+    </section>
+
     <div class="stats-grid">
 
         <div class="mini-card">

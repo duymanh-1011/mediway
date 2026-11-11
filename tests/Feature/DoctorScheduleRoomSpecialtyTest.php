@@ -28,7 +28,7 @@ class DoctorScheduleRoomSpecialtyTest extends TestCase
         return ['doctor_id' => Doctor::where('doctor_code', 'BS000001')->value('id'),
             'specialty_id' => Specialty::where('specialty_code', 'CKTMH')->value('id'),
             'examination_room_id' => ExaminationRoom::where('room_code', 'PKTMH01')->value('id'),
-            'work_date' => today()->addDays(50)->toDateString(), 'start_time' => '09:00', 'end_time' => '10:00', 'status' => 'ACTIVE'];
+            'work_date' => today()->addDays(50)->toDateString(), 'shift' => 'MORNING', 'start_time' => '07:00', 'end_time' => '11:30', 'status' => 'ACTIVE'];
     }
 
     public function test_room_must_match_specialty_on_create_and_update(): void

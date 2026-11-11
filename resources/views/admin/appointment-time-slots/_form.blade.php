@@ -107,38 +107,6 @@
     <div class="form-group">
 
         <label
-            for="max_patients"
-            class="form-label"
-        >
-            Số bệnh nhân tối đa
-            <span class="required">*</span>
-        </label>
-
-        <input
-            type="number"
-            id="max_patients"
-            name="max_patients"
-            class="form-control"
-            min="1"
-            value="{{ old(
-                'max_patients',
-                $appointmentTimeSlot->max_patients ?? 1
-            ) }}"
-            required
-        >
-
-        @error('max_patients')
-            <div class="field-error">
-                {{ \App\Models\AdminDisplay::text($message) }}
-            </div>
-        @enderror
-
-    </div>
-
-
-    <div class="form-group">
-
-        <label
             for="status"
             class="form-label"
         >

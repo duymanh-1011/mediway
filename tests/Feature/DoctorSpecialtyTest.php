@@ -44,7 +44,7 @@ class DoctorSpecialtyTest extends TestCase
     {
         return ['doctor_id' => $this->doctor()->id, 'specialty_id' => $specialtyId ?? $this->specialty()->id,
             'examination_room_id' => ExaminationRoom::where('room_code', 'PKTMH01')->value('id'),
-            'work_date' => today()->addDay()->toDateString(), 'start_time' => '09:00', 'end_time' => '11:00', 'status' => 'ACTIVE'];
+            'work_date' => today()->addDay()->toDateString(), 'shift' => 'MORNING', 'start_time' => '09:00', 'end_time' => '11:00', 'status' => 'ACTIVE'];
     }
 
     private function profileData(?int $specialtyId = null): array
@@ -130,7 +130,7 @@ class DoctorSpecialtyTest extends TestCase
             $this->assertDatabaseMissing('medical_visits', ['appointment_id' => $legacy->id]);
             $this->assertDatabaseHas('appointments', ['id' => $legacy->id, 'specialty_id' => $specialtyId]);
             $this->put(route('admin.doctor-schedules.update', $schedule), [...$this->scheduleData($specialtyId),
-                'work_date' => today()->toDateString(), 'status' => 'INACTIVE'])->assertSessionHasNoErrors();
+                'work_date' => today()->toDateString(), 'shift' => 'LEGACY', 'status' => 'INACTIVE'])->assertSessionHasNoErrors();
         }
     }
 

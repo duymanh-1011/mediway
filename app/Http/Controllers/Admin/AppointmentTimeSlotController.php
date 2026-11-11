@@ -38,9 +38,10 @@ class AppointmentTimeSlotController extends Controller
             $startTime = $this->normalizeTime($data['start_time']);
             $endTime = $this->normalizeTime($data['end_time']);
             $this->validateSlot($doctorSchedule, $data, $startTime, $endTime);
+            $this->validateThirtyMinutes($startTime, $endTime);
             $doctorSchedule->appointmentTimeSlots()->create([
                 'start_time' => $startTime, 'end_time' => $endTime,
-                'max_patients' => $data['max_patients'], 'status' => $data['status'], 'notes' => $data['notes'] ?? null,
+                'max_patients' => null, 'status' => $data['status'], 'notes' => $data['notes'] ?? null,
             ]);
 
             return redirect()->route('admin.doctor-schedules.show', $doctorSchedule)->with('success', 'Thêm khung giờ khám thành công.');
@@ -86,13 +87,14 @@ class AppointmentTimeSlotController extends Controller
             if ($appointmentsCount > 0 && ($slot->start_time !== $startTime || $slot->end_time !== $endTime)) {
                 throw ValidationException::withMessages(['slot_conflict' => 'Khung giờ đã có lịch hẹn nên không thể thay đổi thời gian bắt đầu hoặc kết thúc.']);
             }
-            if ((int) $data['max_patients'] < $appointmentsCount) {
-                throw ValidationException::withMessages(['max_patients' => 'Sức chứa không được nhỏ hơn số lịch hẹn đã đặt ('.$appointmentsCount.').']);
+            // Khung cũ được giữ nguyên giờ, còn khung đổi giờ phải dài đúng 30 phút.
+            if ($slot->start_time !== $startTime || $slot->end_time !== $endTime) {
+                $this->validateThirtyMinutes($startTime, $endTime);
             }
             $this->validateSlot($doctorSchedule, $data, $startTime, $endTime, $slot->id);
             $slot->update([
                 'start_time' => $startTime, 'end_time' => $endTime,
-                'max_patients' => $data['max_patients'], 'status' => $data['status'], 'notes' => $data['notes'] ?? null,
+                'max_patients' => null, 'status' => $data['status'], 'notes' => $data['notes'] ?? null,
             ]);
 
             return redirect()->route('admin.doctor-schedules.show', $doctorSchedule)->with('success', 'Cập nhật khung giờ khám thành công.');
@@ -114,6 +116,13 @@ class AppointmentTimeSlotController extends Controller
     }
 
     /** @param array<string, mixed> $data */
+    private function validateThirtyMinutes(string $startTime, string $endTime): void
+    {
+        if (Carbon::createFromFormat('H:i:s', $startTime)->addMinutes(30)->format('H:i:s') !== $endTime) {
+            throw ValidationException::withMessages(['slot_conflict' => 'Khung giờ mới phải dài đúng 30 phút.']);
+        }
+    }
+
     private function validateSlot(DoctorSchedule $doctorSchedule, array $data, string $startTime, string $endTime, ?int $ignoreSlotId = null): void
     {
         if (! $this->isInsideSchedule($doctorSchedule, $startTime, $endTime)) {

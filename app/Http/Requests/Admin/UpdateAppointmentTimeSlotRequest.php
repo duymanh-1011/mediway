@@ -26,7 +26,7 @@ class UpdateAppointmentTimeSlotRequest extends FormRequest
             ],
 
             'max_patients' => [
-                'required',
+                'nullable',
                 'integer',
                 'min:1',
                 'max:65535',

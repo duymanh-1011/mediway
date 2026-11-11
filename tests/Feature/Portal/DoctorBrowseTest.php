@@ -939,9 +939,7 @@ class DoctorBrowseTest extends TestCase
                 'date'
             );
 
-        /*
-         * Vượt quá số ngày được phép đặt trước.
-         */
+        /* Ngày tương lai sau giới hạn cũ vẫn được phép tra cứu. */
 
         $this
             ->from(
@@ -962,12 +960,7 @@ class DoctorBrowseTest extends TestCase
                     ]
                 )
             )
-            ->assertRedirect(
-                $indexRoute
-            )
-            ->assertSessionHasErrors(
-                'date'
-            );
+            ->assertOk();
     }
 
     /*

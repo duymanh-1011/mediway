@@ -337,6 +337,8 @@
 
                         </div>
 
+                        <p>Đây là khung giờ đăng ký đến khám. Thời gian chờ có thể thay đổi; thứ tự khám theo số hàng đợi sau khi tiếp nhận và thanh toán.</p>
+
                         @error('appointment_time_slot_id')
                             <p
                                 class="mw-book-error"

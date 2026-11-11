@@ -54,12 +54,6 @@ class BrowseDoctorScheduleRequest extends FormRequest
                 'nullable',
                 'date_format:Y-m-d',
                 'after_or_equal:today',
-                'before_or_equal:'
-                    . today()
-                    ->addDays(
-                        Appointment::BOOKING_ADVANCE_DAYS
-                    )
-                    ->toDateString(),
             ],
         ];
     }

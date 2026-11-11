@@ -59,7 +59,7 @@
                                                         )
                                                     );
 
-                                                $remaining = max(
+                                                $remaining = $slot->max_patients === null ? null : max(
                                                     0,
                                                     (int) $slot->max_patients
                                                     - (int) $slot->booked_count
@@ -260,7 +260,6 @@
                                     type="date"
                                     value="{{ $date }}"
                                     min="{{ today()->toDateString() }}"
-                                    max="{{ today()->addDays(\App\Models\Appointment::BOOKING_ADVANCE_DAYS)->toDateString() }}"
                                 >
 
                                 @error('date')
@@ -713,7 +712,7 @@
                                                                                                                                                     : (
                                                                                                                                                         $entry['state'] === 'full'
                                                                                                                                                         ? 'Hết chỗ'
-                                                                                                                                                        : 'Còn ' . $entry['remaining'] . ' chỗ'
+                                                                                                                                                        : ($entry['remaining'] === null ? 'Nhận đăng ký' : 'Còn ' . $entry['remaining'] . ' chỗ')
                                                                                                                                                     )
                                                                                                                                                                                                     }}
                                                                                                                                                                                                 </span>

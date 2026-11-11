@@ -175,15 +175,16 @@ class MediwayWorkflowTest extends TestCase
         $this->assertSame('IN_EXAMINATION', $visit->fresh()->status->name);
     }
 
-    public function test_schedule_cannot_be_shortened_to_exclude_existing_unbooked_slots(): void
+    public function test_schedule_without_bookings_can_move_to_another_shift(): void
     {
         $schedule = $this->slot()->doctorSchedule;
         $this->put(route('admin.doctor-schedules.update', $schedule), [
             'doctor_id' => $schedule->doctor_id, 'specialty_id' => $schedule->specialty_id,
             'examination_room_id' => $schedule->examination_room_id, 'work_date' => $schedule->work_date->format('Y-m-d'),
-            'start_time' => '09:00', 'end_time' => '09:15', 'status' => 'ACTIVE',
-        ])->assertSessionHasErrors('end_time');
-        $this->assertSame('11:00:00', $schedule->fresh()->end_time);
+            'shift' => 'AFTERNOON', 'status' => 'ACTIVE',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('16:30', substr($schedule->fresh()->end_time, 0, 5));
+        $this->assertSame(6, $schedule->appointmentTimeSlots()->count());
     }
 
     public function test_service_orders_require_an_active_examination(): void

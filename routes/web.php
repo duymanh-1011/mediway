@@ -485,6 +485,10 @@ Route::prefix('admin')
                 [DoctorScheduleController::class, 'calendar']
             )->name('doctor-schedules.calendar');
 
+            Route::get('/doctor-schedules/import/template', [DoctorScheduleController::class, 'downloadTemplate'])->name('doctor-schedules.import.template');
+            Route::post('/doctor-schedules/import', [DoctorScheduleController::class, 'importExcel'])->name('doctor-schedules.import');
+
+
             Route::resource(
                 'doctor-schedules',
                 DoctorScheduleController::class

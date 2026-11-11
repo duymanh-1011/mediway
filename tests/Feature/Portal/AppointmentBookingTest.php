@@ -369,7 +369,7 @@ class AppointmentBookingTest extends TestCase
             ->assertOk();
     }
 
-    public function test_booking_outside_booking_window_is_rejected(): void
+    public function test_booking_future_slot_beyond_old_three_day_window_is_allowed(): void
     {
         [, $slot] =
             $this->createSlot(
@@ -392,12 +392,10 @@ class AppointmentBookingTest extends TestCase
                     $slot->id
                 )
             )
-            ->assertSessionHasErrors(
-                'appointment_time_slot_id'
-            );
+            ->assertSessionHasNoErrors();
 
         $this->assertSame(
-            0,
+            1,
             Appointment::query()
                 ->where(
                     'patient_id',

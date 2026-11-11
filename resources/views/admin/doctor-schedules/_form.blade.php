@@ -212,80 +212,31 @@
     </div>
 
 
+    @if (! isset($doctorSchedule))
     <div class="form-group">
-
-        <label
-            for="start_time"
-            class="form-label"
-        >
-            Giờ bắt đầu
-            <span class="required">*</span>
-        </label>
-
-        <input
-            type="time"
-            id="start_time"
-            name="start_time"
-            class="form-control"
-            value="{{ old(
-                'start_time',
-                isset($doctorSchedule)
-                    ? substr(
-                        $doctorSchedule->start_time,
-                        0,
-                        5
-                    )
-                    : ''
-            ) }}"
-            required
-        >
-
-        @error('start_time')
-            <div class="field-error">
-                {{ \App\Models\AdminDisplay::text($message) }}
-            </div>
-        @enderror
-
+        <label for="shift" class="form-label">Ca làm việc <span class="required">*</span></label>
+        <select id="shift" name="shift" class="form-control" required>
+            <option value="">-- Chọn ca --</option>
+            <option value="MORNING" @selected(old('shift') === 'MORNING')>Sáng (07:00–11:30)</option>
+            <option value="AFTERNOON" @selected(old('shift') === 'AFTERNOON')>Chiều (13:30–16:30)</option>
+        </select>
+        @error('shift')<div class="field-error">{{ \App\Models\AdminDisplay::text($message) }}</div>@enderror
+        <p class="muted">Các khung 30 phút được tạo tự động khi lưu.</p>
     </div>
-
-
+    @else
     <div class="form-group">
-
-        <label
-            for="end_time"
-            class="form-label"
-        >
-            Giờ kết thúc
-            <span class="required">*</span>
-        </label>
-
-        <input
-            type="time"
-            id="end_time"
-            name="end_time"
-            class="form-control"
-            value="{{ old(
-                'end_time',
-                isset($doctorSchedule)
-                    ? substr(
-                        $doctorSchedule->end_time,
-                        0,
-                        5
-                    )
-                    : ''
-            ) }}"
-            required
-        >
-
-        @error('end_time')
-            <div class="field-error">
-                {{ \App\Models\AdminDisplay::text($message) }}
-            </div>
-        @enderror
-
+        <label for="shift" class="form-label">Ca làm việc</label>
+        <select id="shift" name="shift" class="form-control">
+            <option value="LEGACY" @selected(old('shift', 'LEGACY') === 'LEGACY')>Giữ giờ hiện tại</option>
+            <option value="MORNING" @selected(old('shift') === 'MORNING')>Sáng (07:00–11:30)</option>
+            <option value="AFTERNOON" @selected(old('shift') === 'AFTERNOON')>Chiều (13:30–16:30)</option>
+        </select>
+        <p class="muted">Nếu đổi ca, hệ thống sử dụng giờ của ca đã chọn. Lịch đã có hẹn không được đổi ca.</p>
     </div>
+    <p class="muted">Giờ hiện tại: {{ substr($doctorSchedule->start_time, 0, 5) }}–{{ substr($doctorSchedule->end_time, 0, 5) }}.</p>
+    @error('shift')<div class="field-error">{{ \App\Models\AdminDisplay::text($message) }}</div>@enderror
 
-
+    @endif
     <div class="form-group">
 
         <label

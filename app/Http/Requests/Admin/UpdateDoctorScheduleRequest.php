@@ -16,23 +16,9 @@ class UpdateDoctorScheduleRequest extends FormRequest
         return true;
     }
 
-    // Giữ nguyên lịch cũ nếu chọn lịch cũ; ca chuẩn lấy giờ từ máy chủ.
-    protected function prepareForValidation(): void
-    {
-        $shift = $this->input('shift');
-        $schedule = $this->route('doctor_schedule');
-        if ($shift === 'LEGACY' && $schedule instanceof \App\Models\DoctorSchedule) {
-            $this->merge(['start_time' => substr($schedule->start_time, 0, 5), 'end_time' => substr($schedule->end_time, 0, 5)]);
-        } elseif (isset(\App\Services\DoctorShiftService::SHIFTS[$shift])) {
-            [$start, $end] = \App\Services\DoctorShiftService::SHIFTS[$shift];
-            $this->merge(['start_time' => $start, 'end_time' => $end]);
-        }
-    }
-
     public function rules(): array
     {
         return [
-            'shift' => ['required', Rule::in(['MORNING', 'AFTERNOON', 'LEGACY'])],
             'doctor_id' => [
                 'required',
                 'integer',
@@ -82,8 +68,6 @@ class UpdateDoctorScheduleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'shift.required' => 'Vui lòng chọn giữ giờ hiện tại hoặc chọn ca làm việc.',
-            'shift.in' => 'Ca làm việc không hợp lệ.',
             'doctor_id.required' => 'Vui lòng chọn bác sĩ.',
 
             'doctor_id.exists' => 'Bác sĩ được chọn không tồn tại hoặc đã ngừng hoạt động.',

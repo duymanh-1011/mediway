@@ -35,7 +35,7 @@
             </h1>
 
             <p class="page-description">
-                Cập nhật thời gian, trạng thái
+                Cập nhật sức chứa, trạng thái
                 hoặc thời gian của khung giờ.
             </p>
 
@@ -62,7 +62,9 @@
             <strong>{{ $appointmentsCount }}</strong>
             lịch hẹn.
 
-            Không được thay đổi giờ bắt đầu hoặc kết thúc của khung này.
+            Không được thay đổi giờ bắt đầu/kết thúc
+            và không được giảm sức chứa xuống dưới
+            {{ $appointmentsCount }}.
 
         </div>
 

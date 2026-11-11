@@ -29,16 +29,8 @@
             </h1>
 
             <p class="page-description">
-                Tạo khung giờ 30 phút nằm trong lịch làm việc của bác sĩ.
+                Tạo khung giờ khám thuộc lịch làm việc của bác sĩ.
             </p>
-            @php
-                // Lịch cũ có thể không chia hết thành các khoảng 30 phút.
-                $minutes = (int) \Carbon\Carbon::parse($doctorSchedule->start_time)->diffInMinutes(\Carbon\Carbon::parse($doctorSchedule->end_time));
-                $remainingMinutes = $minutes % 30;
-            @endphp
-            @if ($remainingMinutes > 0)
-                <p>Thời gian làm việc còn lẻ {{ $remainingMinutes }} phút, không đủ để tạo thêm một khung 30 phút.</p>
-            @endif
 
         </div>
 

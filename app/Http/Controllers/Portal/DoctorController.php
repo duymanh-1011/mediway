@@ -74,7 +74,7 @@ class DoctorController extends Controller
                     ->filter(fn ($slot) => $slot->start_time < $slot->end_time
                         && $slot->start_time >= $schedule->start_time
                         && $slot->end_time <= $schedule->end_time
-                        && ($slot->max_patients === null || (int) $slot->max_patients > 0))
+                        && (int) $slot->max_patients > 0)
                     ->values());
 
                 return $schedule->appointmentTimeSlots->isNotEmpty();
@@ -249,7 +249,17 @@ class DoctorController extends Controller
                 fn(Builder $q) =>
                 $q->where('status', 'ACTIVE')
             )
-            ->whereDate('work_date', '>=', today()->toDateString())
+            ->whereBetween(
+                'work_date',
+                [
+                    today()->toDateString(),
+                    today()
+                        ->addDays(
+                            Appointment::BOOKING_ADVANCE_DAYS
+                        )
+                        ->toDateString(),
+                ]
+            )
             ->when(
                 $specialtyId !== null,
                 fn(Builder $q) =>
@@ -304,8 +314,9 @@ class DoctorController extends Controller
                             && $slot->end_time <= $schedule->end_time
                             && $slot->status === 'ACTIVE'
                             && $startsAt->isFuture()
-                            && ($slot->max_patients === null || ((int) $slot->max_patients > 0
-                            && (int) $slot->booked_count < (int) $slot->max_patients));
+                            && (int) $slot->max_patients > 0
+                            && (int) $slot->booked_count
+                            < (int) $slot->max_patients;
                     })
                     ->values();
 

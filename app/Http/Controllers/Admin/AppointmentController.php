@@ -1138,11 +1138,12 @@ class AppointmentController extends Controller
             ->whereHas('specialty', fn ($query) => $query->where('status', 'ACTIVE'))
             ->whereHas('examinationRoom', fn ($query) => $query->where('status', 'ACTIVE'))
             ->where('work_date', '>=', today()->toDateString())
+            ->where('work_date', '<', today()->addDays(Appointment::BOOKING_ADVANCE_DAYS + 1)->toDateString())
             ->orderBy('work_date')->orderBy('start_time')->get()
             ->filter(function (DoctorSchedule $schedule) use ($currentSlotId) {
                 $schedule->appointmentTimeSlots->each(function (AppointmentTimeSlot $slot) use ($schedule, $currentSlotId) {
                     $slot->is_selectable = ((int) $slot->id === (int) $currentSlotId)
-                        || ($this->isSlotFuture($schedule, $slot) && ($slot->max_patients === null || $slot->booked_count < $slot->max_patients));
+                        || ($this->isSlotFuture($schedule, $slot) && $slot->booked_count < $slot->max_patients);
                 });
 
                 return $schedule->appointmentTimeSlots->contains(fn ($slot) => $slot->is_selectable);
@@ -1257,7 +1258,6 @@ class AppointmentController extends Controller
             return false;
         }
 
-        if ($slot->max_patients === null) return true;
         return
             $this->getActiveBookingCount(
                 $slotId
@@ -1404,8 +1404,8 @@ class AppointmentController extends Controller
         if (! $doctor->canPracticeSpecialty((int) $schedule->specialty_id)) {
             throw ValidationException::withMessages(['appointment_time_slot_id' => 'Bác sĩ chưa được phân chuyên khoa phù hợp với lịch làm việc này. Vui lòng chọn lịch khác hoặc cập nhật hồ sơ bác sĩ.']);
         }
-        if ($schedule->work_date->isBefore(today())) {
-            throw ValidationException::withMessages(['appointment_time_slot_id' => 'Không thể đặt lịch cho ngày đã qua.']);
+        if (! $schedule->work_date->betweenIncluded(today(), today()->addDays(Appointment::BOOKING_ADVANCE_DAYS))) {
+            throw ValidationException::withMessages(['appointment_time_slot_id' => 'Chỉ được đặt lịch từ ngày '.today()->format('d/m/Y').' đến ngày '.today()->addDays(Appointment::BOOKING_ADVANCE_DAYS)->format('d/m/Y').'. Vui lòng chọn lại khung giờ.']);
         }
         $bookings = Appointment::where('appointment_time_slot_id', $slotId)
             ->whereHas('appointmentStatus', fn ($query) => $query->where('name', '!=', 'CANCELLED'))
@@ -1414,7 +1414,7 @@ class AppointmentController extends Controller
             || ! $this->isSlotFuture($schedule, $slot)
             || $slot->start_time >= $slot->end_time
             || $slot->start_time < $schedule->start_time || $slot->end_time > $schedule->end_time
-            || ($slot->max_patients !== null && $bookings >= $slot->max_patients)
+            || $bookings >= $slot->max_patients
             || $schedule->doctor?->status !== 'ACTIVE' || $schedule->specialty?->status !== 'ACTIVE'
             || $schedule->examinationRoom?->status !== 'ACTIVE') {
             throw ValidationException::withMessages(['appointment_time_slot_id' => 'Không thể đặt vào khung giờ đã chọn vì khung giờ đã đầy, đã qua hoặc đã ngừng nhận lịch. Vui lòng chọn khung giờ khác.']);

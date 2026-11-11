@@ -26,7 +26,7 @@ class StoreAppointmentTimeSlotRequest extends FormRequest
             ],
 
             'max_patients' => [
-                'nullable',
+                'required',
                 'integer',
                 'min:1',
                 'max:65535',

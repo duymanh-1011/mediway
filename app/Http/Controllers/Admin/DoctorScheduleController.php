@@ -18,25 +18,6 @@ use Illuminate\Validation\ValidationException;
 
 class DoctorScheduleController extends Controller
 {
-    // Tạo mẫu trống, không đưa thông tin bệnh nhân vào file.
-    public function downloadTemplate()
-    {
-        abort_unless(class_exists(\ZipArchive::class), 503, 'Vui lòng bật phần mở rộng ZIP của PHP để sử dụng Excel.');
-        return response()->streamDownload(function (): void {
-            $book = app(\App\Services\DoctorScheduleImportService::class)->template();
-            (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($book))->save('php://output');
-            $book->disconnectWorksheets();
-        }, 'mau-lich-bac-si.xlsx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
-    }
-
-    // Kiểm tra toàn bộ file; dịch vụ import tự hoàn tác khi có bất kỳ lỗi nào.
-    public function importExcel(Request $request): RedirectResponse
-    {
-        $data = $request->validate(['file' => ['required', 'file', 'mimes:xlsx', 'extensions:xlsx', 'max:2048']]);
-        $service = app(\App\Services\DoctorScheduleImportService::class);
-        $result = $service->import($service->read($data['file']->getRealPath()));
-        return redirect()->route('admin.doctor-schedules.index')->with('success', 'Đã nhập '.$result['schedules'].' ca và '.$result['slots'].' khung hẹn.');
-    }
     public function index(Request $request)
     {
         $keyword = trim(
@@ -531,7 +512,6 @@ class DoctorScheduleController extends Controller
     ): RedirectResponse {
         return DB::transaction(function () use ($request): RedirectResponse {
             $data = $request->validated();
-            unset($data['shift']);
 
             $this->lockActiveScheduleParents($data);
 
@@ -556,10 +536,6 @@ class DoctorScheduleController extends Controller
                 DoctorSchedule::create(
                     $data
                 );
-
-            // Ca và khung hẹn cùng giao dịch để không tạo lịch thiếu khung.
-            app(\App\Services\DoctorShiftService::class)->createSlots($doctorSchedule->fresh());
-
 
             return redirect()
                 ->route(
@@ -594,9 +570,10 @@ class DoctorScheduleController extends Controller
                 'appointments_count'
             );
 
-        // Nếu có khung không giới hạn, tổng sức chứa không phải là số 0.
-        $totalCapacity = $timeSlots->contains(fn (AppointmentTimeSlot $slot) => $slot->max_patients === null)
-            ? null : $timeSlots->sum('max_patients');
+        $totalCapacity =
+            $timeSlots->sum(
+                'max_patients'
+            );
 
         return view(
             'admin.doctor-schedules.show',
@@ -646,8 +623,6 @@ class DoctorScheduleController extends Controller
     ): RedirectResponse {
         return DB::transaction(function () use ($request, $doctorSchedule): RedirectResponse {
             $data = $request->validated();
-            $shift = $data['shift'] ?? null;
-            unset($data['shift']);
 
             $doctorSchedule = DoctorSchedule::whereKey($doctorSchedule->id)->lockForUpdate()->firstOrFail();
             $allowLegacyDeactivation = $data['status'] === 'INACTIVE'
@@ -735,16 +710,6 @@ class DoctorScheduleController extends Controller
                             'schedule_conflict' => 'Lịch làm việc đã có lịch hẹn nên không thể thay đổi bác sĩ, chuyên khoa, phòng, ngày hoặc khung giờ. Bạn chỉ nên cập nhật trạng thái hoặc ghi chú.',
                         ]);
                 }
-            }
-
-            // Chỉ dựng lại khung khi đổi ca chuẩn và chưa có bất kỳ lịch hẹn nào.
-            $timeChanged = substr($doctorSchedule->start_time, 0, 5) !== $data['start_time']
-                || substr($doctorSchedule->end_time, 0, 5) !== $data['end_time'];
-            if ($timeChanged && ! $hasAppointments && in_array($shift, ['MORNING', 'AFTERNOON'], true)) {
-                $doctorSchedule->appointmentTimeSlots()->delete();
-                $doctorSchedule->update($data);
-                app(\App\Services\DoctorShiftService::class)->createSlots($doctorSchedule->fresh());
-                return redirect()->route('admin.doctor-schedules.show', $doctorSchedule)->with('success', 'Cập nhật lịch làm việc thành công.');
             }
 
             $startTime = $data['start_time'].':00';
@@ -902,7 +867,7 @@ class DoctorScheduleController extends Controller
                     '>',
                     $data['start_time']
                 )
-                ->lockForUpdate()->first();
+                ->exists();
 
         if ($doctorConflict) {
 
@@ -945,7 +910,7 @@ class DoctorScheduleController extends Controller
                     '>',
                     $data['start_time']
                 )
-                ->lockForUpdate()->first();
+                ->exists();
 
         if ($roomConflict) {
 

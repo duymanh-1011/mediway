@@ -259,11 +259,11 @@ class AppointmentController extends Controller
             || $schedule->specialty?->status !== 'ACTIVE'
             || $schedule->examinationRoom?->status !== 'ACTIVE'
             || ! $schedule->doctor->canPracticeSpecialty((int) $schedule->specialty_id)
-            || $schedule->work_date->isBefore(today())
+            || ! $schedule->work_date->betweenIncluded(today(), today()->addDays(Appointment::BOOKING_ADVANCE_DAYS))
             || $slot->start_time >= $slot->end_time
             || $slot->start_time < $schedule->start_time
             || $slot->end_time > $schedule->end_time
-            || ($slot->max_patients !== null && (int) $slot->max_patients < 1)
+            || (int) $slot->max_patients < 1
         ) {
             return null;
         }
@@ -290,9 +290,9 @@ class AppointmentController extends Controller
     {
         $slot = AppointmentTimeSlot::find($slotId);
 
-        // NULL là không giới hạn; lịch cũ chưa chuyển vẫn giữ mức chứa đã có.
-        return $slot !== null && ($slot->max_patients === null
-            || $this->getActiveBookingCount($slotId) < (int) $slot->max_patients);
+        return $slot !== null
+            && $this->getActiveBookingCount($slotId)
+            < (int) $slot->max_patients;
     }
 
     private function getActiveBookingCount(int $slotId): int
@@ -351,7 +351,10 @@ class AppointmentController extends Controller
         }
 
         if (
-            $schedule->work_date->isBefore(today())
+            ! $schedule->work_date->betweenIncluded(
+                today(),
+                today()->addDays(Appointment::BOOKING_ADVANCE_DAYS)
+            )
         ) {
             throw ValidationException::withMessages([
                 'appointment_time_slot_id' =>
@@ -376,7 +379,7 @@ class AppointmentController extends Controller
             || $slot->start_time >= $slot->end_time
             || $slot->start_time < $schedule->start_time
             || $slot->end_time > $schedule->end_time
-            || ($slot->max_patients !== null && $bookings >= (int) $slot->max_patients)
+            || $bookings >= (int) $slot->max_patients
             || $doctor->status !== 'ACTIVE'
             || $schedule->specialty?->status !== 'ACTIVE'
             || $schedule->examinationRoom?->status !== 'ACTIVE'

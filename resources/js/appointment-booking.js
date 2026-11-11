@@ -23,7 +23,7 @@ export function bookingScheduleLabel(schedule, kind) {
 export function bookingSlotsFor(schedules, kind, scheduleId = '') {
     return schedules.filter((schedule) => kind === 'doctor' || schedule.id === String(scheduleId)).flatMap((schedule) => schedule.slots.map((slot) => ({
         value: String(slot.id), scheduleId: schedule.id,
-        label: `${kind === 'doctor' ? `${schedule.dateLabel} | ` : ''}${slot.start} - ${slot.end} | ${slot.remaining === null ? 'Nhận đăng ký' : `Còn ${slot.remaining} chỗ`}${kind === 'doctor' ? ` | ${entityText(schedule.room)} | ${schedule.specialty.name}` : ''}`,
+        label: `${kind === 'doctor' ? `${schedule.dateLabel} | ` : ''}${slot.start} - ${slot.end} | Còn ${slot.remaining} chỗ${kind === 'doctor' ? ` | ${entityText(schedule.room)} | ${schedule.specialty.name}` : ''}`,
     })));
 }
 

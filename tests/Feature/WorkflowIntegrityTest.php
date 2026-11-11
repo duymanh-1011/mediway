@@ -155,7 +155,7 @@ class WorkflowIntegrityTest extends TestCase
         $specialty = Specialty::where('specialty_code', 'CKTMH')->firstOrFail();
         $room = ExaminationRoom::where('room_code', 'PKTMH01')->firstOrFail();
         $data = ['doctor_id' => $doctor->id, 'specialty_id' => $specialty->id, 'examination_room_id' => $room->id,
-            'work_date' => '2026-10-28', 'shift' => 'MORNING', 'start_time' => '09:00', 'end_time' => '10:00', 'status' => 'ACTIVE'];
+            'work_date' => '2026-10-28', 'start_time' => '09:00', 'end_time' => '10:00', 'status' => 'ACTIVE'];
         foreach (['doctor_id' => $doctor, 'specialty_id' => $specialty, 'examination_room_id' => $room] as $field => $parent) {
             $parent->update(['status' => 'INACTIVE']);
             $this->post(route('admin.doctor-schedules.store'), $data)->assertSessionHasErrors($field);

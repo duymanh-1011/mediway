@@ -16,17 +16,9 @@ class StoreDoctorScheduleRequest extends FormRequest
         return true;
     }
 
-    // Giờ thực tế được tính từ ca tại máy chủ, không lấy từ dữ liệu trình duyệt.
-    protected function prepareForValidation(): void
-    {
-        [$start, $end] = \App\Services\DoctorShiftService::SHIFTS[$this->input('shift')] ?? [null, null];
-        $this->merge(['start_time' => $start, 'end_time' => $end]);
-    }
-
     public function rules(): array
     {
         return [
-            'shift' => ['required', Rule::in(['MORNING', 'AFTERNOON'])],
             'doctor_id' => [
                 'required',
                 'integer',

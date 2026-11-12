@@ -79,8 +79,59 @@
             @endforeach
         @empty<p>Chưa có chỉ định dịch vụ.</p>@endforelse
     </section>
-    <section class="tech-panel"><h2>Đơn thuốc</h2>@if($record->prescription)<p><strong>{{ $record->prescription->prescription_code }}</strong></p>@foreach($record->prescription->items as $item)<p>{{ $item->medicine?->name ?? 'Thuốc' }} · {{ $item->quantity }} {{ $item->usage_unit }}</p>@endforeach @else<p>Chưa có đơn thuốc.</p>@endif</section>
-    <section class="tech-panel"><h2>Kết luận khám</h2><p>{{ $record->conclusion?->professional_conclusion ?? 'Chưa có kết luận.' }}</p>
+    <section class="tech-panel"><h2>Đơn thuốc</h2>
+        @if($record->prescription)
+            <p><strong>{{ $record->prescription->prescription_code }}</strong> · {{ $record->prescription->prescribed_at?->format('d/m/Y H:i') ?? 'Chưa ghi thời gian' }}</p>
+            <p>Trạng thái: {{ $record->prescription->status === 'ACTIVE' ? 'Đang hiệu lực' : ($record->prescription->status === 'CANCELLED' ? 'Đã hủy' : $record->prescription->status) }}</p>
+            <a class="portal-btn portal-btn--secondary" href="{{ route('doctor.visits.prescriptions.print', $record->id) }}">Xem và in đơn thuốc</a>
+            @foreach($record->prescription->items as $item)
+                <p><strong>{{ $item->medicine?->name ?? 'Thuốc' }}</strong> · {{ $item->quantity }} {{ $item->usage_unit }}</p>
+                <p>Liều mỗi lần: {{ $item->dose_per_use }} · {{ $item->times_per_day }} lần/ngày · {{ $item->duration_days }} ngày · {{ $item->usage_method }}</p>
+                @if($item->administration_time)<p>Thời điểm dùng: {{ $item->administration_time }}</p>@endif
+                @if($item->usage_instructions)<p>Hướng dẫn: {{ $item->usage_instructions }}</p>@endif
+            @endforeach
+            @if($record->prescription->general_instructions)<p><strong>Lời dặn:</strong> {{ $record->prescription->general_instructions }}</p>@endif
+            @if($canEdit && $record->prescription->status === 'ACTIVE')
+                @php($prescriptionForm = old('form_key') === 'prescription-update')
+                <details @if($prescriptionForm) open @endif><summary>Chỉnh sửa lời dặn</summary>
+                    <form class="tech-form" method="post" action="{{ route('doctor.visits.prescriptions.update', $record->id) }}">
+                        @csrf @method('PUT')<input type="hidden" name="form_key" value="prescription-update"><input type="hidden" name="action" value="save">
+                        <input type="hidden" name="record_version" value="{{ $prescriptionForm ? old('record_version') : \App\Services\DoctorClinicalVersion::of($record->prescription) }}">
+                        <label>Lời dặn chung<textarea name="general_instructions" rows="3" maxlength="5000">{{ $prescriptionForm ? old('general_instructions') : $record->prescription->general_instructions }}</textarea></label>
+                        <label>Ghi chú của bác sĩ<textarea name="doctor_notes" rows="2" maxlength="5000">{{ $prescriptionForm ? old('doctor_notes') : $record->prescription->doctor_notes }}</textarea></label>
+                        <button class="portal-btn portal-btn--primary" type="submit">Lưu lời dặn</button>
+                    </form>
+                </details>
+                <details><summary>Hủy đơn thuốc</summary><p>Chỉ có thể hủy khi không còn khoản thu đang hiệu lực. Hiện hệ thống chưa hỗ trợ tạo lại đơn khác cho cùng lượt khám sau khi hủy.</p>
+                    <form method="post" action="{{ route('doctor.visits.prescriptions.update', $record->id) }}">@csrf @method('PUT')
+                        <input type="hidden" name="action" value="cancel"><input type="hidden" name="record_version" value="{{ \App\Services\DoctorClinicalVersion::of($record->prescription) }}">
+                        <button class="portal-btn portal-btn--secondary" type="submit">Xác nhận hủy đơn</button>
+                    </form>
+                </details>
+            @endif
+        @else
+            <p>Chưa có đơn thuốc.</p>
+            @if($canEdit)<a class="portal-btn portal-btn--primary" href="{{ route('doctor.visits.prescriptions.create', $record->id) }}">Kê đơn thuốc</a>@endif
+        @endif
+    </section>
+    <section class="tech-panel"><h2>Kết luận khám</h2>
+        @if($canEdit)
+            @php($conclusionForm = old('form_key') === 'conclusion')
+            @php($followUp = $conclusionForm ? old('has_follow_up', '0') : ($record->conclusion?->has_follow_up ? '1' : '0'))
+            <form class="tech-form" method="post" action="{{ route('doctor.visits.conclusion.save', $record->id) }}">
+                @csrf @method('PUT')<input type="hidden" name="form_key" value="conclusion">
+                <input type="hidden" name="record_version" value="{{ $conclusionForm ? old('record_version') : \App\Services\DoctorClinicalVersion::of($record->conclusion) }}">
+                <label for="professional-conclusion">Kết luận chuyên môn <span aria-hidden="true">*</span><textarea id="professional-conclusion" name="professional_conclusion" maxlength="10000" rows="3" required>{{ $conclusionForm ? old('professional_conclusion') : $record->conclusion?->professional_conclusion }}</textarea></label>
+                <label for="conclusion-disposition">Hướng xử lý<input id="conclusion-disposition" name="disposition" maxlength="120" value="{{ $conclusionForm ? old('disposition') : $record->conclusion?->disposition }}"></label>
+                <label for="treatment-plan">Kế hoạch điều trị<textarea id="treatment-plan" name="treatment_plan" maxlength="10000" rows="2">{{ $conclusionForm ? old('treatment_plan') : $record->conclusion?->treatment_plan }}</textarea></label>
+                <label for="conclusion-instructions">Lời dặn<textarea id="conclusion-instructions" name="instructions" maxlength="10000" rows="2">{{ $conclusionForm ? old('instructions') : $record->conclusion?->instructions }}</textarea></label>
+                <label for="has-follow-up">Hẹn tái khám<select id="has-follow-up" name="has_follow_up"><option value="0" @selected((string) $followUp === '0')>Không</option><option value="1" @selected((string) $followUp === '1')>Có</option></select></label>
+                <label for="follow-up-date">Ngày tái khám nếu có<input id="follow-up-date" type="date" name="follow_up_date" value="{{ $conclusionForm ? old('follow_up_date') : $record->conclusion?->follow_up_date?->format('Y-m-d') }}"></label>
+                <label for="follow-up-reason">Lý do tái khám nếu có<textarea id="follow-up-reason" name="follow_up_reason" maxlength="5000" rows="2">{{ $conclusionForm ? old('follow_up_reason') : $record->conclusion?->follow_up_reason }}</textarea></label>
+                <label for="conclusion-notes">Ghi chú<textarea id="conclusion-notes" name="notes" maxlength="5000" rows="2">{{ $conclusionForm ? old('notes') : $record->conclusion?->notes }}</textarea></label>
+                <button type="submit" class="portal-btn portal-btn--primary">Lưu kết luận</button>
+            </form>
+        @else<p>{{ $record->conclusion?->professional_conclusion ?? 'Chưa có kết luận.' }}</p>@endif
         @if($check['ready'])<p>Đã có đủ chẩn đoán, kết luận và không còn dịch vụ cần chờ.</p>@else<p>Hồ sơ còn thiếu:</p><ul>@foreach($check['reasons'] as $reason)<li>{{ $reason }}</li>@endforeach</ul>@endif
     </section>
 </section>

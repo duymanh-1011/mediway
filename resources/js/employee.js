@@ -3,6 +3,32 @@ import './walk-in-reception.js';
 
 initializeResponsiveTables('.f08 table[data-mobile-records]');
 
+// Đánh lại số thứ tự thuốc để biểu mẫu luôn gửi danh sách liên tiếp lên máy chủ.
+document.querySelectorAll('[data-doctor-prescription]').forEach((form) => {
+    const list = form.querySelector('[data-prescription-rows]');
+    const template = form.querySelector('[data-prescription-template]');
+    const add = form.querySelector('[data-prescription-add]');
+    const renumber = () => {
+        const rows = [...list.querySelectorAll('[data-prescription-row]')];
+        rows.forEach((row, index) => {
+            row.querySelector('[data-prescription-number]').textContent = index + 1;
+            row.querySelectorAll('[name^="items["]').forEach((input) => { input.name = input.name.replace(/^items\[[^\]]+\]/, `items[${index}]`); });
+            row.querySelector('[data-prescription-remove]').disabled = rows.length === 1;
+        });
+        add.disabled = rows.length >= 30;
+    };
+    add.addEventListener('click', () => {
+        if (list.querySelectorAll('[data-prescription-row]').length >= 30) return;
+        list.append(template.content.cloneNode(true));
+        renumber();
+    });
+    list.addEventListener('click', (event) => {
+        const remove = event.target.closest('[data-prescription-remove]');
+        if (remove && list.querySelectorAll('[data-prescription-row]').length > 1) { remove.closest('[data-prescription-row]').remove(); renumber(); }
+    });
+    renumber();
+});
+
 const menu = document.querySelector('.employee-menu');
 if (menu) {
     const wide = window.matchMedia('(min-width: 901px)');

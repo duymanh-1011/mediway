@@ -84,6 +84,11 @@ Route::prefix('bac-si')->name('doctor.')->middleware([\App\Http\Middleware\Docto
     Route::put('/luot-kham/{visit}/noi-dung-kham', [\App\Http\Controllers\Doctor\ClinicalController::class, 'saveNote'])->whereNumber('visit')->name('visits.clinical.update');
     Route::post('/luot-kham/{visit}/chan-doan', [\App\Http\Controllers\Doctor\ClinicalController::class, 'storeDiagnosis'])->whereNumber('visit')->name('visits.diagnoses.store');
     Route::put('/luot-kham/{visit}/chan-doan/{diagnosis}', [\App\Http\Controllers\Doctor\ClinicalController::class, 'updateDiagnosis'])->whereNumber(['visit', 'diagnosis'])->name('visits.diagnoses.update');
+    Route::get('/luot-kham/{visit}/don-thuoc/tao', [\App\Http\Controllers\Doctor\PrescriptionController::class, 'create'])->whereNumber('visit')->name('visits.prescriptions.create');
+    Route::post('/luot-kham/{visit}/don-thuoc', [\App\Http\Controllers\Doctor\PrescriptionController::class, 'store'])->whereNumber('visit')->name('visits.prescriptions.store');
+    Route::get('/luot-kham/{visit}/don-thuoc/in', [\App\Http\Controllers\Doctor\PrescriptionController::class, 'print'])->whereNumber('visit')->name('visits.prescriptions.print');
+    Route::put('/luot-kham/{visit}/don-thuoc', [\App\Http\Controllers\Doctor\PrescriptionController::class, 'update'])->whereNumber('visit')->name('visits.prescriptions.update');
+    Route::put('/luot-kham/{visit}/ket-luan', [\App\Http\Controllers\Doctor\ConclusionController::class, 'save'])->whereNumber('visit')->name('visits.conclusion.save');
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->name('logout');
 });
 

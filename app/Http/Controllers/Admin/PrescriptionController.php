@@ -89,7 +89,7 @@ class PrescriptionController extends Controller
             ]);
             $prescription->items()->createMany($items);
             AuditLog::create([
-                'user_id' => $request->user()->id, 'role_name_snapshot' => 'Administrator', 'action' => 'CREATE',
+                'user_id' => $request->user()->id, 'role_name_snapshot' => $request->user()->role?->name, 'action' => 'CREATE',
                 'entity_type' => 'prescriptions', 'entity_id' => $prescription->id, 'entity_business_code' => $code,
                 'old_values' => [], 'new_values' => ['medical_visit_id' => $lockedVisit->id, 'medicine_count' => $ids->count()],
                 'description' => 'Tạo đơn thuốc '.$code.'.', 'ip_address' => $request->ip(),

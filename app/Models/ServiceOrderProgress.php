@@ -49,38 +49,6 @@ final class ServiceOrderProgress
         }
     }
 
-    /** The caller holds the visit and item locks in the same transaction. */
-    public function publishCompletedResult(ServiceOrderItem $item, ?Request $request = null): bool
-    {
-        if ($item->serviceStatus?->name !== 'COMPLETED' || $item->serviceOrder?->status === 'CANCELLED') {
-            return false;
-        }
-
-        $result = $item->result()->lockForUpdate()->first();
-        if ($result?->patient_publication_status !== 'PRIVATE' || ! $result->hasContent()) {
-            return false;
-        }
-
-        $result->patient_publication_status = 'PUBLISHED';
-        $result->save();
-
-        AuditLog::create([
-            'user_id' => $request?->user()?->id,
-            'role_name_snapshot' => $request?->user()?->role?->name,
-            'action' => 'STATUS_CHANGE',
-            'entity_type' => 'service_results',
-            'entity_id' => $result->id,
-            'old_values' => ['patient_publication_status' => 'PRIVATE'],
-            'new_values' => ['patient_publication_status' => 'PUBLISHED'],
-            'description' => 'Công bố kết quả dịch vụ đã hoàn tất cho bệnh nhân.',
-            'ip_address' => $request?->ip(),
-            'user_agent' => $request?->userAgent(),
-            'performed_at' => now(),
-        ]);
-
-        return true;
-    }
-
     public function auditItemTransition(Request $request, ServiceOrderItem $item, array $before, array $after, string $action): void
     {
         $serviceCode = $item->medicalService?->service_code;

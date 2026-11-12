@@ -2,17 +2,17 @@
 
 namespace App\Support\Portal;
 
-class ClinicalPublication
+class PatientClinicalRecords
 {
     public static function restrict($query, string $table)
     {
         if ($table === 'prescriptions') {
-            return $query->whereHas('medicalVisit.status', fn ($status) => $status->where('name', 'COMPLETED'));
+            // Đơn thuốc của đúng bệnh nhân được hiển thị ngay sau khi lưu.
+            return $query;
         }
 
-        // Trạng thái thực hiện áp dụng cho cả kết quả cũ chưa có cờ công bố.
+        // Hiển thị kết quả đã lưu, giữ chặn các chỉ định bị hủy.
         return $query->whereHas('serviceOrderItem', fn ($item) => $item
-            ->whereHas('serviceStatus', fn ($status) => $status->where('name', 'COMPLETED'))
             ->whereHas('serviceOrder', fn ($order) => $order->where('status', '!=', 'CANCELLED')));
     }
 }

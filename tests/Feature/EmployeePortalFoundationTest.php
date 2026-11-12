@@ -70,15 +70,9 @@ class EmployeePortalFoundationTest extends TestCase
         $this->assertTrue(Hash::check('MatKhauMauDaDoi@123', $user->fresh()->password));
     }
 
-    public function test_doctor_login_is_only_redirected_when_the_doctor_portal_exists(): void
+    public function test_doctor_login_is_redirected_to_the_doctor_portal(): void
     {
         $doctor = User::whereHas('role', fn ($query) => $query->where('name', 'Doctor'))->firstOrFail();
-        $this->post(route('patient.login.store'), ['phone' => $doctor->phone, 'password' => 'Mediway@123'])
-            ->assertSessionHasErrors('phone');
-        $this->assertGuest();
-        $this->flushSession();
-        \Illuminate\Support\Facades\Route::get('/doctor-test-home', fn () => 'doctor')->name('doctor.home');
-        \Illuminate\Support\Facades\Route::getRoutes()->refreshNameLookups();
         $this->post(route('patient.login.store'), ['phone' => $doctor->phone, 'password' => 'Mediway@123'])
             ->assertRedirect(route('doctor.home'));
         $this->assertAuthenticatedAs($doctor);
@@ -86,8 +80,6 @@ class EmployeePortalFoundationTest extends TestCase
 
     public function test_inactive_doctor_cannot_use_the_registered_doctor_portal(): void
     {
-        \Illuminate\Support\Facades\Route::get('/doctor-test-home', fn () => 'doctor')->name('doctor.home');
-        \Illuminate\Support\Facades\Route::getRoutes()->refreshNameLookups();
         $doctor = User::whereHas('role', fn ($query) => $query->where('name', 'Doctor'))->firstOrFail();
         $doctor->doctor->update(['status' => 'INACTIVE']);
         $this->post(route('patient.login.store'), ['phone' => $doctor->phone, 'password' => 'Mediway@123'])

@@ -95,7 +95,7 @@ class PatientResultsVisibilityTest extends TestCase
             ->assertSeeInOrder(['</table>', 'Lưu ý chung', 'BÁC SĨ KÊ ĐƠN'], false);
     }
 
-    public function test_prescription_access_follows_visit_completion_for_list_detail_pdf_and_notifications(): void
+    public function test_prescription_is_accessible_before_visit_completion(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
@@ -109,11 +109,11 @@ class PatientResultsVisibilityTest extends TestCase
         $this->actingAs($patient);
         foreach (['WAITING', 'IN_EXAMINATION', 'WAITING_FOR_SERVICE'] as $status) {
             $visit->update(['visit_status_id' => VisitStatus::where('name', $status)->firstOrFail()->id]);
-            $this->get(route('patient.prescriptions'))->assertOk()->assertDontSee($prescription->prescription_code);
-            $this->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'don-thuoc']))->assertOk()->assertDontSee($prescription->prescription_code);
-            $this->get(route('patient.prescriptions.show', $prescription))->assertNotFound();
-            $this->get(route('patient.prescriptions.document', $prescription))->assertNotFound();
-            $this->get(route('patient.notifications', ['danh-muc' => 'ket-qua']))->assertOk()->assertDontSee($prescription->prescription_code);
+            $this->get(route('patient.prescriptions'))->assertOk()->assertSee($prescription->prescription_code);
+            $this->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'don-thuoc']))->assertOk()->assertSee($prescription->prescription_code);
+            $this->get(route('patient.prescriptions.show', $prescription))->assertOk();
+            $this->get(route('patient.prescriptions.document', $prescription))->assertOk();
+            $this->get(route('patient.notifications', ['danh-muc' => 'ket-qua']))->assertOk()->assertSee($prescription->prescription_code);
         }
         $visit->update(['visit_status_id' => VisitStatus::where('name', 'COMPLETED')->firstOrFail()->id]);
         $this->assertSame('PRIVATE', $prescription->fresh()->patient_publication_status);

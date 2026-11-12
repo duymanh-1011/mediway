@@ -368,7 +368,7 @@ class TechnicalServiceController extends Controller
                 throw ValidationException::withMessages(['service' => 'Dịch vụ này nhập kết quả bằng văn bản, chỉ số hoặc thông tin bổ sung.']);
             }
             $result = ServiceResult::where('service_order_item_id', $record->id)->lockForUpdate()->first();
-            if ($result?->hasContent() || $result?->verified_by_user_id || $result?->patient_publication_status === 'PUBLISHED') {
+            if ($result?->hasContent() || $result?->verified_by_user_id) {
                 throw ValidationException::withMessages(['service' => 'Kết quả đã được lưu và đã khóa chỉnh sửa.']);
             }
             // Sau khi khóa chỉ định, từ chối nội dung gửi từ biểu mẫu đã bị thay đổi.
@@ -437,7 +437,6 @@ class TechnicalServiceController extends Controller
             $record->update(['service_status_id' => $status->id, 'completed_at' => now()]);
             $record->setRelation('serviceStatus', $status);
             $progress = app(ServiceOrderProgress::class);
-            $progress->publishCompletedResult($record, $request);
             $this->audit($request, $record, 'Hoàn tất dịch vụ');
             // Dùng quy trình chung để cập nhật phiếu và hàng đợi quay lại bác sĩ.
             $progress->synchronize($record->service_order_id);

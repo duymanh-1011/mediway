@@ -16,7 +16,10 @@
                 <section class="appointment-panel" aria-labelledby="upcoming-title">
                     <div class="appointment-panel__header">
                         <div class="appointment-panel__title"><span class="appointment-panel__icon" aria-hidden="true">▦</span><div><h2 id="upcoming-title">Lịch khám gần nhất</h2><p>Thông tin lịch hẹn trong ngày hoặc sắp tới của bạn</p></div></div>
-                        @if ($appointment)<x-portal.badge type="info">{{ ['BOOKED' => 'Đã đặt lịch', 'CHECKED_IN' => 'Đã tiếp nhận', 'IN_EXAMINATION' => 'Đang khám'][$appointment->appointmentStatus?->name] ?? 'Chưa có thông tin' }}</x-portal.badge>@endif
+                        @if ($appointment)
+                            @php($statusLabel = \App\Models\AdminDisplay::label($appointment->displayStatus()))
+                            <x-portal.badge type="info">{{ $statusLabel }}</x-portal.badge>
+                        @endif
                     </div>
                     @if ($appointment)
                         <div class="appointment-panel__body">
@@ -24,7 +27,7 @@
                             <p class="appointment-section-label">THÔNG TIN LỊCH HẸN</p>
                             <dl class="appointment-fields">
                                 <div class="appointment-field"><dt>Mã lịch hẹn</dt><dd>{{ $appointment->appointment_code }}</dd></div>
-                                <div class="appointment-field"><dt>Trạng thái</dt><dd>{{ ['BOOKED' => 'Đã đặt lịch', 'CHECKED_IN' => 'Đã tiếp nhận', 'IN_EXAMINATION' => 'Đang khám'][$appointment->appointmentStatus?->name] ?? 'Chưa có thông tin' }}</dd></div>
+                                <div class="appointment-field"><dt>Trạng thái</dt><dd>{{ $statusLabel }}</dd></div>
                                 <div class="appointment-field"><dt>Ngày khám</dt><dd>{{ $appointment->appointment_date?->format('d/m/Y') ?? 'Chưa có thông tin' }}</dd></div>
                                 <div class="appointment-field"><dt>Giờ khám</dt><dd>{{ $appointment->appointmentTimeSlot?->start_time ? substr($appointment->appointmentTimeSlot->start_time, 0, 5) : 'Chưa có thông tin' }}</dd></div>
                                 <div class="appointment-field appointment-field--wide"><dt>Bệnh nhân</dt><dd>{{ $patient->full_name }}</dd></div>

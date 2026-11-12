@@ -121,6 +121,34 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
         $this->assertSame('SERVICE_TECHNICIAN', $employee->detail->fresh()->employee_type);
     }
 
+    public function test_technician_type_rollback_preserves_profiles_and_can_be_reapplied(): void
+    {
+        $addType = require database_path('migrations/2026_11_07_190000_add_service_technician_employee_type.php');
+        $mergeTypes = require database_path('migrations/2026_11_07_200000_merge_legacy_technician_types.php');
+        $details = DB::table('employee_details')->where('employee_type', 'SERVICE_TECHNICIAN')->orderBy('id');
+        $before = $details->get()->all();
+        $this->assertNotEmpty($before);
+
+        $mergeTypes->down();
+        $addType->down();
+
+        $this->assertDatabaseHas('employee_types', ['code' => 'LAB_TECHNICIAN']);
+        $this->assertDatabaseHas('employee_types', ['code' => 'IMAGING_TECHNICIAN']);
+        $this->assertDatabaseHas('employee_types', ['code' => 'SERVICE_TECHNICIAN']);
+        $this->assertEquals($before, $details->get()->all());
+
+        $addType->up();
+        $mergeTypes->up();
+
+        $this->assertDatabaseMissing('employee_types', ['code' => 'LAB_TECHNICIAN']);
+        $this->assertDatabaseMissing('employee_types', ['code' => 'IMAGING_TECHNICIAN']);
+        $this->assertEquals($before, $details->get()->all());
+
+        $details->update(['employee_type' => null]);
+        $addType->down();
+        $this->assertDatabaseMissing('employee_types', ['code' => 'SERVICE_TECHNICIAN']);
+    }
+
     public function test_missing_unknown_and_array_types_are_rejected_without_partial_writes(): void
     {
         $count = User::count();

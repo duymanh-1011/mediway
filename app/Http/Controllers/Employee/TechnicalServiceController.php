@@ -17,6 +17,7 @@ use App\Models\ServiceOrderProgress;
 use App\Models\ServiceResult;
 use App\Models\ServiceStatus;
 use App\Support\EmployeeAccess;
+use App\Support\SessionSearch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -63,10 +64,13 @@ class TechnicalServiceController extends Controller
 
     private function listQuery(Request $request): array
     {
-        return array_filter(
-            Arr::only($request->query(), ['q', 'group', 'status', 'assignee', 'date', 'page']),
-            fn ($value) => is_string($value) && $value !== ''
-        );
+        return [
+            ...array_filter(
+                Arr::only($request->query(), ['group', 'status', 'date', 'page']),
+                fn ($value) => is_string($value) && $value !== ''
+            ),
+            ...(new SessionSearch($request, 'employee.services'))->navigation(),
+        ];
     }
 
     private function filterStage(Builder $items, string $stage): void
@@ -120,6 +124,28 @@ class TechnicalServiceController extends Controller
         return view('employee.technical.index', compact('employee', 'groups', 'openGroup', 'shortcutGroups'));
     }
 
+    private function orderFilterRules(): array
+    {
+        return [
+            'date' => ['nullable', 'date_format:Y-m-d'],
+            'status' => ['nullable', 'in:PENDING,READY,WAITING_PAYMENT,PROCESSING,COMPLETED,CANCELLED'],
+        ];
+    }
+
+    public function filterOrders(Request $request, string $group, string $service)
+    {
+        $this->technician($request->user());
+        $filters = $request->validate(['q' => ['nullable', 'string', 'max:100'], ...$this->orderFilterRules()]);
+        $search = new SessionSearch($request, 'employee.services');
+
+        return redirect()->route('employee.services.orders', [
+            'group' => $group,
+            'service' => $service,
+            ...Arr::except($filters, 'q'),
+            ...$search->remember($filters['q'] ?? null),
+        ]);
+    }
+
     public function orders(Request $request, string $group, string $service)
     {
         $employee = $this->technician($request->user());
@@ -128,31 +154,38 @@ class TechnicalServiceController extends Controller
         $groupName = $groupRecord?->name ?? 'Chưa phân nhóm';
         $service = ($groupRecord?->medicalServices() ?? MedicalService::whereDoesntHave('serviceGroups'))
             ->where('medical_services.service_code', $service)->firstOrFail();
-        $filters = $request->validate([
-            'q' => ['nullable', 'string', 'max:100'],
-            'date' => ['nullable', 'date_format:Y-m-d'],
-            'status' => ['nullable', 'in:PENDING,READY,WAITING_PAYMENT,PROCESSING,COMPLETED,CANCELLED'],
-            'assignee' => ['nullable', 'in:mine,unassigned'],
-        ]);
-        // Tìm theo mã phiếu, tên hoặc mã bệnh nhân trong phạm vi nhân viên được xem.
+        $search = new SessionSearch($request, 'employee.services');
+        $urlFilters = [...$request->validate($this->orderFilterRules()), ...$search->navigation()];
+        $routeParameters = ['group' => $group, 'service' => $service->service_code];
+        if ($request->query->has('q') || ($request->query->has(SessionSearch::PARAMETER) && $search->keyword() === null)) {
+            return redirect()->route('employee.services.orders', [...$routeParameters, ...$urlFilters])
+                ->header('Referrer-Policy', 'no-referrer')
+                ->header('Cache-Control', 'private, no-store');
+        }
+        $filters = $urlFilters + ['q' => $search->keyword()];
+        // Tìm chỉ định theo mã phiếu hoặc thông tin bệnh nhân trong phạm vi nhân viên được xem.
         $items = $service->serviceOrderItems()->visibleToTechnician($employee)
             ->with(['serviceStatus', 'serviceOrder.medicalVisit.patient', 'payable.paymentStatus'])
             ->when($filters['q'] ?? null, function (Builder $items, string $search) {
-                $keyword = '%'.trim($search).'%';
+                $term = trim($search);
+                $keyword = '%'.$term.'%';
                 $items->where(fn (Builder $matches) => $matches
                     ->whereHas('serviceOrder', fn ($query) => $query->whereLike('service_order_code', $keyword))
-                    ->orWhereHas('serviceOrder.medicalVisit.patient', fn ($query) => $query->whereLike('full_name', $keyword)->orWhereLike('patient_code', $keyword)));
+                    ->orWhereHas('serviceOrder.medicalVisit.patient', fn ($patient) => $patient
+                        ->whereLike('full_name', $keyword)
+                        ->orWhereLike('patient_code', $keyword)
+                        ->orWhereHas('user', fn ($user) => $user->where('phone', $term))));
             })
-            ->when(($filters['assignee'] ?? null) === 'mine', fn ($query) => $query->where('performed_by_employee_id', $employee->id))
-            ->when(($filters['assignee'] ?? null) === 'unassigned', fn ($query) => $query->whereNull('performed_by_employee_id'))
             ->when($filters['date'] ?? null, fn ($q, $date) => $q->whereHas('serviceOrder', fn ($order) => $order->whereDate('ordered_at', $date)))
             ->when($filters['status'] ?? null, fn (Builder $query, string $stage) => $this->filterStage($query, $stage))
-            ->orderByDesc('id')->paginate(15)->withQueryString();
+            ->orderByDesc('id')->paginate(15)->appends($urlFilters);
         $listQuery = ['group' => $group, ...Arr::except($this->listQuery($request), ['group'])];
-        $ordersUrl = route('employee.services.orders', ['group' => $group, 'service' => $service->service_code]);
+        $ordersUrl = route('employee.services.orders', $routeParameters);
+        $filterUrl = route('employee.services.orders.filter', $routeParameters);
         $catalogueUrl = route('employee.services.index', ['group' => $group]).'#nhom-'.rawurlencode($group);
 
-        return view('employee.technical.orders', compact('employee', 'groupName', 'service', 'items', 'filters', 'listQuery', 'ordersUrl', 'catalogueUrl'));
+        return response()->view('employee.technical.orders', compact('employee', 'groupName', 'service', 'items', 'filters', 'listQuery', 'ordersUrl', 'filterUrl', 'catalogueUrl'))
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function show(Request $request, int $item)
@@ -169,7 +202,6 @@ class TechnicalServiceController extends Controller
         $hideUploads = $serviceGroups?->contains(fn ($group) => in_array($group->service_group_code, ['XN', 'CDHA', 'TDCN', 'TT'], true)) ?? false;
         $supportsDetails = in_array($groupCode, ['XN', 'CDHA', 'TDCN', 'TT'], true);
         $supportsParameters = in_array($groupCode, ['XN', 'TDCN'], true);
-        $isImaging = $serviceGroups?->contains(fn ($group) => in_array($group->service_group_code, ['CDHA', 'SA'], true)) ?? false;
         $listQuery = $this->listQuery($request);
         $shortcutGroups = $this->shortcutGroups($request);
         $backGroup = $serviceGroups?->firstWhere('service_group_code', $listQuery['group'] ?? null)
@@ -183,7 +215,7 @@ class TechnicalServiceController extends Controller
             ])
             : route('employee.services.index');
 
-        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'supportsDetails', 'hideUploads', 'groupCode', 'isImaging', 'listQuery', 'backUrl'));
+        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'supportsDetails', 'hideUploads', 'groupCode', 'listQuery', 'backUrl'));
     }
 
     // Chỉ tạo bản xem từ dữ liệu đã lưu trong phạm vi nhân viên được phép xem.
@@ -192,22 +224,26 @@ class TechnicalServiceController extends Controller
         $employee = $this->technician($request->user());
         $routePrefix = $this->routePrefix($request);
         $record = $this->scopedItems($employee, $this->shortcutGroups($request))
-            ->with(['medicalService.serviceGroups', 'serviceOrder.medicalVisit.patient', 'performer', 'result'])
+            ->with(['medicalService.serviceGroups', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.examinationRoom', 'performer', 'result'])
             ->findOrFail($item);
         $groups = $record->medicalService?->serviceGroups;
-        $group = $groups?->count() === 1 ? $groups->first()->service_group_code : null;
-        $title = match ($group) {
+        abort_unless($groups?->count() === 1 && $record->result?->hasContent(), 404);
+        $title = match ($groups->first()->service_group_code) {
             'XN' => 'PHIẾU KẾT QUẢ XÉT NGHIỆM',
             'CDHA' => 'PHIẾU KẾT QUẢ CHẨN ĐOÁN HÌNH ẢNH',
+            'SA' => 'PHIẾU KẾT QUẢ SIÊU ÂM',
             'TDCN' => 'PHIẾU KẾT QUẢ THĂM DÒ CHỨC NĂNG',
             'TT' => 'PHIẾU KẾT QUẢ THỦ THUẬT',
-            default => null,
+            default => 'PHIẾU KẾT QUẢ DỊCH VỤ',
         };
-        abort_unless($title && $record->result?->hasContent(), 404);
         $backUrl = route($routePrefix.'.show', ['item' => $item, ...$this->listQuery($request)]);
+        $attachmentUrls = [
+            'pdf' => route($routePrefix.'.document', ['item' => $item, 'type' => 'pdf']),
+            'image' => route($routePrefix.'.document', ['item' => $item, 'type' => 'image']),
+        ];
 
         // Không lưu bản sao phiếu vào bộ nhớ đệm chung vì chứa dữ liệu y tế.
-        return response()->view('employee.technical.print-result', compact('record', 'title', 'backUrl'))
+        return response()->view('print.service-result', compact('record', 'title', 'backUrl', 'attachmentUrls'))
             ->header('Cache-Control', 'private, no-store, no-cache, must-revalidate')
             ->header('X-Content-Type-Options', 'nosniff')
             ->header('X-Robots-Tag', 'noindex, nofollow');
@@ -255,7 +291,10 @@ class TechnicalServiceController extends Controller
     {
         $routePrefix = $this->routePrefix($request);
         $data = $request->validate([
+            'confirm_result' => ['accepted'],
             'result_version' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/'],
+            'technique' => ['nullable', 'string', 'max:2000'],
+            'result_conclusion' => ['nullable', 'string', 'max:10000'],
             'result_summary' => ['nullable', 'string', 'max:10000'],
             'parameters_present' => ['sometimes', 'in:1'],
             'parameters' => ['sometimes', 'array', 'max:30'],
@@ -279,6 +318,12 @@ class TechnicalServiceController extends Controller
             }],
             'result_pdf' => ClinicalDocument::pdfRules(),
             'result_image' => ClinicalDocument::imageRules(),
+        ], [
+            'confirm_result.accepted' => 'Vui lòng xác nhận đã kiểm tra thông tin trước khi lưu kết quả.',
+        ], [
+            'technique' => 'cách thức và vị trí thực hiện',
+            'result_conclusion' => 'kết luận dịch vụ',
+            'result_summary' => 'mô tả kết quả',
         ]);
         $parameters = [];
         foreach ($data['parameters'] ?? [] as $index => $row) {
@@ -302,7 +347,7 @@ class TechnicalServiceController extends Controller
             }
             $details[] = ['name' => $name, 'value' => $value];
         }
-        // Ghi kết quả và tệp trong một giao dịch; không cho nhân viên tự xác nhận y khoa.
+        // Lưu kết quả và tệp cùng giao dịch; bước xác minh vẫn tách riêng.
         ClinicalDocument::transaction(function (ClinicalDocument $documents) use ($request, $item, $data, $parameters, $details) {
             [$record, $employee] = $this->lockedItem($request, $item);
             if ($record->serviceStatus?->name !== 'PROCESSING' || (int) $record->performed_by_employee_id !== (int) $employee->id || $record->serviceOrder?->status === 'CANCELLED') {
@@ -323,28 +368,50 @@ class TechnicalServiceController extends Controller
                 throw ValidationException::withMessages(['service' => 'Dịch vụ này nhập kết quả bằng văn bản, chỉ số hoặc thông tin bổ sung.']);
             }
             $result = ServiceResult::where('service_order_item_id', $record->id)->lockForUpdate()->first();
+            if ($result?->hasContent() || $result?->verified_by_user_id || $result?->patient_publication_status === 'PUBLISHED') {
+                throw ValidationException::withMessages(['service' => 'Kết quả đã được lưu và đã khóa chỉnh sửa.']);
+            }
             // Sau khi khóa chỉ định, từ chối nội dung gửi từ biểu mẫu đã bị thay đổi.
             if (! hash_equals(ServiceResult::editVersion($result), $data['result_version'])) {
                 throw ValidationException::withMessages(['service' => 'Kết quả đã thay đổi. Vui lòng tải lại trang trước khi lưu.']);
-            }
-            if ($result && ($result->verified_by_user_id || $result->patient_publication_status === 'PUBLISHED')) {
-                throw ValidationException::withMessages(['service' => 'Kết quả đã xác minh hoặc đã công bố, không thể sửa trực tiếp.']);
             }
             // Không ghi đè dữ liệu chỉ số cũ có cấu trúc chưa được nhận diện.
             if ($request->has('parameters_present') && $result && ServiceResult::editableParameters($result->result_parameters) === null) {
                 throw ValidationException::withMessages(['parameters' => 'Chỉ số cũ có định dạng khác và được giữ nguyên.']);
             }
-            if ($request->has('details_present') && $result && ServiceResult::editableTechnicalDetails($result->technical_details) === null) {
+            $updatesDetails = $request->has('details_present');
+            $updatesTechnique = array_key_exists('technique', $data);
+            $existingDetails = ServiceResult::editableTechnicalDetails($result?->technical_details);
+            if (($updatesDetails || $updatesTechnique) && $existingDetails === null) {
                 throw ValidationException::withMessages(['details' => 'Thông tin cũ có định dạng khác và được giữ nguyên.']);
             }
             $paths = $documents->store($request, 'service-results/'.$record->id, ClinicalDocument::RESULT_FILES);
-            $summary = trim($data['result_summary'] ?? '');
-            $values = array_merge(['result_summary' => $summary !== '' ? $summary : null, 'resulted_at' => now()], $paths);
+            $values = ['resulted_at' => now(), ...$paths];
+            foreach (['result_summary', 'result_conclusion'] as $field) {
+                if (array_key_exists($field, $data)) {
+                    $values[$field] = $data[$field];
+                }
+            }
             if ($request->has('parameters_present')) $values['result_parameters'] = $parameters;
-            if ($request->has('details_present')) $values['technical_details'] = $details;
+            if ($updatesDetails || $updatesTechnique) {
+                $rows = $updatesDetails ? $details : $existingDetails;
+                if ($updatesTechnique) {
+                    // Trường kỹ thuật nằm ngoài các dòng bổ sung của biểu mẫu.
+                    if (! $updatesDetails) {
+                        $index = array_search(ServiceResult::TECHNIQUE_DETAIL_NAME, array_column($rows, 'name'), true);
+                        if ($index !== false) {
+                            unset($rows[$index]);
+                        }
+                    }
+                    if (filled($data['technique'])) {
+                        array_unshift($rows, ['name' => ServiceResult::TECHNIQUE_DETAIL_NAME, 'value' => $data['technique']]);
+                    }
+                }
+                $values['technical_details'] = array_values($rows);
+            }
             $content = array_merge($result?->getAttributes() ?? [], $values);
             if (! ServiceResult::hasContentValues($content, $record->id)) {
-                throw ValidationException::withMessages(['result_summary' => 'Vui lòng nhập nội dung, chỉ số hoặc thông tin kết quả hợp lệ.']);
+                throw ValidationException::withMessages(['result_summary' => 'Vui lòng nhập kỹ thuật, kết luận, mô tả hoặc chỉ số kết quả hợp lệ.']);
             }
             if ($result) {
                 $result->update($values);
@@ -368,9 +435,12 @@ class TechnicalServiceController extends Controller
             $status = ServiceStatus::where('name', 'COMPLETED')->where('is_active', true)->first();
             if (! $status) throw ValidationException::withMessages(['service' => 'Chưa cấu hình trạng thái hoàn thành.']);
             $record->update(['service_status_id' => $status->id, 'completed_at' => now()]);
+            $record->setRelation('serviceStatus', $status);
+            $progress = app(ServiceOrderProgress::class);
+            $progress->publishCompletedResult($record, $request);
             $this->audit($request, $record, 'Hoàn tất dịch vụ');
             // Dùng quy trình chung để cập nhật phiếu và hàng đợi quay lại bác sĩ.
-            app(ServiceOrderProgress::class)->synchronize($record->service_order_id);
+            $progress->synchronize($record->service_order_id);
         }, 3);
         return redirect()->route($routePrefix.'.show', ['item' => $item, ...$this->listQuery($request)])->with('success', 'Đã hoàn tất dịch vụ.');
     }

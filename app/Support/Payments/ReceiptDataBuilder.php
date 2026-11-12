@@ -3,7 +3,6 @@
 namespace App\Support\Payments;
 
 use App\Models\Payable;
-use App\Models\AdminDisplay;
 
 class ReceiptDataBuilder
 {
@@ -11,56 +10,20 @@ class ReceiptDataBuilder
     {
         $payable->loadMissing([
             'medicalVisit.patient.detail', 'medicalVisit.patient.user',
-            'medicalVisit.doctor', 'medicalVisit.specialty', 'medicalVisit.examinationRoom', 'medicalVisit.diagnoses.disease',
+            'medicalVisit.examinationRoom',
         ]);
         $data = ['serviceItem' => null, 'prescription' => null];
         abort_unless($payable->medicalVisit?->patient, 422, 'Không đủ thông tin bệnh nhân hoặc lượt khám để lập phiếu thu.');
-        if ($type === 'exam') {
-            $visit = $payable->medicalVisit;
-            $patient = $visit->patient;
-            $examDate = $visit->examination_started_at ?? $visit->checked_in_at;
-            $data['examPatient'] = [
-                'name' => $patient->full_name,
-                'address' => $patient->detail?->current_address,
-                'age' => $patient->date_of_birth ? (int) $patient->date_of_birth->diffInYears($examDate ?? now()) : null,
-                'gender' => $patient->gender ? AdminDisplay::label($patient->gender) : null,
-                'phone' => $patient->user?->phone,
-                'exam_date' => $examDate,
-                'diagnosis' => $visit->diagnoses->map(fn ($diagnosis) => $diagnosis->diagnosis_description ?: $diagnosis->disease?->name)->filter()->join('; ') ?: null,
-            ];
-        }
         if ($type === 'service') {
-            $payable->loadMissing(['serviceOrderItem.medicalService.serviceGroups', 'serviceOrderItem.serviceOrder.orderedByDoctor']);
+            $payable->loadMissing(['serviceOrderItem.medicalService', 'serviceOrderItem.serviceOrder']);
             $item = $payable->serviceOrderItem;
             if ($item && (int) $item->serviceOrder?->medical_visit_id === (int) $payable->medical_visit_id) {
                 $data['serviceItem'] = $item;
             }
             abort_unless($data['serviceItem']?->medicalService && $data['serviceItem']->price_at_order !== null && (float) $data['serviceItem']->price_at_order >= 0, 422, 'Thiếu thông tin dịch vụ hoặc giá chỉ định để lập phiếu thu.');
-            $visit = $payable->medicalVisit;
-            $patient = $visit->patient;
-            $referenceDate = $visit->examination_started_at ?? $visit->checked_in_at ?? now();
-            $service = $item->medicalService;
-            $data['serviceReceipt'] = [
-                'patient_name' => $patient->full_name,
-                'patient_code' => $patient->patient_code,
-                'patient_age' => $patient->date_of_birth ? (int) $patient->date_of_birth->diffInYears($referenceDate) : null,
-                'patient_gender' => $patient->gender ? AdminDisplay::label($patient->gender) : null,
-                'patient_address' => $patient->detail?->current_address,
-                'patient_phone' => $patient->user?->phone,
-                'doctor_name' => $item->serviceOrder?->orderedByDoctor?->full_name,
-                'department_name' => $visit->specialty?->name,
-                'room_name' => $visit->examinationRoom?->name,
-                'service_name' => $service->name,
-                'service_group' => $service->serviceGroups->pluck('name')->filter()->join(', ') ?: null,
-                'service_unit' => $service->unit,
-                // The current schema records one item and its price, but no quantity.
-                'quantity' => null,
-                'unit_price' => $item->price_at_order,
-                'line_total' => $item->price_at_order,
-            ];
         }
         if ($type === 'prescription') {
-            $payable->loadMissing(['prescription.items.medicine', 'prescription.doctor']);
+            $payable->loadMissing('prescription.items.medicine');
             $prescription = $payable->prescription;
             if ($prescription && (int) $prescription->medical_visit_id === (int) $payable->medical_visit_id) {
                 $data['prescription'] = $prescription;

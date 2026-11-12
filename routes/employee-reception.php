@@ -2,7 +2,8 @@
 
 use App\Http\Controllers\Employee\ReceptionAppointmentController;
 use App\Http\Controllers\Employee\ReceptionDashboardController;
-use App\Http\Controllers\Employee\WalkInReceptionController;
+use App\Http\Controllers\ReceptionSlipController;
+use App\Http\Controllers\WalkInReceptionController;
 use App\Http\Middleware\EmployeeMiddleware;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Support\Facades\Route;
@@ -20,7 +21,11 @@ Route::prefix('nhan-vien')->name('employee.')
         Route::middleware(EmployeeMiddleware::class.':reception.check_in')->group(function (): void {
             Route::get('/tiep-don/truc-tiep', [WalkInReceptionController::class, 'create'])->name('walk-in.create');
             Route::post('/tiep-don/truc-tiep/tim-benh-nhan', [WalkInReceptionController::class, 'search'])->name('walk-in.search');
-            Route::post('/tiep-don/truc-tiep', [WalkInReceptionController::class, 'store'])->name('walk-in.store');
+            Route::post('/tiep-don/truc-tiep/{patient}/ma-kich-hoat', [WalkInReceptionController::class, 'issueActivation'])->whereNumber('patient')->name('walk-in.activation');
+            Route::post('/tiep-don/truc-tiep/{patient}/mat-khau-tam', [WalkInReceptionController::class, 'issueTemporaryPassword'])->whereNumber('patient')->block()->name('walk-in.temporary-password');
+            Route::post('/tiep-don/truc-tiep', [WalkInReceptionController::class, 'store'])->block()->name('walk-in.store');
+            Route::get('/tiep-don/truc-tiep/{visit}/tai-khoan', [WalkInReceptionController::class, 'credentials'])->whereNumber('visit')->block()->name('walk-in.credentials');
+            Route::get('/tiep-don/luot-kham/{visit}/phieu-kham', ReceptionSlipController::class)->whereNumber('visit')->name('reception.slip');
             Route::get('/tiep-don/truc-tiep/{visit}', [WalkInReceptionController::class, 'show'])->name('walk-in.show');
         });
     });

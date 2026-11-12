@@ -55,18 +55,19 @@ class AppointmentBookingTest extends TestCase
         int $daysFromToday = 1,
         int $maxPatients = 1,
         string $slotStatus = 'ACTIVE',
-        string $scheduleStatus = 'ACTIVE'
+        string $scheduleStatus = 'ACTIVE',
+        string $doctorCode = 'BS000001',
     ) {
         $doctor = Doctor::query()
-            ->where('doctor_code', 'BS000001')
+            ->where('doctor_code', $doctorCode)
             ->firstOrFail();
 
         $specialty = Specialty::query()
-            ->where('specialty_code', 'CKTMH')
+            ->whereKey($doctor->specialty_id)
             ->firstOrFail();
 
         $room = ExaminationRoom::query()
-            ->where('room_code', 'PKTMH01')
+            ->where('specialty_id', $specialty->id)
             ->firstOrFail();
 
         $schedule = DoctorSchedule::create([
@@ -216,7 +217,7 @@ class AppointmentBookingTest extends TestCase
         );
     }
 
-    public function test_full_slot_rejects_another_patient(): void
+    public function test_two_patients_can_book_the_same_slot_regardless_of_legacy_capacity(): void
     {
         [, $slot] =
             $this->createSlot(
@@ -257,12 +258,10 @@ class AppointmentBookingTest extends TestCase
                     $slot->id
                 )
             )
-            ->assertSessionHasErrors(
-                'appointment_time_slot_id'
-            );
+            ->assertSessionHasNoErrors();
 
         $this->assertSame(
-            1,
+            2,
             Appointment::query()
                 ->where(
                     'appointment_time_slot_id',
@@ -270,6 +269,45 @@ class AppointmentBookingTest extends TestCase
                 )
                 ->count()
         );
+    }
+
+    public function test_today_is_afternoon_only_and_post_rechecks_the_cutoff_at_thirteen_thirty(): void
+    {
+        $this->actingAs($this->patientUser());
+        [$schedule, $morning] = $this->createSlot(daysFromToday: 0);
+        $afternoonSchedule = $schedule->replicate();
+        $afternoonSchedule->fill(['start_time' => '13:30:00', 'end_time' => '17:00:00'])->save();
+        $afternoon = $afternoonSchedule->appointmentTimeSlots()->create([
+            'start_time' => '15:00:00', 'end_time' => '15:30:00', 'status' => 'ACTIVE', 'max_patients' => null,
+        ]);
+        [, $tomorrow] = $this->createSlot(daysFromToday: 1);
+        [, $dayAfter] = $this->createSlot(daysFromToday: 2);
+        [, $tooLate] = $this->createSlot(daysFromToday: 3);
+
+        $this->travelTo(today()->setTime(9, 0));
+        $this->get(route('patient.appointments.create', $morning))->assertRedirect(route('patient.doctors.index'));
+        $this->get(route('patient.appointments.create', $afternoon))->assertOk();
+        $this->get(route('patient.appointments.create', $tooLate))->assertRedirect(route('patient.doctors.index'));
+        $this->travelTo(today()->setTime(13, 29));
+        $this->get(route('patient.appointments.create', $afternoon))->assertOk();
+        $this->travelTo(today()->setTime(13, 30));
+        $this->post(route('patient.appointments.store'), $this->bookingData($afternoon->id))->assertSessionHasErrors('appointment_time_slot_id');
+        $this->get(route('patient.appointments.create', $tomorrow))->assertOk();
+        $this->get(route('patient.appointments.create', $dayAfter))->assertOk();
+        $this->travelTo(today()->setTime(18, 0));
+        $this->get(route('patient.appointments.create', $afternoon))->assertRedirect(route('patient.doctors.index'));
+        $this->get(route('patient.appointments.create', $tomorrow))->assertOk();
+        $this->assertFalse($afternoon->appointments()->exists());
+    }
+
+    public function test_same_patient_cannot_book_two_different_slots_with_overlapping_times(): void
+    {
+        [, $first] = $this->createSlot();
+        [, $second] = $this->createSlot(doctorCode: 'BS000002');
+        $this->actingAs($this->patientUser());
+        $this->post(route('patient.appointments.store'), $this->bookingData($first->id))->assertSessionHasNoErrors();
+        $this->post(route('patient.appointments.store'), $this->bookingData($second->id))->assertSessionHasErrors('appointment_time_slot_id');
+        $this->assertFalse($second->appointments()->exists());
     }
 
     public function test_patient_cannot_view_another_patients_appointment(): void

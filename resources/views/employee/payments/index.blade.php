@@ -9,17 +9,6 @@
 @section('content')
 
     @php
-        $filterKeys = [
-            'q',
-            'payment_type',
-            'payment_status_id',
-            'payment_method',
-            'date_from',
-            'date_to',
-            'page',
-        ];
-
-        $backQuery = request()->only($filterKeys);
 
         $hasCollectRoute = \Illuminate\Support\Facades\Route::has(
             'employee.payments.collect.create'
@@ -66,7 +55,11 @@
 
             </div>
 
-            <form method="GET" action="{{ route('employee.payments.index') }}" id="f08-payable-filter" autocomplete="off">
+            <form method="POST" action="{{ route('employee.payments.filter') }}" id="f08-payable-filter" autocomplete="off">
+                @csrf
+                @isset($filters['search'])
+                    <input type="hidden" name="search" value="{{ $filters['search'] }}">
+                @endisset
 
                 <div class="f08-grid">
 
@@ -78,7 +71,7 @@
                         </label>
 
                         <input id="f08-q" type="search" name="q" maxlength="80" value="{{ $filters['q'] ?? '' }}"
-                            placeholder="Tên bệnh nhân, mã khoản thu...">
+                            placeholder="Tên, mã, CCCD hoặc số điện thoại">
 
                     </div>
 
@@ -103,7 +96,7 @@
                                                         {{ match ($type) {
                                     'EXAMINATION_FEE' => 'Phí khám',
                                     'SERVICE_FEE' => 'Phí dịch vụ',
-                                    'MEDICINE_FEE' => 'Tiền thuốc',
+                                    'MEDICINE_FEE' => 'Phí thuốc',
                                     default => $type,
                                 } }}
                                                     </option>
@@ -181,7 +174,7 @@
                     <div class="f08-field">
 
                         <label for="f08-from">
-                            Từ ngày tạo
+                            Từ ngày
                         </label>
 
                         <input id="f08-from" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}">
@@ -192,7 +185,7 @@
                     <div class="f08-field">
 
                         <label for="f08-to">
-                            Đến ngày tạo
+                            Đến ngày
                         </label>
 
                         <input id="f08-to" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}">
@@ -207,9 +200,9 @@
                         ⌕ Áp dụng bộ lọc
                     </button>
 
-                    <a class="f08-btn" href="{{ route('employee.payments.index') }}">
+                    <button class="f08-btn" type="submit" name="reset" value="1" formnovalidate>
                         Xóa bộ lọc
-                    </a>
+                    </button>
 
                 </div>
 

@@ -20,8 +20,12 @@ class ExaminationRoomQueueController extends Controller
 {
     public function index(Request $request): View
     {
+        $queueDate = $request->filled('date') ? $request->input('date') : today()->toDateString();
         $query =
             ExaminationRoomQueue::query()
+                ->whereDate('queued_at', $queueDate)
+                ->whereHas('status', fn ($status) => $status->where('name', '!=', 'COMPLETED'))
+                ->whereDoesntHave('medicalVisit.status', fn ($status) => $status->where('name', 'COMPLETED'))
                 ->with([
                     'status',
                     'medicalVisit.patient',
@@ -119,19 +123,6 @@ class ExaminationRoomQueueController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Ngày
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->filled('date')) {
-            $query->whereDate(
-                'queued_at',
-                $request->input('date')
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
         | Bác sĩ
         |--------------------------------------------------------------------------
         */
@@ -180,13 +171,15 @@ class ExaminationRoomQueueController extends Controller
 
         $queues =
             $query
-                ->orderByDesc('queued_at')
                 ->orderBy('queue_number')
+                ->orderBy('queued_at')
+                ->orderBy('id')
                 ->paginate(15)
                 ->withQueryString();
 
         $queueStatuses =
             QueueStatus::query()
+                ->where('name', '!=', 'COMPLETED')
                 ->orderBy('process_order')
                 ->orderBy('id')
                 ->get();
@@ -206,6 +199,7 @@ class ExaminationRoomQueueController extends Controller
             compact(
                 'queues',
                 'queueStatuses',
+                'queueDate',
                 'doctors',
                 'examinationRooms'
             )

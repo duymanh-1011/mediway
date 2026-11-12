@@ -17,6 +17,8 @@ class AppointmentTimeSlotController extends Controller
     public function create(
         DoctorSchedule $doctorSchedule
     ) {
+        $this->ensureManualSlots($doctorSchedule);
+
         $doctorSchedule->load([
             'doctor',
             'specialty',
@@ -35,6 +37,7 @@ class AppointmentTimeSlotController extends Controller
 
         return DB::transaction(function () use ($doctorSchedule, $data): RedirectResponse {
             $doctorSchedule = DoctorSchedule::whereKey($doctorSchedule->id)->lockForUpdate()->firstOrFail();
+            $this->ensureManualSlots($doctorSchedule);
             $startTime = $this->normalizeTime($data['start_time']);
             $endTime = $this->normalizeTime($data['end_time']);
             $this->validateSlot($doctorSchedule, $data, $startTime, $endTime);
@@ -55,6 +58,7 @@ class AppointmentTimeSlotController extends Controller
             'doctorSchedule.specialty',
             'doctorSchedule.examinationRoom'
         );
+        $this->ensureManualSlots($appointmentTimeSlot->doctorSchedule);
 
         $appointmentsCount =
             DB::table('appointments')
@@ -79,6 +83,7 @@ class AppointmentTimeSlotController extends Controller
 
         return DB::transaction(function () use ($appointmentTimeSlot, $data): RedirectResponse {
             $doctorSchedule = DoctorSchedule::whereKey($appointmentTimeSlot->doctor_schedule_id)->lockForUpdate()->firstOrFail();
+            $this->ensureManualSlots($doctorSchedule);
             $slot = AppointmentTimeSlot::whereKey($appointmentTimeSlot->id)->lockForUpdate()->firstOrFail();
             $startTime = $this->normalizeTime($data['start_time']);
             $endTime = $this->normalizeTime($data['end_time']);
@@ -103,6 +108,7 @@ class AppointmentTimeSlotController extends Controller
     {
         return DB::transaction(function () use ($appointmentTimeSlot): RedirectResponse {
             $doctorSchedule = DoctorSchedule::whereKey($appointmentTimeSlot->doctor_schedule_id)->lockForUpdate()->firstOrFail();
+            $this->ensureManualSlots($doctorSchedule);
             $slot = AppointmentTimeSlot::whereKey($appointmentTimeSlot->id)->lockForUpdate()->firstOrFail();
             if ($slot->appointments()->exists()) {
                 return redirect()->route('admin.doctor-schedules.show', $doctorSchedule)->with('error', 'Khung giờ đã có lịch hẹn nên không thể xóa.');
@@ -111,6 +117,11 @@ class AppointmentTimeSlotController extends Controller
 
             return redirect()->route('admin.doctor-schedules.show', $doctorSchedule)->with('success', 'Xóa khung giờ khám thành công.');
         }, 3);
+    }
+
+    private function ensureManualSlots(DoctorSchedule $schedule): void
+    {
+        abort_if($schedule->isStandardShift(), 409, 'Khung giờ của ca hành chính chuẩn được hệ thống quản lý.');
     }
 
     /** @param array<string, mixed> $data */

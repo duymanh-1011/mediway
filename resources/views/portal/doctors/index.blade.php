@@ -59,27 +59,16 @@
                                                         )
                                                     );
 
-                                                $remaining = max(
-                                                    0,
-                                                    (int) $slot->max_patients
-                                                    - (int) $slot->booked_count
-                                                );
-
-                                                $state = $startsAt
-                                                    ->lessThanOrEqualTo($now)
-                                                    ? 'past'
-                                                    : (
-                                                        $slot->status !== 'ACTIVE'
-                                                        || $remaining === 0
-                                                        ? 'full'
-                                                        : 'open'
-                                                    );
+                                                $cutoff = $startsAt->copy()->setTimeFromTimeString(config('doctor_schedules.shifts.AFTERNOON.start'));
+                                                $deadline = $startsAt->lt($cutoff) ? $startsAt->copy()->startOfDay() : $cutoff;
+                                                $state = 'open';
 
                                                 return [
                                                     'slot' => $slot,
                                                     'schedule' => $schedule,
                                                     'starts_at' => $startsAt,
-                                                    'remaining' => $remaining,
+                                                    'registered' => (int) $slot->booked_count,
+                                                    'deadline' => $deadline,
                                                     'state' => $state,
                                                     'period' =>
                                                         (int) $startsAt->format('H') < 12
@@ -155,7 +144,8 @@
                 <h1>Tra cứu bác sĩ và lịch khám</h1>
 
                 <p class="portal-lead">
-                    Chọn bác sĩ, ngày khám và khung giờ phù hợp với bạn.
+                    Bạn có thể đặt đến hết ngày kia. Trước 13:30, bạn có thể đặt từ ca chiều hôm nay.
+                    Từ 13:30, lịch nhận đặt bắt đầu từ ca sáng ngày mai.
                 </p>
             </div>
         </section>
@@ -259,8 +249,8 @@
                                     name="date"
                                     type="date"
                                     value="{{ $date }}"
-                                    min="{{ today()->toDateString() }}"
-                                    max="{{ today()->addDays(\App\Models\Appointment::BOOKING_ADVANCE_DAYS)->toDateString() }}"
+                                    min="{{ \App\Support\Portal\PatientBookingWindow::firstDate() }}"
+                                    max="{{ \App\Support\Portal\PatientBookingWindow::lastDate() }}"
                                 >
 
                                 @error('date')
@@ -318,7 +308,7 @@
                                         }}.
                         @endif
                     @else
-                        <strong>Tất cả lịch từ hôm nay:</strong>
+                        <strong>Các lịch đang nhận đặt.</strong>
                         Mỗi bác sĩ hiển thị một lần; chọn bác sĩ để
                         xem các ngày và ca làm việc.
                     @endif
@@ -390,7 +380,7 @@
                                                     {{
                             $card['available']
                             ? 'Đang nhận lịch'
-                            : 'Tạm hết suất'
+                            : 'Tạm ngừng nhận lịch'
                                                     }}
                                                 </span>
 
@@ -461,11 +451,11 @@
                                                                                     <small data-day-status>
                                                                                         {{
                                                         $day['available']
-                                                        ? 'Còn ' . $day['available'] . ' suất'
+                                                        ? 'Còn ' . $day['available'] . ' khung giờ'
                                                         : (
                                                             $day['all_past']
                                                             ? 'Đã qua giờ'
-                                                            : 'Hết chỗ'
+                                                            : 'Ngừng nhận lịch'
                                                         )
                                                                                         }}
                                                                                     </small>
@@ -597,7 +587,7 @@
                                                                     : (
                                                                         $allPast
                                                                         ? 'Đã qua giờ'
-                                                                        : 'Hết chỗ'
+                                                                        : 'Ngừng nhận lịch'
                                                                     )
                                                                                                         }}
                                                                                                     </span>
@@ -677,7 +667,7 @@
                                                                                                                                                                                                 class="mw-slot {{ $bookable ? '' : 'is-' . $entry['state'] }}"
                                                                                                                                                                                                 data-slot
                                                                                                                                                                                                 data-state="{{ $entry['state'] }}"
-                                                                                                                                                                                                data-start-ts="{{ $entry['starts_at']->timestamp }}"
+                                                                                                                                                                                                data-book-until-ts="{{ $entry['deadline']->timestamp }}"
                                                                                                                                                                                                 data-slot-label="{{ substr((string) $slot->start_time, 0, 5) }} – {{ substr((string) $slot->end_time, 0, 5) }}"
                                                                                                                                                                                                 data-slot-day="{{ $dayDate->format('d/m/Y') }}"
                                                                                                                                                                                                 data-book-url="{{ $bookable ? route('patient.appointments.create', $slot) : '' }}"
@@ -712,8 +702,8 @@
                                                                                                                                                     ? 'Đã qua giờ'
                                                                                                                                                     : (
                                                                                                                                                         $entry['state'] === 'full'
-                                                                                                                                                        ? 'Hết chỗ'
-                                                                                                                                                        : 'Còn ' . $entry['remaining'] . ' chỗ'
+                                                                                                                                                        ? 'Ngừng nhận lịch'
+                                                                                                                                                        : 'Đã đăng ký ' . $entry['registered']
                                                                                                                                                     )
                                                                                                                                                                                                     }}
                                                                                                                                                                                                 </span>
@@ -740,7 +730,7 @@
                                                 <div class="mw-bookbar">
 
                                                     <p data-booking-summary>
-                                                        Chọn một khung giờ còn chỗ ở trên
+                                                        Chọn một khung giờ còn nhận lịch ở trên
                                                         để tiếp tục đặt lịch.
                                                     </p>
 
@@ -863,7 +853,7 @@
             card.querySelector(
                 '[data-booking-summary]'
             ).textContent =
-                'Chọn một khung giờ còn chỗ ở trên để tiếp tục đặt lịch.';
+                'Chọn một khung giờ còn nhận lịch ở trên để tiếp tục đặt lịch.';
         }
 
         const cards = Array.from(
@@ -939,7 +929,7 @@
             });
 
             /*
-             * 4. Chọn khung giờ còn chỗ
+             * 4. Chọn khung giờ còn nhận lịch
              */
             card.querySelectorAll('[data-slot]').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -1073,7 +1063,7 @@
                     }
 
                     if (
-                        Number(btn.dataset.startTs)
+                        Number(btn.dataset.bookUntilTs)
                         > currentTimestamp
                     ) {
                         return;
@@ -1138,7 +1128,7 @@
                         : (
                             allPast
                                 ? 'Đã qua giờ'
-                                : 'Hết chỗ'
+                                : 'Ngừng nhận lịch'
                         );
                 });
 
@@ -1181,11 +1171,11 @@
                     tab.querySelector(
                         '[data-day-status]'
                     ).textContent = open
-                        ? 'Còn ' + open + ' suất'
+                        ? 'Còn ' + open + ' khung giờ'
                         : (
                             allPast
                                 ? 'Đã qua giờ'
-                                : 'Hết chỗ'
+                                : 'Ngừng nhận lịch'
                         );
                 });
 
@@ -1207,7 +1197,7 @@
 
                 status.textContent = remaining
                     ? 'Đang nhận lịch'
-                    : 'Tạm hết suất';
+                    : 'Tạm ngừng nhận lịch';
             });
         }
 

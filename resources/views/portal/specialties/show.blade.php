@@ -81,21 +81,13 @@
                                     </div>
 
                                     @foreach ($schedule->appointmentTimeSlots as $slot)
-                                        @php
-                                            $remaining = max(
-                                                (int) $slot->max_patients
-                                                - (int) $slot->booked_count,
-                                                0
-                                            );
-                                        @endphp
-
                                         <div class="specialty-slot">
                                             <div>
                                                 {{ substr((string) $slot->start_time, 0, 5) }}
                                                 -
                                                 {{ substr((string) $slot->end_time, 0, 5) }}
 
-                                                · Còn {{ $remaining }} chỗ
+                                                · Đã đăng ký {{ $slot->booked_count }}
                                             </div>
 
                                             <a href="{{ route('patient.appointments.create', $slot) }}">

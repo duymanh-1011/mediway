@@ -62,6 +62,16 @@ class EmployeeReceptionWorkflowTest extends TestCase
         $this->assertSame(0, $visit->queues()->count());
         $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
         $this->assertSame('UNPAID', $fee->paymentStatus->name);
+        $this->assertGreaterThan(0, $visit->reception_queue_number);
+        $slip = route('employee.reception.slip', $visit);
+        $this->get(route('employee.appointments.show', $appointment))->assertOk()->assertSee($slip);
+        $this->get($slip)->assertOk()->assertSee('PHIẾU KHÁM BỆNH')->assertSee('In phiếu khám')
+            ->assertSee('Khám theo lịch')->assertSee($appointment->examinationRoom->name)
+            ->assertSee(number_format((float) $fee->amount, 0, ',', '.').' đ')
+            ->assertSee('class="screen-wrap print-document-wrap reception-slip"', false)
+            ->assertSee('class="reception-slip-number__value">'.$visit->reception_queue_number.'<', false)
+            ->assertDontSee('Tiếp nhận lúc')->assertDontSee('Thông tin bệnh nhân')->assertDontSee('Thông tin khám')
+            ->assertSeeInOrder(['Số thứ tự khám', 'Hà Nội, ngày '.$visit->checked_in_at->format('d').' tháng '.$visit->checked_in_at->format('m').' năm '.$visit->checked_in_at->format('Y').' lúc 09:00', 'Người tiếp đón', $employee->full_name]);
         $this->assertDatabaseHas('audit_logs', ['user_id' => $employee->user_id, 'role_name_snapshot' => 'Employee', 'action' => 'CHECK_IN', 'entity_id' => $appointment->id]);
         $originalDate = $appointment->fresh()->appointment_date->toDateString();
         $originalSlot = $appointment->fresh()->appointment_time_slot_id;
@@ -76,8 +86,10 @@ class EmployeeReceptionWorkflowTest extends TestCase
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail())->post(route('admin.payables.payment-transactions.store', $fee), [
             'payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => Employee::where('employee_code', 'NV000004')->value('id'),
         ])->assertSessionHasNoErrors();
+        $this->get(route('admin.visits.reception-slip', $visit))->assertOk()->assertSee($employee->full_name);
         $this->assertSame(1, $visit->queues()->count());
         $queue = $visit->queues()->sole();
+        $this->assertSame($visit->reception_queue_number, (int) $queue->queue_number);
         $this->assertSame('WAITING', $queue->status->name);
         $this->post(route('admin.queues.call', $queue))->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->assertSame('CALLED', $queue->fresh()->status->name);
@@ -86,6 +98,7 @@ class EmployeeReceptionWorkflowTest extends TestCase
             ->assertSee($visit->visit_code)->assertDontSee('Gọi bệnh nhân')->assertDontSee('/nhan-vien/hang-doi', false);
         $this->flushSession();
         $this->actingAs($appointment->patient->user)->get(route('patient.appointments.show', $appointment))->assertOk()->assertSee('Đã tiếp nhận');
+        $this->get($slip)->assertForbidden();
     }
 
     public function test_cancelled_appointment_and_changed_employee_type_cannot_be_received(): void

@@ -88,7 +88,7 @@ class PasswordResetController extends Controller
             if (! $this->hasValidResetGrant($request, $challenge)) {
                 return false;
             }
-            $user->update(['password' => Hash::make($request->validated('password'))]);
+            $user->update(['password' => Hash::make($request->validated('password')), 'must_change_password' => false]);
             $challenge->update(['expires_at' => now()->subSecond()]);
             AuditLog::create([
                 'user_id' => $user->id,

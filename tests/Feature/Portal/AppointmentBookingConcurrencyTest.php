@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Portal;
 
-use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\ExaminationRoom;
@@ -31,7 +30,7 @@ class AppointmentBookingConcurrencyTest extends TestCase
     private const TEST_DATABASE =
     'mediway_codex_test_20261019';
 
-    public function test_two_patients_cannot_overbook_the_last_slot(): void
+    public function test_two_patients_can_book_the_same_slot_concurrently(): void
     {
         /*
         |--------------------------------------------------------------------------
@@ -118,7 +117,7 @@ class AppointmentBookingConcurrencyTest extends TestCase
         | Tạo lịch khám test
         |--------------------------------------------------------------------------
         |
-        | Slot chỉ có đúng 1 chỗ.
+        | Khung giờ có hạn mức cũ là một người.
         |
         */
 
@@ -250,108 +249,10 @@ class AppointmentBookingConcurrencyTest extends TestCase
                 $second
             );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Kiểm tra số lịch thực tế
-        |--------------------------------------------------------------------------
-        |
-        | Dù có 2 request tranh suất cuối thì chỉ được có đúng 1 appointment.
-        |
-        */
+        $patientIds = Patient::whereIn('patient_code', ['BN000001', 'BN000002'])->pluck('id')->all();
+        $this->assertEqualsCanonicalizing($patientIds, $slot->appointments()->pluck('patient_id')->all());
+        $this->assertSame([302, 302], array_column($responses, 'status'));
 
-        $appointments =
-            Appointment::query()
-            ->where(
-                'appointment_time_slot_id',
-                $slot->id
-            )
-            ->get();
-
-        $this->assertCount(
-            1,
-            $appointments
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Người lấy được slot phải là một trong hai bệnh nhân
-        |--------------------------------------------------------------------------
-        */
-
-        $allowedPatientIds = [
-            Patient::query()
-                ->where(
-                    'patient_code',
-                    'BN000001'
-                )
-                ->value(
-                    'id'
-                ),
-
-            Patient::query()
-                ->where(
-                    'patient_code',
-                    'BN000002'
-                )
-                ->value(
-                    'id'
-                ),
-        ];
-
-        $this->assertContains(
-            $appointments
-                ->first()
-                ->patient_id,
-            $allowedPatientIds
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Một request thành công, request còn lại bị từ chối
-        |--------------------------------------------------------------------------
-        |
-        | Request thành công:
-        | 302 redirect tới trang xác nhận.
-        |
-        | Request thất bại:
-        | 422 validation khi gửi Accept: application/json.
-        |
-        */
-
-        $statuses =
-            collect(
-                $responses
-            )
-            ->pluck(
-                'status'
-            )
-            ->sort()
-            ->values()
-            ->all();
-
-        $this->assertSame(
-            [
-                302,
-                422,
-            ],
-            $statuses
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Chốt capacity
-        |--------------------------------------------------------------------------
-        */
-
-        $this->assertSame(
-            1,
-            Appointment::query()
-                ->where(
-                    'appointment_time_slot_id',
-                    $slot->id
-                )
-                ->count()
-        );
     }
 
     /**

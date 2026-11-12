@@ -17,6 +17,7 @@ class User extends Authenticatable
         'business_code',
         'phone',
         'password',
+        'must_change_password',
         'role_id',
         'status',
     ];
@@ -30,6 +31,7 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
         ];
     }
 

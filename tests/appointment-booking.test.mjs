@@ -7,7 +7,7 @@ const schedule = (id, doctor, room, date = '2026-10-24', start = '09:00') => ({
     doctor: { id: doctor, code: `BS${doctor}`, name: doctor === '1' ? 'An' : 'Bình' },
     room: { id: room, code: `PK${room}`, name: `Phòng ${room}` },
     specialty: { id: '1', code: 'CK1', name: 'Nội khoa' },
-    slots: [{ id: `slot-${id}`, start, end: '09:30', remaining: 2 }],
+    slots: [{ id: `slot-${id}`, start, end: '09:30', registered: 2 }],
 });
 const schedules = [schedule('1', '2', '1'), schedule('2', '1', '2', '2026-10-25'), schedule('3', '1', '1')];
 

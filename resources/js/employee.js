@@ -1,4 +1,5 @@
 import { initializeResponsiveTables } from './responsive-tables.js';
+import './walk-in-reception.js';
 
 initializeResponsiveTables('.f08 table[data-mobile-records]');
 
@@ -8,27 +9,6 @@ if (menu) {
     menu.open = wide.matches;
     wide.addEventListener('change', (event) => { menu.open = event.matches; });
 }
-
-document.querySelector('[data-f08-print]')?.addEventListener('click', () => window.print());
-
-// Cập nhật thời điểm khi in, kể cả khi trang xem trước đã mở từ trước.
-window.addEventListener('beforeprint', () => {
-    const time = document.querySelector('[data-result-print-time]');
-    if (time) time.textContent = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'short', timeStyle: 'short' }).format(new Date());
-});
-
-document.querySelectorAll('.paper table').forEach((table) => {
-    let region = table.closest('.medicine-table-wrap, .ms-table-wrap');
-    if (!region) {
-        region = document.createElement('div');
-        region.className = 'receipt-table-scroll';
-        table.before(region);
-        region.append(table);
-    }
-    region.tabIndex = 0;
-    region.setAttribute('role', 'region');
-    region.setAttribute('aria-label', 'Bảng chi tiết phiếu thu, có thể cuộn ngang');
-});
 
 // Thêm hoặc xóa dòng chỉ số; đánh số lại để máy chủ nhận đúng danh sách.
 document.querySelectorAll('[data-parameter-editor]').forEach((editor) => {

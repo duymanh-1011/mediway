@@ -69,6 +69,9 @@
         @if ($record->conclusion->has_follow_up)
             <div class="portal-visit-section"><h3>Tái khám</h3><p>{{ $record->conclusion->follow_up_date?->format('d/m/Y') ?? 'Theo hướng dẫn của cơ sở y tế' }}@if ($record->conclusion->follow_up_reason) — {{ $record->conclusion->follow_up_reason }}@endif</p></div>
         @endif
+        <div class="portal-visit-actions">
+            <x-portal.button :href="route('patient.results.visit-print', $record)">Xem và in phiếu kết quả khám</x-portal.button>
+        </div>
     @else
         <p>Chưa có kết luận khám.</p>
     @endif

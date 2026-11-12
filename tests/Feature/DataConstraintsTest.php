@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\MedicalService;
 use App\Models\ServiceGroup;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -77,5 +78,22 @@ class DataConstraintsTest extends TestCase
         $service = MedicalService::create(['service_code' => 'PRICECHECK', 'name' => 'Kiểm tra giá', 'price' => 1000]);
         $this->expectException(QueryException::class);
         DB::table('medical_services')->where('id', $service->id)->update(['price' => 1500]);
+    }
+
+    public function test_mysql_rejects_negative_payable_amount_and_ordered_service_price(): void
+    {
+        if (DB::getDriverName() !== 'mysql') {
+            $this->markTestSkipped('Ràng buộc CHECK được kiểm tra bằng MySQL.');
+        }
+        $this->seed(DatabaseSeeder::class);
+        foreach ([
+            ['payables', 'amount', 'payables_amount_check'],
+            ['service_order_items', 'price_at_order', 'service_items_values_check'],
+        ] as [$table, $column, $constraint]) {
+            $row = DB::table($table)->first(['id', $column]);
+            $query = DB::table($table)->where('id', $row->id);
+            $this->assertThrows(fn () => $query->update([$column => -1]), QueryException::class, $constraint);
+            $this->assertSame($row->{$column}, $query->value($column));
+        }
     }
 }

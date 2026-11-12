@@ -17,6 +17,7 @@
 @endsection
 
 @section('content')
+    @php($standardShift = $doctorSchedule->isStandardShift())
 
     <div class="page-header">
 
@@ -47,6 +48,9 @@
                 class="admin-btn admin-btn-secondary"
             >← Quay lại</a>
 
+            @if ($standardShift)
+                <a href="{{ route('admin.doctor-schedules.month.show', [$doctorSchedule->doctor_id, 'month' => $doctorSchedule->work_date->format('Y-m')]) }}" class="admin-btn admin-btn-primary">Quản lý lịch tháng</a>
+            @else
             <a
                 href="{{ route(
                     'admin.doctor-schedules.edit',
@@ -54,6 +58,7 @@
                 ) }}"
                 class="admin-btn admin-btn-secondary"
             >Sửa</a>
+            @endif
 
         </div>
 
@@ -74,10 +79,11 @@
 
         </div>
 
+        @unless ($standardShift)
         <div class="stat-card">
 
             <div class="stat-label">
-                Tổng sức chứa
+                Tổng hạn mức cũ
             </div>
 
             <div class="stat-value">
@@ -85,6 +91,7 @@
             </div>
 
         </div>
+        @endunless
 
         <div class="stat-card">
 
@@ -258,11 +265,12 @@
                     </h3>
 
                     <p class="section-description">
-                        Quản lý khung giờ và sức chứa của lịch làm việc.
+                        {{ $standardShift ? 'Khung giờ được sinh tự động từ ca làm việc.' : 'Theo dõi khung giờ và lượt đăng ký của lịch cũ.' }}
                     </p>
 
                 </div>
 
+                @unless ($standardShift)
                 <a
                     href="{{ route(
                         'admin.doctor-schedules.time-slots.create',
@@ -270,6 +278,7 @@
                     ) }}"
                     class="admin-btn admin-btn-primary"
                 >Thêm khung giờ</a>
+                @endunless
 
             </div>
 
@@ -283,11 +292,10 @@
                         <tr>
                             <th scope="col" class="admin-row-number">STT</th>
                             <th>Thời gian</th>
-                            <th>Sức chứa</th>
+                            @unless ($standardShift)<th>Hạn mức cũ</th>@endunless
                             <th>Đã đặt</th>
-                            <th>Còn trống</th>
                             <th>Trạng thái</th>
-                            <th>Thao tác</th>
+                            @unless ($standardShift)<th>Thao tác</th>@endunless
                         </tr>
 
                     </thead>
@@ -295,18 +303,6 @@
                     <tbody>
 
                     @forelse ($timeSlots as $slot)
-
-                        @php
-
-                            $remaining =
-                                max(
-                                    0,
-                                    $slot->max_patients
-                                    -
-                                    $slot->appointments_count
-                                );
-
-                        @endphp
 
                         <tr>
 
@@ -329,16 +325,12 @@
 
                             </td>
 
-                            <td>
+                            @unless ($standardShift)<td>
                                 {{ $slot->max_patients }}
-                            </td>
+                            </td>@endunless
 
                             <td>
                                 {{ $slot->appointments_count }}
-                            </td>
-
-                            <td>
-                                {{ $remaining }}
                             </td>
 
                             <td>
@@ -355,7 +347,7 @@
 
                             </td>
 
-                            <td><div class="admin-actions admin-table-actions">
+                            @unless ($standardShift)<td><div class="admin-actions admin-table-actions">
 
                                 <div class="action-group">
 
@@ -390,7 +382,7 @@
 
                                 </div>
 
-                            </div></td>
+                            </div></td>@endunless
 
                         </tr>
 
@@ -399,7 +391,7 @@
                         <tr>
 
                             <td
-                                colspan="7"
+                                colspan="{{ $standardShift ? 4 : 6 }}"
                                 class="empty-state"
                             >
                                 Lịch làm việc này chưa có khung giờ.

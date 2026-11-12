@@ -31,7 +31,7 @@
             @if ($result)
                 <div class="portal-visit-section">
                     <h4>Kết quả dịch vụ</h4>
-                    <p>{{ $result->verified_by_user_id ? 'Đã xác minh' : 'Chưa xác minh' }} @if ($result->resulted_at) · {{ $result->resulted_at->format('d/m/Y H:i') }} @endif</p>
+                    @if ($result->resulted_at)<p>Ghi nhận lúc {{ $result->resulted_at->format('d/m/Y H:i') }}</p>@endif
                     @if ($result->result_summary)<p>{{ $result->result_summary }}</p>@endif
                     @if ($result->result_conclusion)<p><strong>Kết luận</strong> {{ $result->result_conclusion }}</p>@endif
                     @if ($rows = $result->parameterDisplayRows())
@@ -43,6 +43,11 @@
                     @endif
                     @if ($result->hasDocument('pdf') || $result->hasDocument('image'))
                         <a href="{{ route('patient.results.visit', ['visit' => $record->id, 'tab' => 'giay-to']) }}">Xem tệp kết quả trong mục Giấy tờ</a>
+                    @endif
+                    @if ($result->hasContent())
+                        <div class="portal-visit-actions">
+                            <x-portal.button :href="route('patient.results.service-print', $result)">Xem và in phiếu kết quả</x-portal.button>
+                        </div>
                     @endif
                 </div>
             @elseif ($entry['key'] !== 'kham-benh')

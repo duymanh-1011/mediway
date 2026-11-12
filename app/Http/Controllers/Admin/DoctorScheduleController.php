@@ -41,6 +41,7 @@ class DoctorScheduleController extends Controller
 
         $query =
             DoctorSchedule::query()
+                ->whereNull('shift_code')
                 ->with([
                     'doctor',
                     'specialty',
@@ -207,13 +208,12 @@ class DoctorScheduleController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $totalSchedules =
-            DoctorSchedule::count();
-
-        $activeSchedules = DoctorSchedule::effectiveActive()->count();
+        $legacySchedules = DoctorSchedule::whereNull('shift_code');
+        $totalSchedules = (clone $legacySchedules)->count();
+        $activeSchedules = (clone $legacySchedules)->effectiveActive()->count();
 
         $todaySchedules =
-            DoctorSchedule::whereDate(
+            $legacySchedules->whereDate(
                 'work_date',
                 now()->toDateString()
             )->count();
@@ -330,6 +330,7 @@ class DoctorScheduleController extends Controller
 
         $query =
             DoctorSchedule::query()
+                ->whereNull('shift_code')
                 ->with([
                     'doctor',
                     'specialty',
@@ -559,7 +560,9 @@ class DoctorScheduleController extends Controller
         ]);
 
         $timeSlots = AppointmentTimeSlot::where('doctor_schedule_id', $doctorSchedule->id)
-            ->withCount('appointments')->orderBy('start_time')->get();
+            ->withCount(['appointments' => fn ($appointments) => $appointments->whereHas(
+                'appointmentStatus', fn ($status) => $status->where('name', '!=', 'CANCELLED'),
+            )])->orderBy('start_time')->get();
         $timeSlots->each(fn (AppointmentTimeSlot $slot) => $slot->setRelation('doctorSchedule', $doctorSchedule));
 
         $totalSlots =
@@ -590,6 +593,8 @@ class DoctorScheduleController extends Controller
     public function edit(
         DoctorSchedule $doctorSchedule
     ) {
+        $this->ensureLegacySchedule($doctorSchedule);
+
         $doctors =
             Doctor::query()
                 ->with('specialty')
@@ -625,6 +630,7 @@ class DoctorScheduleController extends Controller
             $data = $request->validated();
 
             $doctorSchedule = DoctorSchedule::whereKey($doctorSchedule->id)->lockForUpdate()->firstOrFail();
+            $this->ensureLegacySchedule($doctorSchedule);
             $allowLegacyDeactivation = $data['status'] === 'INACTIVE'
                 && (int) $doctorSchedule->doctor_id === (int) $data['doctor_id']
                 && (int) $doctorSchedule->specialty_id === (int) $data['specialty_id']
@@ -741,6 +747,8 @@ class DoctorScheduleController extends Controller
     public function destroy(
         DoctorSchedule $doctorSchedule
     ) {
+        $this->ensureLegacySchedule($doctorSchedule);
+
         $hasAppointments =
             DB::table(
                 'appointment_time_slots as slots'
@@ -827,93 +835,23 @@ class DoctorScheduleController extends Controller
         }
     }
 
-    private function getConflictMessage(
-        array $data,
-        ?int $ignoreScheduleId = null
-    ): ?string {
-        $doctorConflict =
-            DoctorSchedule::query()
-                ->whereDate(
-                    'work_date',
-                    $data['work_date']
-                )
-                ->where(
-                    'doctor_id',
-                    $data['doctor_id']
-                )
-                ->where(
-                    'status',
-                    'ACTIVE'
-                )
-                ->when(
-                    $ignoreScheduleId,
-                    function ($query) use (
-                        $ignoreScheduleId
-                    ) {
-                        $query->where(
-                            'id',
-                            '!=',
-                            $ignoreScheduleId
-                        );
-                    }
-                )
-                ->where(
-                    'start_time',
-                    '<',
-                    $data['end_time']
-                )
-                ->where(
-                    'end_time',
-                    '>',
-                    $data['start_time']
-                )
-                ->exists();
+    private function ensureLegacySchedule(DoctorSchedule $schedule): void
+    {
+        abort_if($schedule->isStandardShift(), 409, 'Ca hành chính chuẩn được quản lý theo lịch tháng.');
+    }
 
-        if ($doctorConflict) {
+    private function getConflictMessage(array $data, ?int $ignoreScheduleId = null): ?string
+    {
+        $overlapping = DoctorSchedule::query()
+            ->overlappingOn($data['work_date'], $data['start_time'].':00', $data['end_time'].':00')
+            ->when($ignoreScheduleId, fn ($query) => $query->whereKeyNot($ignoreScheduleId));
 
-            return 'Bác sĩ đã có lịch làm việc bị trùng thời gian trong ngày này.';
+        if ((clone $overlapping)->where('doctor_id', $data['doctor_id'])
+            ->where(fn ($query) => $query->where('status', 'ACTIVE')->orWhereNotNull('shift_code'))->exists()) {
+            return 'Bác sĩ đã có lịch làm việc hoặc ca nghỉ trùng thời gian trong ngày này.';
         }
 
-        $roomConflict =
-            DoctorSchedule::query()
-                ->whereDate(
-                    'work_date',
-                    $data['work_date']
-                )
-                ->where(
-                    'examination_room_id',
-                    $data['examination_room_id']
-                )
-                ->where(
-                    'status',
-                    'ACTIVE'
-                )
-                ->when(
-                    $ignoreScheduleId,
-                    function ($query) use (
-                        $ignoreScheduleId
-                    ) {
-                        $query->where(
-                            'id',
-                            '!=',
-                            $ignoreScheduleId
-                        );
-                    }
-                )
-                ->where(
-                    'start_time',
-                    '<',
-                    $data['end_time']
-                )
-                ->where(
-                    'end_time',
-                    '>',
-                    $data['start_time']
-                )
-                ->exists();
-
-        if ($roomConflict) {
-
+        if ($overlapping->where('examination_room_id', $data['examination_room_id'])->where('status', 'ACTIVE')->exists()) {
             return 'Phòng khám đã được sử dụng bởi lịch làm việc khác trong khoảng thời gian này.';
         }
 

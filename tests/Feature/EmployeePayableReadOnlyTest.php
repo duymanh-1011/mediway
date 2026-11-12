@@ -26,6 +26,18 @@ class EmployeePayableReadOnlyTest extends TestCase
         return User::where('business_code', $code)->firstOrFail();
     }
 
+    private function searchUrl(string $keyword, array $filters = []): string
+    {
+        $response = $this->post(route('employee.payments.filter'), ['q' => $keyword, ...$filters]);
+        $response->assertRedirect();
+        $url = $response->headers->get('Location');
+        parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $query);
+        $this->assertArrayNotHasKey('q', $query);
+        $this->assertArrayHasKey('search', $query);
+
+        return $url;
+    }
+
     public function test_detail_combines_payable_and_transaction_without_conflating_status_or_amount(): void
     {
         $payable = Payable::whereHas('transactions')->with('transactions')->firstOrFail();
@@ -41,7 +53,7 @@ class EmployeePayableReadOnlyTest extends TestCase
             $this->get(route('employee.payments.show', ['payable' => $payable, 'q' => 'kiemthu', 'page' => 2]))
                 ->assertOk()->assertSee('Thông tin khoản thu và thanh toán')->assertSee($label)
                 ->assertSee('Thất bại')->assertSee('67.890')->assertSee('12.345')->assertSee('Không ghi nhận / tự động')
-                ->assertSee('Ghi chú đối chiếu riêng')->assertSee('q=kiemthu')->assertSee('page=2')
+                ->assertSee('Ghi chú đối chiếu riêng')->assertDontSee('q=kiemthu')->assertSee('page=2')
                 ->assertDontSee('Thông tin giao dịch gần nhất');
         }
         $cashier = $this->account('NV000002');
@@ -85,7 +97,7 @@ class EmployeePayableReadOnlyTest extends TestCase
         $cashier = $this->account('NV000004');
         $item = \App\Models\ServiceOrderItem::with(['medicalService', 'payable'])->whereHas('medicalService')->whereHas('payable')->firstOrFail();
         $payable = $item->payable;
-        $this->actingAs($cashier)->get(route('employee.payments.index', ['q' => $payable->payable_code]))
+        $this->actingAs($cashier)->get($this->searchUrl($payable->payable_code))
             ->assertOk()->assertSee('Phí dịch vụ '.$item->medicalService->name)->assertDontSee('Mã khoản thu / lượt khám');
         $this->get(route('employee.payments.show', $payable))
             ->assertOk()->assertSee('Phí dịch vụ '.$item->medicalService->name)->assertDontSee('Mã lượt khám');
@@ -101,6 +113,7 @@ class EmployeePayableReadOnlyTest extends TestCase
             $this->actingAs($user)
                 ->get(route('employee.payments.index'))
                 ->assertForbidden();
+            $this->post(route('employee.payments.filter'), ['q' => 'PT000012'])->assertForbidden();
         }
     }
 
@@ -119,11 +132,72 @@ class EmployeePayableReadOnlyTest extends TestCase
 
     public function test_search_returns_only_matching_payable(): void
     {
-        $this->actingAs($this->account('NV000004'))
-            ->get(route('employee.payments.index', ['q' => 'PT000012']))
+        $this->actingAs($this->account('NV000004'))->get($this->searchUrl('PT000012'))
             ->assertOk()
             ->assertSee('PT000012')
             ->assertDontSee('PT000011');
+    }
+
+    public function test_cashier_can_search_payables_by_patient_citizen_id_or_phone(): void
+    {
+        $payable = Payable::where('payable_code', 'PT000012')->firstOrFail();
+        $patient = $payable->medicalVisit->patient;
+        $this->actingAs($this->account('NV000004'));
+
+        foreach ([$patient->detail->citizen_id_number, $patient->user->phone] as $keyword) {
+            $response = $this->get($this->searchUrl($keyword))
+                ->assertOk()->assertSee('PT000012')->assertDontSee('PT000010');
+            $this->assertNotEmpty($keyword);
+            $this->assertSame([$patient->id], $response->viewData('payables')->getCollection()
+                ->pluck('medicalVisit.patient.id')->unique()->values()->all());
+        }
+    }
+
+    public function test_search_reference_survives_navigation_and_is_scoped_to_the_cashier_session(): void
+    {
+        $cashier = $this->account('NV000004');
+        $this->actingAs($cashier);
+        $payable = Payable::where('payable_code', 'PT000012')->firstOrFail();
+        $phone = $payable->medicalVisit->patient->user->phone;
+        $url = $this->searchUrl($phone, ['payment_type' => 'SERVICE_FEE']);
+        parse_str(parse_url($url, PHP_URL_QUERY), $query);
+        $this->assertStringNotContainsString($phone, $url);
+        $detail = route('employee.payments.show', ['payable' => $payable, ...$query]);
+        $this->get($url)->assertOk()->assertSee($detail);
+        $this->get($detail)->assertOk()->assertSee($url);
+        $this->get($this->searchUrl('PT000010'))->assertOk()->assertDontSee('PT000012');
+        $this->get($url)->assertOk()->assertSee('PT000012');
+
+        $this->post(route('employee.payments.filter'), ['reset' => 1, 'search' => $query['search']])
+            ->assertRedirect(route('employee.payments.index'));
+        $this->get($url)->assertRedirect(route('employee.payments.index', ['payment_type' => 'SERVICE_FEE']));
+        $this->get(route('employee.payments.index', ['q' => $phone]))->assertRedirect(route('employee.payments.index'));
+        $url = $this->searchUrl($phone);
+        $this->flushSession();
+        $this->actingAs($cashier)->get($url)->assertRedirect(route('employee.payments.index'));
+    }
+
+    public function test_medicine_fee_filter_works_before_and_after_a_charge_is_created(): void
+    {
+        $this->actingAs($this->account('NV000004'));
+        $filters = ['payment_type' => 'MEDICINE_FEE'];
+        $this->get(route('employee.payments.index', $filters))
+            ->assertOk()->assertSee('value="MEDICINE_FEE" selected', false)
+            ->assertSee('Phí thuốc')->assertSee('Không tìm thấy khoản phải thu');
+
+        $prescription = \App\Models\Prescription::where('prescription_code', 'DT000001')->firstOrFail();
+        $payable = Payable::create([
+            'payable_code' => 'PT-THUOC-KIEM-THU',
+            'medical_visit_id' => $prescription->medical_visit_id,
+            'prescription_id' => $prescription->id,
+            'payment_type' => 'MEDICINE_FEE',
+            'description' => 'Tiền thuốc - '.$prescription->prescription_code,
+            'amount' => 20000,
+            'payment_status_id' => PaymentStatus::where('name', 'UNPAID')->value('id'),
+            'generated_at' => now(),
+        ]);
+        $response = $this->get(route('employee.payments.index', $filters))->assertOk();
+        $this->assertSame([$payable->id], $response->viewData('payables')->getCollection()->modelKeys());
     }
 
     public function test_payment_type_and_status_filters_work(): void
@@ -155,7 +229,7 @@ class EmployeePayableReadOnlyTest extends TestCase
     public function test_invalid_search_is_rejected_by_validation(): void
     {
         $this->actingAs($this->account('NV000004'))
-            ->get(route('employee.payments.index', ['q' => str_repeat('A', 81)]))
+            ->post(route('employee.payments.filter'), ['q' => str_repeat('A', 81)])
             ->assertSessionHasErrors('q');
     }
 
@@ -177,8 +251,7 @@ class EmployeePayableReadOnlyTest extends TestCase
             ->get(['id', 'amount', 'payment_status_id'])->toArray();
         $transactionCount = PaymentTransaction::count();
 
-        $this->actingAs($this->account('NV000004'))
-            ->get(route('employee.payments.index', ['q' => 'PT000012']))
+        $this->actingAs($this->account('NV000004'))->get($this->searchUrl('PT000012'))
             ->assertOk();
 
         $this->assertSame($before, Payable::orderBy('id')
@@ -200,19 +273,20 @@ class EmployeePayableReadOnlyTest extends TestCase
     {
         $this->actingAs($this->account('NV000004'));
         $script = '<script>alert(1)</script>';
-        $this->get(route('employee.payments.index', ['q' => $script]))
+        $this->get($this->searchUrl($script))
             ->assertOk()->assertSee(e($script), false)->assertDontSee($script, false)
             ->assertSee('Không tìm thấy khoản phải thu');
-        $this->get(route('employee.payments.index', ['q' => "' OR 1=1 --"]))
+        $this->get($this->searchUrl("' OR 1=1 --"))
             ->assertOk()->assertSee('Không tìm thấy khoản phải thu')->assertDontSee('PT000012');
     }
 
     public function test_paginated_payables_do_not_issue_a_query_per_row(): void
     {
         $this->actingAs($this->account('NV000004'));
+        $url = $this->searchUrl('PT000012');
         \Illuminate\Support\Facades\DB::enableQueryLog();
         \Illuminate\Support\Facades\DB::flushQueryLog();
-        $this->get(route('employee.payments.index', ['q' => 'PT000012']))->assertOk()->assertSee('PT000012');
+        $this->get($url)->assertOk()->assertSee('PT000012');
         $single = count(\Illuminate\Support\Facades\DB::getQueryLog());
         \Illuminate\Support\Facades\DB::flushQueryLog();
         $response = $this->get(route('employee.payments.index'))->assertOk();
@@ -224,8 +298,8 @@ class EmployeePayableReadOnlyTest extends TestCase
     public function test_combined_filters_return_only_the_matching_unpaid_service_fee(): void
     {
         $status = PaymentStatus::where('name', 'UNPAID')->firstOrFail();
-        $response = $this->actingAs($this->account('NV000004'))->get(route('employee.payments.index', [
-            'q' => 'PT000012', 'payment_type' => 'SERVICE_FEE', 'payment_status_id' => $status->id,
+        $response = $this->actingAs($this->account('NV000004'))->get($this->searchUrl('PT000012', [
+            'payment_type' => 'SERVICE_FEE', 'payment_status_id' => $status->id,
             'date_from' => '2026-10-15', 'date_to' => '2026-10-15',
         ]))->assertOk()->assertSee('PT000012')->assertDontSee('PT000011');
         $this->assertSame(1, $response->viewData('payables')->total());
@@ -233,12 +307,16 @@ class EmployeePayableReadOnlyTest extends TestCase
 
     public function test_pagination_limits_to_ten_and_retains_filter_query(): void
     {
-        $response = $this->actingAs($this->account('NV000004'))->get(route('employee.payments.index', ['date_from' => '2026-10-01']))->assertOk();
+        $this->actingAs($this->account('NV000004'));
+        $url = $this->searchUrl('PT', ['date_from' => '2026-10-01']);
+        $response = $this->get($url)->assertOk();
         $paginator = $response->viewData('payables');
         $this->assertSame(10, $paginator->perPage());
         $this->assertCount(10, $paginator->items());
         $this->assertGreaterThan(10, $paginator->total());
         $this->assertStringContainsString('date_from=2026-10-01', $paginator->nextPageUrl());
+        $this->assertStringContainsString('search=', $paginator->nextPageUrl());
+        $this->assertStringNotContainsString('q=', $paginator->nextPageUrl());
         $second = $this->get($paginator->nextPageUrl())->assertOk()->viewData('payables');
         $this->assertLessThanOrEqual(10, $second->count());
         $this->assertNotEquals($paginator->items()[0]->id, $second->items()[0]->id);

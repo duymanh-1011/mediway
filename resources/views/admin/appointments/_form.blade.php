@@ -15,7 +15,7 @@
         'specialty' => ['id' => (string) $schedule->specialty_id, 'code' => $schedule->specialty->specialty_code, 'name' => $schedule->specialty->name],
         'slots' => $schedule->appointmentTimeSlots->filter(fn ($slot) => $slot->is_selectable)->map(fn ($slot) => [
             'id' => (string) $slot->id, 'start' => substr($slot->start_time, 0, 5), 'end' => substr($slot->end_time, 0, 5),
-            'remaining' => max(0, (int) $slot->max_patients - (int) $slot->booked_count),
+            'registered' => (int) $slot->booked_count,
         ])->values()->all(),
     ])->values()->all();
 @endphp

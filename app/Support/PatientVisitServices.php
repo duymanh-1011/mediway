@@ -26,7 +26,7 @@ final class PatientVisitServices
                 'performer' => $item->performer?->full_name,
                 'price' => $item->price_at_order,
                 'unit' => $item->medicalService?->unit,
-                'result' => $item->result,
+                'result' => $item->result?->hasContent() ? $item->result : null,
             ];
         }));
 

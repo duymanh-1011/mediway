@@ -10,6 +10,7 @@ use App\Models\DoctorSchedule;
 use App\Models\ExaminationRoom;
 use App\Models\Specialty;
 use App\Models\User;
+use App\Services\DoctorMonthlyScheduleService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -237,7 +238,7 @@ class AppointmentChangeTest extends TestCase
         )->assertNotFound();
     }
 
-    public function test_full_slot_cannot_be_selected(): void
+    public function test_reschedule_accepts_a_slot_with_other_bookings(): void
     {
         $old = $this->slot(1);
         $target = $this->slot(2);
@@ -251,10 +252,10 @@ class AppointmentChangeTest extends TestCase
         $this->post(
             route('patient.appointments.reschedule', $appointment),
             ['appointment_time_slot_id' => $target->id]
-        )->assertSessionHasErrors('appointment_time_slot_id');
+        )->assertSessionHasNoErrors();
 
         $this->assertSame(
-            $old->id,
+            $target->id,
             $appointment->fresh()->appointment_time_slot_id
         );
     }
@@ -335,9 +336,15 @@ class AppointmentChangeTest extends TestCase
         );
     }
 
-    public function test_patient_booking_reception_and_cashier_create_one_queue(): void
+    public function test_generated_slot_flows_through_patient_booking_reception_cashier_and_queue(): void
     {
-        $slot = $this->slot(1);
+        $doctor = Doctor::where('doctor_code', 'BS000001')->firstOrFail();
+        $schedule = app(DoctorMonthlyScheduleService::class)->updateShift(
+            $this->user('QT000001'), $doctor->id, today()->addDay()->toDateString(), 'MORNING', 'WORKING', null,
+            $doctor->specialty_id, ExaminationRoom::where('room_code', 'PKTMH01')->value('id'),
+        );
+        $slot = $schedule->appointmentTimeSlots()->where('start_time', '09:00:00')->sole();
+        $this->assertNull($slot->max_patients);
         $appointment = $this->booked($slot);
         $patientId = $appointment->patient_id;
         $this->travelTo($slot->doctorSchedule->work_date->copy()->setTime(9, 0));

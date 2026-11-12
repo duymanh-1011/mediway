@@ -2,7 +2,7 @@
 
 return [
     'enabled' => filter_var(
-        env('APPOINTMENTS_AUTO_CANCEL_ENABLED', false),
+        env('APPOINTMENTS_AUTO_CANCEL_ENABLED', true),
         FILTER_VALIDATE_BOOLEAN
     ),
 

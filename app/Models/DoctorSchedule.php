@@ -15,6 +15,7 @@ class DoctorSchedule extends Model
         'work_date',
         'start_time',
         'end_time',
+        'shift_code',
         'status',
         'notes',
     ];
@@ -22,6 +23,16 @@ class DoctorSchedule extends Model
     protected $casts = [
         'work_date' => 'date',
     ];
+
+    public function isStandardShift(): bool
+    {
+        return $this->shift_code !== null;
+    }
+
+    public function scopeOverlappingOn(Builder $query, string $date, string $start, string $end): Builder
+    {
+        return $query->whereDate('work_date', $date)->whereTime('start_time', '<', $end)->whereTime('end_time', '>', $start);
+    }
 
     public function hasEnded(): bool
     {

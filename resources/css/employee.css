@@ -96,6 +96,10 @@ body.employee-body .employee-profile .portal-btn{display:inline-flex;align-items
 .tech-pagination { margin-top: 16px; }
 .tech-form { display: grid; gap: 16px; margin-top: 16px; }
 .tech-form > button { justify-self: start; }
+.doctor-body .tech-form select { width: 100%; min-width: 0; min-height: 44px; padding: 9px 11px; border: 1px solid #cbd9e9; border-radius: 8px; background: var(--portal-surface); color: var(--portal-ink); font: inherit; font-weight: 400; }
+.doctor-body .tech-form select:focus-visible { outline: 2px solid var(--portal-primary); outline-offset: 2px; }
+.doctor-body .tech-panel details { margin-top: 14px; }
+.doctor-body .tech-panel summary { cursor: pointer; color: var(--portal-primary); font-weight: 600; }
 .tech-form .tech-result-confirmation { display: flex; align-items: flex-start; gap: 8px; }
 .tech-form .tech-result-confirmation input { flex: none; width: 16px; height: 16px; min-height: 0; margin: 3px 0 0; padding: 0; accent-color: var(--portal-primary); }
 .tech-facts, .tech-upload { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }

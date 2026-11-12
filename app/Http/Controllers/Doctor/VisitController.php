@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Doctor;
 
 use App\Http\Controllers\Controller;
 use App\Models\MedicalVisit;
+use App\Models\Disease;
 use App\Services\DoctorVisitReadiness;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -30,6 +31,8 @@ class VisitController extends Controller
                 'serviceOrders.items.medicalService', 'serviceOrders.items.serviceStatus', 'serviceOrders.items.result'])
             ->findOrFail($visit);
         $check = $readiness->check($record);
-        return view('doctor.visits.show', compact('doctor', 'record', 'check'));
+        $canEdit = $record->canRecordClinicalData();
+        $diseases = $canEdit ? Disease::where('status', 'ACTIVE')->orderBy('name')->get(['id', 'name', 'disease_code']) : collect();
+        return view('doctor.visits.show', compact('doctor', 'record', 'check', 'canEdit', 'diseases'));
     }
 }

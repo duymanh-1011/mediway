@@ -6,7 +6,7 @@
     <title>@yield('title', 'Khu vực bác sĩ') - Mediway</title>
     @vite(['resources/css/portal.css', 'resources/css/portal-consistency.css', 'resources/css/employee.css', 'resources/js/portal.js', 'resources/js/employee.js'])
 </head>
-<body class="portal-body employee-body">
+<body class="portal-body employee-body doctor-body">
 <header class="employee-header"><div class="employee-header__inner">
     <a class="portal-brand" href="{{ route('doctor.home') }}"><span aria-hidden="true">✦</span> Mediway</a>
     <div class="employee-header__right">
@@ -25,6 +25,8 @@
     </aside>
     <main class="employee-main" id="main-content">
         <nav class="employee-breadcrumb" aria-label="Đường dẫn"><ol><li><a href="{{ route('doctor.home') }}">Lượt khám của tôi</a></li>@hasSection('breadcrumb')<li>@yield('breadcrumb')</li>@endif</ol></nav>
+        @if(session('success'))<div class="portal-alert portal-alert--success" role="status">{{ session('success') }}</div>@endif
+        @if($errors->any())<div class="portal-alert portal-alert--error" role="alert"><strong>Vui lòng kiểm tra thông tin.</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
         @yield('content')
     </main>
 </div>

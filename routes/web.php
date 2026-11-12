@@ -79,6 +79,9 @@ require __DIR__ . '/employee-reception.php';
 Route::prefix('bac-si')->name('doctor.')->middleware([\App\Http\Middleware\DoctorMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function () {
     Route::get('/', [\App\Http\Controllers\Doctor\VisitController::class, 'index'])->name('home');
     Route::get('/luot-kham/{visit}', [\App\Http\Controllers\Doctor\VisitController::class, 'show'])->whereNumber('visit')->name('visits.show');
+    Route::put('/luot-kham/{visit}/noi-dung-kham', [\App\Http\Controllers\Doctor\ClinicalController::class, 'saveNote'])->whereNumber('visit')->name('visits.clinical.update');
+    Route::post('/luot-kham/{visit}/chan-doan', [\App\Http\Controllers\Doctor\ClinicalController::class, 'storeDiagnosis'])->whereNumber('visit')->name('visits.diagnoses.store');
+    Route::put('/luot-kham/{visit}/chan-doan/{diagnosis}', [\App\Http\Controllers\Doctor\ClinicalController::class, 'updateDiagnosis'])->whereNumber(['visit', 'diagnosis'])->name('visits.diagnoses.update');
     Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->name('logout');
 });
 

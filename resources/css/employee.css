@@ -100,6 +100,12 @@ body.employee-body .employee-profile .portal-btn{display:inline-flex;align-items
 .doctor-body .tech-form select:focus-visible { outline: 2px solid var(--portal-primary); outline-offset: 2px; }
 .doctor-body .tech-panel details { margin-top: 14px; }
 .doctor-body .tech-panel summary { cursor: pointer; color: var(--portal-primary); font-weight: 600; }
+.doctor-order-services { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 16px; border: 1px solid var(--portal-line); border-radius: 12px; }
+.doctor-order-services legend { padding: 0 6px; color: var(--portal-ink); font-weight: 700; }
+.doctor-order-form .doctor-order-option { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--portal-line); border-radius: 8px; font-weight: 400; }
+.doctor-order-form .doctor-order-option input { width: 18px; height: 18px; min-height: 0; margin: 0; accent-color: var(--portal-primary); }
+.doctor-order-option small { display: block; margin-top: 4px; color: var(--portal-muted); }
+@media (max-width: 480px) { .doctor-order-form .doctor-order-option { grid-template-columns: auto minmax(0, 1fr); } .doctor-order-option > span:last-child { grid-column: 2; } }
 .tech-form .tech-result-confirmation { display: flex; align-items: flex-start; gap: 8px; }
 .tech-form .tech-result-confirmation input { flex: none; width: 16px; height: 16px; min-height: 0; margin: 3px 0 0; padding: 0; accent-color: var(--portal-primary); }
 .tech-facts, .tech-upload { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }

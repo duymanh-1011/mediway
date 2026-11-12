@@ -65,9 +65,13 @@
         @endif
     </section>
     <section class="tech-panel"><h2>Chỉ định và kết quả dịch vụ</h2>
+        @if($record->canOrderServices())<a class="portal-btn portal-btn--primary" href="{{ route('doctor.visits.orders.create', $record->id) }}">Chỉ định dịch vụ</a>@endif
         @forelse($record->serviceOrders as $order)
-            <h3>{{ $order->service_order_code }}</h3>
+            <h3>{{ $order->service_order_code }} · {{ $order->ordered_at?->format('d/m/Y H:i') ?? 'Chưa ghi thời gian' }}</h3>
+            @if($order->reason)<p><strong>Lý do:</strong> {{ $order->reason }}</p>@endif
+            @if($order->instructions)<p><strong>Hướng dẫn:</strong> {{ $order->instructions }}</p>@endif
             @foreach($order->items as $item)<p><strong>{{ $item->medicalService?->name ?? 'Dịch vụ' }}</strong> · {{ $item->serviceStatus?->description ?? 'Chưa cập nhật' }}</p>
+                @unless($item->result?->hasContent())<p>Chưa có kết quả.</p>@endunless
                 @if($item->result?->result_summary)<p>{{ $item->result->result_summary }}</p>@endif
                 @if($item->result?->result_conclusion)<p>{{ $item->result->result_conclusion }}</p>@endif
                 @if($item->result && ($rows = $item->result->parameterDisplayRows())) @foreach($rows as $row)<p><strong>{{ $row['label'] }}:</strong> {{ $row['value'] }}</p>@endforeach @endif

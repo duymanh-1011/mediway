@@ -1,19 +1,27 @@
-<x-portal.button type="button" variant="secondary" :commandfor="$dialogId" command="show-modal">{{ $label }}</x-portal.button>
+<x-portal.button type="button" variant="secondary" :data-d01-dialog="$dialogId" aria-haspopup="dialog">{{ $label }}</x-portal.button>
 
-<dialog id="{{ $dialogId }}" class="portal-modal" aria-labelledby="{{ $dialogId }}-title">
+<dialog id="{{ $dialogId }}" class="portal-modal d01-dialog" aria-labelledby="{{ $dialogId }}-title">
     <div class="portal-modal__content">
-        <h2 id="{{ $dialogId }}-title">{{ $label }}</h2>
-        <p>{{ $visit->patient?->full_name }} · {{ $visit->visit_code }}</p>
-        <form method="post" action="{{ $url }}" class="portal-modal__actions">
-            @csrf
-            @foreach ($expected as $name => $value)
-                <input type="hidden" name="{{ $name }}" value="{{ $value }}">
-            @endforeach
-            <input type="hidden" name="confirm" value="1">
-            <x-portal.button type="submit" data-pending-label="Đang xử lý…">Xác nhận</x-portal.button>
-        </form>
-        <form method="dialog" class="portal-modal__actions">
-            <x-portal.button type="submit" variant="secondary">Đóng</x-portal.button>
-        </form>
+        <div class="d01-dialog__heading">
+            <h2 id="{{ $dialogId }}-title">{{ $heading ?? $label }}</h2>
+            <form method="dialog">
+                <x-portal.button type="submit" variant="ghost" aria-label="Đóng xác nhận">×</x-portal.button>
+            </form>
+        </div>
+        <p><strong>{{ $visit->patient?->full_name }}</strong></p>
+        <p>Số khám {{ $queue->queue_number }}</p>
+        <div class="portal-modal__actions d01-dialog__actions">
+            <form method="dialog">
+                <x-portal.button type="submit" variant="secondary" autofocus>Hủy</x-portal.button>
+            </form>
+            <form method="post" action="{{ $url }}">
+                @csrf
+                @foreach ($expected as $name => $value)
+                    <input type="hidden" name="{{ $name }}" value="{{ $value }}">
+                @endforeach
+                <input type="hidden" name="confirm" value="1">
+                <x-portal.button type="submit" data-pending-label="Đang xử lý…">{{ $submitLabel ?? 'Xác nhận' }}</x-portal.button>
+            </form>
+        </div>
     </div>
 </dialog>

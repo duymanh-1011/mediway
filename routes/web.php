@@ -110,6 +110,31 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::get('/thanh-toan/giao-dich/{transaction}/bien-lai', [\App\Http\Controllers\Employee\PaymentReceiptController::class, 'show',])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.receipt');
 });
 
+/*
+|--------------------------------------------------------------------------
+| DOCTOR PORTAL — KHU VỰC BÁC SĨ
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('bac-si')->name('doctor.')->middleware([\App\Support\Doctor\DoctorMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class,])->group(function () {
+    Route::get('/', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'home'])->name('home');
+    Route::get('/ho-so', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'profile'])->name('profile');
+    Route::get('/ho-so/chinh-sua', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/ho-so', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/ho-so/doi-mat-khau', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.change');
+    Route::post('/dang-xuat', [\App\Http\Controllers\Portal\AuthController::class, 'destroy'])->name('logout');
+    Route::prefix('kham-benh')->name('examination.')->controller(\App\Http\Controllers\Doctor\ExaminationController::class)->group(function () {
+        Route::get('/phong', 'rooms')->name('rooms.index');
+        Route::get('/phong/{room}/hang-doi', 'queue')->name('rooms.queue');
+        Route::post('/phong/{room}/hang-doi/{queue}/goi', 'call')->whereNumber('queue')->name('queue.call');
+        Route::post('/phong/{room}/hang-doi/{queue}/goi-lai', 'recall')->whereNumber('queue')->name('queue.recall');
+        Route::post('/phong/{room}/hang-doi/{queue}/bo-qua', 'skip')->whereNumber('queue')->name('queue.skip');
+        Route::post('/phong/{room}/hang-doi/{queue}/bat-dau', 'start')->whereNumber('queue')->name('visits.start');
+        Route::post('/phong/{room}/luot-kham/{visit}/hoan-tat', 'complete')->whereNumber('visit')->name('visits.complete');
+    });
+});
+
+
 
 Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::middleware('guest')->group(function () {
@@ -627,7 +652,7 @@ Route::prefix('admin')
             Route::post('/visits/walk-in/search', [WalkInReceptionController::class, 'search'])->name('visits.walk-in.search');
             Route::post('/visits/walk-in/{patient}/activation-code', [WalkInReceptionController::class, 'issueActivation'])->whereNumber('patient')->name('visits.walk-in.activation');
             Route::post('/visits/walk-in', [WalkInReceptionController::class, 'store'])->block()->name('visits.walk-in.store');
-            Route::get('/visits/walk-in/{visit}/credentials', static fn (string $visit) => redirect()->route('admin.visits.show', $visit))
+            Route::get('/visits/walk-in/{visit}/credentials', static fn(string $visit) => redirect()->route('admin.visits.show', $visit))
                 ->whereNumber('visit')->name('visits.walk-in.credentials');
             Route::get('/visits/{visit}/reception-slip', ReceptionSlipController::class)->whereNumber('visit')->name('visits.reception-slip');
 

@@ -17,7 +17,7 @@ use App\Models\VisitStatus;
 use App\Services\Doctor\ExaminationQueueWorkflow;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
@@ -78,14 +78,14 @@ final class D01ExaminationTest extends TestCase
         $scheduledVisit->appointment->appointmentTimeSlot->doctorSchedule->update(['shift_code' => 'MORNING']);
         $path = route('doctor.examination.rooms.queue', $room);
         $before = [MedicalVisit::count(), ExaminationRoomQueue::count()];
-        $this->get($path)->assertOk()->assertSeeInOrder([$earlier->medicalVisit->visit_code, $later->medicalVisit->visit_code])
+        $this->get($path)->assertOk()->assertViewHas('queues', fn ($queues) => $queues->getCollection()->whereIn('id', [$earlier->id, $later->id])->pluck('id')->all() === [$earlier->id, $later->id])
             ->assertDontSee($foreign->medicalVisit->visit_code)->assertDontSee($outsideRoom->medicalVisit->visit_code)
             ->assertDontSee($yesterday->medicalVisit->visit_code);
-        $this->get($path.'?q='.$later->medicalVisit->visit_code)->assertOk()
-            ->assertSee($later->medicalVisit->visit_code)->assertDontSee($earlier->medicalVisit->visit_code);
-        $this->get($path.'?shift=MORNING')->assertOk()->assertSee($scheduledVisit->visit_code)
-            ->assertDontSee($earlier->medicalVisit->visit_code);
-        $this->get($path.'?shift=AFTERNOON')->assertOk()->assertDontSee($scheduledVisit->visit_code);
+        $this->get($path.'?q='.$later->medicalVisit->visit_code)->assertOk()->assertViewHas('queues', fn ($queues) => $queues->isEmpty());
+        $this->get($path.'?shift=MORNING')->assertOk()
+            ->assertViewHas('queues', fn ($queues) => $queues->pluck('medical_visit_id')->contains($scheduledVisit->id)
+                && ! $queues->pluck('medical_visit_id')->contains($earlier->medical_visit_id));
+        $this->get($path.'?shift=AFTERNOON')->assertOk()->assertViewHas('queues', fn ($queues) => $queues->isEmpty());
         $this->get($path.'?date='.now()->subDay()->toDateString())->assertNotFound();
         $this->get(route('doctor.examination.rooms.queue', $otherRoom))->assertNotFound();
         $this->assertSame($before, [MedicalVisit::count(), ExaminationRoomQueue::count()]);
@@ -100,6 +100,85 @@ final class D01ExaminationTest extends TestCase
         $this->actingAs(User::whereHas('role', fn ($role) => $role->where('name', 'Employee'))->firstOrFail())
             ->postJson($url, $this->snapshot($queue))->assertForbidden();
         $this->assertSame(0, $queue->fresh()->call_count);
+    }
+
+    public function test_queue_search_uses_only_patient_name_and_phone_inside_assignment_scope(): void
+    {
+        $this->allowFixtureDoctor();
+        $entry = $this->queue(17);
+        $visit = $entry->medicalVisit;
+        $patient = $visit->patient;
+        $patient->update(['full_name' => 'D01 Patient Search']);
+        $patient->user->update(['phone' => '0981234567']);
+        $otherRoom = ExaminationRoom::whereKeyNot($visit->examination_room_id)->firstOrFail();
+        $outside = $this->queue(18, ['examination_room_id' => $otherRoom->id]);
+
+        foreach (['patient search', '123456'] as $term) {
+            $this->get(route('doctor.examination.rooms.queue', ['room' => $visit->examination_room_id, 'q' => $term]))
+                ->assertOk()->assertSee('D01 Patient Search')->assertDontSee($visit->visit_code)
+                ->assertViewHas('queues', fn ($queues) => $queues->pluck('id')->contains($entry->id)
+                    && ! $queues->pluck('id')->contains($outside->id));
+        }
+        foreach ([$patient->patient_code, $visit->visit_code] as $term) {
+            $this->get(route('doctor.examination.rooms.queue', ['room' => $visit->examination_room_id, 'q' => $term]))
+                ->assertOk()->assertViewHas('queues', fn ($queues) => $queues->isEmpty());
+        }
+    }
+
+    public function test_queue_stage_filters_match_the_badges_and_use_visit_completion(): void
+    {
+        $this->allowFixtureDoctor();
+        $started = ['examination_started_at' => now()->subMinutes(30)];
+        $status = fn ($name) => VisitStatus::where('name', $name)->value('id');
+        $waiting = $this->queue(17);
+        $called = $this->queue(18, queueStatus: 'CALLED');
+        $examining = $this->queue(19, $started + ['visit_status_id' => $status('IN_EXAMINATION')], 'IN_SERVICE');
+        $service = $this->queue(20, $started + ['visit_status_id' => $status('WAITING_FOR_SERVICE')], 'COMPLETED');
+        $return = $this->queue(21, $started + ['visit_status_id' => $status('WAITING_FOR_SERVICE')]);
+        $return->update(['queue_type' => 'RETURN_AFTER_SERVICE']);
+        $completed = $this->queue(22, $started + ['visit_status_id' => $status('COMPLETED'), 'examination_ended_at' => now()], 'COMPLETED');
+        $source = ServiceOrder::whereHas('items')->firstOrFail();
+        $order = $source->replicate();
+        $order->fill(['service_order_code' => 'CD-D01-STAGE', 'medical_visit_id' => $return->medical_visit_id, 'status' => 'ACTIVE'])->save();
+        $item = $source->items()->firstOrFail()->replicate();
+        $item->fill(['service_status_id' => ServiceStatus::where('name', 'CANCELLED')->value('id'), 'started_at' => null, 'completed_at' => null]);
+        $order->items()->save($item);
+        $this->assertNull($service->medicalVisit->examination_ended_at);
+
+        $entries = compact('waiting', 'called', 'examining', 'service', 'return', 'completed');
+        $stages = array_combine(['WAITING', 'CALLED', 'IN_EXAMINATION', 'WAITING_FOR_SERVICE', 'RETURNING', 'COMPLETED'], $entries);
+        $room = $waiting->medicalVisit->examination_room_id;
+        foreach ($stages as $stage => $entry) {
+            $this->get(route('doctor.examination.rooms.queue', ['room' => $room, 'status' => $stage]))
+                ->assertOk()->assertSee('d01-status--'.$stage, false)
+                ->assertViewHas('queues', fn ($queues) => $queues->getCollection()->whereIn('id', collect($entries)->pluck('id'))->pluck('id')->all() === [$entry->id]);
+        }
+        $this->postJson(route('doctor.examination.queue.recall', [$room, $completed]), $this->snapshot($called))
+            ->assertUnprocessable();
+        $this->get(route('doctor.examination.rooms.queue', ['room' => $room, 'status' => 'COMPLETED']))
+            ->assertDontSee('Xem chi tiết');
+        $this->registerD02FixtureDestination();
+        $this->get(route('doctor.examination.rooms.queue', ['room' => $room, 'status' => 'COMPLETED']))
+            ->assertSee('Xem chi tiết')->assertSee(route('doctor.examination.visits.show', $completed->medical_visit_id));
+        $this->get(route('doctor.examination.rooms.queue', ['room' => $room, 'status' => 'IN_EXAMINATION']))
+            ->assertDontSee('Xem chi tiết');
+    }
+
+    public function test_doctor_work_status_uses_each_shift_and_server_time(): void
+    {
+        $this->allowFixtureDoctor();
+        $schedule = DoctorSchedule::where('doctor_id', $this->user->doctor->id)
+            ->whereDate('work_date', today())->where('status', 'ACTIVE')->firstOrFail();
+        $schedule->update(['start_time' => '07:30:00', 'end_time' => '11:30:00', 'shift_code' => 'MORNING']);
+        $schedule->replicate()->fill(['start_time' => '13:30:00', 'end_time' => '17:00:00', 'shift_code' => 'AFTERNOON'])->save();
+        $rooms = route('doctor.examination.rooms.index');
+        foreach ([[7, 29, 'Ngoài giờ làm việc'], [7, 30, 'Đang hoạt động'], [12, 0, 'Ngoài giờ làm việc'],
+            [13, 30, 'Đang hoạt động'], [17, 0, 'Ngoài giờ làm việc']] as [$hour, $minute, $label]) {
+            $this->travelTo(now()->setTime($hour, $minute));
+            $this->get($rooms)->assertOk()->assertViewHas('workStatus', $label);
+        }
+        $this->travelTo(now()->subDay());
+        $this->get($rooms)->assertOk()->assertViewHas('workStatus', 'Không có lịch làm việc');
     }
 
     public function test_call_recall_and_skip_reject_stale_requests_and_unpaid_fees(): void
@@ -121,7 +200,8 @@ final class D01ExaminationTest extends TestCase
         $this->postJson($call, $waiting)->assertUnprocessable()->assertJsonValidationErrors('visit');
         $this->assertSame(0, $queue->fresh()->call_count);
         $fee->update(['payment_status_id' => PaymentStatus::where('name', 'PAID')->value('id')]);
-        $this->post($call, $waiting)->assertSessionHasNoErrors()->assertRedirect();
+        $this->post($call, $waiting)->assertSessionHasNoErrors()->assertRedirect()
+            ->assertSessionHas('success', 'Đã gọi bệnh nhân thành công');
         $this->postJson($call, $waiting)->assertUnprocessable();
         $called = $this->snapshot($queue->fresh());
         $this->post($recall, $called)->assertSessionHasNoErrors()->assertRedirect();
@@ -134,6 +214,29 @@ final class D01ExaminationTest extends TestCase
         $this->assertSame(3, AuditLog::where('entity_type', 'examination_room_queues')->where('entity_id', $queue->id)->count());
     }
 
+    public function test_call_requires_csrf_and_rejects_a_queue_from_another_room(): void
+    {
+        $this->allowFixtureDoctor();
+        $queue = $this->queue(17);
+        $room = $queue->medicalVisit->examination_room_id;
+        $url = route('doctor.examination.queue.call', [$room, $queue]);
+        $payload = $this->snapshot($queue);
+        $token = 'd01-csrf-fixture';
+        $this->app->instance('env', 'local');
+        try {
+            $this->withSession(['_token' => $token])->postJson($url, $payload)->assertStatus(419);
+            $otherRoom = ExaminationRoom::whereKeyNot($room)->firstOrFail();
+            $this->postJson(route('doctor.examination.queue.call', [$otherRoom, $queue]), $payload + ['_token' => $token])
+                ->assertNotFound();
+            $this->assertSame(0, $queue->fresh()->call_count);
+            $this->post($url, $payload + ['_token' => $token])->assertRedirect()
+                ->assertSessionHas('success', 'Đã gọi bệnh nhân thành công');
+            $this->assertSame('CALLED', $queue->fresh()->status->name);
+        } finally {
+            $this->app->instance('env', 'testing');
+        }
+    }
+
     public function test_start_waits_for_d02_and_then_redirects_with_the_visit_id_once(): void
     {
         $this->allowFixtureDoctor();
@@ -142,7 +245,7 @@ final class D01ExaminationTest extends TestCase
         $url = route('doctor.examination.visits.start', [$visit->examination_room_id, $queue]);
         $payload = $this->snapshot($queue);
         $this->get(route('doctor.examination.rooms.queue', $visit->examination_room_id))->assertOk()
-            ->assertDontSee('commandfor="start-'.$queue->id.'"', false);
+            ->assertDontSee('data-d01-dialog="start-'.$queue->id.'"', false);
         $this->postJson($url, $payload)->assertConflict();
         $this->assertNull($visit->fresh()->examination_started_at);
 
@@ -201,7 +304,7 @@ final class D01ExaminationTest extends TestCase
         ], 'IN_SERVICE');
         $visit = $queue->medicalVisit;
         $this->get(route('doctor.examination.rooms.queue', $visit->examination_room_id))->assertOk()
-            ->assertDontSee('commandfor="complete-'.$queue->id.'"', false);
+            ->assertDontSee('data-d01-dialog="complete-'.$queue->id.'"', false);
         $before = AuditLog::count();
         $this->postJson(route('doctor.examination.visits.complete', [$visit->examination_room_id, $visit]), ['confirm' => 1])->assertConflict();
         $this->assertSame('IN_EXAMINATION', $visit->fresh()->status->name);
@@ -212,8 +315,14 @@ final class D01ExaminationTest extends TestCase
 
     private function allowFixtureDoctor(): void
     {
-        Gate::define('doctor.examination', fn (User $user, Doctor $doctor) =>
-            $user->is($this->user) && (int) $doctor->user_id === (int) $user->id);
+        $doctorId = $this->user->doctor()->firstOrFail()->getKey();
+
+        // The test schema has no doctor_type column. Supply it only for this fixture.
+        Event::listen('eloquent.retrieved: '.Doctor::class, static function (Doctor $doctor) use ($doctorId): void {
+            if ($doctor->getKey() === $doctorId) {
+                $doctor->setAttribute('doctor_type', 'EXAMINATION');
+            }
+        });
         $this->actingAs($this->user);
     }
 

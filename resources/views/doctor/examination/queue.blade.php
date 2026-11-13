@@ -4,8 +4,9 @@
 
 @section('title', 'Hàng đợi khám')
 
-@section('content')
+@include('doctor.examination.assets')
 
+@section('content')
     @php
         $filterValues = [
             'date' => $date,
@@ -26,7 +27,7 @@
             )
         );
 
-        $labels = [
+        $actionLabels = [
             'call' => 'Gọi bệnh nhân',
             'recall' => 'Gọi lại',
             'skip' => 'Bỏ qua',
@@ -34,22 +35,16 @@
         ];
     @endphp
 
-    <section class="employee-section reception-work doctor-examination">
+    <section class="employee-section reception-work doctor-examination d01-queue">
 
-        {{-- QUAY LẠI --}}
         <a class="employee-card__link doctor-examination__back" href="{{ route('doctor.examination.rooms.index') }}">
             ← Danh sách phòng
         </a>
 
-        {{-- TIÊU ĐỀ --}}
         <div class="employee-section__heading">
             <div>
                 <h1>{{ $room->name }}</h1>
-
-                <p>
-                    {{ $room->room_code }}
-                    · Hàng đợi của bạn
-                </p>
+                <p>Hàng đợi của bạn</p>
             </div>
 
             <a class="portal-btn portal-btn--secondary" href="{{ $refreshUrl }}">
@@ -57,43 +52,44 @@
             </a>
         </div>
 
-        @if ($room->status !== 'ACTIVE')
-            <div class="portal-alert portal-alert--warning" role="status">
-                Phòng đang ngừng hoạt động.
-                Bạn có thể xem lịch sử hàng đợi.
-            </div>
-        @endif
+        @unless($canOperate)
+            <p class="portal-alert portal-alert--info" role="status">Tài khoản chưa có quyền thao tác hàng đợi. Bạn đang xem ở chế độ chỉ đọc.</p>
+        @endunless
 
         {{-- BỘ LỌC --}}
         <form action="{{ route('doctor.examination.rooms.queue', $room) }}" method="get"
-            class="employee-card employee-filter" data-queue-filter autocomplete="off">
+            class="employee-card employee-filter" aria-label="Lọc hàng đợi khám" autocomplete="off" data-queue-filter>
             <div class="employee-filter__field">
                 <label for="queue-date">Ngày tiếp nhận</label>
 
-                <input id="queue-date" class="form-control" type="date" name="date" value="{{ $filterValues['date'] }}">
+                <input id="queue-date" class="form-control" type="date" name="date" value="{{ $filterValues['date'] }}"
+                    data-default-value="{{ $filterValues['date'] }}">
             </div>
 
             <div class="employee-filter__field">
                 <label for="queue-search">
-                    Bệnh nhân hoặc mã lượt khám
+                    Tên bệnh nhân hoặc số điện thoại
                 </label>
 
                 <input id="queue-search" class="form-control" type="search" name="q" maxlength="100"
-                    value="{{ $filterValues['q'] }}">
+                    placeholder="Nhập tên hoặc số điện thoại..." value="{{ $filterValues['q'] }}"
+                    data-default-value="{{ $filterValues['q'] }}">
             </div>
 
+            {{-- SÁU TRẠNG THÁI --}}
             <div class="employee-filter__field">
-                <label for="queue-status">Trạng thái hàng đợi</label>
+                <label for="queue-status">Trạng thái</label>
 
-                <select id="queue-status" class="form-control" name="status">
+                <select id="queue-status" class="form-control" name="status"
+                    data-default-value="{{ $filterValues['status'] }}">
                     <option value="">Tất cả trạng thái</option>
 
-                    @foreach ($statuses as $status)
-                        <option value="{{ $status->id }}" @selected(
+                    @foreach ($examinationStatusLabels as $code => $label)
+                        <option value="{{ $code }}" @selected(
                             (string) $filterValues['status']
-                            === (string) $status->id
+                            === (string) $code
                         )>
-                            {{ $status->description }}
+                            {{ $label }}
                         </option>
                     @endforeach
                 </select>
@@ -102,7 +98,8 @@
             <div class="employee-filter__field">
                 <label for="queue-shift">Ca lịch hẹn</label>
 
-                <select id="queue-shift" class="form-control" name="shift">
+                <select id="queue-shift" class="form-control" name="shift"
+                    data-default-value="{{ $filterValues['shift'] }}">
                     <option value="">
                         Tất cả, gồm cả lượt đến trực tiếp
                     </option>
@@ -117,7 +114,7 @@
                             'MORNING' => 'Sáng',
                             'AFTERNOON' => 'Chiều',
                         ][$shift] ?? $shift
-                                        }}
+                                            }}
                                 </option>
                     @endforeach
                 </select>
@@ -140,9 +137,8 @@
                 <h2 id="queue-list-title">Hàng đợi khám</h2>
             </div>
 
-            <div class="employee-table-wrap" tabindex="0" role="region" aria-label="Hàng đợi phòng khám">
-                <table class="employee-table">
-
+            <div class="employee-table-wrap d01-table-wrap" tabindex="0" role="region" aria-label="Hàng đợi phòng khám">
+                <table class="employee-table d01-table">
                     <thead>
                         <tr>
                             <th scope="col">Số khám</th>
@@ -156,160 +152,140 @@
 
                     <tbody>
                         @forelse ($queues as $queue)
+                            @php
+                                $visit = $queue->medicalVisit;
 
-                                        @php
-                                            $visit = $queue->medicalVisit;
+                                $queueStatus = $queue->status?->name;
+                                $visitStatus = $visit?->status?->name;
 
-                                            $queueStatus = $queue->status?->name;
-                                            $visitStatus = $visit?->status?->name;
-                                            $displayStatus = $visit->displayStatus();
+                                $businessStatus = $visit?->displayStatus();
 
-                                            $waiting = $queue->queue_type
-                                                === 'RETURN_AFTER_SERVICE'
-                                                ? $visitStatus === 'WAITING_FOR_SERVICE'
-                                                : (
-                                                    $visitStatus === 'WAITING'
-                                                    && !$visit?->examination_started_at
-                                                );
+                                $examinationStatus = $queue->examination_stage;
 
-                                            $phase = $queueWorkflow->phaseToken($queue);
-                                        @endphp
+                                $statusLabel = $examinationStatusLabels[$examinationStatus] ?? 'Chưa xác định';
 
-                                        <tr>
-                                            {{-- SỐ KHÁM --}}
-                                            <td>
-                                                <strong class="doctor-examination__number">
-                                                    {{ $queue->queue_number }}
-                                                </strong>
-                                            </td>
+                                $waiting = $visit
+                                    && (
+                                        $queue->queue_type === 'RETURN_AFTER_SERVICE'
+                                        ? $visitStatus === 'WAITING_FOR_SERVICE'
+                                        : (
+                                            $visitStatus === 'WAITING'
+                                            && !$visit->examination_started_at
+                                        )
+                                    );
 
-                                            {{-- BỆNH NHÂN --}}
-                                            <td class="doctor-examination__patient">
-                                                <strong>
-                                                    {{ $visit?->patient?->full_name ?? '—' }}
-                                                </strong>
-                                                <br>{{ $visit->visit_code }}
-                                            </td>
+                                $canChangeQueue = $canOperate && $visit
+                                    && in_array($examinationStatus, ['WAITING', 'CALLED', 'RETURNING'], true)
+                                    && $room->status === 'ACTIVE'
+                                    && $waiting
+                                    && (bool) ($queue->status?->allows_transition)
+                                    && (bool) ($queue->status?->is_active)
+                                    && $businessStatus !== 'WAITING_FOR_PAYMENT';
 
-                                            {{-- TIẾP NHẬN --}}
-                                            <td>
-                                                {{
-                            $visit?->checked_in_at
-                                    ?->format('H:i d/m/Y')
-                            ?? '—'
-                                                    }}
-                                            </td>
+                                $canCompleteVisit = $canOperate && $visit
+                                    && ($canComplete ?? false)
+                                    && $room->status === 'ACTIVE'
+                                    && $queue->id === (int) $visit->latest_examination_queue_id
+                                    && in_array(
+                                        $queueStatus,
+                                        ['IN_SERVICE', 'COMPLETED'],
+                                        true
+                                    )
+                                    && $visit->examination_started_at
+                                    && !$visit->examination_ended_at
+                                    && in_array(
+                                        $visitStatus,
+                                        ['IN_EXAMINATION', 'RETURNING'],
+                                        true
+                                    );
+                            @endphp
 
-                                            {{-- BÁC SĨ --}}
-                                            <td>
-                                                {{ $visit?->doctor?->full_name ?? '—' }}
-                                            </td>
+                            <tr>
+                                <td>
+                                    <strong class="doctor-examination__number">
+                                        {{ $queue->queue_number }}
+                                    </strong>
+                                </td>
 
-                                            {{-- TRẠNG THÁI --}}
-                                            <td>
-                                                <x-portal.badge :type="\App\Models\AdminDisplay::badge($queueStatus)">
-                                                    {{
-                            $queue->status?->description
-                            ?? 'Chưa xác định'
-                                                        }}
-                                                </x-portal.badge>
-                                                @if($displayStatus && $displayStatus !== $queueStatus)
-                                                    <br><small>{{ \App\Models\AdminDisplay::label($displayStatus) }}</small>
-                                                @endif
-                                            </td>
+                                <td class="doctor-examination__patient">
+                                    <strong class="d01-patient-name">
+                                        {{ $visit?->patient?->full_name ?? '—' }}
+                                    </strong>
 
-                                            {{-- THAO TÁC --}}
-                                            <td>
-                                                <div class="reception-actions doctor-examination__row-actions">
-                                                    @if($canStart && $visit->examination_started_at)
-                                                        <a class="employee-card__link" href="{{ route('doctor.examination.visits.show', $visit) }}">
-                                                            Xem chi tiết
-                                                        </a>
-                                                    @endif
+                                </td>
 
-                                                    @if (
-                                                            $visit
-                                                            && $room->status === 'ACTIVE'
-                                                            && $waiting
-                                                            && $queue->status?->allows_transition
-                                                            && $queue->status?->is_active
-                                                            && $displayStatus !== 'WAITING_FOR_PAYMENT'
-                                                        )
+                                <td>
+                                    {{ $visit?->checked_in_at?->format('H:i d/m/Y') ?? '—' }}
+                                </td>
 
-                                                        @foreach (($actions ?? []) as $action => $transitions)
+                                <td>
+                                    {{ $visit?->doctor?->full_name ?? '—' }}
+                                </td>
 
-                                                            @continue(
-                                                                !isset($labels[$action])
-                                                                || !isset($transitions[$queueStatus])
-                                                                || (
-                                                                    $action === 'start'
-                                                                    && !($canStart ?? false)
-                                                                )
-                                                            )
+                                {{-- SÁU TRẠNG THÁI --}}
+                                <td>
+                                    <span class="d01-status d01-status--{{ $examinationStatus ?? 'unknown' }}">
+                                        {{ $statusLabel }}
+                                    </span>
 
-                                                            @include(
-                                                                'doctor.examination.confirm',
-                                                                [
-                                                                    'dialogId' => $action . '-' . $queue->id,
+                                    @if ($examinationStatus === 'WAITING' && $queueStatus === 'SKIPPED')
+                                        <small class="d01-muted">Đã bỏ qua lượt gọi</small>
+                                    @endif
 
-                                                                    'label' => $labels[$action],
+                                    @if ($businessStatus === 'WAITING_FOR_PAYMENT')
+                                        <small class="d01-muted">Chưa hoàn tất thanh toán</small>
+                                    @endif
+                                </td>
 
-                                                                    'url' => route(
-                                                                        $action === 'start'
-                                                                        ? 'doctor.examination.visits.start'
-                                                                        : 'doctor.examination.queue.' . $action,
-                                                                        [$room, $queue]
-                                                                    ),
+                                {{-- THAO TÁC --}}
+                                <td>
+                                    <div class="d01-actions">
 
-                                                                    'expected' => [
-                                                                        'expected_status' => $queueStatus,
-                                                                        'expected_calls' => $queue->call_count,
-                                                                        'expected_phase' => $phase,
-                                                                    ],
-                                                                ]
-                                                            )
+                                        @if($canOperate && $canStart && $examinationStatus === 'COMPLETED')
+                                            <x-portal.button variant="secondary" :href="route('doctor.examination.visits.show', ['visit' => $visit])">
+                                                Xem chi tiết
+                                            </x-portal.button>
+                                        @elseif($canChangeQueue)
+                                            @php
+                                                $phase = $queueWorkflow->phaseToken($queue);
+                                            @endphp
+                                            @foreach($actions as $action => $transitions)
+                                                @continue(!isset($transitions[$queueStatus]) || ($action === 'start' && !$canStart))
+                                                @php
+                                                    $actionRoute = $action === 'start'
+                                                        ? 'doctor.examination.visits.start'
+                                                        : 'doctor.examination.queue.'.$action;
+                                                @endphp
+                                                @include('doctor.examination.confirm', [
+                                                    'dialogId' => $action.'-'.$queue->id,
+                                                    'label' => $actionLabels[$action],
+                                                    'heading' => $action === 'call' ? 'Xác nhận gọi bệnh nhân' : null,
+                                                    'submitLabel' => $action === 'call' ? 'Xác nhận gọi' : 'Xác nhận',
+                                                    'url' => route($actionRoute, [$room, $queue]),
+                                                    'expected' => [
+                                                        'expected_status' => $queueStatus,
+                                                        'expected_calls' => $queue->call_count,
+                                                        'expected_phase' => $phase,
+                                                    ],
+                                                ])
+                                            @endforeach
+                                            @if($queueStatus === 'CALLED' && !$canStart)
+                                                <small class="d01-muted">Chưa tích hợp trang khám bệnh</small>
+                                            @endif
+                                        @elseif($canCompleteVisit)
+                                            @include('doctor.examination.confirm', [
+                                                'dialogId' => 'complete-'.$queue->id,
+                                                'label' => 'Hoàn tất lượt khám',
+                                                'url' => route('doctor.examination.visits.complete', [$room, $visit]),
+                                                'expected' => [],
+                                            ])
+                                        @else
+                                            <span class="d01-muted">Không có thao tác khả dụng</span>
+                                        @endif
 
-                                                        @endforeach
-                                                    @endif
-
-                                                    {{-- HOÀN TẤT KHÁM --}}
-                                                    @if (
-                                                            $visit
-                                                            && $canComplete
-                                                            && $room->status === 'ACTIVE'
-                                                            && $queue->id === (int) $visit->latest_examination_queue_id
-                                                            && in_array(
-                                                                $queueStatus,
-                                                                ['IN_SERVICE', 'COMPLETED'],
-                                                                true
-                                                            )
-                                                            && $visit->examination_started_at
-                                                            && !$visit->examination_ended_at
-                                                            && in_array(
-                                                                $visitStatus,
-                                                                ['IN_EXAMINATION', 'RETURNING'],
-                                                                true
-                                                            )
-                                                        )
-
-                                                        @include(
-                                                            'doctor.examination.confirm',
-                                                            [
-                                                                'dialogId' => 'complete-' . $queue->id,
-                                                                'label' => 'Hoàn tất lượt khám',
-                                                                'url' => route(
-                                                                    'doctor.examination.visits.complete',
-                                                                    [$room, $visit]
-                                                                ),
-                                                                'expected' => [],
-                                                            ]
-                                                        )
-
-                                                    @endif
-
-                                                </div>
-                                            </td>
-                                        </tr>
+                                    </div>
+                                </td>
+                            </tr>
 
                         @empty
                             <tr>
@@ -319,7 +295,6 @@
                                 </td>
                             </tr>
                         @endforelse
-
                     </tbody>
                 </table>
             </div>
@@ -327,7 +302,6 @@
             <x-portal.pagination :paginator="$queues" />
 
         </section>
-
     </section>
 
 @endsection

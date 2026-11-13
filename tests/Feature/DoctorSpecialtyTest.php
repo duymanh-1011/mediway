@@ -86,13 +86,15 @@ class DoctorSpecialtyTest extends TestCase
     public function test_wrong_specialty_is_rejected_on_schedule_create_and_update(): void
     {
         $wrong = $this->scheduleData($this->specialty('CKDL')->id);
-        foreach (['ACTIVE', 'INACTIVE'] as $status) {
-            $this->post(route('admin.doctor-schedules.store'), [...$wrong, 'status' => $status])->assertSessionHasErrors('doctor_id');
-        }
         $data = $this->scheduleData();
-        $this->post(route('admin.doctor-schedules.store'), $data)->assertSessionHasNoErrors();
-        $schedule = DoctorSchedule::whereDate('work_date', $data['work_date'])->where('doctor_id', $data['doctor_id'])->sole();
-        $this->put(route('admin.doctor-schedules.update', $schedule), $wrong)->assertSessionHasErrors('doctor_id');
+        $this->put(route('admin.doctor-schedules.month.update', $data['doctor_id']), [
+            'date' => $data['work_date'], 'shift' => 'MORNING', 'state' => 'WORKING',
+            'specialty_id' => $wrong['specialty_id'], 'room_id' => $wrong['examination_room_id'],
+        ])->assertSessionHasErrors('specialty_id');
+        $schedule = DoctorSchedule::create($data);
+        foreach (['ACTIVE', 'INACTIVE'] as $status) {
+            $this->put(route('admin.doctor-schedules.update', $schedule), [...$wrong, 'status' => $status])->assertSessionHasErrors('doctor_id');
+        }
         $this->assertSame($data['specialty_id'], $schedule->fresh()->specialty_id);
     }
 
@@ -102,9 +104,10 @@ class DoctorSpecialtyTest extends TestCase
         foreach (Specialty::all() as $index => $specialty) {
             $room = ExaminationRoom::create(['room_code' => 'TESTROOM'.($index + 1), 'name' => 'Phòng kiểm thử',
                 'specialty_id' => $specialty->id, 'status' => 'ACTIVE']);
-            $this->post(route('admin.doctor-schedules.store'), [...$this->scheduleData($specialty->id),
-                'examination_room_id' => $room->id,
-                'work_date' => today()->addDays($index + 1)->toDateString()])->assertSessionHasNoErrors();
+            $this->put(route('admin.doctor-schedules.month.update', $this->doctor()), [
+                'shift' => 'MORNING', 'state' => 'WORKING', 'specialty_id' => $specialty->id, 'room_id' => $room->id,
+                'date' => today()->addDays($index + 1)->toDateString(),
+            ])->assertSessionHasNoErrors();
         }
         $this->assertSame(Specialty::count(), DoctorSchedule::where('doctor_id', $this->doctor()->id)->whereDate('work_date', '>', today())->count());
     }

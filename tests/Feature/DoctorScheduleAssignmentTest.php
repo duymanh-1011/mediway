@@ -66,19 +66,17 @@ class DoctorScheduleAssignmentTest extends TestCase
         DB::table('doctor_schedules')->where('id', $working->id)->update(['examination_room_id' => null]);
     }
 
-    public function test_legacy_form_respects_a_standard_day_off_and_allows_an_adjacent_shift(): void
+    public function test_old_create_submission_redirects_without_creating_a_daily_schedule(): void
     {
         $this->signInAsAdmin();
         $data = $this->shiftData('MORNING');
         DoctorSchedule::create([...$data, 'status' => 'INACTIVE', 'specialty_id' => null, 'examination_room_id' => null]);
         $fields = Arr::except($data, ['shift_code', 'start_time', 'end_time']);
 
-        $this->post(route('admin.doctor-schedules.store'), [...$fields, 'start_time' => '08:00', 'end_time' => '11:00'])
-            ->assertSessionHasErrors('schedule_conflict');
         $this->post(route('admin.doctor-schedules.store'), [...$fields, 'start_time' => '11:30', 'end_time' => '12:00'])
-            ->assertSessionHasNoErrors()->assertSessionHas('success');
+            ->assertStatus(303)->assertRedirect(route('admin.doctor-schedules.month.index'))->assertSessionHas('error');
 
-        $this->assertSame(2, DoctorSchedule::where('doctor_id', $data['doctor_id'])->whereDate('work_date', $data['work_date'])->count());
+        $this->assertSame(1, DoctorSchedule::where('doctor_id', $data['doctor_id'])->whereDate('work_date', $data['work_date'])->count());
     }
 
     public function test_manual_routes_cannot_edit_delete_or_add_slots_to_standard_shifts(): void

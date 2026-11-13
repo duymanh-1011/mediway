@@ -156,15 +156,17 @@ class WorkflowIntegrityTest extends TestCase
         $room = ExaminationRoom::where('room_code', 'PKTMH01')->firstOrFail();
         $data = ['doctor_id' => $doctor->id, 'specialty_id' => $specialty->id, 'examination_room_id' => $room->id,
             'work_date' => '2026-10-28', 'start_time' => '09:00', 'end_time' => '10:00', 'status' => 'ACTIVE'];
-        foreach (['doctor_id' => $doctor, 'specialty_id' => $specialty, 'examination_room_id' => $room] as $field => $parent) {
+        $route = route('admin.doctor-schedules.month.update', $doctor);
+        $shift = ['date' => $data['work_date'], 'shift' => 'MORNING', 'state' => 'WORKING',
+            'specialty_id' => $specialty->id, 'room_id' => $room->id];
+        foreach ([[$doctor, 'specialty_id'], [$specialty, 'specialty_id'], [$room, 'examination_room_id']] as [$parent, $field]) {
             $parent->update(['status' => 'INACTIVE']);
-            $this->post(route('admin.doctor-schedules.store'), $data)->assertSessionHasErrors($field);
+            $this->put($route, $shift)->assertSessionHasErrors($field);
             $parent->update(['status' => 'ACTIVE']);
         }
         $doctor->update(['status' => 'INACTIVE']);
         $data['status'] = 'INACTIVE';
-        $this->post(route('admin.doctor-schedules.store'), $data)->assertSessionHasNoErrors();
-        $schedule = DoctorSchedule::where('doctor_id', $doctor->id)->whereDate('work_date', '2026-10-28')->sole();
+        $schedule = DoctorSchedule::create($data);
         $this->put(route('admin.doctor-schedules.update', $schedule), [...$data, 'status' => 'ACTIVE'])->assertSessionHasErrors('doctor_id');
         $this->assertSame('INACTIVE', $schedule->fresh()->status);
     }

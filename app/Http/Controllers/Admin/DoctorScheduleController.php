@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreDoctorScheduleRequest;
 use App\Http\Requests\Admin\UpdateDoctorScheduleRequest;
 use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\AppointmentTimeSlot;
 use App\Models\ExaminationRoom;
 use App\Models\Specialty;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,536 +16,33 @@ use Illuminate\Validation\ValidationException;
 
 class DoctorScheduleController extends Controller
 {
-    public function index(Request $request)
+    public function redirectToMonth(Request $request): RedirectResponse
     {
-        $keyword = trim(
-            (string) $request->get('keyword')
-        );
+        $filters = $request->validate([
+            'doctor_id' => 'nullable|integer|min:1',
+            'month' => 'nullable|date_format:Y-m',
+            'work_date' => 'nullable|date_format:Y-m-d',
+            'keyword' => 'nullable|string|max:100',
+        ]);
 
-        $doctorId =
-            $request->get('doctor_id');
-
-        $specialtyId =
-            $request->get('specialty_id');
-
-        $roomId =
-            $request->get('examination_room_id');
-
-        $status =
-            $request->get('status');
-
-        $workDate =
-            $request->get('work_date');
-
-        $query =
-            DoctorSchedule::query()
-                ->whereNull('shift_code')
-                ->with([
-                    'doctor',
-                    'specialty',
-                    'examinationRoom',
-                ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Tìm kiếm
-        |--------------------------------------------------------------------------
-        */
-
-        if ($keyword !== '') {
-
-            $query->where(
-                function ($q) use ($keyword) {
-
-                    $q->whereHas(
-                        'doctor',
-                        function ($doctorQuery) use ($keyword) {
-
-                            $doctorQuery
-                                ->where(
-                                    'doctor_code',
-                                    'like',
-                                    "%{$keyword}%"
-                                )
-                                ->orWhere(
-                                    'full_name',
-                                    'like',
-                                    "%{$keyword}%"
-                                );
-                        }
-                    )
-                        ->orWhereHas(
-                            'specialty',
-                            function ($specialtyQuery) use ($keyword) {
-
-                                $specialtyQuery
-                                    ->where(
-                                        'name',
-                                        'like',
-                                        "%{$keyword}%"
-                                    );
-                            }
-                        )
-                        ->orWhereHas(
-                            'examinationRoom',
-                            function ($roomQuery) use ($keyword) {
-
-                                $roomQuery
-                                    ->where(
-                                        'room_code',
-                                        'like',
-                                        "%{$keyword}%"
-                                    )
-                                    ->orWhere(
-                                        'name',
-                                        'like',
-                                        "%{$keyword}%"
-                                    );
-                            }
-                        );
-                }
-            );
+        $month = $filters['month'] ?? (isset($filters['work_date']) ? substr($filters['work_date'], 0, 7) : null);
+        if (isset($filters['doctor_id']) && Doctor::whereKey($filters['doctor_id'])->exists()) {
+            return redirect()->route('admin.doctor-schedules.month.show', [
+                'doctor' => $filters['doctor_id'],
+                'month' => $month,
+            ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Bộ lọc
-        |--------------------------------------------------------------------------
-        */
-
-        if (! empty($doctorId)) {
-
-            $query->where(
-                'doctor_id',
-                $doctorId
-            );
-        }
-
-        if (! empty($specialtyId)) {
-
-            $query->where(
-                'specialty_id',
-                $specialtyId
-            );
-        }
-
-        if (! empty($roomId)) {
-
-            $query->where(
-                'examination_room_id',
-                $roomId
-            );
-        }
-
-        if (! empty($workDate)) {
-
-            $query->whereDate(
-                'work_date',
-                $workDate
-            );
-        }
-
-        if (
-            in_array(
-                $status,
-                ['ACTIVE', 'INACTIVE'],
-                true
-            )
-        ) {
-            $status === 'ACTIVE' ? $query->effectiveActive() : $query->effectiveInactive();
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Đếm slot
-        |--------------------------------------------------------------------------
-        */
-
-        $query->withCount(
-            'appointmentTimeSlots'
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Danh sách
-        |--------------------------------------------------------------------------
-        */
-
-        $doctorSchedules =
-            $query
-                ->orderByDesc('work_date')
-                ->orderBy('start_time')
-                ->paginate(10)
-                ->withQueryString();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Dữ liệu filter
-        |--------------------------------------------------------------------------
-        */
-
-        $doctors =
-            Doctor::query()
-                ->with('specialty')
-                ->orderBy('full_name')
-                ->get();
-
-        $specialties =
-            Specialty::query()
-                ->orderBy('name')
-                ->get();
-
-        $examinationRooms =
-            ExaminationRoom::query()
-                ->orderBy('name')
-                ->get();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Thống kê
-        |--------------------------------------------------------------------------
-        */
-
-        $legacySchedules = DoctorSchedule::whereNull('shift_code');
-        $totalSchedules = (clone $legacySchedules)->count();
-        $activeSchedules = (clone $legacySchedules)->effectiveActive()->count();
-
-        $todaySchedules =
-            $legacySchedules->whereDate(
-                'work_date',
-                now()->toDateString()
-            )->count();
-
-        return view(
-            'admin.doctor-schedules.index',
-            compact(
-                'doctorSchedules',
-                'doctors',
-                'specialties',
-                'examinationRooms',
-                'keyword',
-                'doctorId',
-                'specialtyId',
-                'roomId',
-                'status',
-                'workDate',
-                'totalSchedules',
-                'activeSchedules',
-                'todaySchedules'
-            )
-        );
+        return redirect()->route('admin.doctor-schedules.month.index', [
+            'keyword' => $filters['keyword'] ?? null,
+            'month' => $month,
+        ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Calendar
-    |--------------------------------------------------------------------------
-    */
-
-    public function calendar(Request $request)
+    public function redirectLegacyStore(): RedirectResponse
     {
-        $month =
-            $request->get(
-                'month',
-                now()->format('Y-m')
-            );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Kiểm tra format tháng
-        |--------------------------------------------------------------------------
-        */
-
-        try {
-
-            $currentMonth =
-                Carbon::createFromFormat(
-                    '!Y-m',
-                    $month
-                )->startOfMonth();
-
-        } catch (\Throwable $exception) {
-
-            $currentMonth =
-                now()->startOfMonth();
-
-            $month =
-                $currentMonth->format('Y-m');
-        }
-
-        $doctorId =
-            $request->get('doctor_id');
-
-        $specialtyId =
-            $request->get('specialty_id');
-
-        $roomId =
-            $request->get(
-                'examination_room_id'
-            );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Phạm vi tháng
-        |--------------------------------------------------------------------------
-        */
-
-        $monthStart =
-            $currentMonth
-                ->copy()
-                ->startOfMonth();
-
-        $monthEnd =
-            $currentMonth
-                ->copy()
-                ->endOfMonth();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Calendar luôn bắt đầu Thứ 2
-        |--------------------------------------------------------------------------
-        */
-
-        $calendarStart =
-            $monthStart
-                ->copy()
-                ->startOfWeek(
-                    Carbon::MONDAY
-                );
-
-        $calendarEnd =
-            $monthEnd
-                ->copy()
-                ->endOfWeek(
-                    Carbon::SUNDAY
-                );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Lấy lịch
-        |--------------------------------------------------------------------------
-        */
-
-        $query =
-            DoctorSchedule::query()
-                ->whereNull('shift_code')
-                ->with([
-                    'doctor',
-                    'specialty',
-                    'examinationRoom',
-                ])
-                ->whereBetween(
-                    'work_date',
-                    [
-                        $calendarStart
-                            ->format('Y-m-d'),
-
-                        $calendarEnd
-                            ->format('Y-m-d'),
-                    ]
-                );
-
-        if (! empty($doctorId)) {
-
-            $query->where(
-                'doctor_id',
-                $doctorId
-            );
-        }
-
-        if (! empty($specialtyId)) {
-
-            $query->where(
-                'specialty_id',
-                $specialtyId
-            );
-        }
-
-        if (! empty($roomId)) {
-
-            $query->where(
-                'examination_room_id',
-                $roomId
-            );
-        }
-
-        $schedules =
-            $query
-                ->orderBy('work_date')
-                ->orderBy('start_time')
-                ->get()
-                ->groupBy(
-                    function (
-                        DoctorSchedule $schedule
-                    ) {
-                        return $schedule
-                            ->work_date
-                            ->format('Y-m-d');
-                    }
-                );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Tạo danh sách ngày cho calendar
-        |--------------------------------------------------------------------------
-        */
-
-        $calendarDays =
-            collect();
-
-        $cursor =
-            $calendarStart->copy();
-
-        while (
-            $cursor->lte($calendarEnd)
-        ) {
-            $calendarDays->push(
-                $cursor->copy()
-            );
-
-            $cursor->addDay();
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Dữ liệu filter
-        |--------------------------------------------------------------------------
-        */
-
-        $doctors =
-            Doctor::query()
-                ->with('specialty')
-                ->orderBy('full_name')
-                ->get();
-
-        $specialties =
-            Specialty::query()
-                ->orderBy('name')
-                ->get();
-
-        $examinationRooms =
-            ExaminationRoom::query()
-                ->orderBy('name')
-                ->get();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Điều hướng tháng
-        |--------------------------------------------------------------------------
-        */
-
-        $previousMonth =
-            $currentMonth
-                ->copy()
-                ->subMonth()
-                ->format('Y-m');
-
-        $nextMonth =
-            $currentMonth
-                ->copy()
-                ->addMonth()
-                ->format('Y-m');
-
-        return view(
-            'admin.doctor-schedules.calendar',
-            compact(
-                'currentMonth',
-                'calendarDays',
-                'schedules',
-                'doctors',
-                'specialties',
-                'examinationRooms',
-                'doctorId',
-                'specialtyId',
-                'roomId',
-                'month',
-                'previousMonth',
-                'nextMonth'
-            )
-        );
-    }
-
-    public function create()
-    {
-        $doctors =
-            Doctor::query()
-                ->with('specialty')
-                ->whereHas('specialty', fn ($query) => $query->where('status', 'ACTIVE'))
-                ->where(
-                    'status',
-                    'ACTIVE'
-                )
-                ->orderBy('full_name')
-                ->get();
-
-        $specialties =
-            Specialty::query()
-                ->where(
-                    'status',
-                    'ACTIVE'
-                )
-                ->orderBy('name')
-                ->get();
-
-        $examinationRooms =
-            ExaminationRoom::query()
-                ->where(
-                    'status',
-                    'ACTIVE'
-                )
-                ->orderBy('name')
-                ->get();
-
-        return view(
-            'admin.doctor-schedules.create',
-            compact(
-                'doctors',
-                'specialties',
-                'examinationRooms'
-            )
-        );
-    }
-
-    public function store(
-        StoreDoctorScheduleRequest $request
-    ): RedirectResponse {
-        return DB::transaction(function () use ($request): RedirectResponse {
-            $data = $request->validated();
-
-            $this->lockActiveScheduleParents($data);
-
-            if ($data['status'] === 'ACTIVE') {
-
-                $conflictMessage =
-                    $this->getConflictMessage(
-                        $data
-                    );
-
-                if ($conflictMessage !== null) {
-
-                    return back()
-                        ->withInput()
-                        ->withErrors([
-                            'schedule_conflict' => $conflictMessage,
-                        ]);
-                }
-            }
-
-            $doctorSchedule =
-                DoctorSchedule::create(
-                    $data
-                );
-
-            return redirect()
-                ->route(
-                    'admin.doctor-schedules.show',
-                    $doctorSchedule
-                )
-                ->with(
-                    'success',
-                    'Thêm lịch làm việc bác sĩ thành công.'
-                );
-        }, 3);
+        return redirect()->route('admin.doctor-schedules.month.index', [], 303)
+            ->with('error', 'Vui lòng chọn bác sĩ và xếp ca trong lịch tháng.');
     }
 
     public function show(
@@ -769,7 +264,8 @@ class DoctorScheduleController extends Controller
 
             return redirect()
                 ->route(
-                    'admin.doctor-schedules.index'
+                    'admin.doctor-schedules.show',
+                    $doctorSchedule
                 )
                 ->with(
                     'error',
@@ -804,7 +300,8 @@ class DoctorScheduleController extends Controller
 
         return redirect()
             ->route(
-                'admin.doctor-schedules.index'
+                'admin.doctor-schedules.month.show',
+                [$doctorSchedule->doctor_id, 'month' => $doctorSchedule->work_date->format('Y-m')]
             )
             ->with(
                 'success',

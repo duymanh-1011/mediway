@@ -177,7 +177,7 @@ class AdminPresentationConsistencyTest extends TestCase
     {
         $doctor = Doctor::where('doctor_code', 'BS000001')->firstOrFail();
         $this->get(route('admin.doctors.show', $doctor))->assertOk()->assertDontSee('sẽ được')
-            ->assertSee(route('admin.doctor-schedules.index', ['doctor_id' => $doctor->id]))
+            ->assertSee(route('admin.doctor-schedules.month.show', $doctor))
             ->assertSee(route('admin.appointments.index', ['doctor_id' => $doctor->id]))
             ->assertSee(route('admin.visits.index', ['doctor_id' => $doctor->id]));
         $response = $this->get(route('admin.users.show', $doctor->user))->assertOk()->assertSee('Xem hồ sơ')->assertSee(route('admin.doctors.show', $doctor));

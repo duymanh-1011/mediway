@@ -12,7 +12,9 @@ use ZipArchive;
 
 class DoctorScheduleWorkbook
 {
-    private const HEADERS = ['Ngày', 'Ca sáng', 'Ca chiều'];
+    private const HEADERS = ['Ngày', 'Ca sáng', 'Phòng khám ca sáng', 'Ca chiều', 'Phòng khám ca chiều'];
+
+    private const LEGACY_HEADERS = ['Ngày', 'Ca sáng', 'Ca chiều'];
 
     public function read(string $path, string $month): array
     {
@@ -20,8 +22,8 @@ class DoctorScheduleWorkbook
         $reader = new XlsxReader;
         try {
             $info = $reader->listWorksheetInfo($path);
-            if (count($info) !== 1 || $info[0]['totalRows'] > 32 || $info[0]['totalColumns'] !== 3) {
-                $this->invalid('File cần một trang tính, đúng ba cột và tối đa 31 dòng dữ liệu.');
+            if (count($info) !== 1 || $info[0]['totalRows'] > 32 || ! in_array($info[0]['totalColumns'], [3, 5], true)) {
+                $this->invalid('Tệp cần một trang tính và tối đa 31 dòng dữ liệu theo mẫu nhập lịch.');
             }
             $book = $reader->load($path);
         } catch (\PhpOffice\PhpSpreadsheet\Reader\Exception | \PhpOffice\PhpSpreadsheet\Exception $error) {
@@ -30,14 +32,18 @@ class DoctorScheduleWorkbook
 
         try {
             $sheet = $book->getSheet(0);
-            $headers = array_map(fn ($column) => trim((string) $sheet->getCell($column.'1')->getValue()), ['A', 'B', 'C']);
-            if ($headers !== self::HEADERS) {
-                $this->invalid('Dòng đầu cần có đúng các cột Ngày, Ca sáng và Ca chiều.');
+            $columns = array_slice(['A', 'B', 'C', 'D', 'E'], 0, $info[0]['totalColumns']);
+            $legacy = count($columns) === 3;
+            $headers = array_map(fn ($column) => trim((string) $sheet->getCell($column.'1')->getValue()), $columns);
+            if ($headers !== ($legacy ? self::LEGACY_HEADERS : self::HEADERS)) {
+                $this->invalid('Tiêu đề cột không khớp. Hãy tải mẫu Excel từ trang lịch tháng.');
             }
+            $shiftColumns = $legacy ? ['MORNING' => [1, null], 'AFTERNOON' => [2, null]]
+                : ['MORNING' => [1, 2], 'AFTERNOON' => [3, 4]];
             $days = [];
             for ($row = 2; $row <= $sheet->getHighestDataRow(); $row++) {
                 $values = [];
-                foreach (['A', 'B', 'C'] as $column) {
+                foreach ($columns as $column) {
                     $cell = $sheet->getCell($column.$row);
                     if ($cell->getDataType() === DataType::TYPE_FORMULA) {
                         $this->invalid("Dòng $row chứa công thức. Hãy nhập giá trị trực tiếp.");
@@ -54,12 +60,22 @@ class DoctorScheduleWorkbook
                 if (isset($days[$date])) {
                     $this->invalid("Ngày ở dòng $row bị trùng.");
                 }
-                foreach (['MORNING' => 1, 'AFTERNOON' => 2] as $code => $column) {
-                    $days[$date][$code] = match (mb_strtoupper(trim((string) $values[$column]))) {
+                foreach ($shiftColumns as $code => [$statusColumn, $roomColumn]) {
+                    $shift = $code === 'MORNING' ? 'ca sáng' : 'ca chiều';
+                    $state = match (mb_strtoupper(trim((string) $values[$statusColumn]))) {
                         'LÀM' => 'WORKING',
                         'NGHỈ' => 'OFF',
-                        default => $this->invalid("Trạng thái ở dòng $row phải là LÀM hoặc NGHỈ."),
+                        'GIỮ NGUYÊN' => 'KEEP',
+                        default => $this->invalid("Dòng $row ($shift): chọn LÀM, NGHỈ hoặc GIỮ NGUYÊN."),
                     };
+                    $roomCode = $roomColumn === null ? '' : trim(explode(' | ', trim((string) $values[$roomColumn]), 2)[0]);
+                    if (! $legacy && $state === 'WORKING' && $roomCode === '') {
+                        $this->invalid("Dòng $row ($shift): nhập mã phòng khám cho ca LÀM.");
+                    }
+                    if ($state === 'OFF' && $roomCode !== '') {
+                        $this->invalid("Dòng $row ($shift): để trống phòng khám cho ca NGHỈ.");
+                    }
+                    $days[$date][$code] = ['state' => $state, 'room_code' => $roomCode !== '' ? $roomCode : null];
                 }
             }
             if ($days === []) {
@@ -73,27 +89,35 @@ class DoctorScheduleWorkbook
         }
     }
 
-    public function template(): Spreadsheet
+    public function template(string $month): Spreadsheet
     {
         $book = new Spreadsheet;
         $sheet = $book->getActiveSheet();
         $sheet->setTitle('Lịch bác sĩ');
         $sheet->fromArray(self::HEADERS, null, 'A1');
-        $sheet->getStyle('A1:C1')->getFont()->setBold(true);
-        $sheet->freezePane('A2');
-        foreach (['A', 'B', 'C'] as $column) {
-            $sheet->getColumnDimension($column)->setWidth(18);
+        $first = \DateTimeImmutable::createFromFormat('!Y-m', $month);
+        $numberOfDays = (int) $first->format('t');
+        for ($day = 0; $day < $numberOfDays; $day++) {
+            $sheet->fromArray([Date::PHPToExcel($first->modify("+$day days")), 'GIỮ NGUYÊN', null, 'GIỮ NGUYÊN'], null, 'A'.($day + 2));
         }
-        $sheet->getStyle('A2:A32')->getNumberFormat()->setFormatCode('dd/mm/yyyy');
-        $sheet->setDataValidation('B2:C32', (new DataValidation)
+        $lastRow = $numberOfDays + 1;
+        $sheet->getStyle('A1:E1')->getFont()->setBold(true);
+        $sheet->freezePane('A2');
+        foreach (['A' => 16, 'B' => 18, 'C' => 44, 'D' => 18, 'E' => 44] as $column => $width) {
+            $sheet->getColumnDimension($column)->setWidth($width);
+        }
+        $sheet->getStyle('A2:A'.$lastRow)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+        $statusValidation = (new DataValidation)
             ->setType(DataValidation::TYPE_LIST)
             ->setErrorStyle(DataValidation::STYLE_STOP)
             ->setAllowBlank(true)
             ->setShowDropDown(true)
             ->setShowErrorMessage(true)
             ->setErrorTitle('Trạng thái không hợp lệ')
-            ->setError('Chọn LÀM hoặc NGHỈ.')
-            ->setFormula1('"LÀM,NGHỈ"'));
+            ->setError('Chọn LÀM, NGHỈ hoặc GIỮ NGUYÊN.')
+            ->setFormula1('"LÀM,NGHỈ,GIỮ NGUYÊN"');
+        $sheet->setDataValidation('B2:B'.$lastRow, $statusValidation);
+        $sheet->setDataValidation('D2:D'.$lastRow, clone $statusValidation);
 
         return $book;
     }

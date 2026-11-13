@@ -7,7 +7,6 @@ use Carbon\CarbonImmutable;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -73,20 +72,16 @@ class DoctorScheduleFoundationTest extends TestCase
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $data = $this->scheduleData();
         $oldId = DB::table('doctor_schedules')->insertGetId($data);
-        $route = route('admin.doctor-schedules.store');
-        $fields = Arr::except($data, ['created_at', 'updated_at', 'shift_code']);
-        $shifts = config('doctor_schedules.shifts');
+        $route = route('admin.doctor-schedules.month.update', $data['doctor_id']);
+        $fields = ['date' => $data['work_date'], 'state' => 'WORKING', 'specialty_id' => $data['specialty_id'],
+            'room_id' => $data['examination_room_id']];
 
-        $this->post($route, [
-            ...$fields, 'start_time' => substr($shifts['MORNING']['start'], 0, 5), 'end_time' => substr($shifts['MORNING']['end'], 0, 5),
-        ])->assertSessionHasErrors('schedule_conflict');
+        $this->put($route, [...$fields, 'shift' => 'MORNING'])->assertSessionHasErrors('shift');
         $this->assertDatabaseHas('doctor_schedules', [
             'id' => $oldId, 'shift_code' => null, 'start_time' => '08:00:00', 'end_time' => '11:00:00',
         ]);
 
-        $this->post($route, [
-            ...$fields, 'start_time' => substr($shifts['AFTERNOON']['start'], 0, 5), 'end_time' => substr($shifts['AFTERNOON']['end'], 0, 5),
-        ])->assertSessionHasNoErrors();
+        $this->put($route, [...$fields, 'shift' => 'AFTERNOON'])->assertSessionHasNoErrors();
         $this->assertSame(2, DB::table('doctor_schedules')->where('doctor_id', $data['doctor_id'])->whereDate('work_date', $data['work_date'])->count());
     }
 

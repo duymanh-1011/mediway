@@ -23,7 +23,7 @@ class DoctorMonthlyScheduleService
         'doctor_id', 'work_date', 'shift_code', 'start_time', 'end_time', 'status', 'specialty_id', 'examination_room_id',
     ];
 
-    public function __construct(private DoctorScheduleSlots $slots) {}
+    public function __construct(private DoctorScheduleSlots $slots, private DoctorShiftHours $shiftHours) {}
 
     public function forMonth(User $actor, int $doctorId, string $month): array
     {
@@ -37,16 +37,18 @@ class DoctorMonthlyScheduleService
             ->orderBy('start_time')->orderBy('id')->get()
             ->groupBy(fn (DoctorSchedule $schedule) => $schedule->work_date->toDateString());
 
+        $shiftHours = $this->shiftHours->current();
         $days = [];
         for ($day = $firstDay; $day < $nextMonth; $day = $day->addDay()) {
             $date = $day->toDateString();
             $schedules = $byDay->get($date, collect());
             $standard = $schedules->whereNotNull('shift_code')->keyBy('shift_code');
             $shifts = [];
-            foreach (config('doctor_schedules.shifts') as $code => $hours) {
+            foreach ($shiftHours as $code => $hours) {
                 $schedule = $standard->get($code);
                 $shifts[$code] = [
-                    ...$hours,
+                    'start' => $schedule?->start_time ?? $hours['start'],
+                    'end' => $schedule?->end_time ?? $hours['end'],
                     'state' => match ($schedule?->status) {
                         'ACTIVE' => 'WORKING',
                         'INACTIVE' => 'OFF',
@@ -59,7 +61,7 @@ class DoctorMonthlyScheduleService
             $days[$date] = ['shifts' => $shifts, 'legacy_schedules' => $schedules->whereNull('shift_code')->values()];
         }
 
-        return ['doctor' => $doctor, 'month' => $month, 'days' => $days];
+        return ['doctor' => $doctor, 'month' => $month, 'days' => $days, 'shiftHours' => $shiftHours];
     }
 
     public function updateShift(
@@ -74,15 +76,13 @@ class DoctorMonthlyScheduleService
         bool $preview = false,
     ): DoctorSchedule {
         $actor = $this->authorize($actor);
-        $shifts = config('doctor_schedules.shifts');
         Validator::make(
             ['date' => $date, 'shift' => $shiftCode, 'state' => $state],
-            ['date' => 'required|date_format:Y-m-d', 'shift' => ['required', Rule::in(array_keys($shifts))], 'state' => 'required|in:WORKING,OFF'],
+            ['date' => 'required|date_format:Y-m-d', 'shift' => ['required', Rule::in(array_keys(config('doctor_schedules.shifts')))], 'state' => 'required|in:WORKING,OFF'],
         )->validate();
         $endOfDay = CarbonImmutable::createFromFormat('!Y-m-d', $date, config('app.timezone'))->addDay()->toDateString();
-        $hours = $shifts[$shiftCode];
-
-        $apply = function () use ($actor, $doctorId, $date, $endOfDay, $shiftCode, $state, $expectedRevision, $specialtyId, $roomId, $hours, $preview) {
+        $apply = function () use ($actor, $doctorId, $date, $endOfDay, $shiftCode, $state, $expectedRevision, $specialtyId, $roomId, $preview) {
+            $hours = $this->shiftHours->current(lock: ! $preview)[$shiftCode];
             $cell = DoctorSchedule::where('doctor_id', $doctorId)->where('shift_code', $shiftCode)
                 ->where('work_date', '>=', $date)->where('work_date', '<', $endOfDay);
             // Existing booking and reception writers lock the schedule before the doctor.
@@ -101,7 +101,10 @@ class DoctorMonthlyScheduleService
             $before = $schedule ? $this->snapshot($schedule) : [];
             $schedule ??= new DoctorSchedule(['doctor_id' => $doctorId, 'work_date' => $date, 'shift_code' => $shiftCode]);
             $schedule->fill([
-                ...$assignment, 'start_time' => $hours['start'], 'end_time' => $hours['end'], 'status' => $working ? 'ACTIVE' : 'INACTIVE',
+                ...$assignment,
+                'start_time' => $schedule->start_time ?? $hours['start'],
+                'end_time' => $schedule->end_time ?? $hours['end'],
+                'status' => $working ? 'ACTIVE' : 'INACTIVE',
             ]);
             if (! $schedule->isDirty()) {
                 if ($working) {

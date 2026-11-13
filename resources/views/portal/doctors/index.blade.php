@@ -22,79 +22,28 @@
             $doctorId
         );
 
-        $now = now();
-
-        // Một bác sĩ chỉ xuất hiện một lần.
-        // Mỗi ngày chứa các slot của ca sáng và chiều.
         $doctorCards = $schedules
             ->groupBy('doctor_id')
-            ->map(function ($items) use ($now) {
+            ->map(function ($items) {
                 $days = $items
-                    ->sortBy(
-                        fn($schedule) =>
-                            $schedule->work_date->format('Y-m-d')
-                            . ' '
-                            . $schedule->start_time
-                    )
-                    ->groupBy(
-                        fn($schedule) =>
-                            $schedule->work_date->format('Y-m-d')
-                    )
-                    ->map(function ($daySchedules, $dayKey) use ($now) {
+                    ->groupBy(fn ($schedule) => $schedule->work_date->format('Y-m-d'))
+                    ->map(function ($daySchedules) {
                         $entries = $daySchedules
-                            ->flatMap(
-                                function ($schedule) use ($dayKey, $now) {
-                                    return $schedule
-                                        ->appointmentTimeSlots
-                                        ->map(
-                                            function ($slot) use ($schedule, $dayKey, $now) {
-                                                $startsAt =
-                                                    \Illuminate\Support\Carbon::parse(
-                                                        $dayKey
-                                                        . ' '
-                                                        . substr(
-                                                            (string) $slot->start_time,
-                                                            0,
-                                                            8
-                                                        )
-                                                    );
+                            ->flatMap(fn ($schedule) => $schedule->appointmentTimeSlots->map(function ($slot) use ($schedule) {
+                                $window = \App\Support\Portal\PatientBookingWindow::slotWindow($schedule, $slot);
 
-                                                $cutoff = $startsAt->copy()->setTimeFromTimeString(config('doctor_schedules.shifts.AFTERNOON.start'));
-                                                $deadline = $startsAt->lt($cutoff) ? $startsAt->copy()->startOfDay() : $cutoff;
-                                                $state = 'open';
-
-                                                return [
-                                                    'slot' => $slot,
-                                                    'schedule' => $schedule,
-                                                    'starts_at' => $startsAt,
-                                                    'registered' => (int) $slot->booked_count,
-                                                    'deadline' => $deadline,
-                                                    'state' => $state,
-                                                    'period' =>
-                                                        (int) $startsAt->format('H') < 12
-                                                        ? 'morning'
-                                                        : 'afternoon',
-                                                ];
-                                            }
-                                        );
-                                }
-                            )
-                            ->sortBy(
-                                fn($entry) =>
-                                    $entry['starts_at']->timestamp
-                            )
+                                return [
+                                    'slot' => $slot,
+                                    'schedule' => $schedule,
+                                    'deadline' => $window['deadline'],
+                                    'state' => 'open',
+                                    'period' => strtolower($window['shift']),
+                                ];
+                            }))
+                            ->sortBy(fn ($entry) => $entry['slot']->start_time)
                             ->values();
 
-                        return [
-                            'entries' => $entries,
-                            'available' =>
-                                $entries->where('state', 'open')->count(),
-                            'all_past' =>
-                                $entries->every(
-                                    fn($entry) =>
-                                        $entry['state'] === 'past'
-                                ),
-                        ];
+                        return ['entries' => $entries, 'available' => $entries->count()];
                     });
 
                 return [
@@ -106,12 +55,6 @@
                         ->implode(' · '),
                     'days' => $days,
                     'available' => $days->sum('available'),
-                    'open_days' => $days
-                        ->filter(
-                            fn($day) =>
-                                $day['available'] > 0
-                        )
-                        ->count(),
                 ];
             })
             ->values();
@@ -144,8 +87,7 @@
                 <h1>Tra cứu bác sĩ và lịch khám</h1>
 
                 <p class="portal-lead">
-                    Bạn có thể đặt đến hết ngày kia. Trước 13:30, bạn có thể đặt từ ca chiều hôm nay.
-                    Từ 13:30, lịch nhận đặt bắt đầu từ ca sáng ngày mai.
+                    Bạn có thể đặt đến hết ngày kia. Nếu khám trong ngày, hãy đặt trước khi ca chiều của bác sĩ bắt đầu.
                 </p>
             </div>
         </section>
@@ -365,12 +307,6 @@
                                                         <a href="{{ route('patient.doctors.show', $doctor) }}">{{ $doctor->full_name }}</a>
                                                     </h3>
 
-                                                    <p class="mw-doctor-sub">
-                                                        {{ $days->count() }} ngày làm việc
-                                                        ·
-                                                        {{ $card['available'] }}
-                                                        khung giờ còn đặt được
-                                                    </p>
                                                 </div>
 
                                                 <span
@@ -448,17 +384,6 @@
                                                                                         {{ $dayDate->format('d/m') }}
                                                                                     </span>
 
-                                                                                    <small data-day-status>
-                                                                                        {{
-                                                        $day['available']
-                                                        ? 'Còn ' . $day['available'] . ' khung giờ'
-                                                        : (
-                                                            $day['all_past']
-                                                            ? 'Đã qua giờ'
-                                                            : 'Ngừng nhận lịch'
-                                                        )
-                                                                                        }}
-                                                                                    </small>
                                                                                 </button>
                                                     @endforeach
                                                 </div>
@@ -614,12 +539,14 @@
 
                                                                                                                                             <div class="mw-shift-meta">
 
-                                                                                                                                                <span>
-                                                                                                                                                    <strong>Phòng khám:</strong>
-                                                                                                                                                    {{
-                                                                                                        $shift->examinationRoom?->name
-                                                                                                        ?? 'Chưa cập nhật'
-                                                                                                                                                    }}
+                                                                                                                                                <span class="mw-shift-room">
+                                                                                                                                                    <strong>Địa điểm</strong>
+                                                                                                                                                    {{ $shift->examinationRoom?->name ?? 'Chưa cập nhật' }}
+                                                                                                                                                    @if($shift->examinationRoom?->room_number || $shift->examinationRoom?->building)
+                                                                                                                                                        <span class="mw-shift-location">
+                                                                                                                                                            {{ collect([$shift->examinationRoom->room_number ? 'Phòng '.$shift->examinationRoom->room_number : null, $shift->examinationRoom->building])->filter()->implode(' · ') }}
+                                                                                                                                                        </span>
+                                                                                                                                                    @endif
                                                                                                                                                 </span>
 
                                                                                                                                                 <span>
@@ -670,6 +597,7 @@
                                                                                                                                                                                                 data-book-until-ts="{{ $entry['deadline']->timestamp }}"
                                                                                                                                                                                                 data-slot-label="{{ substr((string) $slot->start_time, 0, 5) }} – {{ substr((string) $slot->end_time, 0, 5) }}"
                                                                                                                                                                                                 data-slot-day="{{ $dayDate->format('d/m/Y') }}"
+                                                                                                                                                                                                data-slot-room="{{ $shift->examinationRoom?->name ?? 'Chưa cập nhật phòng khám' }}"
                                                                                                                                                                                                 data-book-url="{{ $bookable ? route('patient.appointments.create', $slot) : '' }}"
                                                                                                                                                                                                 aria-pressed="false"
                                                                                                                                                                                                 @disabled(!$bookable)
@@ -693,20 +621,7 @@
                                                                                                                                                                                                     }}
                                                                                                                                                                                                 </span>
 
-                                                                                                                                                                                                <span
-                                                                                                                                                                                                    class="mw-slot-status"
-                                                                                                                                                                                                    data-slot-status
-                                                                                                                                                                                                >
-                                                                                                                                                                                                    {{
-                                                                                                                                                    $entry['state'] === 'past'
-                                                                                                                                                    ? 'Đã qua giờ'
-                                                                                                                                                    : (
-                                                                                                                                                        $entry['state'] === 'full'
-                                                                                                                                                        ? 'Ngừng nhận lịch'
-                                                                                                                                                        : 'Đã đăng ký ' . $entry['registered']
-                                                                                                                                                    )
-                                                                                                                                                                                                    }}
-                                                                                                                                                                                                </span>
+                                                                                                                                                                                                <span class="mw-slot-status" data-slot-status hidden></span>
 
                                                                                                                                                                                             </button>
 
@@ -952,7 +867,9 @@
                         'Đã chọn: '
                         + btn.dataset.slotDay
                         + ' · '
-                        + btn.dataset.slotLabel;
+                        + btn.dataset.slotLabel
+                        + ' · '
+                        + btn.dataset.slotRoom;
 
                     const action = card.querySelector(
                         '[data-booking-action]'
@@ -1081,9 +998,9 @@
                     btn.classList.add('is-past');
                     btn.classList.remove('is-selected');
 
-                    btn.querySelector(
-                        '[data-slot-status]'
-                    ).textContent = 'Đã qua giờ';
+                    const status = btn.querySelector('[data-slot-status]');
+                    status.textContent = 'Đã qua giờ';
+                    status.hidden = false;
                 });
 
                 if (selectedExpired) {
@@ -1149,34 +1066,10 @@
 
                     if (!panel) return;
 
-                    const slots = Array.from(
-                        panel.querySelectorAll('[data-slot]')
-                    );
-
-                    const open = slots.filter(
-                        btn => !btn.disabled
-                    ).length;
-
-                    const allPast =
-                        slots.length > 0
-                        && slots.every(
-                            btn => btn.dataset.state === 'past'
-                        );
-
                     tab.classList.toggle(
                         'is-unavailable',
-                        open === 0
+                        !panel.querySelector('[data-slot]:not(:disabled)')
                     );
-
-                    tab.querySelector(
-                        '[data-day-status]'
-                    ).textContent = open
-                        ? 'Còn ' + open + ' khung giờ'
-                        : (
-                            allPast
-                                ? 'Đã qua giờ'
-                                : 'Ngừng nhận lịch'
-                        );
                 });
 
                 /*

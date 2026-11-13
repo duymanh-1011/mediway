@@ -86,8 +86,6 @@
                                                 {{ substr((string) $slot->start_time, 0, 5) }}
                                                 -
                                                 {{ substr((string) $slot->end_time, 0, 5) }}
-
-                                                · Đã đăng ký {{ $slot->booked_count }}
                                             </div>
 
                                             <a href="{{ route('patient.appointments.create', $slot) }}">

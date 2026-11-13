@@ -182,7 +182,7 @@ class AppointmentReceptionRulesTest extends TestCase
         $this->assertSame('ACTIVE', $slot->fresh()->status);
     }
 
-    public function test_expired_schedule_is_inactive_in_detail_list_filter_and_count(): void
+    public function test_expired_schedule_is_inactive_in_detail_and_effective_status_scopes(): void
     {
         $slot = $this->slot();
         $schedule = $slot->doctorSchedule;
@@ -192,10 +192,8 @@ class AppointmentReceptionRulesTest extends TestCase
         $this->assertSame('INACTIVE', $schedule->fresh()->effectiveStatus());
         $this->assertSame('INACTIVE', $slot->fresh()->effectiveStatus());
         $this->get(route('admin.doctor-schedules.show', $schedule))->assertOk()->assertSee('Ngừng hoạt động');
-        $this->get(route('admin.doctor-schedules.index', ['status' => 'INACTIVE', 'work_date' => today()->toDateString()]))
-            ->assertOk()->assertViewHas('doctorSchedules', fn ($schedules) => $schedules->contains('id', $schedule->id));
-        $this->get(route('admin.doctor-schedules.index', ['status' => 'ACTIVE', 'work_date' => today()->toDateString()]))
-            ->assertOk()->assertViewHas('doctorSchedules', fn ($schedules) => ! $schedules->contains('id', $schedule->id));
+        $this->assertTrue(DoctorSchedule::effectiveInactive()->whereKey($schedule->id)->exists());
+        $this->assertFalse(DoctorSchedule::effectiveActive()->whereKey($schedule->id)->exists());
         $this->assertSame('ACTIVE', $schedule->fresh()->status);
     }
 

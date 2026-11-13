@@ -132,7 +132,7 @@
             <h2>Tra cứu hoạt động của bác sĩ</h2>
             <p class="form-help">Mở trực tiếp danh sách đã lọc theo bác sĩ này.</p>
             <div class="admin-actions">
-                <a class="admin-btn admin-btn-detail" href="{{ route('admin.doctor-schedules.index', ['doctor_id' => $doctor->id]) }}">Lịch làm việc</a>
+                <a class="admin-btn admin-btn-detail" href="{{ route('admin.doctor-schedules.month.show', $doctor) }}">Lịch làm việc</a>
                 <a class="admin-btn admin-btn-detail" href="{{ route('admin.appointments.index', ['doctor_id' => $doctor->id]) }}">Lịch hẹn</a>
                 <a class="admin-btn admin-btn-detail" href="{{ route('admin.visits.index', ['doctor_id' => $doctor->id]) }}">Lượt khám</a>
             </div>

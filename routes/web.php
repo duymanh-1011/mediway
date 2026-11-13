@@ -492,24 +492,25 @@ Route::prefix('admin')
 
             Route::prefix('doctor-schedules/month')->name('doctor-schedules.month.')->controller(\App\Http\Controllers\Admin\DoctorMonthlyScheduleController::class)->group(function (): void {
                 Route::get('/', 'index')->name('index');
+                Route::get('/shift-hours', 'editShiftHours')->name('shift-hours.edit');
+                Route::put('/shift-hours', 'updateShiftHours')->name('shift-hours.update');
                 Route::get('/template', 'template')->name('template');
                 Route::get('/{doctor}', 'show')->whereNumber('doctor')->name('show');
                 Route::put('/{doctor}', 'update')->whereNumber('doctor')->name('update');
                 Route::post('/{doctor}/import', 'preview')->whereNumber('doctor')->name('import.preview');
+                Route::post('/{doctor}/import/apply', 'import')->whereNumber('doctor')->name('import.apply');
                 Route::get('/{doctor}/import/{token}', 'review')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.show');
                 Route::put('/{doctor}/import/{token}', 'assignments')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.assignments');
                 Route::post('/{doctor}/import/{token}', 'confirm')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.confirm');
             });
 
-            Route::get(
-                '/doctor-schedules/calendar',
-                [DoctorScheduleController::class, 'calendar']
-            )->name('doctor-schedules.calendar');
-
-            Route::resource(
-                'doctor-schedules',
-                DoctorScheduleController::class
-            );
+            Route::controller(DoctorScheduleController::class)->prefix('doctor-schedules')->name('doctor-schedules.')->group(function (): void {
+                Route::get('/', 'redirectToMonth')->name('index');
+                Route::get('/calendar', 'redirectToMonth')->name('calendar');
+                Route::get('/create', 'redirectToMonth')->name('create');
+                Route::post('/', 'redirectLegacyStore')->name('store');
+            });
+            Route::resource('doctor-schedules', DoctorScheduleController::class)->only(['show', 'edit', 'update', 'destroy']);
 
             /*
             |--------------------------------------------------------------------------

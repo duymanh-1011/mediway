@@ -112,16 +112,11 @@ class F08TeamIntegrationTest extends TestCase
         $doctor = Doctor::where('doctor_code', 'BS000001')->firstOrFail();
         $room = ExaminationRoom::where('room_code', 'PKTMH01')->firstOrFail();
         $date = today()->addDay()->toDateString();
-        $this->actingAs($admin)->post(route('admin.doctor-schedules.store'), [
-            'doctor_id' => $doctor->id, 'specialty_id' => $doctor->specialty_id,
-            'examination_room_id' => $room->id, 'work_date' => $date,
-            'start_time' => '09:00', 'end_time' => '11:00', 'status' => 'ACTIVE',
+        $this->actingAs($admin)->put(route('admin.doctor-schedules.month.update', $doctor), [
+            'date' => $date, 'shift' => 'MORNING', 'state' => 'WORKING', 'specialty_id' => $doctor->specialty_id, 'room_id' => $room->id,
         ])->assertSessionHasNoErrors();
-        $schedule = DoctorSchedule::where('doctor_id', $doctor->id)->whereDate('work_date', $date)->firstOrFail();
-        $this->post(route('admin.doctor-schedules.time-slots.store', $schedule), [
-            'start_time' => '09:00', 'end_time' => '09:30', 'max_patients' => 2, 'status' => 'ACTIVE',
-        ])->assertSessionHasNoErrors();
-        $slot = $schedule->appointmentTimeSlots()->sole();
+        $schedule = DoctorSchedule::where('doctor_id', $doctor->id)->whereDate('work_date', $date)->where('shift_code', 'MORNING')->sole();
+        $slot = $schedule->appointmentTimeSlots()->where('start_time', '09:00:00')->sole();
         $this->actingAs($patient)->post(route('patient.appointments.store'), [
             'appointment_time_slot_id' => $slot->id, 'reason_for_visit' => 'Khám thử nghiệm', 'confirmed_information' => '1',
         ])->assertSessionHasNoErrors();

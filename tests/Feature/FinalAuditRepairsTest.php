@@ -223,10 +223,14 @@ class FinalAuditRepairsTest extends TestCase
 
     public function test_calendar_starts_at_the_first_day_in_short_months(): void
     {
+        $doctor = DoctorSchedule::firstOrFail()->doctor;
         foreach ([['2026-10-31', '2026-11'], ['2026-01-31', '2026-02'], ['2026-03-30', '2026-02'], ['2028-01-29', '2028-02']] as [$today, $month]) {
             $this->travelTo(Carbon::parse($today.' 09:00'));
-            $this->get(route('admin.doctor-schedules.calendar', ['month' => $month]))->assertOk()
-                ->assertViewHas('currentMonth', fn ($date) => $date->format('Y-m-d') === $month.'-01');
+            $monthUrl = route('admin.doctor-schedules.month.show', [$doctor, 'month' => $month]);
+            $this->get(route('admin.doctor-schedules.calendar', ['month' => $month]))
+                ->assertRedirect(route('admin.doctor-schedules.month.index', ['month' => $month]));
+            $this->get(route('admin.doctor-schedules.month.index', ['month' => $month]))->assertOk()->assertSee($monthUrl);
+            $this->get($monthUrl)->assertOk()->assertViewHas('days', fn ($days) => array_key_first($days) === $month.'-01');
         }
     }
 

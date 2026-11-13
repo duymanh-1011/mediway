@@ -46,6 +46,26 @@ class DoctorBrowseTest extends TestCase
             ->assertSessionHasErrors('appointment_time_slot_id');
     }
 
+    public function test_booking_list_shows_the_room_for_each_shift_without_registration_counts(): void
+    {
+        $doctor = $this->activeDoctors(1)->firstOrFail();
+        $morning = $this->createSchedule($doctor);
+        $morning->examinationRoom->update(['name' => 'Phòng khám A', 'room_number' => '101', 'building' => 'Tòa A']);
+        $firstSlot = $this->createSlot($morning);
+        $otherRoom = $morning->examinationRoom->replicate();
+        $otherRoom->fill(['room_code' => 'TEST-02', 'name' => 'Phòng khám B', 'room_number' => '202', 'building' => 'Tòa B'])->save();
+        $afternoon = $this->createSchedule($doctor, 1, 'ACTIVE', '17:30', '19:00');
+        $afternoon->update(['shift_code' => 'AFTERNOON', 'examination_room_id' => $otherRoom->id]);
+        $secondSlot = $this->createSlot($afternoon, '17:30', '18:00');
+
+        $this->get(route('patient.doctors.index', ['doctor_id' => $doctor->id]))->assertOk()
+            ->assertSee('data-slot-room="Phòng khám A"', false)->assertSee(route('patient.appointments.create', $firstSlot))
+            ->assertSee('data-slot-room="Phòng khám B"', false)->assertSee(route('patient.appointments.create', $secondSlot))
+            ->assertSeeText('Phòng 101 · Tòa A')->assertSeeText('Phòng 202 · Tòa B')
+            ->assertDontSeeText('Đã đăng ký 0')->assertDontSee('data-day-status', false)
+            ->assertDontSeeText('khung giờ còn đặt được');
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -742,7 +762,7 @@ class DoctorBrowseTest extends TestCase
     |--------------------------------------------------------------------------
     */
 
-    public function test_browse_displays_registration_count_and_keeps_the_slot_bookable(): void
+    public function test_browse_hides_registration_count_and_keeps_the_slot_bookable(): void
     {
         $doctor = $this->activeDoctors(1)->firstOrFail();
         $schedule = $this->createSchedule($doctor, 1);
@@ -759,7 +779,7 @@ class DoctorBrowseTest extends TestCase
             ->get(route('patient.doctors.index'))->assertOk();
         $returned = $response->viewData('schedules')->firstWhere('id', $schedule->id);
         $this->assertEquals(1, $returned->appointmentTimeSlots->firstWhere('id', $slot->id)->booked_count);
-        $response->assertSeeText('Đã đăng ký')->assertSee(route('patient.appointments.create', $slot));
+        $response->assertDontSeeText('Đã đăng ký')->assertSee(route('patient.appointments.create', $slot));
     }
 
     /*

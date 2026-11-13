@@ -35,20 +35,27 @@ class DoctorScheduleRoomSpecialtyTest extends TestCase
     {
         $data = $this->data();
         $wrong = ExaminationRoom::where('room_code', 'PKTM01')->firstOrFail();
-        $this->post(route('admin.doctor-schedules.store'), [...$data, 'examination_room_id' => $wrong->id])->assertSessionHasErrors('examination_room_id');
+        $route = route('admin.doctor-schedules.month.update', $data['doctor_id']);
+        $shift = ['date' => $data['work_date'], 'shift' => 'MORNING', 'state' => 'WORKING', 'specialty_id' => $data['specialty_id']];
+        $this->put($route, [...$shift, 'room_id' => $wrong->id])->assertSessionHasErrors('examination_room_id');
         $wrong->update(['specialty_id' => null]);
-        $this->post(route('admin.doctor-schedules.store'), [...$data, 'examination_room_id' => $wrong->id])->assertSessionHasErrors('examination_room_id');
-        $this->post(route('admin.doctor-schedules.store'), $data)->assertSessionHasNoErrors();
-        $schedule = DoctorSchedule::where('doctor_id', $data['doctor_id'])->whereDate('work_date', $data['work_date'])->firstOrFail();
-        $this->put(route('admin.doctor-schedules.update', $schedule), [...$data, 'examination_room_id' => $wrong->id])->assertSessionHasErrors('examination_room_id');
+        $this->put($route, [...$shift, 'room_id' => $wrong->id])->assertSessionHasErrors('examination_room_id');
+        $this->put($route, [...$shift, 'room_id' => $data['examination_room_id']])->assertSessionHasNoErrors();
+        $schedule = DoctorSchedule::create([...$data, 'work_date' => today()->addDays(51)->toDateString()]);
+        $this->put(route('admin.doctor-schedules.update', $schedule), [...$data,
+            'work_date' => $schedule->work_date->toDateString(), 'examination_room_id' => $wrong->id])->assertSessionHasErrors('examination_room_id');
         $this->assertSame($data['examination_room_id'], $schedule->fresh()->examination_room_id);
-        $this->get(route('admin.doctor-schedules.create'))->assertOk()->assertSee('data-schedule-room', false)->assertSee('data-specialty-id="'.$data['specialty_id'].'"', false);
+        $this->get(route('admin.doctor-schedules.month.show', [$data['doctor_id'], 'month' => substr($data['work_date'], 0, 7)]))
+            ->assertOk()->assertSee('data-month-room', false)->assertSee('data-specialty="'.$data['specialty_id'].'"', false);
     }
 
     public function test_cannot_reassign_room_with_future_active_schedule_from_other_specialty(): void
     {
         $data = $this->data();
-        $this->post(route('admin.doctor-schedules.store'), $data)->assertSessionHasNoErrors();
+        $this->put(route('admin.doctor-schedules.month.update', $data['doctor_id']), [
+            'date' => $data['work_date'], 'shift' => 'MORNING', 'state' => 'WORKING',
+            'specialty_id' => $data['specialty_id'], 'room_id' => $data['examination_room_id'],
+        ])->assertSessionHasNoErrors();
         $room = ExaminationRoom::findOrFail($data['examination_room_id']);
         $this->put(route('admin.examination-rooms.update', $room), [
             'room_code' => $room->room_code, 'name' => $room->name, 'room_number' => $room->room_number,

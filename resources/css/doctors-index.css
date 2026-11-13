@@ -238,12 +238,6 @@
         text-decoration: underline;
     }
 
-    .mw-doctor-sub {
-        color: var(--muted);
-        font-size: 13px;
-        margin: 0;
-    }
-
     .mw-availability {
         display: inline-flex;
         padding: 7px 11px;
@@ -347,22 +341,11 @@
         margin-top: 5px;
     }
 
-    .mw-day small {
-        display: block;
-        color: #75869b;
-        font-size: 11px;
-        margin-top: 5px;
-    }
-
     .mw-day.is-active {
         background: var(--b);
         border-color: var(--b);
         color: #fff;
         box-shadow: 0 6px 16px #2563eb20;
-    }
-
-    .mw-day.is-active small {
-        color: #e0edff;
     }
 
     .mw-day.is-unavailable:not(.is-active) {
@@ -491,6 +474,21 @@
         color: #2b415e;
     }
 
+    .mw-shift-room {
+        flex: 0 0 100%;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 8px;
+        font-weight: 600;
+        color: var(--ink);
+    }
+
+    .mw-shift-location {
+        font-weight: 400;
+        color: #536680;
+    }
+
     /* Khung giờ */
     .mw-slot-grid {
         display: grid;
@@ -503,7 +501,7 @@
         padding: 10px 7px;
         border: 1px solid #d1dff1;
         border-radius: 10px;
-        min-height: 68px;
+        min-height: 48px;
         background: #fff;
         text-align: center;
         color: var(--ink);
@@ -519,14 +517,14 @@
         white-space: nowrap;
     }
 
-    .mw-slot-status {
+    .mw-slot-status:not([hidden]) {
         display: block;
         font-size: 11px;
         color: #16805a;
         margin-top: 6px;
     }
 
-    .mw-slot:not(:disabled):hover {
+    .mw-slot:not(:disabled):not(.is-selected):hover {
         border-color: var(--b);
         background: #eff6ff;
     }

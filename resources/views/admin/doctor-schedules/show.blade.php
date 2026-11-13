@@ -41,16 +41,9 @@
 
         <div class="header-actions">
 
-            <a
-                href="{{ route(
-                    'admin.doctor-schedules.index'
-                ) }}"
-                class="admin-btn admin-btn-secondary"
-            >← Quay lại</a>
+            <a href="{{ route('admin.doctor-schedules.month.show', [$doctorSchedule->doctor_id, 'month' => $doctorSchedule->work_date->format('Y-m')]) }}" class="admin-btn admin-btn-secondary">← Quản lý lịch tháng</a>
 
-            @if ($standardShift)
-                <a href="{{ route('admin.doctor-schedules.month.show', [$doctorSchedule->doctor_id, 'month' => $doctorSchedule->work_date->format('Y-m')]) }}" class="admin-btn admin-btn-primary">Quản lý lịch tháng</a>
-            @else
+            @unless ($standardShift)
             <a
                 href="{{ route(
                     'admin.doctor-schedules.edit',
@@ -58,7 +51,7 @@
                 ) }}"
                 class="admin-btn admin-btn-secondary"
             >Sửa</a>
-            @endif
+            @endunless
 
         </div>
 

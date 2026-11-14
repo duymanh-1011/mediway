@@ -99,13 +99,15 @@ class DoctorServiceOrderTest extends TestCase
             ->assertSee('Chưa có dịch vụ đang hoạt động trong danh mục.');
     }
 
-    public function test_wrong_doctor_and_closed_visit_cannot_create_orders(): void
+    public function test_doctor_can_order_for_other_visit_but_not_closed_visit(): void
     {
         $visit = $this->activeVisit();
         $foreign = MedicalVisit::where('visit_code', 'LK000005')->firstOrFail();
         $service = MedicalService::where('service_code', 'DVXN007')->firstOrFail();
-        $this->get(route('doctor.visits.orders.create', $foreign))->assertNotFound();
-        $this->post(route('doctor.visits.orders.store', $foreign), ['medical_service_ids' => [$service->id]])->assertNotFound();
+        $foreign->update(['appointment_id' => null, 'visit_status_id' => VisitStatus::where('name', 'IN_EXAMINATION')->value('id')]);
+        $this->get(route('doctor.visits.orders.create', $foreign))->assertOk();
+        $this->post(route('doctor.visits.orders.store', $foreign), ['medical_service_ids' => [$service->id]])->assertSessionHasNoErrors();
+        $this->assertSame(User::where('business_code', 'BS000001')->firstOrFail()->doctor->id, $foreign->serviceOrders()->latest('id')->firstOrFail()->ordered_by_doctor_id);
         $visit->update(['visit_status_id' => VisitStatus::where('name', 'COMPLETED')->value('id')]);
         $before = $visit->serviceOrders()->count();
         $this->post(route('doctor.visits.orders.store', $visit), ['medical_service_ids' => [$service->id]])->assertSessionHasErrors('visit');
@@ -137,7 +139,7 @@ class DoctorServiceOrderTest extends TestCase
             ->assertSee('Nội dung kết quả kiểm thử')->assertSee('Chỉ số kiểm thử')->assertSee('5.4 mg/L')
             ->assertSee('Thông tin bổ sung')->assertSee('Giá trị kiểm thử');
         $other = MedicalVisit::where('visit_code', 'LK000002')->firstOrFail();
-        $this->get(route('doctor.visits.show', $other))->assertNotFound();
+        $this->get(route('doctor.visits.show', $other))->assertOk();
     }
 
     public function test_doctor_can_open_only_existing_safe_files_from_an_assigned_visit(): void
@@ -158,7 +160,7 @@ class DoctorServiceOrderTest extends TestCase
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
         $this->get($image)->assertOk();
         $this->get(route('doctor.visits.results.document', [$otherVisit->id, $result->id, 'pdf']))->assertNotFound();
-        $this->flushSession()->actingAs(User::where('business_code', 'BS000002')->firstOrFail())->get($pdf)->assertNotFound();
+        $this->flushSession()->actingAs(User::where('business_code', 'BS000002')->firstOrFail())->get($pdf)->assertOk();
         $this->flushSession()->actingAs(User::where('business_code', 'BN000001')->firstOrFail())->get($pdf)->assertForbidden();
 
         $this->flushSession()->actingAs(User::where('business_code', 'BS000001')->firstOrFail());

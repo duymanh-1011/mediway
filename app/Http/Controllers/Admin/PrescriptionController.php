@@ -37,16 +37,16 @@ class PrescriptionController extends Controller
         return view('admin.prescriptions.create', compact('visit', 'medicines', 'saleUnits'));
     }
 
-    public function store(StorePrescriptionRequest $request, MedicalVisit $visit)
+    public function store(StorePrescriptionRequest $request, MedicalVisit $visit, ?int $actorDoctorId = null)
     {
         $data = $request->validated();
-        $prescription = DB::transaction(function () use ($visit, $data, $request) {
+        $prescription = DB::transaction(function () use ($visit, $data, $request, $actorDoctorId) {
             $lockedVisit = $visit->lockForClinicalWrite();
             ClinicalTimeline::assertEventTime(now()->format('Y-m-d H:i:s'), $lockedVisit->examination_started_at ?? $lockedVisit->checked_in_at, 'prescription', 'Thời điểm kê đơn');
             if ($lockedVisit->prescription()->exists()) {
                 throw ValidationException::withMessages(['prescription' => 'Lượt khám này đã có đơn thuốc.']);
             }
-            $doctor = Doctor::whereKey($lockedVisit->doctor_id)->lockForUpdate()->first();
+            $doctor = Doctor::whereKey($actorDoctorId ?? $lockedVisit->doctor_id)->lockForUpdate()->first();
             if (! $doctor || $doctor->status !== 'ACTIVE') {
                 throw ValidationException::withMessages(['prescription' => 'Bác sĩ của lượt khám không còn hoạt động. Vui lòng kiểm tra lại.']);
             }
@@ -83,7 +83,7 @@ class PrescriptionController extends Controller
             } while (Prescription::where('prescription_code', $code)->exists());
             $prescription = Prescription::create([
                 'prescription_code' => $code, 'medical_visit_id' => $lockedVisit->id,
-                'doctor_id' => $lockedVisit->doctor_id, 'prescribed_at' => now(), 'status' => 'ACTIVE',
+                'doctor_id' => $actorDoctorId ?? $lockedVisit->doctor_id, 'prescribed_at' => now(), 'status' => 'ACTIVE',
                 'general_instructions' => $data['general_instructions'] ?? null, 'doctor_notes' => $data['doctor_notes'] ?? null,
             ]);
             $prescription->items()->createMany($items);

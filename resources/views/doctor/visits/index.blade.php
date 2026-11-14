@@ -1,18 +1,18 @@
 @extends('doctor.layout')
-@section('title', 'Lượt khám của tôi')
+@section('title', 'Danh sách lượt khám')
 @section('content')
 <section class="employee-welcome"><div class="employee-welcome__copy">
     <p class="portal-eyebrow">KHU VỰC BÁC SĨ</p><h1>Xin chào, {{ $doctor->full_name }}</h1>
-    <p>Theo dõi các lượt khám được phân công cho bạn.</p>
+    <p>Theo dõi các lượt khám trong hệ thống.</p>
     <span class="employee-welcome__identity"><x-employee-icon name="shield" /> Bác sĩ · {{ $doctor->doctor_code }}</span>
 </div><div class="employee-welcome__art" aria-hidden="true"><div class="employee-welcome__ring"></div><span><x-employee-icon name="reception" /></span><i></i></div></section>
-<section class="employee-section"><div class="employee-section__heading"><div><p class="portal-eyebrow">KHÔNG GIAN LÀM VIỆC</p><h2>Lượt khám của tôi</h2><p>Chọn lượt khám để xem thông tin và hồ sơ liên quan.</p></div></div>
-    <form method="get" action="{{ route('doctor.home') }}" class="tech-filter doctor-visit-filter" aria-label="Lọc lượt khám">
+<section class="employee-section"><div class="employee-section__heading"><div><p class="portal-eyebrow">KHÔNG GIAN LÀM VIỆC</p><h2>Danh sách lượt khám</h2><p>Chọn lượt khám để xem thông tin và hồ sơ liên quan.</p></div></div>
+    <form method="get" action="{{ route('doctor.visits.index') }}" class="tech-filter doctor-visit-filter" aria-label="Lọc lượt khám">
         <label class="tech-filter__search" for="visit-search">Tìm bệnh nhân hoặc lượt khám<input id="visit-search" name="q" type="search" maxlength="100" value="{{ old('q', $filters['q'] ?? '') }}" placeholder="Tên, mã bệnh nhân hoặc mã lượt khám"></label>
         <label for="visit-from">Từ ngày<input id="visit-from" type="date" name="date_from" value="{{ old('date_from', $filters['date_from'] ?? '') }}"></label>
         <label for="visit-to">Đến ngày<input id="visit-to" type="date" name="date_to" value="{{ old('date_to', $filters['date_to'] ?? '') }}"></label>
         <label for="visit-status">Trạng thái<select id="visit-status" name="status"><option value="">Tất cả</option>@foreach($statuses as $status)<option value="{{ $status->id }}" @selected((string) old('status', $filters['status'] ?? '') === (string) $status->id)>{{ $status->description ?: $status->name }}{{ $status->is_active ? '' : ' (ngừng sử dụng)' }}</option>@endforeach</select></label>
-        <div class="doctor-visit-filter__actions"><button type="submit" class="portal-btn portal-btn--primary">Lọc danh sách</button><a href="{{ route('doctor.home') }}" class="portal-btn portal-btn--secondary">Xóa lọc</a></div>
+        <div class="doctor-visit-filter__actions"><button type="submit" class="portal-btn portal-btn--primary">Lọc danh sách</button><a href="{{ route('doctor.visits.index') }}" class="portal-btn portal-btn--secondary">Xóa lọc</a></div>
     </form>
     <div class="tech-panel">
         @forelse($visits as $visit)
@@ -25,9 +25,9 @@
                     <div><dt>Tiếp nhận</dt><dd>{{ $visit->checked_in_at?->format('d/m/Y H:i') ?? 'Chưa tiếp nhận' }}</dd></div>
                 </dl>
                 <a class="employee-card__link" href="{{ route('doctor.visits.show', $visit->id) }}">Xem chi tiết <x-employee-icon name="arrow" /></a>
-            </div>@include('doctor.visits._status', ['status' => $visit->status])</article>
+            </div>@include('doctor.visits._status', ['visit' => $visit])</article>
         @empty
-            <p>{{ $hasVisits ? 'Không tìm thấy lượt khám phù hợp bộ lọc.' : 'Chưa có lượt khám nào được phân công cho bạn.' }}</p>
+            <p>{{ $hasVisits ? 'Không tìm thấy lượt khám phù hợp bộ lọc.' : 'Chưa có lượt khám nào.' }}</p>
         @endforelse
         {{ $visits->links() }}
     </div>

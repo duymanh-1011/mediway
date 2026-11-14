@@ -26,9 +26,9 @@ class DoctorVisitPortalTest extends TestCase
         $other = MedicalVisit::where('visit_code', 'LK000002')->firstOrFail();
         $this->post(route('patient.login.store'), ['phone' => $doctor->phone, 'password' => 'Mediway@123'])
             ->assertRedirect(route('doctor.home'));
-        $this->get(route('doctor.home'))->assertOk()->assertSee($own->visit_code)->assertDontSee($other->visit_code);
+        $this->get(route('doctor.visits.index'))->assertOk()->assertSee($own->visit_code)->assertSee($other->visit_code);
         $this->get(route('doctor.visits.show', $own->id))->assertOk()->assertSee($own->patient->full_name);
-        $this->get(route('doctor.visits.show', $other->id))->assertNotFound();
+        $this->get(route('doctor.visits.show', $other->id))->assertOk();
     }
 
     public function test_non_doctors_and_inactive_doctors_cannot_access_visits(): void

@@ -35,16 +35,18 @@ class VisitController extends Controller
             // Chỉ giữ các giá trị văn bản hợp lệ để hiển thị lại biểu mẫu an toàn.
             $input = collect($request->only(['q', 'date_from', 'date_to', 'status']))
                 ->filter(fn ($value) => is_string($value) || is_int($value))->all();
-            return redirect()->route('doctor.home')->withErrors($validator)->withInput($input);
+            return redirect()->route('doctor.visits.index')->withErrors($validator)->withInput($input);
         }
         $filters = $validator->validated();
         $term = trim($filters['q'] ?? '');
         $filters['q'] = $term;
 
-        // Luôn giới hạn theo bác sĩ trước khi nhóm các điều kiện tìm kiếm OR.
-        $assigned = MedicalVisit::query()->where('doctor_id', $doctor->id);
+        // Mọi bác sĩ đã đăng nhập được xem danh sách lượt khám.
+        $assigned = MedicalVisit::query();
         $hasVisits = (clone $assigned)->exists();
         $visits = $assigned
+            // Dùng cùng dữ liệu tiến độ với Admin, nạp theo danh sách thay vì từng dòng.
+            ->withServiceProgress()
             ->when($term !== '', fn ($query) => $query->where(fn ($query) => $query
                 ->where('visit_code', 'like', '%'.$term.'%')
                 ->orWhereHas('patient', fn ($patient) => $patient->where('full_name', 'like', '%'.$term.'%')
@@ -56,7 +58,7 @@ class VisitController extends Controller
             ->orderByDesc('checked_in_at')->orderByDesc('id')->paginate(10)->appends($filters);
         // Giữ trạng thái ngừng hoạt động nếu bác sĩ vẫn có hồ sơ lịch sử sử dụng nó.
         $statuses = VisitStatus::where(fn ($query) => $query->where('is_active', true)
-            ->orWhereHas('medicalVisits', fn ($query) => $query->where('doctor_id', $doctor->id)))
+            ->orWhereHas('medicalVisits'))
             ->orderBy('process_order')->orderBy('id')->get();
         return view('doctor.visits.index', compact('doctor', 'visits', 'filters', 'statuses', 'hasVisits'));
     }
@@ -64,9 +66,10 @@ class VisitController extends Controller
     public function show(Request $request, int $visit, DoctorVisitReadiness $readiness): View
     {
         $doctor = $request->user()->doctor;
-        // Ràng buộc quyền ngay trong truy vấn, kể cả khi tự nhập địa chỉ URL.
-        $record = MedicalVisit::query()->where('doctor_id', $doctor->id)
-            ->with(['patient', 'specialty', 'examinationRoom', 'status', 'appointment', 'clinicalNote',
+        // Chỉ tài khoản bác sĩ hợp lệ đã qua middleware mới đến được đây.
+        $record = MedicalVisit::query()
+            ->withServiceProgress()
+            ->with(['doctor', 'patient', 'specialty', 'examinationRoom', 'status', 'appointment', 'clinicalNote',
                 'diagnoses.disease', 'conclusion', 'prescription.items.medicine',
                 'serviceOrders.items.medicalService', 'serviceOrders.items.serviceStatus', 'serviceOrders.items.result'])
             ->findOrFail($visit);
@@ -91,14 +94,14 @@ class VisitController extends Controller
         DB::transaction(function () use ($request, $visit, $readiness): void {
             // Khóa lượt trước khi kiểm tra quyền, tiến độ và chuyển trạng thái.
             $record = MedicalVisit::with('status')->whereKey($visit)
-                ->where('doctor_id', $request->user()->doctor->id)->lockForUpdate()->firstOrFail();
+                ->lockForUpdate()->firstOrFail();
             $record->assertNotBeforeAppointmentDay();
             if (! in_array($record->status?->name, ['IN_EXAMINATION', 'RETURNING'], true)) {
                 throw ValidationException::withMessages(['visit' => 'Lượt khám chưa ở trạng thái cho phép hoàn tất.']);
             }
             $check = $readiness->check($record);
             if (! $check['ready']) {
-                throw ValidationException::withMessages(['visit' => array_values($check['reasons'])]);
+                throw ValidationException::withMessages(['visit' => implode(' ', $check['reasons'])]);
             }
 
             $finishedAt = now();
@@ -132,10 +135,10 @@ class VisitController extends Controller
     {
         abort_unless(in_array($type, ['pdf', 'image'], true), 404);
 
-        // Tệp phải thuộc kết quả của đúng lượt khám được phân công cho bác sĩ này.
+        // Tệp phải thuộc đúng kết quả và lượt khám được yêu cầu.
         $record = ServiceResult::query()->whereKey($result)
             ->whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($query) => $query
-                ->whereKey($visit)->where('doctor_id', $request->user()->doctor->id))
+                ->whereKey($visit))
             ->firstOrFail();
 
         $path = $type === 'pdf' ? $record->result_pdf_path : $record->result_image_path;

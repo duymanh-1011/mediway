@@ -20,8 +20,8 @@ class ServiceOrderController extends Controller
     public function create(Request $request, int $visit): View|RedirectResponse
     {
         $doctor = $request->user()->doctor;
-        // Chỉ cho bác sĩ truy cập lượt được phân công, kể cả khi nhập trực tiếp URL.
-        $record = MedicalVisit::whereKey($visit)->where('doctor_id', $doctor->id)
+        // Truy cập lượt khám dành cho bác sĩ đã đăng nhập.
+        $record = MedicalVisit::whereKey($visit)
             ->with(['patient', 'doctor', 'specialty', 'examinationRoom', 'status', 'appointment'])->firstOrFail();
         if ($record->conclusion()->exists()) {
             return redirect()->route('doctor.visits.show', $record)->withErrors(['conclusion_lock' => DoctorPrescriptionLock::CONCLUSION_MESSAGE]);
@@ -41,7 +41,7 @@ class ServiceOrderController extends Controller
 
         DB::transaction(function () use ($request, $visit, $doctorId, $serviceIds, $adminOrders): void {
             // Khóa lượt khám để kiểm tra lại quyền và chống gửi lặp cùng lúc.
-            $record = MedicalVisit::whereKey($visit)->where('doctor_id', $doctorId)
+            $record = MedicalVisit::whereKey($visit)
                 ->with('status')->lockForUpdate()->firstOrFail();
             // Kiểm tra khi đã khóa lượt, kể cả form mở trước lúc kê đơn.
             DoctorPrescriptionLock::assertUnlocked($record);
@@ -59,7 +59,7 @@ class ServiceOrderController extends Controller
 
             // Tái sử dụng nghiệp vụ Admin hiện hữu để lập chỉ định, khoản thu và đồng bộ trạng thái.
             // Giao dịch bên ngoài giữ khóa phân công cho đến khi toàn bộ thao tác kết thúc.
-            $adminOrders->store($request, $record);
+            $adminOrders->store($request, $record, $doctorId);
         }, 3);
 
         return redirect()->route('doctor.visits.show', $visit)->with('success', 'Đã tạo chỉ định và khoản cần thanh toán.');

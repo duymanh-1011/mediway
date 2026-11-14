@@ -64,6 +64,9 @@ class DoctorVisitIntegrationTest extends TestCase
         $this->post(route('doctor.visits.orders.store', $visit), ['medical_service_ids' => [$service->id], 'reason' => 'Chỉ định liên kết kiểm thử'])->assertSessionHasNoErrors();
         $order = $visit->serviceOrders()->where('reason', 'Chỉ định liên kết kiểm thử')->sole();
         $item = $order->items()->sole();
+        // Danh sách và chi tiết bác sĩ dùng cùng nhãn tiến độ như Admin.
+        $this->get(route('doctor.visits.show', $visit))->assertOk()
+            ->assertSee('data-visit-status="WAITING_FOR_SERVICE"', false)->assertSee('Chờ thực hiện');
         $this->assertSame('UNPAID', $item->payable->paymentStatus->name);
         $this->assertFalse(app(DoctorVisitReadiness::class)->check($visit->fresh())['ready']);
         $this->post(route('doctor.visits.orders.store', $visit), ['medical_service_ids' => [$service->id]])->assertSessionHasErrors('medical_service_ids');
@@ -74,6 +77,9 @@ class DoctorVisitIntegrationTest extends TestCase
         $this->flushSession()->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
         $this->get(route('employee.services.show', $item))->assertOk()->assertSee($service->name);
         $this->post(route('employee.services.start', $item))->assertSessionHasNoErrors();
+        $this->flushSession()->actingAs($doctor)->get(route('doctor.visits.show', $visit))
+            ->assertOk()->assertSee('Đang thực hiện');
+        $this->flushSession()->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
         $this->post(route('employee.services.save', $item), [
             'result_version' => ServiceResult::editVersion(null), 'confirm_result' => '1', 'result_summary' => 'Kết quả liên kết kiểm thử',
             'parameters_present' => '1', 'parameters' => [['name' => 'Chỉ số liên kết', 'value' => '5', 'unit' => 'mg/L']],
@@ -91,7 +97,7 @@ class DoctorVisitIntegrationTest extends TestCase
             ->assertSee('Kết quả liên kết kiểm thử')->assertSee('Chỉ số liên kết')->assertSee('Thông tin kỹ thuật');
         $this->get(route('patient.results.service-print', $result))->assertOk()->assertSee('Kết quả liên kết kiểm thử');
         $this->flushSession()->actingAs($otherPatient)->get(route('patient.results.service-print', $result))->assertNotFound();
-        $this->flushSession()->actingAs(User::where('business_code', 'BS000002')->firstOrFail())->get(route('doctor.visits.show', $visit))->assertNotFound();
+        $this->flushSession()->actingAs(User::where('business_code', 'BS000002')->firstOrFail())->get(route('doctor.visits.show', $visit))->assertOk();
         $this->flushSession()->actingAs(User::where('business_code', 'NV000001')->firstOrFail())->get(route('employee.services.show', $item))->assertForbidden();
 
         $this->flushSession()->actingAs(User::where('business_code', 'NV000002')->firstOrFail());

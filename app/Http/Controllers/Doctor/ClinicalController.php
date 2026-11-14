@@ -60,7 +60,7 @@ class ClinicalController extends Controller
         unset($data['record_version']);
         DB::transaction(function () use ($request, $visit, $diagnosis, $data, $version): void {
             $record = $this->lockedVisit($request, $visit);
-            // Chẩn đoán phải thuộc đúng lượt được phân công, không chỉ đúng ID.
+            // Chẩn đoán phải thuộc đúng lượt khám, không chỉ đúng ID.
             $item = $record->diagnoses()->whereKey($diagnosis)->lockForUpdate()->firstOrFail();
             $this->assertVersion($item, $version);
             $this->ensureDiseaseAndUnique($record, $data, $item->id, $item->disease_id);
@@ -72,8 +72,8 @@ class ClinicalController extends Controller
 
     private function lockedVisit(Request $request, int $id): MedicalVisit
     {
-        // Khóa lượt trước khi kiểm tra lại phân công và trạng thái để tránh ghi đè đồng thời.
-        $record = MedicalVisit::whereKey($id)->where('doctor_id', $request->user()->doctor->id)->lockForUpdate()->firstOrFail();
+        // Khóa lượt trước khi kiểm tra trạng thái để tránh ghi đè đồng thời.
+        $record = MedicalVisit::whereKey($id)->lockForUpdate()->firstOrFail();
         $record = $record->lockForClinicalWrite();
         // Cùng khóa lượt khám với tạo đơn để kiểm tra lại tại thời điểm ghi.
         DoctorPrescriptionLock::assertUnlocked($record);

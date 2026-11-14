@@ -3,12 +3,12 @@
 @section('breadcrumb', 'Chi tiết lượt khám')
 @section('content')
 <section class="tech-page tech-detail-page doctor-visit" data-doctor-workspace data-visit-id="{{ $record->id }}">
-    <a class="portal-btn portal-btn--secondary tech-back" href="{{ route('doctor.home') }}">← Quay lại lượt khám</a>
+    <a class="portal-btn portal-btn--secondary tech-back" href="{{ route('doctor.visits.index') }}">← Quay lại lượt khám</a>
     <section class="tech-panel tech-detail-panel doctor-visit__hero"><p class="portal-eyebrow">HỒ SƠ KHÁM BỆNH</p><h1>{{ $record->patient?->full_name ?? 'Chưa cập nhật' }}</h1>
-        <p class="doctor-visit__meta"><span>Mã lượt khám: <strong>{{ $record->visit_code }}</strong></span>@include('doctor.visits._status', ['status' => $record->status])</p>
+        <p class="doctor-visit__meta"><span>Mã lượt khám: <strong>{{ $record->visit_code }}</strong></span>@include('doctor.visits._status', ['visit' => $record])</p>
         <h2>Thông tin lượt khám</h2><dl class="tech-facts">
             <div><dt>Mã bệnh nhân</dt><dd>{{ $record->patient?->patient_code ?? '—' }}</dd></div>
-            <div><dt>Bác sĩ phụ trách</dt><dd>{{ $doctor->full_name }}</dd></div>
+            <div><dt>Bác sĩ phụ trách</dt><dd>{{ $record->doctor?->full_name ?? 'Chưa cập nhật' }}</dd></div>
             <div><dt>Chuyên khoa</dt><dd>{{ $record->specialty?->name ?? '—' }}</dd></div>
             <div><dt>Phòng khám</dt><dd>{{ $record->examinationRoom?->name ?? '—' }}</dd></div>
             <div><dt>Tiếp nhận lúc</dt><dd>{{ $record->checked_in_at?->format('d/m/Y H:i') ?? '—' }}</dd></div>
@@ -90,9 +90,10 @@
         @if(! $prescriptionLocked && ! $conclusionLocked && $record->canOrderServices())<a class="portal-btn portal-btn--primary" href="{{ route('doctor.visits.orders.create', $record->id) }}">Chỉ định dịch vụ</a>@endif
         @forelse($record->serviceOrders as $order)
             <article class="doctor-visit__card"><h3>{{ $order->service_order_code }} · {{ $order->ordered_at?->format('d/m/Y H:i') ?? 'Chưa ghi thời gian' }}</h3>
+            <p><strong>Trạng thái phiếu chỉ định:</strong> {{ \App\Models\AdminDisplay::label($order->status) }}</p>
             @if($order->reason)<p><strong>Lý do:</strong> {{ $order->reason }}</p>@endif
             @if($order->instructions)<p><strong>Hướng dẫn:</strong> {{ $order->instructions }}</p>@endif
-            @foreach($order->items as $item)<div class="doctor-visit__item"><p><strong>{{ $item->medicalService?->name ?? 'Dịch vụ' }}</strong> · {{ $item->serviceStatus?->description ?? 'Chưa cập nhật' }}</p>
+            @foreach($order->items as $item)<div class="doctor-visit__item"><p><strong>{{ $item->medicalService?->name ?? 'Dịch vụ' }}</strong> · Trạng thái dịch vụ: {{ \App\Models\AdminDisplay::label($item->serviceStatus?->name, 'service') }}</p>
                 @unless($item->result?->hasContent())<p>Chưa có kết quả.</p>@endunless
                 @if($item->result?->result_summary)<p>{{ $item->result->result_summary }}</p>@endif
                 @if($item->result?->result_conclusion)<p>{{ $item->result->result_conclusion }}</p>@endif
@@ -115,7 +116,7 @@
                 <dl class="doctor-prescription-overview__facts">
                     <div><dt>Mã đơn thuốc</dt><dd>{{ $record->prescription->prescription_code }}</dd></div>
                     <div><dt>Thời gian kê đơn</dt><dd>{{ $record->prescription->prescribed_at?->format('d/m/Y H:i') ?? 'Chưa ghi thời gian' }}</dd></div>
-                    <div><dt>Trạng thái</dt><dd>{{ $record->prescription->status === 'ACTIVE' ? 'Đang hiệu lực' : ($record->prescription->status === 'CANCELLED' ? 'Đã hủy' : $record->prescription->status) }}</dd></div>
+                    <div><dt>Trạng thái</dt><dd>{{ \App\Models\AdminDisplay::label($record->prescription->status) }}</dd></div>
                 </dl>
                 <a class="portal-btn portal-btn--secondary" href="{{ route('doctor.visits.prescriptions.print', $record->id) }}">Xem và in đơn thuốc</a>
             </div>

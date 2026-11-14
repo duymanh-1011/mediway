@@ -455,45 +455,7 @@ span[aria-current] { border-color: var(--primary); background: var(--primary); c
         body[data-admin-page="appointments-show"] .detail-grid { grid-template-columns: 1fr; }
         body[data-admin-page="appointments-show"] .checkin-card { flex-direction: column; align-items: flex-start; }
     }
-    body[data-admin-page="doctor-schedules-calendar"] .filter-card { margin-bottom: 18px; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-navigation { display: grid; grid-template-columns: auto 1fr auto; gap: 15px; align-items: center; margin-bottom: 15px; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-month-title { text-align: center; color: #0f172a; font-size: 22px; font-weight: 700; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-container { overflow-x: auto; border: 1px solid #dbe3ef; border-radius: 10px; background: #ffffff; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-week-header { min-width: 1050px; display: grid; grid-template-columns: repeat(7, minmax(150px, 1fr)); background: #f8fafc; border-bottom: 1px solid #dbe3ef; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-week-header div { padding: 11px 8px; text-align: center; color: #334155; font-size: var(--admin-font-body); font-weight: 700; border-right: 1px solid #e2e8f0; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-week-header div:last-child { border-right: none; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-grid { min-width: 1050px; display: grid; grid-template-columns: repeat(7, minmax(150px, 1fr)); }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-day { min-height: 150px; padding: 8px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; background: #ffffff; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-day:nth-child(7n) { border-right: none; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-day.other-month { background: #f8fafc; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-day.today { background: #eff6ff; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-day-number { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: var(--admin-font-body); font-weight: 700; }
-    body[data-admin-page="doctor-schedules-calendar"] .other-month .calendar-day-number { color: #94a3b8; }
-    body[data-admin-page="doctor-schedules-calendar"] .today-label { padding: 2px 5px; border-radius: 5px; background: #2563eb; color: #ffffff; font-size: var(--admin-font-small); }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-events { display: flex; flex-direction: column; gap: 6px; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-event { display: block; padding: 7px; border: 1px solid #bfdbfe; border-radius: 7px; background: #eff6ff; color: #1e3a8a; text-decoration: none; transition: transform 0.12s ease, box-shadow 0.12s ease; }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-event:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08); }
-    body[data-admin-page="doctor-schedules-calendar"] .calendar-event.inactive { border-color: #e2e8f0; background: #f8fafc; color: #64748b; }
-    body[data-admin-page="doctor-schedules-calendar"] .event-time { margin-bottom: 3px; font-size: var(--admin-font-small); font-weight: 700; }
-    body[data-admin-page="doctor-schedules-calendar"] .event-doctor { margin-bottom: 2px; overflow: hidden; font-size: var(--admin-font-small); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-    body[data-admin-page="doctor-schedules-calendar"] .event-room { font-size: var(--admin-font-small); }
-    body[data-admin-page="doctor-schedules-calendar"] .no-event { color: #cbd5e1; text-align: center; font-size: var(--admin-font-small); }
-    @media (max-width: 700px) {
-        body[data-admin-page="doctor-schedules-calendar"] .calendar-navigation { grid-template-columns: 1fr; text-align: center; }
-    }
-    body[data-admin-page="doctor-schedules-create"] .schedule-error { margin-bottom: 20px; padding: 13px 15px; border: 1px solid #fecaca; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
     body[data-admin-page="doctor-schedules-edit"] .schedule-error { margin-bottom: 20px; padding: 13px 15px; border: 1px solid #fecaca; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
-    body[data-admin-page="doctor-schedules-index"] .mini-card { padding: 16px 18px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 11px; }
-    body[data-admin-page="doctor-schedules-index"] .mini-card-label { margin-bottom: 7px; color: #64748b; font-size: var(--admin-font-body); }
-    body[data-admin-page="doctor-schedules-index"] .mini-card-value { font-size: 26px; font-weight: 700; }
-    body[data-admin-page="doctor-schedules-index"] .mini-card-value.success { color: #059669; }
-    body[data-admin-page="doctor-schedules-index"] .action-group { display: flex; align-items: center; gap: 7px; }
-    body[data-admin-page="doctor-schedules-index"] .action-group form { margin: 0; }
-    body[data-admin-page="doctor-schedules-index"] .action-link { padding: 6px 9px; border: none; border-radius: 6px; text-decoration: none; font-family: "Segoe UI", Arial, Helvetica, sans-serif; font-size: var(--admin-font-body); font-weight: 600; cursor: pointer; }
-    body[data-admin-page="doctor-schedules-index"] .action-link.view { background: #eff6ff; color: #1d4ed8; }
-    body[data-admin-page="doctor-schedules-index"] .action-link.edit { background: #fffbeb; color: #b45309; }
-    body[data-admin-page="doctor-schedules-index"] .action-link.delete { background: #fef2f2; color: #b91c1c; }
-    body[data-admin-page="doctor-schedules-index"] .pagination-wrapper { margin-top: 18px; }
     body[data-admin-page="doctor-schedules-show"] .detail-grid { display: grid; grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1.5fr); gap: 20px; }
     body[data-admin-page="doctor-schedules-show"] .section-title { margin: 0 0 16px; font-size: 18px; }
     body[data-admin-page="doctor-schedules-show"] .section-description { margin: -10px 0 15px; color: #64748b; font-size: var(--admin-font-body); }
@@ -3228,6 +3190,24 @@ body.admin-ui .admin-content table :is(th, td).admin-row-number { width: 4rem; m
 .admin-content form.admin-filter-form .admin-filter-actions { flex: 0 0 100%; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding-top: 2px; align-items: center; }
 .admin-content form.admin-filter-form[data-filter-fields="1"] .admin-filter-field { flex: 1 1 240px; }
 .admin-content form.admin-filter-form[data-filter-fields="1"] .admin-filter-actions { flex: 0 0 auto; align-self: flex-end; padding-top: 0; min-height: 40px; }
+.schedule-upload-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.schedule-upload-picker #workbook-name { min-width: 0; overflow-wrap: anywhere; color: #475569; }
+.schedule-month-table { table-layout: fixed; }
+.schedule-month-table th:first-child { width: 20%; }
+.admin-content .admin-table.schedule-month-table td { vertical-align: top; }
+.schedule-shift-room { display: block; margin-top: 5px; color: #475569; overflow-wrap: anywhere; }
+.schedule-hours-group { min-width: 0; margin: 0; }
+.schedule-hours-group .form-group:last-child { margin-bottom: 0; }
+.schedule-hours-actions { grid-column: 1 / -1; }
+@media (min-width: 601px) {
+    body.admin-ui .admin-content .admin-list-panel .admin-list-table:is(.schedule-doctor-table, .schedule-month-table) { min-width: 540px; }
+    .schedule-doctor-table th:first-child { width: 18%; }
+    body.admin-ui .admin-content .schedule-doctor-table .schedule-doctor-actions {
+        width: 1%;
+        text-align: end;
+        white-space: nowrap;
+    }
+}
 .admin-lookup { position: relative; min-width: 0; width: 100%; }
 .admin-lookup-control { position: relative; }
 .admin-lookup input[type="search"], .admin-filter-form .admin-lookup input[type="search"] { width: 100%; min-height: 40px; padding: 9px 38px 9px 11px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; color: #0f172a; font: inherit; box-sizing: border-box; }

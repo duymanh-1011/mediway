@@ -20,8 +20,8 @@ class ConclusionController extends Controller
         $data = $request->validated();
         $version = $request->validate(['record_version' => ['required', 'string', 'size:64']])['record_version'];
         DB::transaction(function () use ($request, $visit, $data, $version, $readiness): void {
-            // Kiểm tra phân công và trạng thái trong giao dịch trước khi ghi hồ sơ.
-            $record = MedicalVisit::whereKey($visit)->where('doctor_id', $request->user()->doctor->id)
+            // Khóa lượt và kiểm tra trạng thái trong giao dịch trước khi ghi hồ sơ.
+            $record = MedicalVisit::whereKey($visit)
                 ->lockForUpdate()->firstOrFail()->lockForClinicalWrite();
             $conclusion = $record->conclusion()->lockForUpdate()->first();
             // Kết luận đã lưu là chỉ đọc, kể cả khi gửi lại biểu mẫu cũ.
@@ -46,7 +46,7 @@ class ConclusionController extends Controller
                 'follow_up_reason' => $followUp ? ($data['follow_up_reason'] ?? null) : null,
                 'notes' => $data['notes'] ?? null,
             ];
-            $conclusion = $record->conclusion()->create([...$values, 'doctor_id' => $record->doctor_id, 'concluded_at' => now()]);
+            $conclusion = $record->conclusion()->create([...$values, 'doctor_id' => $request->user()->doctor->id, 'concluded_at' => now()]);
             // Ghi người thao tác; nội dung bệnh án không sao chép vào nhật ký.
             AuditLog::create(['user_id' => $request->user()->id, 'role_name_snapshot' => 'Doctor', 'action' => 'CREATE',
                 'entity_type' => 'visit_conclusions', 'entity_id' => $conclusion->id, 'entity_business_code' => $record->visit_code,

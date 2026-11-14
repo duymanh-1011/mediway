@@ -33,7 +33,7 @@ class AdminFilterLayoutTest extends TestCase
             }
             $pages[$name] = route($name);
         }
-        $pages['admin.doctor-schedules.calendar'] = route('admin.doctor-schedules.calendar');
+        $pages['admin.doctor-schedules.month.index'] = route('admin.doctor-schedules.month.index');
         $pages['admin.service-groups.show'] = route('admin.service-groups.show', ServiceGroup::where('service_group_code', 'XN')->firstOrFail());
         $pages['admin.disease-groups.show'] = route('admin.disease-groups.show', DiseaseGroup::where('disease_group_code', 'NBHH')->firstOrFail());
         $pages['admin.dashboard'] = route('admin.dashboard');
@@ -75,12 +75,13 @@ class AdminFilterLayoutTest extends TestCase
                     $this->assertGreaterThan(0, $xpath->query('ancestor::div[contains(@class,"admin-filter-field")]', $control)->length, $name.': '.$control->getAttribute('name'));
                 }
                 $button = $xpath->query('.//button', $actions->item(0))->item(0);
-                $this->assertSame($controls->length > 1 || $name === 'admin.dashboard' ? 'Lọc' : 'Tìm kiếm', trim($button->textContent), $name);
+                $usesFilterLabel = $controls->length > 1 || in_array($name, ['admin.dashboard', 'admin.doctor-schedules.month.index'], true);
+                $this->assertSame($usesFilterLabel ? 'Lọc' : 'Tìm kiếm', trim($button->textContent), $name);
                 $this->assertSame('Xóa bộ lọc', trim($xpath->query('.//a', $actions->item(0))->item(0)->textContent));
                 $checked++;
             }
         }
-        $this->assertSame(38, $checked);
+        $this->assertSame(37, $checked);
     }
 
     public function test_filter_values_results_and_reset_link_are_preserved(): void

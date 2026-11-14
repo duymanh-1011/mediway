@@ -1,0 +1,461 @@
+/* Danh sách phòng khám */
+.doctor-rooms-page {
+    --dr-primary: #2563eb;
+    --dr-text: #172b4d;
+    --dr-muted: #64748b;
+    --dr-border: #e2e8f0;
+}
+
+/* ===================== FILTER ===================== */
+
+.doctor-rooms-page .doctor-rooms__filter {
+    display: grid;
+    grid-template-columns:
+        minmax(220px, 1fr) minmax(200px, 0.8fr) auto;
+    align-items: end;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.doctor-rooms-page .doctor-rooms__filter-field {
+    min-width: 0;
+}
+
+.doctor-rooms-page .doctor-rooms__filter-field label {
+    display: block;
+    margin-bottom: 9px;
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--dr-text);
+}
+
+.doctor-rooms-page .doctor-rooms__filter-field .form-control {
+    width: 100%;
+    min-height: 42px;
+    border-radius: 9px;
+}
+
+.doctor-rooms-page .doctor-rooms__filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.doctor-rooms-page .doctor-rooms__filter-actions .portal-btn {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===================== TABLE ===================== */
+
+.doctor-rooms-page .doctor-rooms__table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--dr-border);
+    border-radius: 11px;
+    background: #ffffff;
+}
+
+.doctor-rooms-page .doctor-rooms__table {
+    width: 100%;
+    min-width: 850px;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.doctor-rooms-page .doctor-rooms__table thead th {
+    padding: 13px 11px;
+    background: #f1f5fb;
+    color: #344563;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.doctor-rooms-page .doctor-rooms__table tbody td {
+    padding: 14px 11px;
+    vertical-align: middle;
+    border-bottom: 1px solid #edf2f7;
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.doctor-rooms-page .doctor-rooms__table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.doctor-rooms-page .doctor-rooms__table tbody tr:hover {
+    background: #fafcff;
+}
+
+/* ===================== ROOM ===================== */
+
+.doctor-rooms-page .doctor-rooms__room-name {
+    display: block;
+    color: #142b51;
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+/* ===================== SPECIALTY ===================== */
+
+.doctor-rooms-page .doctor-rooms__specialty {
+    display: inline-block;
+    padding: 6px 9px;
+    border-radius: 7px;
+    background: #eef4ff;
+    color: #2459af;
+    font-size: 11.5px;
+    font-weight: 650;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+/* ===================== STATUS ===================== */
+
+.doctor-rooms-page .doctor-rooms__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.35;
+    border: 1px solid transparent;
+    max-width: 100%;
+}
+
+.doctor-rooms-page .doctor-rooms__status::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.doctor-rooms-page .doctor-rooms__status--active {
+    background: #ecfdf3;
+    color: #087443;
+    border-color: #bbf7d0;
+}
+
+.doctor-rooms-page .doctor-rooms__status--inactive {
+    background: #fff1f2;
+    color: #be123c;
+    border-color: #fecdd3;
+}
+
+.doctor-rooms-page .doctor-rooms__status--maintenance {
+    background: #fffbeb;
+    color: #a16207;
+    border-color: #fde68a;
+}
+
+.doctor-rooms-page .doctor-rooms__status--other {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+
+/* ===================== DOCTOR ASSIGNMENTS ===================== */
+
+.doctor-rooms-page .doctor-rooms__assignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+.doctor-rooms-page .doctor-rooms__assignment {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.doctor-rooms-page .doctor-rooms__assignment+.doctor-rooms__assignment {
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Doctor name */
+
+.doctor-rooms-page .doctor-rooms__assignment-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.doctor-rooms-page .doctor-rooms__assignment-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    border-radius: 7px;
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.doctor-rooms-page .doctor-rooms__assignment-icon svg {
+    width: 15px;
+    height: 15px;
+}
+
+.doctor-rooms-page .doctor-rooms__assignment-name strong {
+    color: #183153;
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+/* Doctor working hours */
+
+.doctor-rooms-page .doctor-rooms__assignment-shifts {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding-left: 34px;
+}
+
+.doctor-rooms-page .doctor-rooms__shift {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 7px;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #315fa7;
+    font-size: 10.5px;
+    font-weight: 650;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.doctor-rooms-page .doctor-rooms__shift::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    flex: 0 0 5px;
+    border-radius: 50%;
+    background: #4b83df;
+}
+
+.doctor-rooms-page .doctor-rooms__unassigned {
+    display: inline-block;
+    padding: 8px 10px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    color: #64748b;
+    background: #f8fafc;
+    font-size: 12px;
+}
+
+/* ===================== WAITING COUNT ===================== */
+
+.doctor-rooms-page .doctor-rooms__waiting {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 30px;
+    padding: 5px 9px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+}
+
+.doctor-rooms-page .doctor-rooms__waiting--empty {
+    background: #f1f5f9;
+    color: #94a3b8;
+}
+
+/* ===================== ACTION ===================== */
+
+.doctor-rooms-page .doctor-rooms__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 10px;
+    font-size: 11.5px;
+    font-weight: 650;
+    white-space: nowrap;
+    border-radius: 8px;
+    max-width: 100%;
+}
+
+/* ===================== EMPTY ===================== */
+
+.doctor-rooms-page .doctor-rooms__empty {
+    padding: 30px 20px !important;
+    text-align: center;
+    color: #64748b;
+}
+
+/* ===================== RESPONSIVE ===================== */
+
+@media (max-width: 1100px) {
+    .doctor-rooms-page .doctor-rooms__filter {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .doctor-rooms-page .doctor-rooms__filter-actions {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .doctor-rooms-page .doctor-rooms__filter {
+        grid-template-columns: 1fr;
+    }
+
+    .doctor-rooms-page .doctor-rooms__filter-actions {
+        grid-column: auto;
+    }
+}
+
+/* Hàng đợi khám */
+.d01-queue .d01-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    border: 1px solid transparent;
+}
+
+.d01-queue .d01-status::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: 0 0 7px;
+}
+
+.d01-queue .d01-status--WAITING {
+    color: #a16207;
+    background: #fef9c3;
+    border-color: #fde68a;
+}
+
+.d01-queue .d01-status--CALLED {
+    color: #1d4ed8;
+    background: #dbeafe;
+    border-color: #bfdbfe;
+}
+
+.d01-queue .d01-status--IN_EXAMINATION {
+    color: #0369a1;
+    background: #e0f2fe;
+    border-color: #bae6fd;
+}
+
+.d01-queue .d01-status--WAITING_FOR_SERVICE {
+    color: #7c3aed;
+    background: #f3e8ff;
+    border-color: #ddd6fe;
+}
+
+.d01-queue .d01-status--RETURNING {
+    color: #c2410c;
+    background: #ffedd5;
+    border-color: #fed7aa;
+}
+
+.d01-queue .d01-status--COMPLETED {
+    color: #047857;
+    background: #d1fae5;
+    border-color: #a7f3d0;
+}
+
+.d01-queue .d01-status--unknown {
+    color: #475569;
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+}
+
+.d01-queue .d01-actions {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.d01-queue .d01-dialog {
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    overflow-y: auto;
+}
+
+.d01-queue .d01-dialog__heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.d01-queue .d01-dialog__heading h2 {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.d01-queue .d01-dialog__actions {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.d01-queue .d01-patient-name {
+    display: block;
+    font-weight: 700;
+    color: #183153;
+}
+
+.d01-queue .d01-table-wrap {
+    overflow-x: auto;
+}
+
+.d01-queue .d01-table {
+    min-width: 900px;
+    width: 100%;
+}
+
+.d01-queue .d01-table td {
+    vertical-align: middle;
+}
+
+.d01-queue .d01-muted {
+    display: block;
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* Độ rộng cột của bảng phòng khám */
+.doctor-rooms-page .doctor-rooms__table col:nth-child(1) { width: 22%; }
+.doctor-rooms-page .doctor-rooms__table col:nth-child(2),
+.doctor-rooms-page .doctor-rooms__table col:nth-child(3),
+.doctor-rooms-page .doctor-rooms__table col:nth-child(6) { width: 14%; }
+.doctor-rooms-page .doctor-rooms__table col:nth-child(4) { width: 28%; }
+.doctor-rooms-page .doctor-rooms__table col:nth-child(5) { width: 8%; }

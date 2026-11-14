@@ -77,7 +77,7 @@ require __DIR__ . '/employee-reception.php';
 
 // Khu vực bác sĩ dùng đăng nhập chung; phần hồ sơ chỉ truy cập lượt được phân công.
 Route::prefix('bac-si')->name('doctor.')->middleware([\App\Http\Middleware\DoctorMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function () {
-    Route::get('/', [\App\Http\Controllers\Doctor\VisitController::class, 'index'])->name('home');
+    Route::get('/luot-kham', [\App\Http\Controllers\Doctor\VisitController::class, 'index'])->name('visits.index');
     Route::get('/luot-kham/{visit}', [\App\Http\Controllers\Doctor\VisitController::class, 'show'])->whereNumber('visit')->name('visits.show');
     Route::get('/luot-kham/{visit}/ket-qua/{result}/tep/{type}', [\App\Http\Controllers\Doctor\VisitController::class, 'resultDocument'])->whereNumber(['visit', 'result'])->where('type', 'pdf|image')->name('visits.results.document');
     Route::get('/luot-kham/{visit}/chi-dinh', [\App\Http\Controllers\Doctor\ServiceOrderController::class, 'create'])->whereNumber('visit')->name('visits.orders.create');
@@ -90,7 +90,6 @@ Route::prefix('bac-si')->name('doctor.')->middleware([\App\Http\Middleware\Docto
     Route::get('/luot-kham/{visit}/don-thuoc/in', [\App\Http\Controllers\Doctor\PrescriptionController::class, 'print'])->whereNumber('visit')->name('visits.prescriptions.print');
     Route::put('/luot-kham/{visit}/ket-luan', [\App\Http\Controllers\Doctor\ConclusionController::class, 'save'])->whereNumber('visit')->name('visits.conclusion.save');
     Route::post('/luot-kham/{visit}/hoan-tat', [\App\Http\Controllers\Doctor\VisitController::class, 'complete'])->whereNumber('visit')->name('visits.complete');
-    Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->name('logout');
 });
 
 Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\EmployeeMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function () {
@@ -127,6 +126,33 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::get('/thanh-toan/{payable}', [\App\Http\Controllers\Employee\PayableController::class, 'show'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.show');
     Route::get('/thanh-toan/giao-dich/{transaction}/bien-lai', [\App\Http\Controllers\Employee\PaymentReceiptController::class, 'show',])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.receipt');
 });
+
+/*
+|--------------------------------------------------------------------------
+| DOCTOR PORTAL — KHU VỰC BÁC SĨ
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('bac-si')->name('doctor.')->middleware([\App\Support\Doctor\DoctorMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class,])->group(function () {
+    Route::get('/', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'home'])->name('home');
+    Route::get('/ho-so', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'profile'])->name('profile');
+    Route::get('/ho-so/chinh-sua', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/ho-so', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/ho-so/doi-mat-khau', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.change');
+    Route::post('/dang-xuat', [\App\Http\Controllers\Portal\AuthController::class, 'destroy'])->name('logout');
+    Route::prefix('kham-benh')->name('examination.')->controller(\App\Http\Controllers\Doctor\ExaminationController::class)->group(function () {
+        Route::get('/phong', 'rooms')->name('rooms.index');
+        Route::get('/phong/{room}/hang-doi', 'queue')->name('rooms.queue');
+        Route::post('/phong/{room}/hang-doi/{queue}/goi', 'call')->whereNumber('queue')->name('queue.call');
+        Route::post('/phong/{room}/hang-doi/{queue}/goi-lai', 'recall')->whereNumber('queue')->name('queue.recall');
+        Route::post('/phong/{room}/hang-doi/{queue}/bo-qua', 'skip')->whereNumber('queue')->name('queue.skip');
+        Route::post('/phong/{room}/hang-doi/{queue}/bat-dau', 'start')->whereNumber('queue')->name('visits.start');
+        Route::post('/phong/{room}/luot-kham/{visit}/hoan-tat', 'complete')->whereNumber('visit')->name('visits.complete');
+    });
+    // Hàng đợi dẫn đến trang chi tiết đã giới hạn theo bác sĩ được phân công.
+    Route::get('/kham-benh/luot-kham/{visit}', [\App\Http\Controllers\Doctor\VisitController::class, 'show'])->whereNumber('visit')->name('examination.visits.show');
+});
+
 
 
 Route::prefix('tai-khoan')->name('patient.')->group(function () {
@@ -512,24 +538,25 @@ Route::prefix('admin')
 
             Route::prefix('doctor-schedules/month')->name('doctor-schedules.month.')->controller(\App\Http\Controllers\Admin\DoctorMonthlyScheduleController::class)->group(function (): void {
                 Route::get('/', 'index')->name('index');
+                Route::get('/shift-hours', 'editShiftHours')->name('shift-hours.edit');
+                Route::put('/shift-hours', 'updateShiftHours')->name('shift-hours.update');
                 Route::get('/template', 'template')->name('template');
                 Route::get('/{doctor}', 'show')->whereNumber('doctor')->name('show');
                 Route::put('/{doctor}', 'update')->whereNumber('doctor')->name('update');
                 Route::post('/{doctor}/import', 'preview')->whereNumber('doctor')->name('import.preview');
+                Route::post('/{doctor}/import/apply', 'import')->whereNumber('doctor')->name('import.apply');
                 Route::get('/{doctor}/import/{token}', 'review')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.show');
                 Route::put('/{doctor}/import/{token}', 'assignments')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.assignments');
                 Route::post('/{doctor}/import/{token}', 'confirm')->whereNumber('doctor')->where('token', '[A-Za-z0-9]{48}')->name('import.confirm');
             });
 
-            Route::get(
-                '/doctor-schedules/calendar',
-                [DoctorScheduleController::class, 'calendar']
-            )->name('doctor-schedules.calendar');
-
-            Route::resource(
-                'doctor-schedules',
-                DoctorScheduleController::class
-            );
+            Route::controller(DoctorScheduleController::class)->prefix('doctor-schedules')->name('doctor-schedules.')->group(function (): void {
+                Route::get('/', 'redirectToMonth')->name('index');
+                Route::get('/calendar', 'redirectToMonth')->name('calendar');
+                Route::get('/create', 'redirectToMonth')->name('create');
+                Route::post('/', 'redirectLegacyStore')->name('store');
+            });
+            Route::resource('doctor-schedules', DoctorScheduleController::class)->only(['show', 'edit', 'update', 'destroy']);
 
             /*
             |--------------------------------------------------------------------------
@@ -646,7 +673,7 @@ Route::prefix('admin')
             Route::post('/visits/walk-in/search', [WalkInReceptionController::class, 'search'])->name('visits.walk-in.search');
             Route::post('/visits/walk-in/{patient}/activation-code', [WalkInReceptionController::class, 'issueActivation'])->whereNumber('patient')->name('visits.walk-in.activation');
             Route::post('/visits/walk-in', [WalkInReceptionController::class, 'store'])->block()->name('visits.walk-in.store');
-            Route::get('/visits/walk-in/{visit}/credentials', static fn (string $visit) => redirect()->route('admin.visits.show', $visit))
+            Route::get('/visits/walk-in/{visit}/credentials', static fn(string $visit) => redirect()->route('admin.visits.show', $visit))
                 ->whereNumber('visit')->name('visits.walk-in.credentials');
             Route::get('/visits/{visit}/reception-slip', ReceptionSlipController::class)->whereNumber('visit')->name('visits.reception-slip');
 

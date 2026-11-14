@@ -10,13 +10,14 @@
     brand-subtitle="Hồ sơ điều trị"
     :facility="[$visit->examinationRoom?->name]"
     :identifiers="['Mã đơn' => $record->prescription_code, 'Mã bệnh nhân' => $patient->patient_code]"
-    :back-url="route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'don-thuoc'])"
-    back-label="Quay lại đơn thuốc lượt khám"
+    :back-url="$backUrl ?? route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'don-thuoc'])"
+    :back-label="!empty($doctorPrint) ? 'Quay lại lượt khám' : 'Quay lại đơn thuốc lượt khám'"
     print-label="In đơn thuốc"
 >
-    @if ($record->hasPdf())
+    @if (empty($doctorPrint))
         <x-slot:actions>
-            <a href="{{ route('patient.prescriptions.document', $record->id) }}">Xem PDF gốc</a>
+            @if ($record->status === 'ACTIVE' && $visit->status?->name === 'COMPLETED')<a href="{{ route('patient.prescriptions.purchase.show', $record->id) }}">Lựa chọn mua thuốc</a>@endif
+            @if ($record->hasPdf())<a href="{{ route('patient.prescriptions.document', $record->id) }}">Xem PDF gốc</a>@endif
         </x-slot:actions>
     @endif
 

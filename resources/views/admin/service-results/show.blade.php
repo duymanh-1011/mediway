@@ -496,6 +496,18 @@
                 </div>
                 @endif
 
+                {{-- Dùng cùng cách đọc dữ liệu kỹ thuật đã lưu như trang bác sĩ và bệnh nhân. --}}
+                @if ($technicalRows = $result->technicalDetailRows())
+                    <div class="result-card">
+                        <div class="result-card-header"><div>
+                            <h2>Thông tin kỹ thuật bổ sung</h2>
+                            <p>Thông tin kỹ thuật đã được ghi nhận cho dịch vụ.</p>
+                        </div></div>
+                        <div class="result-parameters">
+                            @include('admin.layouts.partials.value-list', ['valueRows' => $technicalRows])
+                        </div>
+                    </div>
+                @endif
             </div>
 
 

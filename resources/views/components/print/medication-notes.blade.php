@@ -20,6 +20,14 @@
     </section>
 @endif
 
+{{-- Ghi chú trong đơn được chia sẻ với bệnh nhân và hiện trên phiếu in. --}}
+@if (filled($prescription->doctor_notes))
+    <section class="prescription-advice" aria-labelledby="prescription-doctor-notes">
+        <h2 id="prescription-doctor-notes">Ghi chú của bác sĩ</h2>
+        <p>{{ $prescription->doctor_notes }}</p>
+    </section>
+@endif
+
 <section class="prescription-advice prescription-general-notes" aria-labelledby="prescription-general-notes">
     <h2 id="prescription-general-notes">Lưu ý chung</h2>
     <ul>

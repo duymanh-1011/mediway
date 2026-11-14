@@ -105,12 +105,126 @@ body.employee-body .employee-profile .portal-btn{display:inline-flex;align-items
 .doctor-order-form .doctor-order-option { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--portal-line); border-radius: 8px; font-weight: 400; }
 .doctor-order-form .doctor-order-option input { width: 18px; height: 18px; min-height: 0; margin: 0; accent-color: var(--portal-primary); }
 .doctor-order-option small { display: block; margin-top: 4px; color: var(--portal-muted); }
+.doctor-body .doctor-order-facts { margin: 16px 0; }
+.doctor-body .doctor-order-form__details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.doctor-body .doctor-order-list { display: grid; gap: 8px; }
+.doctor-body .doctor-order-option[hidden], .doctor-body [data-service-search-field][hidden], .doctor-body [data-selection-summary][hidden], .doctor-body [data-service-search-empty][hidden] { display: none; }
+.doctor-body .doctor-order-summary { justify-self: start; padding: 7px 11px; border-radius: 8px; background: #edf4ff; color: #244e8b; }
+.doctor-body .doctor-order-option:has(input:checked) { border-color: #83abed; background: #f2f7ff; }
+.doctor-body .doctor-order-option:focus-within { outline: 2px solid #245bd6; outline-offset: 2px; }
+@media (max-width: 600px) { .doctor-body .doctor-order-form__details { grid-template-columns: minmax(0, 1fr); } }
 .doctor-prescription-item { min-width: 0; margin: 0 0 16px; padding: 16px; border: 1px solid var(--portal-line); border-radius: 12px; }
 .doctor-prescription-item legend { padding: 0 6px; color: var(--portal-ink); font-weight: 700; }
 .doctor-prescription-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
 .doctor-prescription-grid__wide { grid-column: 1 / -1; }
+.doctor-body .doctor-prescription-form [data-doctor-unit-price] { color: #536a84; font-size: 12px; font-weight: 400; line-height: 1.5; }
 .doctor-prescription-form .doctor-prescription-confirm { display: flex; align-items: flex-start; gap: 9px; }
 .doctor-prescription-form .doctor-prescription-confirm input { width: 18px; min-height: 18px; flex: none; accent-color: var(--portal-primary); }
+.doctor-prescription-form .doctor-prescription-error { margin: 0; color: #a61b29; font-size: 0.875rem; }
+.doctor-body .doctor-conclusion-form h3 { margin: 4px 0; color: #1a3152; font-size: 16px; }
+.doctor-body .doctor-conclusion-error { margin: 6px 0 0; color: #a61b29; font-size: 13px; }
+.doctor-body .doctor-follow-up { min-width: 0; margin: 0; padding: 16px; border: 1px solid #dce7f4; border-radius: 12px; background: #f8faff; }
+.doctor-body .doctor-follow-up legend { padding: 0 6px; color: #1a3152; font-weight: 700; }
+.doctor-body .doctor-conclusion-form .doctor-follow-up__toggle { display: flex; align-items: center; gap: 9px; }
+.doctor-body .doctor-follow-up__toggle input { width: 18px; height: 18px; min-height: 0; margin: 0; accent-color: var(--portal-primary); }
+.doctor-body .doctor-follow-up__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+.doctor-body .doctor-follow-up__fields[hidden] { display: none; }
+@media (max-width: 600px) { .doctor-body .doctor-follow-up__fields { grid-template-columns: minmax(0, 1fr); } }
+
+/* Trang lượt khám của bác sĩ: phân nhóm thông tin, không ảnh hưởng giao diện nhân viên. */
+.doctor-body .doctor-visit { max-width: 1120px; min-width: 0; }
+.doctor-body .doctor-visit__hero, .doctor-body .doctor-visit__section { min-width: 0; padding: clamp(18px, 3vw, 30px); border: 1px solid #dce7f4; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(27, 55, 92, .045); }
+.doctor-body .doctor-visit__hero { border-top: 4px solid #2d63dd; }
+.doctor-body .doctor-visit__hero h1 { margin: 3px 0 10px; font-size: clamp(24px, 3vw, 32px); line-height: 1.2; overflow-wrap: anywhere; }
+.doctor-body .doctor-visit__hero h2, .doctor-body .doctor-visit__section h2 { margin: 0 0 16px; color: #1a3152; font-size: 19px; }
+.doctor-body .doctor-visit__hero h2 { margin-top: 24px; font-size: 16px; }
+.doctor-body .doctor-visit__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin: 0; }
+.doctor-body .doctor-visit__quick { position: sticky; top: 72px; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 9px; border: 1px solid #dce7f4; border-radius: 12px; background: #fff; box-shadow: 0 5px 16px rgba(27, 55, 92, .08); }
+.doctor-body .doctor-visit__quick a { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 11px; border-radius: 8px; color: #234b80; font-size: 13px; font-weight: 650; text-decoration: none; }
+.doctor-body .doctor-visit__quick a:hover, .doctor-body .doctor-visit__quick a:focus-visible { background: #eaf2ff; color: #174fba; }
+.doctor-body .doctor-visit__section[id] { scroll-margin-top: 165px; }
+.doctor-body .doctor-visit__section > .portal-alert { margin: 0 0 14px; }
+.doctor-body .doctor-visit__status { display: inline-block; padding: 5px 10px; border-radius: 999px; background: #eaf2ff; color: #1c4c97; font-size: 13px; font-weight: 700; }
+/* Bộ lọc và nhãn chỉ áp dụng cho khu vực bác sĩ. */
+.doctor-body .doctor-visit-filter { margin-bottom: 16px; padding: 20px; }
+.doctor-body .doctor-visit-filter select { width: 100%; min-width: 0; min-height: 44px; padding: 9px 11px; border: 1px solid #cbd9e9; border-radius: 8px; background: #fff; color: #17283e; font: inherit; }
+.doctor-body .doctor-visit-filter__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; grid-column: 1 / -1; }
+.doctor-body .doctor-visit-list__item { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: start; gap: 16px; margin-top: 14px; padding: 20px; background: #fff; border-color: #dce7f4; }
+.doctor-body .doctor-visit-list__item:first-child { margin-top: 0; }
+.doctor-body .doctor-visit-list__info { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.doctor-body .doctor-visit-list__info h3 { margin: 1px 0 14px; color: #172b46; font-size: 17px; line-height: 1.4; }
+.doctor-body .doctor-visit-list__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; margin: 0 0 15px; }
+.doctor-body .doctor-visit-list__facts div { min-width: 0; }
+.doctor-body .doctor-visit-list__facts dt { margin-bottom: 2px; color: #687d98; font-size: 12px; }
+.doctor-body .doctor-visit-list__facts dd { margin: 0; color: #253c5b; font-size: 13px; font-weight: 600; line-height: 1.5; }
+.doctor-body .doctor-visit-list__item .employee-card__link { margin-top: 2px; }
+.doctor-body .doctor-visit-status { display: inline-block; max-width: 100%; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+.doctor-body .doctor-visit-status--waiting { color: #82410b; background: #fff1dd; }
+.doctor-body .doctor-visit-status--examining { color: #174b9c; background: #e7f0ff; }
+.doctor-body .doctor-visit-status--service { color: #5c338e; background: #f1eaff; }
+.doctor-body .doctor-visit-status--returning { color: #075f62; background: #dff4f1; }
+.doctor-body .doctor-visit-status--completed { color: #17603b; background: #e2f5e9; }
+.doctor-body .doctor-visit-status--neutral { color: #3d5065; background: #edf1f5; }
+@media (max-width: 600px) { .doctor-body .doctor-visit-filter { grid-template-columns: minmax(0, 1fr); padding: 16px; } .doctor-body .doctor-visit-filter__actions { grid-column: auto; } .doctor-body .doctor-visit-list__item { grid-template-columns: 42px minmax(0, 1fr); gap: 10px 12px; padding: 16px; } .doctor-body .doctor-visit-list__item > .doctor-visit-status { grid-column: 2; grid-row: 2; justify-self: start; } .doctor-body .doctor-visit-list__facts { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+.doctor-body .doctor-visit__section > p { line-height: 1.6; overflow-wrap: anywhere; }
+.doctor-body .doctor-visit__section > .portal-btn { margin: 0 0 12px; }
+.doctor-body .doctor-visit__card { min-width: 0; margin: 12px 0; padding: 16px; border: 1px solid #e1eaf4; border-radius: 12px; background: #f8faff; overflow-wrap: anywhere; }
+.doctor-body .doctor-visit__card h3 { margin: 0 0 10px; font-size: 15px; color: #294b78; }
+.doctor-body .doctor-visit__card p { margin: 6px 0; line-height: 1.55; white-space: pre-wrap; }
+/* Tách nhãn và nội dung để bác sĩ đọc nhanh chẩn đoán và đơn thuốc. */
+.doctor-body .doctor-clinical-card { padding: 18px; }
+.doctor-body .doctor-clinical-card__heading, .doctor-body .doctor-medicine-card__heading { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 18px; }
+.doctor-body .doctor-clinical-card__label, .doctor-body .doctor-prescription-overview dt, .doctor-body .doctor-medicine-card__facts dt { display: block; color: #647895; font-size: 12px; font-weight: 600; }
+.doctor-body .doctor-clinical-card__heading h3 { margin: 4px 0 0; color: #193355; font-size: 16px; }
+.doctor-body .doctor-clinical-card__type { padding: 5px 10px; border-radius: 999px; background: #e9f1ff; color: #23549d; font-size: 12px; font-weight: 700; }
+.doctor-body .doctor-clinical-card__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; margin: 15px 0 0; }
+.doctor-body .doctor-clinical-card__facts div { min-width: 0; }
+.doctor-body .doctor-clinical-card__facts dt { color: #647895; font-size: 12px; font-weight: 600; }
+.doctor-body .doctor-clinical-card__facts dd { margin: 4px 0 0; color: #263f60; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
+.doctor-body .doctor-clinical-card__description { margin-top: 15px; padding-top: 13px; border-top: 1px solid #dfe8f4; }
+.doctor-body .doctor-clinical-card__description p { margin: 4px 0 0; color: #263f60; }
+.doctor-body .doctor-conclusion-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.doctor-body .doctor-conclusion-summary > div { min-width: 0; padding: 13px 15px; border: 1px solid #e1eaf4; border-radius: 10px; background: #f8faff; }
+.doctor-body .doctor-conclusion-summary dt { color: #647895; font-size: 12px; font-weight: 600; }
+.doctor-body .doctor-conclusion-summary dd { margin: 5px 0 0; color: #263f60; line-height: 1.55; overflow-wrap: anywhere; white-space: pre-wrap; }
+.doctor-body .doctor-prescription-overview { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px; border: 1px solid #dfe8f4; border-radius: 12px; background: #f8faff; }
+.doctor-body .doctor-prescription-overview__facts, .doctor-body .doctor-medicine-card__facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); flex: 1 1 440px; gap: 12px 22px; margin: 0; }
+.doctor-body .doctor-prescription-overview dd, .doctor-body .doctor-medicine-card__facts dd { margin: 4px 0 0; color: #203a5c; font-weight: 600; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.doctor-body .doctor-prescription-heading { margin: 22px 0 10px; color: #1a3152; font-size: 15px; }
+.doctor-body .doctor-medicine-card__heading { padding-bottom: 12px; border-bottom: 1px solid #dfe8f4; }
+.doctor-body .doctor-medicine-card__heading h4 { margin: 0; color: #193355; font-size: 15px; overflow-wrap: anywhere; }
+.doctor-body .doctor-medicine-card__heading span { color: #3f5878; font-size: 13px; font-weight: 600; }
+.doctor-body .doctor-medicine-card__facts { margin-top: 13px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.doctor-body .doctor-medicine-card__wide { grid-column: 1 / -1; }
+.doctor-body .doctor-prescription-advice { margin-top: 16px; padding: 14px 16px; border-left: 3px solid #6d9be6; border-radius: 0 9px 9px 0; background: #f2f7ff; color: #254361; }
+.doctor-body .doctor-prescription-advice p { margin: 5px 0 0; color: #254361; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.doctor-body .doctor-visit__item { margin-top: 12px; padding: 12px 14px; border-radius: 9px; background: #fff; }
+.doctor-body .doctor-result-files { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.doctor-body .doctor-result-files .portal-btn { min-height: 40px; font-size: 13px; }
+.doctor-body .doctor-visit__clinical-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.doctor-body .doctor-visit__clinical-summary > div { min-width: 0; padding: 12px 14px; border-radius: 9px; background: #f5f8fc; overflow-wrap: anywhere; }
+.doctor-body .doctor-visit__clinical-summary strong { color: #294565; font-size: 13px; }
+.doctor-body .doctor-visit__clinical-summary p { margin: 5px 0 0; color: #17283e; line-height: 1.5; white-space: pre-wrap; }
+.doctor-body .doctor-visit details { min-width: 0; }
+.doctor-body .doctor-visit summary { width: fit-content; max-width: 100%; padding: 8px 0; line-height: 1.5; }
+.doctor-body .doctor-visit summary:focus-visible { outline: 2px solid #245bd2; outline-offset: 3px; border-radius: 4px; }
+.doctor-body .doctor-visit__editor[open] { margin-top: 16px; padding: 0 16px 16px; border: 1px solid #dce7f4; border-radius: 12px; background: #fbfdff; }
+.doctor-body .doctor-visit__editor[open] summary { padding-top: 14px; }
+.doctor-body .doctor-visit .tech-form label { min-width: 0; }
+.doctor-body .doctor-visit .tech-form :is(input, textarea, select) { max-width: 100%; }
+@media (max-width: 600px) {
+    /* Trên điện thoại không ghim thanh chuyển nhanh để dành chỗ cho nội dung khám. */
+    .doctor-body .doctor-visit__quick { position: static; }
+    .doctor-body .doctor-visit__quick a { flex: 1 1 auto; justify-content: center; padding: 8px; background: #f3f7fd; }
+    .doctor-body .doctor-visit__section[id] { scroll-margin-top: 80px; }
+    .doctor-body .doctor-visit__clinical-summary { grid-template-columns: minmax(0, 1fr); }
+    .doctor-body .doctor-conclusion-summary { grid-template-columns: minmax(0, 1fr); }
+    .doctor-body .doctor-visit__section, .doctor-body .doctor-visit__hero { padding: 18px; }
+    .doctor-body .doctor-visit__card { padding: 13px; }
+    .doctor-body .doctor-prescription-overview__facts, .doctor-body .doctor-medicine-card__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .doctor-body .doctor-prescription-overview .portal-btn { width: 100%; }
+    .doctor-body .doctor-visit .portal-btn { max-width: 100%; white-space: normal; text-align: center; }
+}
 @media (max-width: 600px) { .doctor-prescription-grid { grid-template-columns: minmax(0, 1fr); } .doctor-prescription-grid__wide { grid-column: auto; } }
 @media (max-width: 480px) { .doctor-order-form .doctor-order-option { grid-template-columns: auto minmax(0, 1fr); } .doctor-order-option > span:last-child { grid-column: 2; } }
 .tech-form .tech-result-confirmation { display: flex; align-items: flex-start; gap: 8px; }

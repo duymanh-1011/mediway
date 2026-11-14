@@ -150,6 +150,19 @@ class PortalController extends Controller
                     'description' => 'Đơn thuốc '.$prescription->prescription_code,
                     'time' => $prescription->prescribed_at ?? $prescription->created_at, 'url' => route('patient.prescriptions.show', $prescription->id)]);
             }
+            // Nhắc chọn mua một lần khi lượt đã hoàn tất và chưa có khoản thu còn hiệu lực.
+            $purchases = Prescription::where('status', 'ACTIVE')
+                ->whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $patient->id)->whereHas('status', fn ($s) => $s->where('name', 'COMPLETED')))
+                ->whereDoesntHave('payables', fn ($q) => $q->whereDoesntHave('paymentStatus', fn ($s) => $s->where('name', 'CANCELLED')))
+                ->with('medicalVisit')->orderByDesc('updated_at')->limit(20)->get();
+            foreach ($purchases as $prescription) {
+                $visit = $prescription->medicalVisit;
+                $items->push(['key' => $this->notificationKey('prescription-purchase', $prescription->id, $visit->examination_ended_at ?? $visit->id),
+                    'category' => 'Kết quả', 'title' => 'Lựa chọn mua thuốc tại bệnh viện',
+                    'description' => 'Lượt khám đã hoàn tất. Xem lựa chọn mua thuốc theo đơn '.$prescription->prescription_code.'.',
+                    'time' => $visit->examination_ended_at ?? $prescription->updated_at,
+                    'url' => route('patient.prescriptions.purchase.show', $prescription->id)]);
+            }
         }
         if (in_array($category, ['tat-ca', 'thanh-toan'], true)) {
             $payables = Payable::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))

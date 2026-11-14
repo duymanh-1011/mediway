@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\StoreServiceOrderRequest;
 use App\Models\MedicalService;
 use App\Models\MedicalVisit;
 use App\Models\ServiceOrderItem;
+use App\Services\DoctorPrescriptionLock;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,12 +17,18 @@ use Illuminate\View\View;
 
 class ServiceOrderController extends Controller
 {
-    public function create(Request $request, int $visit): View
+    public function create(Request $request, int $visit): View|RedirectResponse
     {
         $doctor = $request->user()->doctor;
         // Chỉ cho bác sĩ truy cập lượt được phân công, kể cả khi nhập trực tiếp URL.
         $record = MedicalVisit::whereKey($visit)->where('doctor_id', $doctor->id)
-            ->with(['patient', 'status', 'appointment'])->firstOrFail();
+            ->with(['patient', 'doctor', 'specialty', 'examinationRoom', 'status', 'appointment'])->firstOrFail();
+        if ($record->conclusion()->exists()) {
+            return redirect()->route('doctor.visits.show', $record)->withErrors(['conclusion_lock' => DoctorPrescriptionLock::CONCLUSION_MESSAGE]);
+        }
+        if ($record->prescription()->exists()) {
+            return redirect()->route('doctor.visits.show', $record)->withErrors(['prescription_lock' => DoctorPrescriptionLock::MESSAGE]);
+        }
         $services = MedicalService::where('status', 'ACTIVE')->with('serviceGroups')
             ->orderBy('display_order')->orderBy('name')->get();
         return view('doctor.visits.order-create', compact('doctor', 'record', 'services'));
@@ -36,6 +43,8 @@ class ServiceOrderController extends Controller
             // Khóa lượt khám để kiểm tra lại quyền và chống gửi lặp cùng lúc.
             $record = MedicalVisit::whereKey($visit)->where('doctor_id', $doctorId)
                 ->with('status')->lockForUpdate()->firstOrFail();
+            // Kiểm tra khi đã khóa lượt, kể cả form mở trước lúc kê đơn.
+            DoctorPrescriptionLock::assertUnlocked($record);
             $record->assertNotBeforeAppointmentDay();
             if (! $record->canOrderServices()) {
                 throw ValidationException::withMessages(['visit' => 'Lượt khám chưa ở trạng thái cho phép chỉ định dịch vụ.']);

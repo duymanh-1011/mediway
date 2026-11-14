@@ -3,10 +3,10 @@
     <div class="doctor-prescription-grid">
         <label>Thuốc <span aria-hidden="true">*</span><select name="items[{{ $index }}][medicine_id]" required>
             <option value="">Chọn thuốc</option>
-            @foreach($medicines as $medicine)<option value="{{ $medicine->id }}" @selected((string) ($values['medicine_id'] ?? '') === (string) $medicine->id)>{{ $medicine->medicine_code }} · {{ $medicine->name }} {{ $medicine->strength }} ({{ implode(', ', array_keys($medicine->salePrices())) ?: 'chưa có giá' }})</option>@endforeach
+            @foreach($medicines as $medicine)<option value="{{ $medicine->id }}" data-prices="{{ json_encode($medicine->salePrices(), JSON_UNESCAPED_UNICODE) }}" @selected((string) ($values['medicine_id'] ?? '') === (string) $medicine->id)>{{ $medicine->medicine_code }} · {{ $medicine->name }} {{ $medicine->strength }} ({{ implode(', ', array_keys($medicine->salePrices())) ?: 'chưa có giá' }})</option>@endforeach
         </select></label>
         <label>Số lượng <span aria-hidden="true">*</span><input type="number" name="items[{{ $index }}][quantity]" min="0.01" step="0.01" value="{{ $values['quantity'] ?? '' }}" required></label>
-        <label>Đơn vị <span aria-hidden="true">*</span><select name="items[{{ $index }}][usage_unit]" required><option value="">Chọn đơn vị</option>@foreach($units as $unit)<option value="{{ $unit }}" @selected(($values['usage_unit'] ?? '') === $unit)>{{ $unit }}</option>@endforeach</select></label>
+        <label>Đơn vị <span aria-hidden="true">*</span><select name="items[{{ $index }}][usage_unit]" required><option value="">Chọn đơn vị</option>@foreach($units as $unit)<option value="{{ $unit }}" @selected(($values['usage_unit'] ?? '') === $unit)>{{ $unit }}</option>@endforeach</select><small data-doctor-unit-price aria-live="polite">Chọn thuốc và đơn vị có giá trong danh mục.</small></label>
         <label>Liều mỗi lần <span aria-hidden="true">*</span><input name="items[{{ $index }}][dose_per_use]" maxlength="80" value="{{ $values['dose_per_use'] ?? '' }}" required></label>
         <label>Số lần mỗi ngày <span aria-hidden="true">*</span><input type="number" name="items[{{ $index }}][times_per_day]" min="0.01" step="0.01" value="{{ $values['times_per_day'] ?? '' }}" required></label>
         <label>Số ngày dùng <span aria-hidden="true">*</span><input type="number" name="items[{{ $index }}][duration_days]" min="1" step="1" value="{{ $values['duration_days'] ?? '' }}" required></label>

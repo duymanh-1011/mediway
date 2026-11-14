@@ -14,9 +14,10 @@
     :back-label="!empty($doctorPrint) ? 'Quay lại lượt khám' : 'Quay lại đơn thuốc lượt khám'"
     print-label="In đơn thuốc"
 >
-    @if (empty($doctorPrint) && $record->hasPdf())
+    @if (empty($doctorPrint))
         <x-slot:actions>
-            <a href="{{ route('patient.prescriptions.document', $record->id) }}">Xem PDF gốc</a>
+            @if ($record->status === 'ACTIVE' && $visit->status?->name === 'COMPLETED')<a href="{{ route('patient.prescriptions.purchase.show', $record->id) }}">Lựa chọn mua thuốc</a>@endif
+            @if ($record->hasPdf())<a href="{{ route('patient.prescriptions.document', $record->id) }}">Xem PDF gốc</a>@endif
         </x-slot:actions>
     @endif
 

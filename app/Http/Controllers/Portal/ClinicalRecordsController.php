@@ -160,7 +160,7 @@ class ClinicalRecordsController extends Controller
 
         $record = PatientClinicalRecords::restrict(Prescription::query(), 'prescriptions')->whereHas('medicalVisit', fn ($visit) => $visit->where('patient_id', $patient->id))
             ->with(['doctor:id,full_name', 'medicalVisit.diagnoses.disease:id,disease_code,name',
-                'medicalVisit.examinationRoom:id,name', 'items.medicine'])
+                'medicalVisit.examinationRoom:id,name', 'medicalVisit.status', 'items.medicine'])
             ->findOrFail($prescription);
 
         $patient->load('detail:id,patient_id,current_address,permanent_address,citizen_id_number');

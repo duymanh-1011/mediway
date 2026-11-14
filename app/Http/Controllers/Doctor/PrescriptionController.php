@@ -7,9 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePrescriptionRequest;
 use App\Models\MedicalVisit;
 use App\Models\Medicine;
-use App\Models\AuditLog;
-use App\Models\Payable;
-use App\Services\DoctorClinicalVersion;
+use App\Services\DoctorPrescriptionLock;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +21,9 @@ class PrescriptionController extends Controller
         $doctor = $request->user()->doctor;
         $record = MedicalVisit::whereKey($visit)->where('doctor_id', $doctor->id)
             ->with(['patient', 'status', 'appointment', 'prescription'])->firstOrFail();
+        if ($record->conclusion()->exists()) {
+            return redirect()->route('doctor.visits.show', $record)->withErrors(['conclusion_lock' => DoctorPrescriptionLock::CONCLUSION_MESSAGE]);
+        }
         if (! $record->canRecordClinicalData() || $record->prescription) {
             return redirect()->route('doctor.visits.show', $record)->withErrors(['prescription' => 'Chỉ có thể tạo một đơn thuốc khi lượt khám đang được phép ghi hồ sơ.']);
         }
@@ -37,6 +38,8 @@ class PrescriptionController extends Controller
             $record = MedicalVisit::whereKey($visit)->where('doctor_id', $request->user()->doctor->id)
                 ->lockForUpdate()->firstOrFail();
             $record = $record->lockForClinicalWrite();
+            // Kết luận và đơn dùng cùng khóa lượt để tránh lưu song song sai thứ tự.
+            DoctorPrescriptionLock::assertConclusionUnlocked($record);
             if ($record->prescription()->exists()) {
                 throw ValidationException::withMessages(['prescription' => 'Lượt khám này đã có đơn thuốc.']);
             }
@@ -66,41 +69,4 @@ class PrescriptionController extends Controller
         ])->header('Cache-Control', 'private, no-store');
     }
 
-    public function update(Request $request, int $visit): RedirectResponse
-    {
-        $data = $request->validate([
-            'record_version' => ['required', 'string', 'size:64'],
-            'action' => ['required', 'in:save,cancel'],
-            'general_instructions' => ['nullable', 'string', 'max:5000'],
-            'doctor_notes' => ['nullable', 'string', 'max:5000'],
-        ]);
-        DB::transaction(function () use ($request, $visit, $data): void {
-            // Cùng thứ tự khóa với luồng tạo khoản thu để tránh sửa đồng thời.
-            $record = MedicalVisit::whereKey($visit)->where('doctor_id', $request->user()->doctor->id)
-                ->lockForUpdate()->firstOrFail()->lockForClinicalWrite();
-            $prescription = $record->prescription()->lockForUpdate()->firstOrFail();
-            if (! hash_equals(DoctorClinicalVersion::of($prescription), $data['record_version'])) {
-                throw ValidationException::withMessages(['record_version' => 'Đơn thuốc đã thay đổi. Vui lòng tải lại trước khi lưu.']);
-            }
-            if ($prescription->status !== 'ACTIVE') {
-                throw ValidationException::withMessages(['prescription' => 'Đơn thuốc không còn hiệu lực để chỉnh sửa.']);
-            }
-            if ($data['action'] === 'cancel') {
-                $hasPayable = Payable::where('prescription_id', $prescription->id)
-                    ->whereDoesntHave('paymentStatus', fn ($status) => $status->where('name', 'CANCELLED'))->exists();
-                if ($hasPayable) {
-                    throw ValidationException::withMessages(['prescription' => 'Đơn thuốc đã có khoản thu. Vui lòng đối chiếu khoản thu trước khi hủy đơn.']);
-                }
-                $prescription->update(['status' => 'CANCELLED']);
-            } else {
-                // Phần Admin hiện chỉ hỗ trợ sửa lời dặn, không sửa trực tiếp danh sách thuốc.
-                $prescription->update(['general_instructions' => $data['general_instructions'] ?? null, 'doctor_notes' => $data['doctor_notes'] ?? null]);
-            }
-            AuditLog::create(['user_id' => $request->user()->id, 'role_name_snapshot' => 'Doctor', 'action' => 'UPDATE',
-                'entity_type' => 'prescriptions', 'entity_id' => $prescription->id, 'entity_business_code' => $prescription->prescription_code,
-                'description' => $data['action'] === 'cancel' ? 'Bác sĩ hủy đơn thuốc.' : 'Bác sĩ cập nhật lời dặn đơn thuốc.',
-                'ip_address' => $request->ip(), 'user_agent' => mb_substr((string) $request->userAgent(), 0, 500), 'performed_at' => now()]);
-        }, 3);
-        return redirect()->route('doctor.visits.show', $visit)->with('success', $data['action'] === 'cancel' ? 'Đã hủy đơn thuốc.' : 'Đã cập nhật lời dặn.');
-    }
 }

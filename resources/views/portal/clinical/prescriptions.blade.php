@@ -15,6 +15,7 @@
             <div class="patient-record__meta"><span>Ngày kê: <strong>{{ $prescription->prescribed_at?->format('d/m/Y H:i') ?? 'Chưa cập nhật' }}</strong></span><span>Bác sĩ: <strong>{{ $prescription->doctor?->full_name ?? 'Chưa cập nhật' }}</strong></span></div>
             <details class="clinical-visit-details" @if ($visitId) open @endif><summary>Xem thuốc và hướng dẫn <span aria-hidden="true">⌄</span></summary><div class="clinical-visit-details__body">
             @if ($prescription->general_instructions)<div class="patient-record__content"><h4>Lời dặn</h4><p>{{ $prescription->general_instructions }}</p></div>@endif
+            @if (filled($prescription->doctor_notes))<div class="patient-record__content"><h4>Ghi chú của bác sĩ</h4><p>{{ $prescription->doctor_notes }}</p></div>@endif
             <div class="patient-record__content"><h4>Danh sách thuốc</h4><ul class="patient-medicine-list">
                 {{-- Từng thuốc hiển thị liều và hướng dẫn nếu các thông tin đó có dữ liệu. --}}
                 @forelse ($prescription->items as $item)

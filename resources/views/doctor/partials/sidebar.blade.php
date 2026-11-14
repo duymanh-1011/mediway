@@ -71,6 +71,10 @@
                 CHỨC NĂNG
             </p>
 
+            <a href="{{ route('doctor.visits.index') }}" class="employee-nav__item {{ request()->routeIs('doctor.visits.*') ? 'is-active' : '' }}" @if(request()->routeIs('doctor.visits.*')) aria-current="page" @endif>
+                <x-employee-icon name="reception" /><span>Danh sách lượt khám</span>
+            </a>
+
             @if ($canExamine)
 
                 <a

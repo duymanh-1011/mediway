@@ -122,8 +122,8 @@ class EmployeeTechnicalParametersTest extends TestCase
         $result = $item->fresh()->result;
         $this->flushSession();
         $printUrl = route('patient.results.service-print', $result);
-        $this->actingAs($patient)->get($printUrl)->assertNotFound();
-        $this->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'dich-vu']))->assertOk()->assertDontSee('Thông tin thử nghiệm');
+        $this->actingAs($patient)->get($printUrl)->assertOk()->assertSee('Thông tin thử nghiệm');
+        $this->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'dich-vu']))->assertOk()->assertSee('Thông tin thử nghiệm');
 
         $this->flushSession();
         $this->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
@@ -192,13 +192,13 @@ class EmployeeTechnicalParametersTest extends TestCase
         $resultUrl = route('patient.results.visit', ['visit' => $item->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $item->id]);
         $printUrl = route('patient.results.service-print', $result);
         $this->assertSame('PRIVATE', $result->patient_publication_status);
-        $this->actingAs($patient)->get($resultUrl)->assertOk()->assertDontSee('5,4 mmol/L');
-        $this->get($printUrl)->assertNotFound();
+        $this->actingAs($patient)->get($resultUrl)->assertOk()->assertSee('5,4 mmol/L');
+        $this->get($printUrl)->assertOk();
         $this->flushSession();
         $this->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
         $this->post(route('employee.laboratory.complete', $item->id))->assertSessionHasNoErrors();
         $this->assertSame('COMPLETED', $item->fresh()->serviceStatus->name);
-        $this->assertSame('PUBLISHED', $result->fresh()->patient_publication_status);
+        $this->assertSame('PRIVATE', $result->fresh()->patient_publication_status);
         $this->post(route('employee.laboratory.complete', $item->id))->assertSessionHasErrors('service');
         $this->saveResult('laboratory', $item, $payload)->assertSessionHasErrors('service');
 
@@ -231,13 +231,10 @@ class EmployeeTechnicalParametersTest extends TestCase
         $this->assertSame($legacy, $item->fresh()->result->result_parameters);
     }
 
-    public function test_verified_and_published_results_are_not_editable(): void
+    public function test_verified_results_are_not_editable(): void
     {
         $item = $this->startLaboratory();
         $result = ServiceResult::create(['service_order_item_id' => $item->id, 'verified_by_user_id' => User::where('business_code', 'BS000001')->value('id')]);
-        $this->saveResult('laboratory', $item, ['result_summary' => 'Thay đổi'])->assertSessionHasErrors('service');
-        $result->update(['verified_by_user_id' => null]);
-        $result->setAttribute('patient_publication_status', 'PUBLISHED'); $result->save();
         $this->saveResult('laboratory', $item, ['result_summary' => 'Thay đổi'])->assertSessionHasErrors('service');
         $this->assertNull($result->fresh()->result_summary);
     }
@@ -289,10 +286,10 @@ class EmployeeTechnicalParametersTest extends TestCase
 
         $printUrl = route('patient.results.service-print', $result);
         $this->flushSession();
-        $this->actingAs($patient)->get($printUrl)->assertNotFound();
+        $this->actingAs($patient)->get($printUrl)->assertOk();
         $this->flushSession();
         $this->actingAs($technician)->post(route('employee.imaging.complete', $item->id))->assertSessionHasNoErrors();
-        $this->assertSame('PUBLISHED', $result->fresh()->patient_publication_status);
+        $this->assertSame('PRIVATE', $result->fresh()->patient_publication_status);
 
         $this->flushSession();
         $this->actingAs($patient)->get($printUrl)->assertOk()

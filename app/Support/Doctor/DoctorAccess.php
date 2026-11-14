@@ -50,8 +50,7 @@ final class DoctorAccess
             && $user->role?->name === 'Doctor'
             && $user->role?->status === 'ACTIVE'
             && $doctor->status === 'ACTIVE'
-            && (int) $doctor->user_id === (int) $user->id
-            && $doctor->doctor_type === self::EXAMINATION_TYPE;
+            && (int) $doctor->user_id === (int) $user->id;
     }
 
     public function assertRoom(
@@ -60,12 +59,7 @@ final class DoctorAccess
         string $date
     ): void {
         abort_unless(
-            $room->status === 'ACTIVE'
-                && $doctor->schedules()
-                ->where('examination_room_id', $room->id)
-                ->whereDate('work_date', $date)
-                ->where('status', 'ACTIVE')
-                ->exists(),
+            $room->status === 'ACTIVE',
             404
         );
     }

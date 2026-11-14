@@ -21,7 +21,7 @@
     @stack('styles')
 </head>
 
-<body class="portal-body employee-body">
+<body class="portal-body employee-body doctor-body">
 
     @php
         $pageTitle = trim($__env->yieldContent('title'));
@@ -46,7 +46,7 @@
                             </span>
                         </li>
 
-                    @elseif(request()->routeIs('doctor.profile', 'doctor.examination.*'))
+                    @elseif(request()->routeIs('doctor.profile', 'doctor.examination.*', 'doctor.visits.*'))
 
                         <li>
                             <a href="{{ route('doctor.home') }}">
@@ -56,7 +56,7 @@
 
                         <li>
                             <span aria-current="page">
-                                {{ $pageTitle }}
+                                @yield('breadcrumb', $pageTitle)
                             </span>
                         </li>
 

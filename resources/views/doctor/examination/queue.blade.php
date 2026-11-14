@@ -290,7 +290,7 @@
                         @empty
                             <tr>
                                 <td colspan="6" class="doctor-examination__empty">
-                                    Không có lượt khám được phân công
+                                    Không có lượt khám phù hợp
                                     phù hợp với bộ lọc.
                                 </td>
                             </tr>

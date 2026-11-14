@@ -37,8 +37,7 @@ class DoctorMiddleware
             return $this->forbidden($request);
         }
 
-        // Chỉ bác sĩ loại EXAMINATION được truy cập D01.
-        // Áp dụng cho tất cả GET, POST và các phương thức khác.
+        // Chỉ tài khoản bác sĩ hợp lệ mới truy cập chức năng khám.
         if (
             $request->routeIs('doctor.examination.*')
             && ! $access->canExamine($user, $doctor)

@@ -15,7 +15,7 @@ class ClinicalPublicationSecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_unfinished_service_results_stay_hidden_even_with_a_legacy_publication_flag(): void
+    public function test_saved_service_results_are_visible_before_completion(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
@@ -28,14 +28,11 @@ class ClinicalPublicationSecurityTest extends TestCase
         DB::table('prescriptions')->where('id', $prescription->id)->update(['patient_publication_status' => 'PRIVATE']);
 
         $this->actingAs($user)->get(route('patient.results.visit', ['visit' => $item->serviceOrder->medical_visit_id, 'tab' => 'dich-vu']))
-            ->assertOk()->assertDontSee('DRAFT-SENTINEL-RESULT');
-        $resultNotificationUrl = route('patient.results.visit', [
-            'visit' => $item->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $item->id,
-        ]).'#dich-vu-'.$item->id;
+            ->assertOk()->assertSee('DRAFT-SENTINEL-RESULT');
         $this->get(route('patient.notifications', ['danh-muc' => 'ket-qua']))
-            ->assertOk()->assertDontSee($resultNotificationUrl);
+            ->assertOk()->assertSee('Có kết quả dịch vụ');
         $this->get(route('patient.prescriptions'))->assertOk()->assertSee($prescription->prescription_code);
-        $this->get(route('patient.results.service-print', $result))->assertNotFound();
+        $this->get(route('patient.results.service-print', $result))->assertOk();
         $this->get(route('patient.results.document', [$result->id, 'result_pdf']))->assertNotFound();
         $this->get(route('patient.prescriptions.document', $prescription->id))->assertNotFound();
     }
@@ -100,7 +97,7 @@ class ClinicalPublicationSecurityTest extends TestCase
         $this->get(route('patient.notifications', ['danh-muc' => 'ket-qua']))->assertOk()->assertSee($prescription->prescription_code);
     }
 
-    public function test_service_pdf_requires_completion_and_a_non_cancelled_order(): void
+    public function test_service_pdf_is_visible_before_completion_but_not_for_cancelled_order(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
@@ -120,7 +117,7 @@ class ClinicalPublicationSecurityTest extends TestCase
         $completedStatusId = $item->service_status_id;
         $item->update(['service_status_id' => ServiceStatus::where('name', 'PROCESSING')->value('id')]);
 
-        $this->actingAs($user)->get($resultUrl)->assertNotFound();
+        $this->actingAs($user)->get($resultUrl)->assertOk();
         $this->get($prescriptionUrl)->assertOk();
         $item->update(['service_status_id' => $completedStatusId]);
         $this->get($resultUrl)->assertOk();

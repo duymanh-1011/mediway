@@ -108,7 +108,6 @@ class ExaminationController extends Controller
         $rooms = ExaminationRoom::query()
             ->with('specialty')
             ->where('status', 'ACTIVE')
-            ->whereIn('id', (clone $assignedToday)->select('examination_room_id'))
             ->addSelect([
                 'waiting_count' => $this->waitingCount($doctor, $date),
             ])
@@ -120,7 +119,7 @@ class ExaminationController extends Controller
             ->cursorPaginate(12, cursor: $cursor)
             ->appends($filters);
 
-        $schedules = $assignedToday
+        $schedules = DoctorSchedule::whereDate('work_date', $date)->where('status', 'ACTIVE')
             ->with('doctor:id,full_name')
             ->whereIn(
                 'examination_room_id',
@@ -167,9 +166,8 @@ class ExaminationController extends Controller
         ]);
         $date = $filters['date'] ?? today()->toDateString();
         app(DoctorAccess::class)->assertRoom($doctor, $room, $date);
-        // Giữ nguyên phạm vi dữ liệu bác sĩ/phòng/ngày.
+        // Hiển thị mọi lượt khám trong phòng và ngày được chọn.
         $visibleVisit = fn ($visit) => $visit
-            ->where('doctor_id', $doctor->id)
             ->where('examination_room_id', $room->id)
             ->whereDate('checked_in_at', $date)
             ->when(
@@ -292,7 +290,6 @@ class ExaminationController extends Controller
         $this->transaction(function () use ($request, $doctor, $room, $visit, $completion) {
             $visit = MedicalVisit::query()
                 ->with('status')
-                ->where('doctor_id', $doctor->id)
                 ->where('examination_room_id', $room->id)
                 ->whereKey($visit)
                 ->lockForUpdate()
@@ -462,7 +459,6 @@ class ExaminationController extends Controller
             ->selectRaw('count(distinct medical_visit_id)')
             ->whereHas('medicalVisit', fn ($visit) => $visit
                 ->whereColumn('medical_visits.examination_room_id', 'examination_rooms.id')
-                ->where('doctor_id', $doctor->id)
                 ->whereDate('checked_in_at', $date)
                 ->where(fn ($stage) => $stage
                     ->where(fn ($initial) => $initial
@@ -520,7 +516,6 @@ class ExaminationController extends Controller
             ->whereHas(
                 'medicalVisit',
                 fn ($visit) => $visit
-                    ->where('doctor_id', $doctor->id)
                     ->where(
                         'examination_room_id',
                         $room->id
@@ -568,8 +563,7 @@ class ExaminationController extends Controller
         );
 
         abort_unless(
-            (int) $visit->doctor_id === (int) $current->id
-                && (int) $visit->examination_room_id
+            (int) $visit->examination_room_id
                 === (int) $room->id,
             404
         );

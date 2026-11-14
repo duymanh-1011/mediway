@@ -121,7 +121,7 @@ class PortalController extends Controller
             }
         }
         if (in_array($category, ['tat-ca', 'ket-qua'], true)) {
-            $results = \App\Support\Portal\ClinicalPublication::restrict(ServiceResult::query(), 'service_results')
+            $results = \App\Support\Portal\PatientClinicalRecords::restrict(ServiceResult::query(), 'service_results')
                 ->whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))
                 ->where(fn ($q) => $q->whereNotNull('result_summary')->orWhereNotNull('result_conclusion')
                     ->orWhereNotNull('result_parameters')->orWhereNotNull('technical_details')->orWhereNotNull('result_pdf_path')->orWhereNotNull('result_image_path'))
@@ -142,13 +142,26 @@ class PortalController extends Controller
                     'description' => 'Bạn có thể xem kết luận trong kết quả khám bệnh.',
                     'time' => $conclusion->concluded_at ?? $conclusion->created_at, 'url' => route('patient.results.visit', $conclusion->medical_visit_id).'#ket-luan']);
             }
-            $prescriptions = \App\Support\Portal\ClinicalPublication::restrict(Prescription::query(), 'prescriptions')
+            $prescriptions = \App\Support\Portal\PatientClinicalRecords::restrict(Prescription::query(), 'prescriptions')
                 ->whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))
                 ->where('status', 'ACTIVE')->orderByDesc('prescribed_at')->limit(20)->get();
             foreach ($prescriptions as $prescription) {
                 $items->push(['key' => $this->notificationKey('prescription', $prescription->id, $prescription->updated_at), 'category' => 'Kết quả', 'title' => 'Có đơn thuốc',
                     'description' => 'Đơn thuốc '.$prescription->prescription_code,
                     'time' => $prescription->prescribed_at ?? $prescription->created_at, 'url' => route('patient.prescriptions.show', $prescription->id)]);
+            }
+            // Nhắc chọn mua một lần khi lượt đã hoàn tất và chưa có khoản thu còn hiệu lực.
+            $purchases = Prescription::where('status', 'ACTIVE')
+                ->whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $patient->id)->whereHas('status', fn ($s) => $s->where('name', 'COMPLETED')))
+                ->whereDoesntHave('payables', fn ($q) => $q->whereDoesntHave('paymentStatus', fn ($s) => $s->where('name', 'CANCELLED')))
+                ->with('medicalVisit')->orderByDesc('updated_at')->limit(20)->get();
+            foreach ($purchases as $prescription) {
+                $visit = $prescription->medicalVisit;
+                $items->push(['key' => $this->notificationKey('prescription-purchase', $prescription->id, $visit->examination_ended_at ?? $visit->id),
+                    'category' => 'Kết quả', 'title' => 'Lựa chọn mua thuốc tại bệnh viện',
+                    'description' => 'Lượt khám đã hoàn tất. Xem lựa chọn mua thuốc theo đơn '.$prescription->prescription_code.'.',
+                    'time' => $visit->examination_ended_at ?? $prescription->updated_at,
+                    'url' => route('patient.prescriptions.purchase.show', $prescription->id)]);
             }
         }
         if (in_array($category, ['tat-ca', 'thanh-toan'], true)) {

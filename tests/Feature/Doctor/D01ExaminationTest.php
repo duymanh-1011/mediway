@@ -60,7 +60,7 @@ final class D01ExaminationTest extends TestCase
         parse_str(parse_url($first->nextPageUrl(), PHP_URL_QUERY), $query);
         $this->assertSame($filters['q'], $query['q']);
         $this->assertSame((string) $filters['specialty'], $query['specialty']);
-        $this->get($first->nextPageUrl())->assertOk()->assertSee('D01-PAGE-13')->assertDontSee('D01-PAGE-14');
+        $this->get($first->nextPageUrl())->assertOk()->assertSee('D01-PAGE-13')->assertSee('D01-PAGE-14');
     }
 
     public function test_queue_scopes_room_date_shift_and_doctor_and_never_allocates_a_number_on_get(): void
@@ -86,20 +86,34 @@ final class D01ExaminationTest extends TestCase
             ->assertViewHas('queues', fn ($queues) => $queues->pluck('medical_visit_id')->contains($scheduledVisit->id)
                 && ! $queues->pluck('medical_visit_id')->contains($earlier->medical_visit_id));
         $this->get($path.'?shift=AFTERNOON')->assertOk()->assertViewHas('queues', fn ($queues) => $queues->isEmpty());
-        $this->get($path.'?date='.now()->subDay()->toDateString())->assertNotFound();
-        $this->get(route('doctor.examination.rooms.queue', $otherRoom))->assertNotFound();
+        $this->get($path.'?date='.now()->subDay()->toDateString())->assertOk();
+        $this->get(route('doctor.examination.rooms.queue', $otherRoom))->assertOk();
         $this->assertSame($before, [MedicalVisit::count(), ExaminationRoomQueue::count()]);
     }
 
-    public function test_doctor_without_gate_and_employee_cannot_call_via_doctor_route(): void
+    public function test_doctor_can_call_without_type_gate_but_employee_cannot(): void
     {
         $queue = $this->queue(17);
         $url = route('doctor.examination.queue.call', [$queue->medicalVisit->examination_room_id, $queue]);
-        $this->actingAs($this->user)->postJson($url, $this->snapshot($queue))->assertForbidden();
+        $this->actingAs($this->user)->postJson($url, $this->snapshot($queue))->assertRedirect();
         $this->flushSession();
         $this->actingAs(User::whereHas('role', fn ($role) => $role->where('name', 'Employee'))->firstOrFail())
             ->postJson($url, $this->snapshot($queue))->assertForbidden();
-        $this->assertSame(0, $queue->fresh()->call_count);
+        $this->assertSame(1, $queue->fresh()->call_count);
+    }
+
+    public function test_doctor_can_view_and_call_a_visit_assigned_to_another_doctor(): void
+    {
+        $otherDoctorId = Doctor::whereKeyNot($this->user->doctor->id)->value('id');
+        $queue = $this->queue(27, ['doctor_id' => $otherDoctorId]);
+        $room = $queue->medicalVisit->examinationRoom;
+        // Không thêm thuộc tính doctor_type giả: tài khoản bác sĩ hợp lệ vẫn dùng được.
+        $this->actingAs($this->user)->get(route('doctor.examination.rooms.index'))->assertOk();
+        $this->get(route('doctor.examination.rooms.queue', $room))->assertOk()
+            ->assertViewHas('queues', fn ($queues) => $queues->getCollection()->contains('id', $queue->id));
+        $this->post(route('doctor.examination.queue.call', [$room, $queue]), $this->snapshot($queue))->assertSessionHasNoErrors();
+        $this->assertSame('CALLED', $queue->fresh()->status->name);
+        $this->assertSame($otherDoctorId, $queue->fresh()->medicalVisit->doctor_id);
     }
 
     public function test_queue_search_uses_only_patient_name_and_phone_inside_assignment_scope(): void
@@ -155,9 +169,6 @@ final class D01ExaminationTest extends TestCase
         }
         $this->postJson(route('doctor.examination.queue.recall', [$room, $completed]), $this->snapshot($called))
             ->assertUnprocessable();
-        $this->get(route('doctor.examination.rooms.queue', ['room' => $room, 'status' => 'COMPLETED']))
-            ->assertDontSee('Xem chi tiết');
-        $this->registerD02FixtureDestination();
         $this->get(route('doctor.examination.rooms.queue', ['room' => $room, 'status' => 'COMPLETED']))
             ->assertSee('Xem chi tiết')->assertSee(route('doctor.examination.visits.show', $completed->medical_visit_id));
         $this->get(route('doctor.examination.rooms.queue', ['room' => $room, 'status' => 'IN_EXAMINATION']))
@@ -237,7 +248,7 @@ final class D01ExaminationTest extends TestCase
         }
     }
 
-    public function test_start_waits_for_d02_and_then_redirects_with_the_visit_id_once(): void
+    public function test_start_redirects_to_integrated_visit_details_once(): void
     {
         $this->allowFixtureDoctor();
         $queue = $this->queue(17, queueStatus: 'CALLED');
@@ -245,11 +256,8 @@ final class D01ExaminationTest extends TestCase
         $url = route('doctor.examination.visits.start', [$visit->examination_room_id, $queue]);
         $payload = $this->snapshot($queue);
         $this->get(route('doctor.examination.rooms.queue', $visit->examination_room_id))->assertOk()
-            ->assertDontSee('data-d01-dialog="start-'.$queue->id.'"', false);
-        $this->postJson($url, $payload)->assertConflict();
+            ->assertSee('data-d01-dialog="start-'.$queue->id.'"', false);
         $this->assertNull($visit->fresh()->examination_started_at);
-
-        $this->registerD02FixtureDestination();
         $before = MedicalVisit::count();
         $this->post($url, $payload)->assertRedirect('/bac-si/kham-benh/luot-kham/'.$visit->id);
         $this->postJson($url, $payload)->assertUnprocessable();

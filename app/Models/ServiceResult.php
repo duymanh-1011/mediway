@@ -37,7 +37,7 @@ class ServiceResult extends Model
         return hash('sha256', json_encode([
             $result->id, $result->result_summary, $result->result_conclusion,
             $result->result_parameters, $result->technical_details, $result->result_pdf_path, $result->result_image_path,
-            $result->verified_by_user_id, $result->patient_publication_status,
+            $result->verified_by_user_id,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
     }
 

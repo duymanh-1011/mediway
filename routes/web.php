@@ -75,6 +75,23 @@ Route::get('/tin-tuc/{slug}', [PublicController::class, 'article'])->name('publi
 
 require __DIR__ . '/employee-reception.php';
 
+// Khu vực bác sĩ dùng đăng nhập chung; phần hồ sơ chỉ truy cập lượt được phân công.
+Route::prefix('bac-si')->name('doctor.')->middleware([\App\Http\Middleware\DoctorMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function () {
+    Route::get('/luot-kham', [\App\Http\Controllers\Doctor\VisitController::class, 'index'])->name('visits.index');
+    Route::get('/luot-kham/{visit}', [\App\Http\Controllers\Doctor\VisitController::class, 'show'])->whereNumber('visit')->name('visits.show');
+    Route::get('/luot-kham/{visit}/ket-qua/{result}/tep/{type}', [\App\Http\Controllers\Doctor\VisitController::class, 'resultDocument'])->whereNumber(['visit', 'result'])->where('type', 'pdf|image')->name('visits.results.document');
+    Route::get('/luot-kham/{visit}/chi-dinh', [\App\Http\Controllers\Doctor\ServiceOrderController::class, 'create'])->whereNumber('visit')->name('visits.orders.create');
+    Route::post('/luot-kham/{visit}/chi-dinh', [\App\Http\Controllers\Doctor\ServiceOrderController::class, 'store'])->whereNumber('visit')->name('visits.orders.store');
+    Route::put('/luot-kham/{visit}/noi-dung-kham', [\App\Http\Controllers\Doctor\ClinicalController::class, 'saveNote'])->whereNumber('visit')->name('visits.clinical.update');
+    Route::post('/luot-kham/{visit}/chan-doan', [\App\Http\Controllers\Doctor\ClinicalController::class, 'storeDiagnosis'])->whereNumber('visit')->name('visits.diagnoses.store');
+    Route::put('/luot-kham/{visit}/chan-doan/{diagnosis}', [\App\Http\Controllers\Doctor\ClinicalController::class, 'updateDiagnosis'])->whereNumber(['visit', 'diagnosis'])->name('visits.diagnoses.update');
+    Route::get('/luot-kham/{visit}/don-thuoc/tao', [\App\Http\Controllers\Doctor\PrescriptionController::class, 'create'])->whereNumber('visit')->name('visits.prescriptions.create');
+    Route::post('/luot-kham/{visit}/don-thuoc', [\App\Http\Controllers\Doctor\PrescriptionController::class, 'store'])->whereNumber('visit')->name('visits.prescriptions.store');
+    Route::get('/luot-kham/{visit}/don-thuoc/in', [\App\Http\Controllers\Doctor\PrescriptionController::class, 'print'])->whereNumber('visit')->name('visits.prescriptions.print');
+    Route::put('/luot-kham/{visit}/ket-luan', [\App\Http\Controllers\Doctor\ConclusionController::class, 'save'])->whereNumber('visit')->name('visits.conclusion.save');
+    Route::post('/luot-kham/{visit}/hoan-tat', [\App\Http\Controllers\Doctor\VisitController::class, 'complete'])->whereNumber('visit')->name('visits.complete');
+});
+
 Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\EmployeeMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function () {
     Route::get('/', [\App\Http\Controllers\Employee\WorkspaceController::class, 'home'])->name('home');
     Route::get('/ho-so', [\App\Http\Controllers\Employee\WorkspaceController::class, 'profile'])->name('profile');
@@ -132,6 +149,8 @@ Route::prefix('bac-si')->name('doctor.')->middleware([\App\Support\Doctor\Doctor
         Route::post('/phong/{room}/hang-doi/{queue}/bat-dau', 'start')->whereNumber('queue')->name('visits.start');
         Route::post('/phong/{room}/luot-kham/{visit}/hoan-tat', 'complete')->whereNumber('visit')->name('visits.complete');
     });
+    // Hàng đợi dẫn đến trang chi tiết đã giới hạn theo bác sĩ được phân công.
+    Route::get('/kham-benh/luot-kham/{visit}', [\App\Http\Controllers\Doctor\VisitController::class, 'show'])->whereNumber('visit')->name('examination.visits.show');
 });
 
 
@@ -178,6 +197,8 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::middleware(PatientMiddleware::class)->get('/ket-qua/{result}/tai-lieu/{type}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'resultDocument'])->where('type', 'result_pdf|result_image')->name('results.document');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptions'])->name('prescriptions');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc/{prescription}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescription'])->whereNumber('prescription')->name('prescriptions.show');
+    Route::middleware(PatientMiddleware::class)->get('/don-thuoc/{prescription}/mua-thuoc', [\App\Http\Controllers\Portal\PrescriptionPurchaseController::class, 'show'])->whereNumber('prescription')->name('prescriptions.purchase.show');
+    Route::middleware(PatientMiddleware::class)->post('/don-thuoc/{prescription}/mua-thuoc', [\App\Http\Controllers\Portal\PrescriptionPurchaseController::class, 'store'])->whereNumber('prescription')->name('prescriptions.purchase.store');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc/{prescription}/pdf', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptionDocument'])->name('prescriptions.document');
     Route::middleware(PatientMiddleware::class)->group(function () {
         Route::middleware(PatientMiddleware::class)->group(function () {

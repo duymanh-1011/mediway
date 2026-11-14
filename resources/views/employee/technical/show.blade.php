@@ -11,7 +11,7 @@
     $hasResult = $result?->hasContent();
     $isClosedVisit = $order?->medicalVisit?->status?->name === 'COMPLETED';
     $canEnterResult = $isWorking && ! $isClosedVisit && ! $hasResult
-        && ! $result?->verified_by_user_id && $result?->patient_publication_status !== 'PUBLISHED';
+        && ! $result?->verified_by_user_id;
     $detailQuery = ['item' => $record->id, ...$listQuery];
     $currentVersion = \App\Models\ServiceResult::editVersion($result);
     $submittedVersion = old('result_version');

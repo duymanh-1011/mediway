@@ -169,7 +169,7 @@
 
                         <p>
                             Theo dõi phòng khám, gọi bệnh nhân và
-                            điều phối lượt khám được phân công.
+                            điều phối lượt khám.
                         </p>
 
                         @if ($canExamine)
@@ -224,7 +224,7 @@
 
                 <p>
                     Truy cập các chức năng khám bệnh
-                    phù hợp với phạm vi được phân công.
+                    trong hệ thống.
                 </p>
 
             </div>

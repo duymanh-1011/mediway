@@ -89,6 +89,9 @@ class UpdateMedicalServiceRequest extends FormRequest
                 'string',
             ],
 
+            'service_result_template_id' => ['nullable', 'integer', Rule::exists('service_result_templates', 'id')->where(fn ($query) => $query
+                ->where('is_active', true)->orWhere('id', $medicalService->service_result_template_id))],
+
             'display_order' => [
                 'required',
                 'integer',

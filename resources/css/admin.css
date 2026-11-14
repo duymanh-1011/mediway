@@ -3229,3 +3229,6 @@ body.admin-ui .admin-content .admin-lookup-chip { min-height: 28px; padding: 4px
 @container (max-width: 719px) { .admin-content form.admin-filter-form { --admin-filter-columns: 2 !important; } }
 @container (max-width: 479px) { .admin-content form.admin-filter-form { --admin-filter-columns: 1 !important; } }
 @media (max-width: 800px) { body.admin-ui .admin-content :is(.order-card, .payable-card, .prescription-card, .result-card, .dr-card, .em-card, .pf-card, .hr-card) { padding: 16px; } }
+.result-template-field { margin: 12px 0; padding: 16px; }
+.result-template-field .form-group > label:not(.form-label) { display: flex; align-items: center; gap: 8px; }
+.result-template-field .form-group input[type="checkbox"] { width: 16px; height: 16px; }

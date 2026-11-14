@@ -32,8 +32,23 @@
                 <div class="portal-visit-section">
                     <h4>Kết quả dịch vụ</h4>
                     @if ($result->resulted_at)<p>Ghi nhận lúc {{ $result->resulted_at->format('d/m/Y H:i') }}</p>@endif
-                    @if ($result->result_summary)<p>{{ $result->result_summary }}</p>@endif
-                    @if ($result->result_conclusion)<p><strong>Kết luận</strong> {{ $result->result_conclusion }}</p>@endif
+                    @if ($result->template_snapshot)
+                        <p><strong>{{ $result->template_snapshot['name'] ?? 'Phiếu kết quả' }}</strong></p>
+                        @foreach ($result->templateDisplayRows() as $row)
+                            @if (isset($row['measurements']))
+                                <h5>{{ $row['label'] }}</h5>
+                                <div class="clinical-result-table-wrap"><table><thead><tr><th>Chỉ số</th><th>Kết quả</th><th>Đơn vị</th><th>Khoảng tham chiếu</th><th>Đánh giá</th></tr></thead><tbody>
+                                    @foreach ($row['measurements'] as $measurement)<tr><td>{{ $measurement['name'] ?? '' }}</td><td>{{ $measurement['value'] ?? '' }}</td><td>{{ $measurement['unit'] ?? '—' }}</td><td>{{ $measurement['reference'] ?? '—' }}</td><td>{{ $measurement['flag'] ?? '—' }}</td></tr>@endforeach
+                                </tbody></table></div>
+                            @else
+                                <p><strong>{{ $row['label'] }}:</strong> {{ $row['value'] }}</p>
+                            @endif
+                        @endforeach
+                    @endif
+                    @unless ($result->template_snapshot)
+                        @if ($result->result_summary)<p>{{ $result->result_summary }}</p>@endif
+                        @if ($result->result_conclusion)<p><strong>Kết luận</strong> {{ $result->result_conclusion }}</p>@endif
+                    @endunless
                     @if ($rows = $result->parameterDisplayRows())
                         <dl class="patient-record__parameters">@foreach ($rows as $row)<div><dt>{{ $row['label'] }}</dt><dd>{{ $row['value'] }}</dd></div>@endforeach</dl>
                     @endif

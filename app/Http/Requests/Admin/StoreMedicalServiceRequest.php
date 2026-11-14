@@ -75,6 +75,8 @@ class StoreMedicalServiceRequest extends FormRequest
                 'string',
             ],
 
+            'service_result_template_id' => ['nullable', 'integer', Rule::exists('service_result_templates', 'id')->where('is_active', true)],
+
             'display_order' => [
                 'required',
                 'integer',

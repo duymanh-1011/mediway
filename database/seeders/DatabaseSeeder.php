@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             ExaminationRoomSeeder::class,
             ServiceGroupSeeder::class,
             MedicalServiceSeeder::class,
+            ServiceResultTemplateSeeder::class,
             DiseaseGroupSeeder::class,
             DiseaseSeeder::class,
             MedicineSeeder::class,

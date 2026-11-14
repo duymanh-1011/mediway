@@ -136,7 +136,9 @@ class ClinicalRecordsController extends Controller
             'serviceOrderItem.serviceOrder.medicalVisit.examinationRoom:id,name',
         ]);
         $record = $clinicalResult->serviceOrderItem->setRelation('result', $clinicalResult);
-        $title = 'PHIẾU KẾT QUẢ DỊCH VỤ';
+        $title = filled($clinicalResult->template_snapshot['name'] ?? null)
+            ? 'PHIẾU KẾT QUẢ '.mb_strtoupper($clinicalResult->template_snapshot['name'])
+            : 'PHIẾU KẾT QUẢ DỊCH VỤ';
         $backUrl = route('patient.results.visit', [
             'visit' => $record->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $record->id,
         ]);

@@ -276,6 +276,20 @@
 
 </div>
 
+<div class="form-group">
+    <label for="service_result_template_id" class="form-label">Mẫu phiếu kết quả</label>
+    <select id="service_result_template_id" name="service_result_template_id" class="form-control">
+        <option value="">Không dùng mẫu phiếu</option>
+        @foreach (($resultTemplates ?? collect()) as $resultTemplate)
+            <option value="{{ $resultTemplate->id }}" @selected((string) old('service_result_template_id', $medicalService->service_result_template_id ?? '') === (string) $resultTemplate->id)>
+                {{ $resultTemplate->name }}{{ $resultTemplate->is_active ? '' : ' (Ngừng sử dụng)' }}
+            </option>
+        @endforeach
+    </select>
+    <p class="form-help">Mẫu này sẽ được dùng khi nhân viên ghi kết quả cho dịch vụ. Các phiếu đã lập luôn giữ bản mẫu tại thời điểm tạo.</p>
+    @error('service_result_template_id')<div class="field-error">{{ \App\Models\AdminDisplay::text($message) }}</div>@enderror
+</div>
+
 
 {{-- =====================================================
      NHÓM DỊCH VỤ

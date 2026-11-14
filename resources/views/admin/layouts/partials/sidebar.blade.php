@@ -278,6 +278,11 @@
                 Dịch vụ y tế
             </a>
 
+            <a href="{{ route('admin.service-result-templates.index') }}" class="sidebar-link {{ request()->routeIs('admin.service-result-templates.*') ? 'active' : '' }}">
+                <span class="sidebar-link-dot"></span>
+                Mẫu phiếu kết quả
+            </a>
+
             <a
                 href="{{ route(
                     'admin.disease-groups.index'

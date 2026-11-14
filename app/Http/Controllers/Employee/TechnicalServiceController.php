@@ -15,6 +15,7 @@ use App\Models\ServiceGroup;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceOrderProgress;
 use App\Models\ServiceResult;
+use App\Models\ServiceResultTemplate;
 use App\Models\ServiceStatus;
 use App\Support\EmployeeAccess;
 use App\Support\SessionSearch;
@@ -194,7 +195,7 @@ class TechnicalServiceController extends Controller
         $title = 'Thực hiện dịch vụ';
         $routePrefix = $this->routePrefix($request);
         $record = $this->scopedItems($employee, $this->shortcutGroups($request))
-            ->with(['medicalService.serviceGroups', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.status', 'performer', 'payable.paymentStatus', 'result'])
+            ->with(['medicalService.serviceGroups', 'medicalService.resultTemplate', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.status', 'performer', 'payable.paymentStatus', 'result'])
             ->findOrFail($item);
         $serviceGroups = $record->medicalService?->serviceGroups;
         // Không tự đoán biểu mẫu khi dịch vụ có nhiều nhóm hoặc chưa có nhóm.
@@ -215,7 +216,11 @@ class TechnicalServiceController extends Controller
             ])
             : route('employee.services.index');
 
-        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'supportsDetails', 'hideUploads', 'groupCode', 'listQuery', 'backUrl'));
+        $resultTemplate = $record->medicalService?->resultTemplate;
+        $templateVersion = $resultTemplate
+            ? hash('sha256', json_encode([$resultTemplate->id, $resultTemplate->name, $resultTemplate->fields], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR))
+            : null;
+        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'supportsDetails', 'hideUploads', 'groupCode', 'listQuery', 'backUrl', 'resultTemplate', 'templateVersion'));
     }
 
     // Chỉ tạo bản xem từ dữ liệu đã lưu trong phạm vi nhân viên được phép xem.
@@ -227,15 +232,17 @@ class TechnicalServiceController extends Controller
             ->with(['medicalService.serviceGroups', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.examinationRoom', 'performer', 'result'])
             ->findOrFail($item);
         $groups = $record->medicalService?->serviceGroups;
-        abort_unless($groups?->count() === 1 && $record->result?->hasContent(), 404);
-        $title = match ($groups->first()->service_group_code) {
+        abort_unless($record->result?->hasContent(), 404);
+        $title = $record->result?->template_snapshot['name']
+            ? 'PHIẾU KẾT QUẢ '.$record->result->template_snapshot['name']
+            : match ($groups?->first()?->service_group_code) {
             'XN' => 'PHIẾU KẾT QUẢ XÉT NGHIỆM',
             'CDHA' => 'PHIẾU KẾT QUẢ CHẨN ĐOÁN HÌNH ẢNH',
             'SA' => 'PHIẾU KẾT QUẢ SIÊU ÂM',
             'TDCN' => 'PHIẾU KẾT QUẢ THĂM DÒ CHỨC NĂNG',
             'TT' => 'PHIẾU KẾT QUẢ THỦ THUẬT',
             default => 'PHIẾU KẾT QUẢ DỊCH VỤ',
-        };
+            };
         $backUrl = route($routePrefix.'.show', ['item' => $item, ...$this->listQuery($request)]);
         $attachmentUrls = [
             'pdf' => route($routePrefix.'.document', ['item' => $item, 'type' => 'pdf']),
@@ -261,7 +268,7 @@ class TechnicalServiceController extends Controller
         abort_unless($visitId, 404);
         $visit = MedicalVisit::with('status')->whereKey($visitId)->lockForUpdate()->firstOrFail();
         $visit->assertServiceDataWritable();
-        $record = $items->with(['serviceStatus', 'serviceOrder', 'payable.paymentStatus', 'result'])->lockForUpdate()->firstOrFail();
+        $record = $items->with(['serviceStatus', 'serviceOrder', 'payable.paymentStatus', 'medicalService.resultTemplate', 'result'])->lockForUpdate()->firstOrFail();
 
         return [$record, $employee];
     }
@@ -293,6 +300,9 @@ class TechnicalServiceController extends Controller
         $data = $request->validate([
             'confirm_result' => ['accepted'],
             'result_version' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/'],
+            'template_version' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/'],
+            'template_values' => ['sometimes', 'array', 'max:30'],
+            'template_values.*' => ['sometimes'],
             'technique' => ['nullable', 'string', 'max:2000'],
             'result_conclusion' => ['nullable', 'string', 'max:10000'],
             'result_summary' => ['nullable', 'string', 'max:10000'],
@@ -348,7 +358,8 @@ class TechnicalServiceController extends Controller
             $details[] = ['name' => $name, 'value' => $value];
         }
         // Lưu kết quả và tệp cùng giao dịch; bước xác minh vẫn tách riêng.
-        ClinicalDocument::transaction(function (ClinicalDocument $documents) use ($request, $item, $data, $parameters, $details) {
+        $templateValues = $data['template_values'] ?? [];
+        ClinicalDocument::transaction(function (ClinicalDocument $documents) use ($request, $item, $data, $parameters, $details, $templateValues) {
             [$record, $employee] = $this->lockedItem($request, $item);
             if ($record->serviceStatus?->name !== 'PROCESSING' || (int) $record->performed_by_employee_id !== (int) $employee->id || $record->serviceOrder?->status === 'CANCELLED') {
                 throw ValidationException::withMessages(['service' => 'Chỉ người đang thực hiện mới được nhập kết quả khi dịch vụ đang xử lý.']);
@@ -364,9 +375,6 @@ class TechnicalServiceController extends Controller
             if (($request->has('details') || $request->has('details_present')) && ! $supportsDetails) {
                 throw ValidationException::withMessages(['details' => 'Dịch vụ chưa thuộc một nhóm hỗ trợ thông tin bổ sung.']);
             }
-            if ($groups->intersect(['XN', 'CDHA', 'TDCN', 'TT'])->isNotEmpty() && ($request->hasFile('result_pdf') || $request->hasFile('result_image'))) {
-                throw ValidationException::withMessages(['service' => 'Dịch vụ này nhập kết quả bằng văn bản, chỉ số hoặc thông tin bổ sung.']);
-            }
             $result = ServiceResult::where('service_order_item_id', $record->id)->lockForUpdate()->first();
             if ($result?->hasContent() || $result?->verified_by_user_id || $result?->patient_publication_status === 'PUBLISHED') {
                 throw ValidationException::withMessages(['service' => 'Kết quả đã được lưu và đã khóa chỉnh sửa.']);
@@ -374,6 +382,55 @@ class TechnicalServiceController extends Controller
             // Sau khi khóa chỉ định, từ chối nội dung gửi từ biểu mẫu đã bị thay đổi.
             if (! hash_equals(ServiceResult::editVersion($result), $data['result_version'])) {
                 throw ValidationException::withMessages(['service' => 'Kết quả đã thay đổi. Vui lòng tải lại trang trước khi lưu.']);
+            }
+            $templateId = $record->medicalService?->service_result_template_id;
+            $template = $templateId ? ServiceResultTemplate::whereKey($templateId)->lockForUpdate()->first() : null;
+            if (! $template || ! $template->is_active) {
+                throw ValidationException::withMessages(['service' => 'Dịch vụ chưa được gán mẫu phiếu kết quả đang hoạt động. Vui lòng liên hệ quản trị viên.']);
+            }
+            $currentTemplateVersion = hash('sha256', json_encode([$template->id, $template->name, $template->fields], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+            if (! hash_equals($currentTemplateVersion, $data['template_version'])) {
+                throw ValidationException::withMessages(['service' => 'Mẫu phiếu vừa được cập nhật. Vui lòng tải lại trang trước khi nhập kết quả.']);
+            }
+            $fields = $template->fields;
+            $allowedKeys = collect($fields)->pluck('key')->filter(fn ($key) => is_string($key))->all();
+            if (array_diff(array_keys($templateValues), $allowedKeys)) {
+                throw ValidationException::withMessages(['template_values' => 'Phiếu kết quả đã thay đổi. Vui lòng tải lại trang.']);
+            }
+            $normalizedTemplateValues = [];
+            foreach ($fields as $field) {
+                $key = $field['key'];
+                $value = $templateValues[$key] ?? null;
+                if (($field['type'] ?? '') === 'measurements') {
+                    if (! is_array($value) || ! array_is_list($value) || count($value) > 20) {
+                        throw ValidationException::withMessages(['template_values.'.$key => 'Vui lòng nhập bảng kết quả đúng định dạng.']);
+                    }
+                    $measurements = [];
+                    foreach ($value as $index => $row) {
+                        if (! is_array($row)) throw ValidationException::withMessages(['template_values.'.$key.'.'.$index => 'Dòng kết quả không hợp lệ.']);
+                        $row = array_intersect_key($row, array_flip(['name', 'value', 'unit', 'reference', 'flag']));
+                        $row = array_map(fn ($cell) => is_scalar($cell) ? trim((string) $cell) : '', $row);
+                        if (implode('', $row) === '') continue;
+                        if (blank($row['name'] ?? null) || blank($row['value'] ?? null)) {
+                            throw ValidationException::withMessages(['template_values.'.$key.'.'.$index => 'Mỗi dòng kết quả cần có tên và giá trị.']);
+                        }
+                        foreach ($row as $cell) if (mb_strlen($cell) > 200) throw ValidationException::withMessages(['template_values.'.$key.'.'.$index => 'Mỗi nội dung trong bảng không được quá 200 ký tự.']);
+                        $measurements[] = $row;
+                    }
+                    if (($field['required'] ?? false) && ! $measurements) {
+                        throw ValidationException::withMessages(['template_values.'.$key => 'Vui lòng nhập ít nhất một dòng kết quả.']);
+                    }
+                    $normalizedTemplateValues[$key] = $measurements;
+                    continue;
+                }
+                $value = is_scalar($value) ? trim((string) $value) : '';
+                if (($field['required'] ?? false) && $value === '') {
+                    throw ValidationException::withMessages(['template_values.'.$key => 'Vui lòng nhập '.$field['label'].'.']);
+                }
+                if (mb_strlen($value) > 10000 || (($field['type'] ?? '') === 'number' && $value !== '' && ! is_numeric($value))) {
+                    throw ValidationException::withMessages(['template_values.'.$key => 'Giá trị của '.$field['label'].' không hợp lệ.']);
+                }
+                $normalizedTemplateValues[$key] = $value;
             }
             // Không ghi đè dữ liệu chỉ số cũ có cấu trúc chưa được nhận diện.
             if ($request->has('parameters_present') && $result && ServiceResult::editableParameters($result->result_parameters) === null) {
@@ -387,8 +444,19 @@ class TechnicalServiceController extends Controller
             }
             $paths = $documents->store($request, 'service-results/'.$record->id, ClinicalDocument::RESULT_FILES);
             $values = ['resulted_at' => now(), ...$paths];
+            $values['template_snapshot'] = ['id' => $template->id, 'name' => $template->name, 'fields' => $fields];
+            $values['template_values'] = $normalizedTemplateValues;
+            if (filled($normalizedTemplateValues['conclusion'] ?? null)) {
+                $values['result_conclusion'] = $normalizedTemplateValues['conclusion'];
+            }
+            foreach (['findings', 'result', 'procedure', 'interpretation', 'comment'] as $summaryKey) {
+                if (filled($normalizedTemplateValues[$summaryKey] ?? null)) {
+                    $values['result_summary'] = $normalizedTemplateValues[$summaryKey];
+                    break;
+                }
+            }
             foreach (['result_summary', 'result_conclusion'] as $field) {
-                if (array_key_exists($field, $data)) {
+                if (array_key_exists($field, $data) && ! array_key_exists($field, $values)) {
                     $values[$field] = $data[$field];
                 }
             }

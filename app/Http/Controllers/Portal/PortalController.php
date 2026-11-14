@@ -124,7 +124,7 @@ class PortalController extends Controller
             $results = \App\Support\Portal\ClinicalPublication::restrict(ServiceResult::query(), 'service_results')
                 ->whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $patient->id))
                 ->where(fn ($q) => $q->whereNotNull('result_summary')->orWhereNotNull('result_conclusion')
-                    ->orWhereNotNull('result_parameters')->orWhereNotNull('technical_details')->orWhereNotNull('result_pdf_path')->orWhereNotNull('result_image_path'))
+                    ->orWhereNotNull('result_parameters')->orWhereNotNull('technical_details')->orWhereNotNull('template_values')->orWhereNotNull('result_pdf_path')->orWhereNotNull('result_image_path'))
                 ->with(['serviceOrderItem.medicalService', 'serviceOrderItem.serviceOrder'])->orderByDesc('updated_at')->limit(20)->get();
             foreach ($results as $result) {
                 if (! $result->hasContent()) {

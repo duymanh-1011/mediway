@@ -160,3 +160,7 @@ body.portal-body{font-family:"Segoe UI",Arial,Helvetica,sans-serif;font-size:15p
 .portal-body button.notification-item:hover { background: var(--portal-accent); }
 .portal-body button.notification-item:focus-visible { outline: 3px solid #93b7ff; outline-offset: -3px; }
 @media (max-width: 480px) { .portal-body button.notification-item { flex-direction: column; gap: 8px; padding: 16px; } }
+.clinical-result-table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--portal-line); border-radius: 10px; }
+.clinical-result-table-wrap table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 13px; }
+.clinical-result-table-wrap :is(th, td) { padding: 9px 11px; border-bottom: 1px solid var(--portal-line); text-align: left; vertical-align: top; }
+.clinical-result-table-wrap th { background: var(--portal-accent); color: var(--portal-ink); font-weight: 700; }

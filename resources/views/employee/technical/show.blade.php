@@ -59,7 +59,9 @@
         </section>
     @endif
 
-    @if ($canEnterResult)
+    @include('employee.technical._result-form')
+
+    @if ($canEnterResult && false)
         @php
             $existingDetails = \App\Models\ServiceResult::editableTechnicalDetails($result?->technical_details);
             $techniqueName = \App\Models\ServiceResult::TECHNIQUE_DETAIL_NAME;
@@ -173,6 +175,7 @@
     @elseif ($result)
         <section class="tech-panel tech-detail-panel tech-result-panel">
             <h2>Kết quả đã lưu</h2>
+            @if (! $result->template_snapshot)
             <section class="tech-result-section" aria-labelledby="saved-details-title">
                 <h3 id="saved-details-title">1. Kỹ thuật</h3>
                 <p>{{ $record->medicalService?->name ?? 'Chưa cập nhật tên dịch vụ' }}</p>
@@ -205,7 +208,24 @@
                     </div>
                 </section>
             @endif
-            @if ($groupCode && $hasResult)
+            @else
+                <section class="tech-result-section" aria-labelledby="saved-template-result-title">
+                    <h3 id="saved-template-result-title">{{ $result->template_snapshot['name'] ?? 'Phiếu kết quả' }}</h3>
+                    @foreach ($result->templateDisplayRows() as $row)
+                        @if (isset($row['measurements']))
+                            <h4>{{ $row['label'] }}</h4>
+                            <div class="tech-result-table-wrap tech-template-measurements" role="region" aria-label="{{ $row['label'] }}" tabindex="0">
+                                <table class="tech-result-table"><thead><tr><th>Chỉ số</th><th>Kết quả</th><th>Đơn vị</th><th>Khoảng tham chiếu</th><th>Đánh giá</th></tr></thead><tbody>
+                                    @foreach ($row['measurements'] as $measurement)<tr><td>{{ $measurement['name'] ?? '' }}</td><td>{{ $measurement['value'] ?? '' }}</td><td>{{ $measurement['unit'] ?? '—' }}</td><td>{{ $measurement['reference'] ?? '—' }}</td><td>{{ $measurement['flag'] ?? '—' }}</td></tr>@endforeach
+                                </tbody></table>
+                            </div>
+                        @else
+                            <dl class="tech-parameters"><div><dt>{{ $row['label'] }}</dt><dd class="tech-result-summary">{{ $row['value'] }}</dd></div></dl>
+                        @endif
+                    @endforeach
+                </section>
+            @endif
+            @if ($hasResult)
                 <div class="tech-actions"><a class="portal-btn portal-btn--primary" href="{{ route($routePrefix.'.print', $detailQuery) }}">Xem và in phiếu kết quả</a></div>
             @endif
             @if ($result->hasDocument('pdf') || $result->hasDocument('image'))

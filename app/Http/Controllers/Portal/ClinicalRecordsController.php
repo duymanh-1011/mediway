@@ -94,10 +94,11 @@ class ClinicalRecordsController extends Controller
             ->where('transaction_result', 'SUCCESS')
             ->where('payment_method', 'CASH')
             ->whereHas('payable.medicalVisit', fn ($record) => $record->whereKey($visit)->where('patient_id', $patient->id))
-            ->with(['collector:id,full_name', 'payable.medicalVisit', 'payable.serviceOrderItem.medicalService'])
+            ->with(['collector:id,full_name', 'payable.medicalVisit.status', 'payable.serviceOrderItem.medicalService'])
             ->findOrFail($transaction);
 
         if ($receipt->payable->payment_type === 'MEDICINE_FEE') {
+            abort_unless($receipt->payable->medicalVisit?->status?->name === 'COMPLETED', 404);
             PatientClinicalRecords::restrict(Prescription::query(), 'prescriptions')
                 ->whereKey($receipt->payable->prescription_id)
                 ->where('medical_visit_id', $visit)
@@ -136,9 +137,7 @@ class ClinicalRecordsController extends Controller
             'serviceOrderItem.serviceOrder.medicalVisit.examinationRoom:id,name',
         ]);
         $record = $clinicalResult->serviceOrderItem->setRelation('result', $clinicalResult);
-        $title = filled($clinicalResult->template_snapshot['name'] ?? null)
-            ? 'PHIẾU KẾT QUẢ '.mb_strtoupper($clinicalResult->template_snapshot['name'])
-            : 'PHIẾU KẾT QUẢ DỊCH VỤ';
+        $title = 'PHIẾU KẾT QUẢ DỊCH VỤ';
         $backUrl = route('patient.results.visit', [
             'visit' => $record->serviceOrder->medical_visit_id, 'tab' => 'dich-vu', 'dich-vu' => $record->id,
         ]);

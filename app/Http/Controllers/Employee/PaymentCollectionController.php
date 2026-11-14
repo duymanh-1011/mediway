@@ -20,7 +20,8 @@ class PaymentCollectionController extends Controller
             $request->user()
                 && $access->allows(
                     $request->user(),
-                    'payment.collect'
+                    'payment.collect',
+                    $request->session()->get('employee_workspace_mode')
                 ),
             403,
             'Bạn không có quyền thu tiền.'

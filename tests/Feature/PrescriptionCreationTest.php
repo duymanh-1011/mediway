@@ -145,7 +145,7 @@ class PrescriptionCreationTest extends TestCase
         $this->get(route('admin.payables.show', $fee))->assertOk()->assertSee('href="'.$paymentUrl.'"', false)->assertSee('Ghi nhận thanh toán');
         $cashier = \App\Models\Employee::where('employee_code', 'NV000004')->firstOrFail();
         $nurse = \App\Models\Employee::where('employee_code', 'NV000001')->firstOrFail();
-        $this->get($paymentUrl)->assertOk()->assertSee($cashier->employee_code)->assertDontSee($nurse->employee_code);
+        $this->get($paymentUrl)->assertOk()->assertSee($cashier->employee_code)->assertSee($nurse->employee_code);
         $this->post(route('admin.prescriptions.payable.store', $prescription), ['confirm_purchase' => 1])->assertSessionHasErrors('confirm_purchase');
         $this->get(route('admin.payables.show', $fee))->assertOk()->assertSee('Tiền thuốc')->assertSee($prescription->prescription_code);
         $patient = $visit->patient->user;
@@ -157,20 +157,18 @@ class PrescriptionCreationTest extends TestCase
         $this->actingAs($admin)->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasErrors('collected_by_employee_id');
         $this->assertSame('UNPAID', $fee->fresh()->paymentStatus->name);
         $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'QR', 'confirm_payment' => 1, 'collected_by_employee_id' => 999999])->assertSessionHasErrors('collected_by_employee_id');
-        $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => $nurse->id])->assertSessionHasErrors('collected_by_employee_id');
-        $this->assertSame('UNPAID', $fee->fresh()->paymentStatus->name);
         $employee = \App\Models\Employee::where('employee_code', 'NV000004')->firstOrFail();
         $employee->update(['status' => 'INACTIVE']);
         $this->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => $employee->id])->assertSessionHasErrors('collected_by_employee_id');
         $employee->update(['status' => 'ACTIVE']);
         $this->actingAs($admin)
-            ->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id')])->assertSessionHasNoErrors();
+            ->post(route('admin.payables.payment-transactions.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => $nurse->id])->assertSessionHasNoErrors();
         $this->assertSame('PAID', $fee->fresh()->paymentStatus->name);
         $this->assertSame('36000.00', $fee->fresh()->transactions()->sole()->amount);
         $transaction = $fee->fresh()->transactions()->sole();
-        $this->assertSame($employee->id, $transaction->collected_by_employee_id);
+        $this->assertSame($nurse->id, $transaction->collected_by_employee_id);
         $this->assertDatabaseHas('audit_logs', ['entity_type' => 'payment_transactions', 'entity_id' => $transaction->id, 'user_id' => $admin->id]);
-        $this->get(route('admin.payment-transactions.show', $transaction))->assertOk()->assertSee($employee->full_name)->assertSee($employee->employee_code);
+        $this->get(route('admin.payment-transactions.show', $transaction))->assertOk()->assertSee($nurse->full_name)->assertSee($nurse->employee_code);
         $this->get(route('admin.prescriptions.show', $prescription))->assertOk()->assertDontSee('href="'.$paymentUrl.'"', false)->assertSee('Tiền thuốc đã được thanh toán.');
         $this->get(route('admin.payables.show', $fee))->assertOk()->assertDontSee('href="'.$paymentUrl.'"', false);
     }

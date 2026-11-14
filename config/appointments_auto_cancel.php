@@ -12,7 +12,7 @@ return [
             1440,
             (int) env(
                 'APPOINTMENTS_NO_SHOW_GRACE_MINUTES',
-                0
+                15
             )
         )
     ),

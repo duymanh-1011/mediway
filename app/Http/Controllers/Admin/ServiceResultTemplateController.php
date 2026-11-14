@@ -56,7 +56,7 @@ class ServiceResultTemplateController extends Controller
             'fields.*' => ['array:key,label,type,required,unit,reference'],
             'fields.*.key' => ['required', 'alpha_dash:ascii', 'max:40', 'distinct'],
             'fields.*.label' => ['required', 'string', 'max:120'],
-            'fields.*.type' => ['required', Rule::in(['text', 'textarea', 'number'])],
+            'fields.*.type' => ['required', Rule::in(['text', 'textarea', 'number', 'measurements'])],
             'fields.*.required' => ['required', 'boolean'],
             'fields.*.unit' => ['nullable', 'string', 'max:40'],
             'fields.*.reference' => ['nullable', 'string', 'max:120'],

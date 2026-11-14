@@ -24,6 +24,7 @@ class DoctorPrescriptionConclusionTest extends TestCase
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
+        $this->withSession(['doctor_workspace_mode' => 'examination']);
         $this->actingAs(User::where('business_code', 'BS000001')->firstOrFail());
     }
 
@@ -236,17 +237,20 @@ class DoctorPrescriptionConclusionTest extends TestCase
 
         // Xác nhận không hợp lệ không được tạo đơn, kể cả khi gọi trực tiếp.
         foreach ([null, '0', 'khong'] as $confirmation) {
-            $this->flushSession()->actingAs(User::where('business_code', 'BS000001')->firstOrFail());
+            $this->flushSession();
+            $this->actingAsDoctorWorkspace(User::where('business_code', 'BS000001')->firstOrFail());
             $this->from($create)->post($store, [...$payload, 'confirm_create' => $confirmation])->assertSessionHasErrors('confirm_create');
             $this->assertNull($visit->fresh()->prescription);
         }
-        $this->flushSession()->actingAs(User::where('business_code', 'BS000001')->firstOrFail());
+        $this->flushSession();
+        $this->actingAsDoctorWorkspace(User::where('business_code', 'BS000001')->firstOrFail());
         $this->from($create)->post($store, $payload)->assertSessionHasErrors('confirm_create');
         $this->get($create)->assertOk()
             ->assertSee('Lời dặn cần giữ')->assertSee('Ghi chú cần giữ')
             ->assertSee('Tôi đã kiểm tra thông tin thuốc và xác nhận tạo đơn.');
 
-        $this->flushSession()->actingAs(User::where('business_code', 'BS000001')->firstOrFail());
+        $this->flushSession();
+        $this->actingAsDoctorWorkspace(User::where('business_code', 'BS000001')->firstOrFail());
         $this->from($create)->post($store, [...$payload, 'items' => [[...$payload['items'][0], 'quantity' => '0']], 'confirm_create' => '1'])
             ->assertSessionHasErrors('items.0.quantity');
         $form = $this->get($create)->assertOk()->assertSee('Lời dặn cần giữ')->assertSee('Ghi chú cần giữ');

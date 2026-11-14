@@ -8,6 +8,7 @@ use App\Models\Doctor;
 use App\Models\User;
 use App\Rules\PasswordByteLimit;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -21,7 +22,37 @@ class WorkspaceController extends Controller
 
         abort_unless($doctor, 403);
 
-        return view('doctor.home', compact('doctor'));
+        if ($request->session()->get('doctor_workspace_mode') === 'services') {
+            return redirect()->route('doctor.services.index');
+        }
+
+        if ($request->session()->get('doctor_workspace_mode') === 'examination') {
+            return view('doctor.dashboard', compact('doctor'));
+        }
+
+        $employee = $doctor;
+
+        return view('doctor.home', compact('employee'));
+    }
+
+    public function selectWorkspace(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'workspace' => ['required', 'in:examination,services'],
+        ], [
+            'workspace.required' => 'Vui lòng chọn một chức năng.',
+            'workspace.in' => 'Chức năng được chọn không hợp lệ.',
+        ]);
+
+        $current = $request->session()->get('doctor_workspace_mode');
+        if ($current !== null && $current !== $data['workspace']) {
+            abort(403, 'Bạn đã chọn chức năng cho phiên đăng nhập này. Vui lòng đăng xuất nếu cần đổi chức năng.');
+        }
+
+        $request->session()->put('doctor_workspace_mode', $data['workspace']);
+        $request->session()->regenerate();
+
+        return redirect()->route('doctor.home');
     }
 
     public function profile(Request $request)

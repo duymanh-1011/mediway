@@ -7,7 +7,10 @@
     $result = $record->result;
     $stage = $record->technicalStage();
     $displayStatus = \App\Support\TechnicalServiceStatus::for($record);
-    $isWorking = $stage === 'PROCESSING' && (int) $record->performed_by_employee_id === (int) $employee->id;
+    $isWorking = $stage === 'PROCESSING' && ($isDoctorWorkspace
+        ? ((int) $record->performed_by_doctor_id === (int) $employee->id
+            || (! $record->performed_by_doctor_id && $record->performed_by_employee_id))
+        : (int) $record->performed_by_employee_id === (int) $employee->id);
     $hasResult = $result?->hasContent();
     $isClosedVisit = $order?->medicalVisit?->status?->name === 'COMPLETED';
     $canEnterResult = $isWorking && ! $isClosedVisit && ! $hasResult
@@ -32,7 +35,7 @@
         <dl class="tech-facts">
             <div><dt>Bệnh nhân</dt><dd>{{ $patient?->full_name ?? 'Chưa cập nhật' }}</dd></div>
             <div><dt>Mã bệnh nhân</dt><dd>{{ $patient?->patient_code ?? 'Chưa cập nhật' }}</dd></div>
-            <div><dt>Nhân viên thực hiện</dt><dd>{{ $record->performer?->full_name ?? 'Chưa có người thực hiện' }}</dd></div>
+            <div><dt>{{ $record->performerDoctor ? 'Bác sĩ thực hiện' : ($isDoctorWorkspace && $record->performer ? 'Phân công trước đây' : ($isDoctorWorkspace ? 'Bác sĩ thực hiện' : 'Người thực hiện')) }}</dt><dd>{{ $record->performerDoctor?->full_name ?? $record->performer?->full_name ?? 'Chưa có người thực hiện' }}</dd></div>
             <div><dt>Thanh toán</dt><dd>{{ $record->payable?->paymentStatus?->description ?? 'Chưa cập nhật' }}</dd></div>
             <div><dt>Bắt đầu lúc</dt><dd>{{ $record->started_at?->format('d/m/Y H:i') ?? '—' }}</dd></div>
             <div><dt>Hoàn tất lúc</dt><dd>{{ $record->completed_at?->format('d/m/Y H:i') ?? '—' }}</dd></div>
@@ -75,7 +78,7 @@
             $submittedSummary = old('result_summary', $result?->result_summary);
         @endphp
         <section class="tech-panel tech-detail-panel tech-entry-panel">
-            <h2>Nhập kết quả kỹ thuật</h2>
+            <h2>{{ $isDoctorWorkspace ? 'Nhập kết quả dịch vụ' : 'Nhập kết quả kỹ thuật' }}</h2>
             <p>Lưu kết quả để xem lại phiếu. Bệnh nhân có thể xem kết quả sau khi bạn xác nhận hoàn tất dịch vụ.</p>
             @if (! $groupCode)<p>Dịch vụ cần có một nhóm xác định để xem trước phiếu và dùng các trường riêng theo nhóm.</p>@endif
             <form method="post" enctype="multipart/form-data" action="{{ route($routePrefix.'.save', $detailQuery) }}" class="tech-form">
@@ -167,7 +170,7 @@
                 @endif
                 <label class="tech-result-confirmation">
                     <input type="checkbox" name="confirm_result" value="1" required>
-                    <span>Tôi đã kiểm tra thông tin và xác nhận lưu kết quả. Sau khi lưu, kết quả sẽ được khóa chỉnh sửa.</span>
+                    <span>{{ $isDoctorWorkspace ? 'Tôi đã kiểm tra thông tin và xác nhận lưu kết quả với tư cách bác sĩ thực hiện. Sau khi lưu, kết quả sẽ được khóa chỉnh sửa.' : 'Tôi đã kiểm tra thông tin và xác nhận lưu kết quả. Sau khi lưu, kết quả sẽ được khóa chỉnh sửa.' }}</span>
                 </label>
                 <button type="submit" class="portal-btn portal-btn--primary" data-pending-label="Đang lưu…">Lưu kết quả</button>
             </form>
@@ -211,7 +214,9 @@
             @else
                 <section class="tech-result-section" aria-labelledby="saved-template-result-title">
                     <h3 id="saved-template-result-title">{{ $result->template_snapshot['name'] ?? 'Phiếu kết quả' }}</h3>
-                    @foreach ($result->templateDisplayRows() as $row)
+                    @php($templateSections = $result->templateSections())
+                    <p class="tech-result-summary"><strong>Kỹ thuật:</strong></p>
+                    @foreach ($templateSections['technical'] as $row)
                         @if (isset($row['measurements']))
                             <h4>{{ $row['label'] }}</h4>
                             <div class="tech-result-table-wrap tech-template-measurements" role="region" aria-label="{{ $row['label'] }}" tabindex="0">
@@ -223,6 +228,7 @@
                             <dl class="tech-parameters"><div><dt>{{ $row['label'] }}</dt><dd class="tech-result-summary">{{ $row['value'] }}</dd></div></dl>
                         @endif
                     @endforeach
+                    <p class="tech-result-summary"><strong>Kết luận:</strong> {{ $templateSections['conclusion'] }}</p>
                 </section>
             @endif
             @if ($hasResult)

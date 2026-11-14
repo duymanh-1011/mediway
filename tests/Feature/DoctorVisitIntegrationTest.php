@@ -48,7 +48,7 @@ class DoctorVisitIntegrationTest extends TestCase
             ->patch(route('admin.visits.update-status', $visit), ['visit_status_id' => VisitStatus::where('name', 'IN_EXAMINATION')->value('id')])
             ->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->assertSame('IN_EXAMINATION', $visit->fresh()->status->name);
-        $this->flushSession()->actingAs($doctor);
+        $this->flushSession()->actingAsDoctorWorkspace($doctor);
         $this->get(route('doctor.visits.show', $visit))->assertOk()->assertSee($visit->visit_code);
         $this->put(route('doctor.visits.clinical.update', $visit), [
             'record_version' => DoctorClinicalVersion::of(null), 'reason_for_visit' => 'Lý do liên kết kiểm thử',
@@ -58,8 +58,8 @@ class DoctorVisitIntegrationTest extends TestCase
         $this->post(route('doctor.visits.diagnoses.store', $visit), [
             'disease_id' => $disease->id, 'diagnosis_type' => 'PRIMARY', 'diagnosis_description' => 'Chẩn đoán liên kết kiểm thử',
         ])->assertSessionHasNoErrors();
-        // Bác sĩ chỉ định, thu ngân thanh toán và kỹ thuật viên xử lý chính chỉ định đó.
-        $this->flushSession()->actingAs($doctor);
+        // Bác sĩ chỉ định, thu ngân thanh toán và bác sĩ thực hiện dịch vụ đã chỉ định.
+        $this->flushSession()->actingAsDoctorWorkspace($doctor);
         $service = MedicalService::where('service_code', 'DVXN001')->firstOrFail();
         $this->post(route('doctor.visits.orders.store', $visit), ['medical_service_ids' => [$service->id], 'reason' => 'Chỉ định liên kết kiểm thử'])->assertSessionHasNoErrors();
         $order = $visit->serviceOrders()->where('reason', 'Chỉ định liên kết kiểm thử')->sole();
@@ -71,17 +71,24 @@ class DoctorVisitIntegrationTest extends TestCase
         $this->assertFalse(app(DoctorVisitReadiness::class)->check($visit->fresh())['ready']);
         $this->post(route('doctor.visits.orders.store', $visit), ['medical_service_ids' => [$service->id]])->assertSessionHasErrors('medical_service_ids');
         $this->assertSame(1, $visit->serviceOrders()->where('reason', 'Chỉ định liên kết kiểm thử')->count());
-        $this->flushSession()->actingAs(User::where('business_code', 'NV000004')->firstOrFail());
+        $this->flushSession()->actingAsEmployeeWorkspace(User::where('business_code', 'NV000004')->firstOrFail(), 'cashier');
         $this->post(route('employee.payments.collect.store', $item->payable), ['payment_method' => 'CASH', 'confirm_payment' => '1'])->assertSessionHasNoErrors();
         $this->assertSame('PAID', $item->payable->fresh()->paymentStatus->name);
-        $this->flushSession()->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
-        $this->get(route('employee.services.show', $item))->assertOk()->assertSee($service->name);
-        $this->post(route('employee.services.start', $item))->assertSessionHasNoErrors();
-        $this->flushSession()->actingAs($doctor)->get(route('doctor.visits.show', $visit))
+        $this->flushSession()->actingAsDoctorWorkspace($doctor, 'services');
+        $this->get(route('doctor.services.show', $item))->assertOk()->assertSee($service->name);
+        $this->post(route('doctor.services.start', $item))->assertSessionHasNoErrors();
+        $this->flushSession()->actingAsDoctorWorkspace($doctor)->get(route('doctor.visits.show', $visit))
             ->assertOk()->assertSee('Đang thực hiện');
-        $this->flushSession()->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
-        $this->post(route('employee.services.save', $item), [
-            'result_version' => ServiceResult::editVersion(null), 'confirm_result' => '1', 'result_summary' => 'Kết quả liên kết kiểm thử',
+        $this->flushSession()->actingAsDoctorWorkspace($doctor, 'services');
+        $this->post(route('doctor.services.save', $item), [
+            'result_version' => ServiceResult::editVersion(null),
+            'template_version' => hash('sha256', json_encode([$service->resultTemplate->id, $service->resultTemplate->name, $service->resultTemplate->fields], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)),
+            'confirm_result' => '1', 'result_summary' => 'Kết quả liên kết kiểm thử',
+            'template_values' => [
+                'specimen' => 'Mẫu kiểm thử',
+                'measurements' => [['name' => 'Chỉ số liên kết', 'value' => '5', 'unit' => 'mg/L']],
+                'comment' => 'Kết quả liên kết kiểm thử',
+            ],
             'parameters_present' => '1', 'parameters' => [['name' => 'Chỉ số liên kết', 'value' => '5', 'unit' => 'mg/L']],
             'details_present' => '1', 'details' => [['name' => 'Kỹ thuật kiểm thử', 'value' => 'Thông tin kỹ thuật']],
         ])->assertSessionHasNoErrors();
@@ -90,18 +97,19 @@ class DoctorVisitIntegrationTest extends TestCase
         $this->flushSession()->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $this->get(route('admin.service-results.show', $result))->assertOk()
             ->assertSee('Kết quả liên kết kiểm thử')->assertSee('Chỉ số liên kết')->assertSee('Thông tin kỹ thuật');
-        $this->flushSession()->actingAs($doctor);
+        $this->flushSession()->actingAsDoctorWorkspace($doctor);
         $this->get(route('doctor.visits.show', $visit))->assertOk()->assertSee('Kết quả liên kết kiểm thử')->assertSee('Chỉ số liên kết')->assertSee('Thông tin kỹ thuật');
         $this->flushSession()->actingAs($patient);
         $this->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'dich-vu']))->assertOk()
             ->assertSee('Kết quả liên kết kiểm thử')->assertSee('Chỉ số liên kết')->assertSee('Thông tin kỹ thuật');
         $this->get(route('patient.results.service-print', $result))->assertOk()->assertSee('Kết quả liên kết kiểm thử');
         $this->flushSession()->actingAs($otherPatient)->get(route('patient.results.service-print', $result))->assertNotFound();
-        $this->flushSession()->actingAs(User::where('business_code', 'BS000002')->firstOrFail())->get(route('doctor.visits.show', $visit))->assertOk();
-        $this->flushSession()->actingAs(User::where('business_code', 'NV000001')->firstOrFail())->get(route('employee.services.show', $item))->assertForbidden();
+        $this->flushSession()->actingAsDoctorWorkspace(User::where('business_code', 'BS000002')->firstOrFail())->get(route('doctor.visits.show', $visit))->assertOk();
+        $this->flushSession()->actingAsEmployeeWorkspace(User::where('business_code', 'NV000001')->firstOrFail(), 'reception')
+            ->get(route('employee.services.show', $item))->assertForbidden();
 
-        $this->flushSession()->actingAs(User::where('business_code', 'NV000002')->firstOrFail());
-        $this->post(route('employee.services.complete', $item))->assertSessionHasNoErrors();
+        $this->flushSession()->actingAsDoctorWorkspace($doctor, 'services');
+        $this->post(route('doctor.services.complete', $item))->assertSessionHasNoErrors();
         $this->assertSame('COMPLETED', $item->fresh()->serviceStatus->name);
         $this->assertFalse(app(DoctorVisitReadiness::class)->check($visit->fresh())['ready']);
         $this->assertNotSame('COMPLETED', $visit->fresh()->status->name);
@@ -109,7 +117,7 @@ class DoctorVisitIntegrationTest extends TestCase
         // Giả lập lượt đã được gọi quay lại bác sĩ sau khi hoàn tất dịch vụ.
         $visit->update(['visit_status_id' => VisitStatus::where('name', 'RETURNING')->value('id')]);
         // Hoàn tất dịch vụ trước khi kê đơn; kết luận vẫn được ghi sau kê đơn.
-        $this->flushSession()->actingAs($doctor);
+        $this->flushSession()->actingAsDoctorWorkspace($doctor);
         $medicine = Medicine::where('unit', 'viên')->where('status', 'ACTIVE')->firstOrFail();
         $medicine->update(['price_per_unit' => 2000]);
         $this->post(route('doctor.visits.prescriptions.store', $visit), [

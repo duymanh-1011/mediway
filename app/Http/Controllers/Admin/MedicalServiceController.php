@@ -96,7 +96,7 @@ class MedicalServiceController extends Controller
             ->orWhereHas('medicalServices', fn ($q) => $q->whereKey($medicalService->id))
             ->orderBy('display_order')->orderBy('name')->get();
         $resultTemplates = ServiceResultTemplate::where('is_active', true)
-            ->orWhereKey($medicalService->service_result_template_id)
+            ->when($medicalService->service_result_template_id, fn ($query) => $query->orWhere('id', $medicalService->service_result_template_id))
             ->orderBy('name')->get();
 
         return view('admin.medical-services.edit', compact('medicalService', 'serviceGroups', 'resultTemplates'));
@@ -135,6 +135,12 @@ class MedicalServiceController extends Controller
 
     public function activate(MedicalService $medicalService): RedirectResponse
     {
+        if (! $medicalService->resultTemplate?->is_active) {
+            throw ValidationException::withMessages([
+                'service_result_template_id' => 'Hãy gán một mẫu kết quả đang sử dụng trước khi kích hoạt dịch vụ.',
+            ]);
+        }
+
         $medicalService->update(['status' => 'ACTIVE']);
 
         return back()->with('success', 'Đã kích hoạt lại dịch vụ y tế.');

@@ -8,6 +8,7 @@ use App\Models\ClinicalDocument;
 use App\Models\MedicalVisit;
 use App\Models\Employee;
 use App\Models\EmployeeDetail;
+use App\Models\Doctor;
 use App\Models\MedicalService;
 use App\Models\Payable;
 use App\Models\User;
@@ -18,6 +19,7 @@ use App\Models\ServiceResult;
 use App\Models\ServiceResultTemplate;
 use App\Models\ServiceStatus;
 use App\Support\EmployeeAccess;
+use App\Support\DoctorAccess;
 use App\Support\SessionSearch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -30,37 +32,68 @@ class TechnicalServiceController extends Controller
 {
     private const UNGROUPED = 'chua-phan-nhom';
 
-    private function technician(User $user): Employee
+    private function executor(Request $request): Employee|Doctor
     {
-        $employee = app(EmployeeAccess::class)->employee($user);
-        abort_unless($employee && EmployeeAccess::typeCode($employee->detail->employee_type) === EmployeeAccess::SERVICE_TECHNICIAN, 403);
+        if ($this->isDoctorWorkspace($request)) {
+            $doctor = app(DoctorAccess::class)->doctor($request->user());
+            abort_unless($doctor, 403);
+
+            return $doctor;
+        }
+
+        $employee = app(EmployeeAccess::class)->employee($request->user());
+        abort_unless($employee, 403);
 
         return $employee;
     }
 
+    private function isDoctorWorkspace(Request $request): bool
+    {
+        return $request->routeIs('doctor.*');
+    }
+
     private function routePrefix(Request $request): string
     {
+        $prefix = $this->isDoctorWorkspace($request) ? 'doctor' : 'employee';
+
         return match (true) {
-            $request->routeIs('employee.laboratory.*') => 'employee.laboratory',
-            $request->routeIs('employee.imaging.*') => 'employee.imaging',
-            default => 'employee.services',
+            $request->routeIs($prefix.'.laboratory.*') => $prefix.'.laboratory',
+            $request->routeIs($prefix.'.imaging.*') => $prefix.'.imaging',
+            default => $prefix.'.services',
         };
     }
 
     private function shortcutGroups(Request $request): array
     {
         return match ($this->routePrefix($request)) {
-            'employee.laboratory' => ['XN'],
-            'employee.imaging' => ['CDHA', 'SA'],
+            'employee.laboratory', 'doctor.laboratory' => ['XN'],
+            'employee.imaging', 'doctor.imaging' => ['CDHA', 'SA'],
             default => [],
         };
     }
 
-    private function scopedItems(Employee $employee, array $groupCodes): Builder
+    private function scopedItems(Employee|Doctor $executor, array $groupCodes): Builder
     {
-        return ServiceOrderItem::query()
-            ->when($groupCodes, fn ($query) => $query->whereHas('medicalService.serviceGroups', fn ($groups) => $groups->whereIn('service_group_code', $groupCodes)))
-            ->visibleToTechnician($employee);
+        $query = ServiceOrderItem::query()
+            ->when($groupCodes, fn ($query) => $query->whereHas('medicalService.serviceGroups', fn ($groups) => $groups->whereIn('service_group_code', $groupCodes)));
+
+        return $this->constrainToExecutor($query, $executor);
+    }
+
+    private function constrainToExecutor(Builder $query, Employee|Doctor $executor): Builder
+    {
+        if ($executor instanceof Employee) {
+            return $query->visibleToTechnician($executor);
+        }
+
+        if ($executor instanceof Doctor) {
+            return $query->where(fn (Builder $items) => $items->where('performed_by_doctor_id', $executor->id)
+                ->orWhere(fn (Builder $legacy) => $legacy->whereNull('performed_by_doctor_id')
+                    ->where(fn (Builder $assigned) => $assigned->whereNull('performed_by_employee_id')
+                        ->orWhereHas('serviceStatus', fn (Builder $status) => $status->whereIn('name', ['PENDING', 'PROCESSING'])))));
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 
     private function listQuery(Request $request): array
@@ -70,7 +103,7 @@ class TechnicalServiceController extends Controller
                 Arr::only($request->query(), ['group', 'status', 'date', 'page']),
                 fn ($value) => is_string($value) && $value !== ''
             ),
-            ...(new SessionSearch($request, 'employee.services'))->navigation(),
+            ...(new SessionSearch($request, $this->isDoctorWorkspace($request) ? 'doctor.services' : 'employee.services'))->navigation(),
         ];
     }
 
@@ -95,10 +128,10 @@ class TechnicalServiceController extends Controller
 
     public function index(Request $request)
     {
-        $employee = $this->technician($request->user());
+        $employee = $this->executor($request);
         $shortcutGroups = $this->shortcutGroups($request);
         $withCurrentOrders = fn ($services) => $services->withCount([
-            'serviceOrderItems as current_order_count' => fn (Builder $items) => $items->visibleToTechnician($employee)->unresolved()
+            'serviceOrderItems as current_order_count' => fn (Builder $items) => $this->constrainToExecutor($items, $employee)->unresolved()
                 ->whereDoesntHave('serviceOrder', fn ($order) => $order->where('status', 'CANCELLED')),
         ])->orderBy('medical_services.display_order')->orderBy('medical_services.name');
 
@@ -122,7 +155,9 @@ class TechnicalServiceController extends Controller
             $openGroup = $shortcutGroups[0];
         }
 
-        return view('employee.technical.index', compact('employee', 'groups', 'openGroup', 'shortcutGroups'));
+        $routePrefix = $this->routePrefix($request);
+
+        return view('employee.technical.index', compact('employee', 'groups', 'openGroup', 'shortcutGroups', 'routePrefix'));
     }
 
     private function orderFilterRules(): array
@@ -135,11 +170,12 @@ class TechnicalServiceController extends Controller
 
     public function filterOrders(Request $request, string $group, string $service)
     {
-        $this->technician($request->user());
+        $this->executor($request);
         $filters = $request->validate(['q' => ['nullable', 'string', 'max:100'], ...$this->orderFilterRules()]);
-        $search = new SessionSearch($request, 'employee.services');
+        $routePrefix = $this->routePrefix($request);
+        $search = new SessionSearch($request, $routePrefix);
 
-        return redirect()->route('employee.services.orders', [
+        return redirect()->route($routePrefix.'.orders', [
             'group' => $group,
             'service' => $service,
             ...Arr::except($filters, 'q'),
@@ -149,23 +185,24 @@ class TechnicalServiceController extends Controller
 
     public function orders(Request $request, string $group, string $service)
     {
-        $employee = $this->technician($request->user());
+        $employee = $this->executor($request);
+        $routePrefix = $this->routePrefix($request);
         $groupRecord = $group === self::UNGROUPED ? null : ServiceGroup::where('service_group_code', $group)->firstOrFail();
         $group = $groupRecord?->service_group_code ?? self::UNGROUPED;
         $groupName = $groupRecord?->name ?? 'Chưa phân nhóm';
         $service = ($groupRecord?->medicalServices() ?? MedicalService::whereDoesntHave('serviceGroups'))
             ->where('medical_services.service_code', $service)->firstOrFail();
-        $search = new SessionSearch($request, 'employee.services');
+        $search = new SessionSearch($request, $routePrefix);
         $urlFilters = [...$request->validate($this->orderFilterRules()), ...$search->navigation()];
         $routeParameters = ['group' => $group, 'service' => $service->service_code];
         if ($request->query->has('q') || ($request->query->has(SessionSearch::PARAMETER) && $search->keyword() === null)) {
-            return redirect()->route('employee.services.orders', [...$routeParameters, ...$urlFilters])
+            return redirect()->route($routePrefix.'.orders', [...$routeParameters, ...$urlFilters])
                 ->header('Referrer-Policy', 'no-referrer')
                 ->header('Cache-Control', 'private, no-store');
         }
         $filters = $urlFilters + ['q' => $search->keyword()];
         // Tìm chỉ định theo mã phiếu hoặc thông tin bệnh nhân trong phạm vi nhân viên được xem.
-        $items = $service->serviceOrderItems()->visibleToTechnician($employee)
+        $items = $this->constrainToExecutor($service->serviceOrderItems()->getQuery(), $employee)
             ->with(['serviceStatus', 'serviceOrder.medicalVisit.patient', 'payable.paymentStatus'])
             ->when($filters['q'] ?? null, function (Builder $items, string $search) {
                 $term = trim($search);
@@ -181,21 +218,21 @@ class TechnicalServiceController extends Controller
             ->when($filters['status'] ?? null, fn (Builder $query, string $stage) => $this->filterStage($query, $stage))
             ->orderByDesc('id')->paginate(15)->appends($urlFilters);
         $listQuery = ['group' => $group, ...Arr::except($this->listQuery($request), ['group'])];
-        $ordersUrl = route('employee.services.orders', $routeParameters);
-        $filterUrl = route('employee.services.orders.filter', $routeParameters);
-        $catalogueUrl = route('employee.services.index', ['group' => $group]).'#nhom-'.rawurlencode($group);
+        $ordersUrl = route($routePrefix.'.orders', $routeParameters);
+        $filterUrl = route($routePrefix.'.orders.filter', $routeParameters);
+        $catalogueUrl = route($routePrefix.'.index', ['group' => $group]).'#nhom-'.rawurlencode($group);
 
-        return response()->view('employee.technical.orders', compact('employee', 'groupName', 'service', 'items', 'filters', 'listQuery', 'ordersUrl', 'filterUrl', 'catalogueUrl'))
+        return response()->view('employee.technical.orders', compact('employee', 'groupName', 'service', 'items', 'filters', 'listQuery', 'ordersUrl', 'filterUrl', 'catalogueUrl', 'routePrefix'))
             ->header('Cache-Control', 'private, no-store');
     }
 
     public function show(Request $request, int $item)
     {
-        $employee = $this->technician($request->user());
-        $title = 'Thực hiện dịch vụ';
+        $employee = $this->executor($request);
+        $title = $this->isDoctorWorkspace($request) ? 'Bác sĩ thực hiện dịch vụ' : 'Thực hiện dịch vụ';
         $routePrefix = $this->routePrefix($request);
         $record = $this->scopedItems($employee, $this->shortcutGroups($request))
-            ->with(['medicalService.serviceGroups', 'medicalService.resultTemplate', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.status', 'performer', 'payable.paymentStatus', 'result'])
+            ->with(['medicalService.serviceGroups', 'medicalService.resultTemplate', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.status', 'performer', 'performerDoctor', 'payable.paymentStatus', 'result'])
             ->findOrFail($item);
         $serviceGroups = $record->medicalService?->serviceGroups;
         // Không tự đoán biểu mẫu khi dịch vụ có nhiều nhóm hoặc chưa có nhóm.
@@ -208,41 +245,37 @@ class TechnicalServiceController extends Controller
         $backGroup = $serviceGroups?->firstWhere('service_group_code', $listQuery['group'] ?? null)
             ?? $serviceGroups?->first(fn (ServiceGroup $group) => in_array($group->service_group_code, $shortcutGroups, true))
             ?? $serviceGroups?->sortBy('display_order')->first();
+        $isDoctorWorkspace = $this->isDoctorWorkspace($request);
+        $catalogPrefix = $isDoctorWorkspace ? 'doctor.services' : 'employee.services';
         $backUrl = $record->medicalService
-            ? route('employee.services.orders', [
+            ? route($catalogPrefix.'.orders', [
                 'group' => $backGroup?->service_group_code ?? self::UNGROUPED,
                 'service' => $record->medicalService->service_code,
                 ...Arr::except($listQuery, ['group']),
             ])
-            : route('employee.services.index');
+            : route($catalogPrefix.'.index');
 
         $resultTemplate = $record->medicalService?->resultTemplate;
         $templateVersion = $resultTemplate
             ? hash('sha256', json_encode([$resultTemplate->id, $resultTemplate->name, $resultTemplate->fields], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR))
             : null;
-        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'supportsDetails', 'hideUploads', 'groupCode', 'listQuery', 'backUrl', 'resultTemplate', 'templateVersion'));
+
+        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'supportsDetails', 'hideUploads', 'groupCode', 'listQuery', 'backUrl', 'isDoctorWorkspace', 'resultTemplate', 'templateVersion'));
     }
 
     // Chỉ tạo bản xem từ dữ liệu đã lưu trong phạm vi nhân viên được phép xem.
     public function printResult(Request $request, int $item)
     {
-        $employee = $this->technician($request->user());
+        $employee = $this->executor($request);
         $routePrefix = $this->routePrefix($request);
         $record = $this->scopedItems($employee, $this->shortcutGroups($request))
-            ->with(['medicalService.serviceGroups', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.examinationRoom', 'performer', 'result'])
+            ->with(['medicalService.serviceGroups', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.examinationRoom', 'performer', 'performerDoctor', 'result'])
             ->findOrFail($item);
         $groups = $record->medicalService?->serviceGroups;
         abort_unless($record->result?->hasContent(), 404);
-        $title = $record->result?->template_snapshot['name']
-            ? 'PHIẾU KẾT QUẢ '.$record->result->template_snapshot['name']
-            : match ($groups?->first()?->service_group_code) {
-            'XN' => 'PHIẾU KẾT QUẢ XÉT NGHIỆM',
-            'CDHA' => 'PHIẾU KẾT QUẢ CHẨN ĐOÁN HÌNH ẢNH',
-            'SA' => 'PHIẾU KẾT QUẢ SIÊU ÂM',
-            'TDCN' => 'PHIẾU KẾT QUẢ THĂM DÒ CHỨC NĂNG',
-            'TT' => 'PHIẾU KẾT QUẢ THỦ THUẬT',
-            default => 'PHIẾU KẾT QUẢ DỊCH VỤ',
-            };
+        // Dùng cùng một tiêu đề trên mọi phiếu kết quả; tên dịch vụ được nêu
+        // riêng ở phần II để tránh lặp "PHIẾU KẾT QUẢ Phiếu ...".
+        $title = 'PHIẾU KẾT QUẢ DỊCH VỤ';
         $backUrl = route($routePrefix.'.show', ['item' => $item, ...$this->listQuery($request)]);
         $attachmentUrls = [
             'pdf' => route($routePrefix.'.document', ['item' => $item, 'type' => 'pdf']),
@@ -260,9 +293,15 @@ class TechnicalServiceController extends Controller
     private function lockedItem(Request $request, int $id): array
     {
         $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
-        $lockedEmployee = Employee::where('user_id', $user->id)->lockForUpdate()->firstOrFail();
-        EmployeeDetail::where('employee_id', $lockedEmployee->id)->lockForUpdate()->firstOrFail();
-        $employee = $this->technician($user);
+        if ($this->isDoctorWorkspace($request)) {
+            Doctor::where('user_id', $user->id)->lockForUpdate()->firstOrFail();
+            $employee = app(DoctorAccess::class)->doctor($user);
+        } else {
+            $lockedEmployee = Employee::where('user_id', $user->id)->lockForUpdate()->firstOrFail();
+            EmployeeDetail::where('employee_id', $lockedEmployee->id)->lockForUpdate()->first();
+            $employee = app(EmployeeAccess::class)->employee($user);
+        }
+        abort_unless($employee, 403);
         $items = $this->scopedItems($employee, $this->shortcutGroups($request))->whereKey($id);
         $visitId = (clone $items)->join('service_orders', 'service_orders.id', '=', 'service_order_items.service_order_id')->value('service_orders.medical_visit_id');
         abort_unless($visitId, 404);
@@ -271,6 +310,21 @@ class TechnicalServiceController extends Controller
         $record = $items->with(['serviceStatus', 'serviceOrder', 'payable.paymentStatus', 'medicalService.resultTemplate', 'result'])->lockForUpdate()->firstOrFail();
 
         return [$record, $employee];
+    }
+
+    private function claimLegacyAssignment(ServiceOrderItem $record, Employee|Doctor $executor): void
+    {
+        if ($executor instanceof Doctor && ! $record->performed_by_doctor_id && $record->performed_by_employee_id) {
+            $record->update(['performed_by_doctor_id' => $executor->id]);
+            $record->refresh();
+        }
+    }
+
+    private function ownsAssignment(ServiceOrderItem $record, Employee|Doctor $executor): bool
+    {
+        return $executor instanceof Doctor
+            ? (int) $record->performed_by_doctor_id === (int) $executor->id
+            : (int) $record->performed_by_employee_id === (int) $executor->id;
     }
 
     public function start(Request $request, int $item)
@@ -288,7 +342,14 @@ class TechnicalServiceController extends Controller
             }
             $status = ServiceStatus::where('name', 'PROCESSING')->where('is_active', true)->first();
             if (! $status) throw ValidationException::withMessages(['service' => 'Chưa cấu hình trạng thái đang thực hiện.']);
-            $record->update(['service_status_id' => $status->id, 'started_at' => now(), 'performed_by_employee_id' => $employee->id]);
+            $assignment = $employee instanceof Doctor
+                ? ['performed_by_doctor_id' => $employee->id]
+                : ['performed_by_employee_id' => $employee->id];
+            $record->update([
+                'service_status_id' => $status->id,
+                'started_at' => now(),
+                ...$assignment,
+            ]);
             $this->audit($request, $record, 'Bắt đầu thực hiện dịch vụ');
         }, 3);
         return redirect()->route($routePrefix.'.show', ['item' => $item, ...$this->listQuery($request)])->with('success', 'Đã bắt đầu thực hiện dịch vụ.');
@@ -361,7 +422,8 @@ class TechnicalServiceController extends Controller
         $templateValues = $data['template_values'] ?? [];
         ClinicalDocument::transaction(function (ClinicalDocument $documents) use ($request, $item, $data, $parameters, $details, $templateValues) {
             [$record, $employee] = $this->lockedItem($request, $item);
-            if ($record->serviceStatus?->name !== 'PROCESSING' || (int) $record->performed_by_employee_id !== (int) $employee->id || $record->serviceOrder?->status === 'CANCELLED') {
+            $this->claimLegacyAssignment($record, $employee);
+            if ($record->serviceStatus?->name !== 'PROCESSING' || ! $this->ownsAssignment($record, $employee) || $record->serviceOrder?->status === 'CANCELLED') {
                 throw ValidationException::withMessages(['service' => 'Chỉ người đang thực hiện mới được nhập kết quả khi dịch vụ đang xử lý.']);
             }
             // Kiểm tra nhóm từ dữ liệu máy chủ cho mọi yêu cầu, kể cả gửi trực tiếp.
@@ -432,6 +494,11 @@ class TechnicalServiceController extends Controller
                 }
                 $normalizedTemplateValues[$key] = $value;
             }
+            $hasTemplateConclusion = collect(['conclusion', 'interpretation', 'comment'])
+                ->contains(fn ($key) => filled($normalizedTemplateValues[$key] ?? null));
+            if (! $hasTemplateConclusion && blank($data['result_conclusion'] ?? null)) {
+                throw ValidationException::withMessages(['result_conclusion' => 'Vui lòng nhập kết luận dịch vụ.']);
+            }
             // Không ghi đè dữ liệu chỉ số cũ có cấu trúc chưa được nhận diện.
             if ($request->has('parameters_present') && $result && ServiceResult::editableParameters($result->result_parameters) === null) {
                 throw ValidationException::withMessages(['parameters' => 'Chỉ số cũ có định dạng khác và được giữ nguyên.']);
@@ -454,6 +521,9 @@ class TechnicalServiceController extends Controller
                     $values['result_summary'] = $normalizedTemplateValues[$summaryKey];
                     break;
                 }
+            }
+            if ($employee instanceof Doctor) {
+                $values['verified_by_user_id'] = $employee->user_id;
             }
             foreach (['result_summary', 'result_conclusion'] as $field) {
                 if (array_key_exists($field, $data) && ! array_key_exists($field, $values)) {
@@ -496,7 +566,8 @@ class TechnicalServiceController extends Controller
         $routePrefix = $this->routePrefix($request);
         DB::transaction(function () use ($request, $item) {
             [$record, $employee] = $this->lockedItem($request, $item);
-            if ($record->serviceStatus?->name !== 'PROCESSING' || ! $record->serviceStatus?->allows_transition || (int) $record->performed_by_employee_id !== (int) $employee->id || $record->serviceOrder?->status === 'CANCELLED') {
+            $this->claimLegacyAssignment($record, $employee);
+            if ($record->serviceStatus?->name !== 'PROCESSING' || ! $record->serviceStatus?->allows_transition || ! $this->ownsAssignment($record, $employee) || $record->serviceOrder?->status === 'CANCELLED') {
                 throw ValidationException::withMessages(['service' => 'Dịch vụ không còn ở trạng thái cho phép hoàn tất.']);
             }
             if (! $record->result?->hasContent()) throw ValidationException::withMessages(['service' => 'Cần lưu kết quả trước khi hoàn tất.']);
@@ -514,7 +585,7 @@ class TechnicalServiceController extends Controller
 
     public function document(Request $request, int $item, string $type): StreamedResponse
     {
-        $employee = $this->technician($request->user());
+        $employee = $this->executor($request);
         abort_unless(in_array($type, ['pdf', 'image'], true), 404);
         $record = $this->scopedItems($employee, $this->shortcutGroups($request))->with('result')->findOrFail($item);
         abort_unless($record->result, 404);
@@ -524,6 +595,6 @@ class TechnicalServiceController extends Controller
 
     private function audit(Request $request, ServiceOrderItem $item, string $description): void
     {
-        AuditLog::create(['user_id' => $request->user()->id, 'role_name_snapshot' => 'Employee', 'action' => 'UPDATE', 'entity_type' => 'service_order_items', 'entity_id' => $item->id, 'description' => $description, 'ip_address' => $request->ip(), 'user_agent' => mb_substr((string) $request->userAgent(), 0, 500), 'performed_at' => now()]);
+        AuditLog::create(['user_id' => $request->user()->id, 'role_name_snapshot' => $request->user()->role?->name, 'action' => 'UPDATE', 'entity_type' => 'service_order_items', 'entity_id' => $item->id, 'description' => $description, 'ip_address' => $request->ip(), 'user_agent' => mb_substr((string) $request->userAgent(), 0, 500), 'performed_at' => now()]);
     }
 }

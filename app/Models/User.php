@@ -58,9 +58,8 @@ class User extends Authenticatable
     public function scopeEligibleResultVerifier(Builder $query): Builder
     {
         return $query->where('status', 'ACTIVE')
-            ->whereHas('role', fn ($q) => $q->where('name', 'Employee')->where('status', 'ACTIVE'))
-            ->whereHas('employee', fn ($q) => $q->where('status', 'ACTIVE')
-                ->whereHas('detail', fn ($detail) => $detail->whereIn('employee_type', EmployeeAccess::TECHNICIAN_CODES)));
+            ->whereHas('role', fn ($q) => $q->where('name', 'Doctor')->where('status', 'ACTIVE'))
+            ->whereHas('doctor', fn ($q) => $q->where('status', 'ACTIVE'));
     }
 
     /** Must be called inside the service-result transaction, before saving uploads. */
@@ -70,12 +69,10 @@ class User extends Authenticatable
             return;
         }
         $user = self::whereKey($id)->lockForUpdate()->first();
-        $employee = Employee::where('user_id', $id)->lockForUpdate()->first();
-        $detail = $employee?->detail()->lockForUpdate()->first();
-        if (! $user || $user->status !== 'ACTIVE' || $employee?->status !== 'ACTIVE'
-            || $user->role?->name !== 'Employee' || $user->role?->status !== 'ACTIVE'
-            || ! in_array($detail?->employee_type, EmployeeAccess::TECHNICIAN_CODES, true)) {
-            throw ValidationException::withMessages(['verified_by_user_id' => 'Vui lòng chọn kỹ thuật viên đang hoạt động.']);
+        $doctor = Doctor::where('user_id', $id)->lockForUpdate()->first();
+        if (! $user || $user->status !== 'ACTIVE' || $doctor?->status !== 'ACTIVE'
+            || $user->role?->name !== 'Doctor' || $user->role?->status !== 'ACTIVE') {
+            throw ValidationException::withMessages(['verified_by_user_id' => 'Vui lòng chọn bác sĩ đang hoạt động.']);
         }
     }
 

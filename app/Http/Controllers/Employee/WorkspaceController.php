@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Employee;
+use App\Models\EmployeeDetail;
 use App\Models\User;
 use App\Rules\PasswordByteLimit;
 use App\Support\EmployeeAccess;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -18,19 +20,32 @@ class WorkspaceController extends Controller
     public function home(Request $request)
     {
         $employee = app(EmployeeAccess::class)->employee($request->user());
-        $work = match (EmployeeAccess::typeCode($employee->detail->employee_type)) {
-            EmployeeAccess::SERVICE_TECHNICIAN => [
-                'label' => 'Dịch vụ được giao chưa hoàn tất',
-                'count' => \App\Models\ServiceOrderItem::where('performed_by_employee_id', $employee->id)->unresolved()->count(),
-            ],
-            'CASHIER' => [
-                'label' => 'Giao dịch bạn xác nhận hôm nay',
-                'count' => \App\Models\PaymentTransaction::where('collected_by_employee_id', $employee->id)
-                    ->where('transaction_result', 'SUCCESS')->whereDate('confirmed_at', today())->count(),
-            ],
-            default => null,
+
+        return match ($request->session()->get('employee_workspace_mode')) {
+            'reception' => redirect()->route('employee.reception.index'),
+            'cashier' => redirect()->route('employee.payments.index'),
+            default => view('employee.home', compact('employee')),
         };
-        return view('employee.home', compact('employee', 'work'));
+    }
+
+    public function selectWorkspace(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'workspace' => ['required', 'in:reception,cashier'],
+        ], [
+            'workspace.required' => 'Vui lòng chọn một chức năng.',
+            'workspace.in' => 'Chức năng được chọn không hợp lệ.',
+        ]);
+
+        $current = $request->session()->get('employee_workspace_mode');
+        if ($current !== null && $current !== $data['workspace']) {
+            abort(403, 'Bạn đã chọn chức năng cho phiên đăng nhập này. Vui lòng đăng xuất nếu cần đổi chức năng.');
+        }
+
+        $request->session()->put('employee_workspace_mode', $data['workspace']);
+        $request->session()->regenerate();
+
+        return redirect()->route('employee.home');
     }
 
     public function profile(Request $request)
@@ -65,7 +80,10 @@ class WorkspaceController extends Controller
             $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
             $employee = Employee::where('user_id', $user->id)->lockForUpdate()->firstOrFail();
             abort_unless(app(EmployeeAccess::class)->employee($user), 403);
-            $detail = $employee->detail()->lockForUpdate()->firstOrFail();
+            $detail = $employee->detail()->lockForUpdate()->first();
+            if (! $detail) {
+                $detail = new EmployeeDetail(['employee_id' => $employee->id]);
+            }
             $detail->fill($data);
             $fields = array_keys($detail->getDirty());
             if ($fields === []) return false;

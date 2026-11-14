@@ -23,6 +23,7 @@ class DoctorServiceOrderTest extends TestCase
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
+        $this->withSession(['doctor_workspace_mode' => 'examination']);
         $this->actingAs(User::where('business_code', 'BS000001')->firstOrFail());
     }
 
@@ -160,10 +161,11 @@ class DoctorServiceOrderTest extends TestCase
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
         $this->get($image)->assertOk();
         $this->get(route('doctor.visits.results.document', [$otherVisit->id, $result->id, 'pdf']))->assertNotFound();
-        $this->flushSession()->actingAs(User::where('business_code', 'BS000002')->firstOrFail())->get($pdf)->assertOk();
+        $this->flushSession();
+        $this->actingAsDoctorWorkspace(User::where('business_code', 'BS000002')->firstOrFail())->get($pdf)->assertOk();
         $this->flushSession()->actingAs(User::where('business_code', 'BN000001')->firstOrFail())->get($pdf)->assertForbidden();
 
-        $this->flushSession()->actingAs(User::where('business_code', 'BS000001')->firstOrFail());
+        $this->flushSession()->actingAsDoctorWorkspace(User::where('business_code', 'BS000001')->firstOrFail());
         $result->update(['result_pdf_path' => $directory.'/../result.pdf', 'result_image_path' => $directory.'/missing.png']);
         $this->get($pdf)->assertNotFound();
         $this->get($image)->assertNotFound();

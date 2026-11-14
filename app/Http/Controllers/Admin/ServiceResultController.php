@@ -178,7 +178,8 @@ class ServiceResultController extends Controller
             'serviceOrder.orderedByDoctor',
             'medicalService',
             'serviceStatus',
-            'performer',
+                'performer',
+                'performerDoctor',
             'result',
         ]);
 
@@ -213,7 +214,7 @@ class ServiceResultController extends Controller
                 );
         }
 
-        $verifiers = User::eligibleResultVerifier()->with('employee:id,user_id,employee_code,full_name')->orderBy('business_code')->get(['id', 'business_code']);
+        $verifiers = User::eligibleResultVerifier()->with('doctor:id,user_id,doctor_code,full_name')->orderBy('business_code')->get(['id', 'business_code']);
 
         return view(
             'admin.service-results.create',
@@ -443,6 +444,7 @@ class ServiceResultController extends Controller
                 'serviceOrderItem.medicalService',
                 'serviceOrderItem.serviceStatus',
                 'serviceOrderItem.performer',
+                'serviceOrderItem.performerDoctor',
                 'verifier:id,business_code',
                 'verifier.doctor:id,user_id,doctor_code,full_name',
                 'verifier.employee:id,user_id,employee_code,full_name',
@@ -468,6 +470,7 @@ class ServiceResultController extends Controller
                 'serviceOrderItem.medicalService',
                 'serviceOrderItem.serviceStatus',
                 'serviceOrderItem.performer',
+                'serviceOrderItem.performerDoctor',
                 'verifier:id,business_code',
                 'verifier.doctor:id,user_id,doctor_code,full_name',
                 'verifier.employee:id,user_id,employee_code,full_name',
@@ -477,7 +480,7 @@ class ServiceResultController extends Controller
         abort_if($result->serviceOrderItem->serviceOrder->medicalVisit->status?->name === 'COMPLETED',
             403, 'Lượt khám đã hoàn tất, không thể sửa trực tiếp kết quả dịch vụ.');
 
-        $verifiers = User::eligibleResultVerifier()->with('employee:id,user_id,employee_code,full_name')->orderBy('business_code')->get(['id', 'business_code']);
+        $verifiers = User::eligibleResultVerifier()->with('doctor:id,user_id,doctor_code,full_name')->orderBy('business_code')->get(['id', 'business_code']);
         if ($result->verifier && ! $verifiers->contains('id', $result->verifier->id)) {
             $verifiers->push($result->verifier); // Giữ người xác nhận lịch sử khi sửa nội dung khác.
         }

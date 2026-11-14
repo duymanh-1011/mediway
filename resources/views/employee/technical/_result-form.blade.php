@@ -2,7 +2,9 @@
     @if (! $resultTemplate || ! $resultTemplate->is_active)
         <div class="portal-alert portal-alert--warning">Dịch vụ này chưa được gán mẫu phiếu kết quả đang hoạt động. Vui lòng liên hệ quản trị viên.</div>
     @else
-        @php($resultFormHasErrors = $errors->any())
+        @php
+            $resultFormHasErrors = $errors->any();
+        @endphp
         <div class="tech-actions">
             <button type="button" class="portal-btn portal-btn--primary" data-open-result-form aria-expanded="{{ $resultFormHasErrors ? 'true' : 'false' }}" aria-controls="service-result-entry">+ Thêm phiếu kết quả</button>
         </div>
@@ -17,6 +19,7 @@
                     @php
                         $fieldKey = $field['key'];
                         $fieldValue = old('template_values.'.$fieldKey, $result?->template_values[$fieldKey] ?? '');
+                        $isConclusionField = in_array($fieldKey, ['conclusion', 'interpretation', 'comment'], true);
                     @endphp
                     <fieldset class="tech-parameter-editor">
                         <legend>{{ $field['label'] }} @if ($field['required'])<span aria-label="bắt buộc">*</span>@endif</legend>
@@ -41,11 +44,11 @@
                             </div>
                         @elseif (($field['type'] ?? '') === 'textarea')
                             <label>{{ $field['label'] }}
-                                <textarea name="template_values[{{ $fieldKey }}]" rows="5" maxlength="10000" @required($field['required'])>{{ is_string($fieldValue) ? $fieldValue : '' }}</textarea>
+                                <textarea name="template_values[{{ $fieldKey }}]" rows="5" maxlength="10000" @required($field['required'] || $isConclusionField)>{{ is_string($fieldValue) ? $fieldValue : '' }}</textarea>
                             </label>
                         @else
                             <label>{{ $field['label'] }}
-                                <input type="{{ ($field['type'] ?? '') === 'number' ? 'number' : 'text' }}" name="template_values[{{ $fieldKey }}]" value="{{ is_scalar($fieldValue) ? $fieldValue : '' }}" maxlength="10000" @if (($field['type'] ?? '') === 'number') step="any" @endif @required($field['required'])>
+                                <input type="{{ ($field['type'] ?? '') === 'number' ? 'number' : 'text' }}" name="template_values[{{ $fieldKey }}]" value="{{ is_scalar($fieldValue) ? $fieldValue : '' }}" maxlength="10000" @if (($field['type'] ?? '') === 'number') step="any" @endif @required($field['required'] || $isConclusionField)>
                             </label>
                             @if (filled($field['unit'] ?? null) || filled($field['reference'] ?? null))
                                 <small>{{ collect([$field['unit'] ?? null, $field['reference'] ?? null])->filter()->join(' · ') }}</small>
@@ -54,6 +57,15 @@
                         @error('template_values.'.$fieldKey)<p class="field-error">{{ $message }}</p>@enderror
                     </fieldset>
                 @endforeach
+                @unless (collect($resultTemplate->fields)->contains(fn ($field) => in_array($field['key'] ?? null, ['conclusion', 'interpretation', 'comment'], true)))
+                    <fieldset class="tech-parameter-editor">
+                        <legend>Kết luận <span aria-label="bắt buộc">*</span></legend>
+                        <label>Kết luận dịch vụ
+                            <textarea name="result_conclusion" rows="5" maxlength="10000" required>{{ old('result_conclusion', $result?->result_conclusion ?? '') }}</textarea>
+                        </label>
+                        @error('result_conclusion')<p class="field-error">{{ $message }}</p>@enderror
+                    </fieldset>
+                @endunless
                 <div class="tech-upload">
                     <label>Tệp kết quả PDF (không bắt buộc, tối đa 5 MB)<input type="file" name="result_pdf" accept=".pdf,application/pdf"></label>
                     <label>Ảnh kết quả (không bắt buộc, tối đa 2 MB)<input type="file" name="result_image" accept=".jpg,.jpeg,.png,.webp"></label>

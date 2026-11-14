@@ -55,7 +55,7 @@ class PatientPrescriptionPurchaseTest extends TestCase
         $this->flushSession()->actingAs($other)->get($show)->assertNotFound();
         $this->post($store, ['confirm_purchase' => 1])->assertNotFound();
 
-        $this->flushSession()->actingAs(User::where('business_code', 'NV000004')->firstOrFail());
+        $this->flushSession()->actingAsEmployeeWorkspace(User::where('business_code', 'NV000004')->firstOrFail(), 'cashier');
         $this->get(route('employee.payments.show', $payable))->assertOk()->assertSee($payable->payable_code);
         $this->post(route('employee.payments.collect.store', $payable), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
         $transaction = $payable->transactions()->where('transaction_result', 'SUCCESS')->firstOrFail();

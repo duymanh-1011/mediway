@@ -110,15 +110,15 @@ class AppointmentReceptionRulesTest extends TestCase
         $this->assertSame('BOOKED', $duplicate->fresh()->appointmentStatus->name);
     }
 
-    public function test_check_in_opens_exactly_thirty_minutes_before_appointment_during_doctor_shift(): void
+    public function test_check_in_opens_exactly_one_hour_before_appointment_during_doctor_shift(): void
     {
         $slot = $this->slot();
         $slot->update(['start_time' => '10:00', 'end_time' => '10:30']);
         $appointment = $this->book($slot);
-        $this->travelTo(today()->setTime(9, 29, 59));
+        $this->travelTo(today()->setTime(8, 59, 59));
         $queueCount = ExaminationRoomQueue::count();
         $auditCount = AuditLog::count();
-        $this->get(route('admin.appointments.show', $appointment))->assertOk()->assertSee('Chỉ có thể tiếp nhận từ 09:30')
+        $this->get(route('admin.appointments.show', $appointment))->assertOk()->assertSee('Chỉ có thể tiếp nhận từ 09:00')
             ->assertDontSee('action="'.route('admin.appointments.check-in', $appointment).'"', false);
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasErrors('appointment');
         $this->assertFalse($appointment->medicalVisit()->exists());
@@ -126,7 +126,7 @@ class AppointmentReceptionRulesTest extends TestCase
         $this->assertSame($queueCount, ExaminationRoomQueue::count());
         $this->assertSame($auditCount, AuditLog::count());
 
-        $this->travelTo(today()->setTime(9, 30));
+        $this->travelTo(today()->setTime(9, 0));
         $this->get(route('admin.appointments.show', $appointment))->assertOk()->assertSee('action="'.route('admin.appointments.check-in', $appointment).'"', false);
         $this->post(route('admin.appointments.check-in', $appointment))->assertSessionHasNoErrors();
         $this->assertSame(1, $appointment->medicalVisit()->count());

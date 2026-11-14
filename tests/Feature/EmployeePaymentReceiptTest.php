@@ -13,6 +13,12 @@ class EmployeePaymentReceiptTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withSession(['employee_workspace_mode' => 'cashier']);
+    }
+
     public function test_receipt_headers_show_the_correct_identifiers_without_collection_date_or_time(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -144,9 +150,9 @@ class EmployeePaymentReceiptTest extends TestCase
         $this->withoutVite();
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')->firstOrFail();
         $url = route('employee.payments.receipt', $transaction);
-        $this->actingAs(User::where('business_code', 'NV000001')->firstOrFail())->get($url)->assertForbidden();
+        $this->actingAsEmployeeWorkspace(User::where('business_code', 'NV000001')->firstOrFail(), 'reception')->get($url)->assertForbidden();
         $this->flushSession();
-        $this->actingAs(User::where('business_code', 'NV000004')->firstOrFail());
+        $this->actingAsEmployeeWorkspace(User::where('business_code', 'NV000004')->firstOrFail(), 'cashier');
         foreach ([['transaction_result' => 'FAILED', 'payment_method' => 'CASH'], ['transaction_result' => 'SUCCESS', 'payment_method' => 'QR']] as $values) {
             DB::table('payment_transactions')->where('id', $transaction->id)->update($values);
             $this->get($url)->assertNotFound();

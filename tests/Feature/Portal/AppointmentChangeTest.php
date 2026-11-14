@@ -349,7 +349,7 @@ class AppointmentChangeTest extends TestCase
         $patientId = $appointment->patient_id;
         $this->travelTo($slot->doctorSchedule->work_date->copy()->setTime(9, 0));
         $receptionist = User::where('business_code', 'NV000001')->firstOrFail();
-        $this->flushSession()->actingAs($receptionist)
+        $this->flushSession()->actingAsEmployeeWorkspace($receptionist, 'reception')
             ->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])
             ->assertSessionHasNoErrors();
         $visit = $appointment->fresh()->medicalVisit;
@@ -360,7 +360,7 @@ class AppointmentChangeTest extends TestCase
         $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
         $this->assertSame('UNPAID', $fee->paymentStatus->name);
         $cashier = User::where('business_code', 'NV000004')->firstOrFail();
-        $this->flushSession()->actingAs($cashier)
+        $this->flushSession()->actingAsEmployeeWorkspace($cashier, 'cashier')
             ->post(route('employee.payments.collect.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])
             ->assertSessionHasNoErrors();
         $this->assertSame('PAID', $fee->fresh()->paymentStatus->name);

@@ -71,45 +71,47 @@
                 CHỨC NĂNG
             </p>
 
-            <a href="{{ route('doctor.visits.index') }}" class="employee-nav__item {{ request()->routeIs('doctor.visits.*') ? 'is-active' : '' }}" @if(request()->routeIs('doctor.visits.*')) aria-current="page" @endif>
-                <x-employee-icon name="reception" /><span>Danh sách lượt khám</span>
-            </a>
-
-            @if ($canExamine)
-
-                <a
-                    href="{{ route('doctor.examination.rooms.index') }}"
-                    class="employee-nav__item {{ $examinationActive ? 'is-active' : '' }}"
-                    @if ($examinationActive)
-                        aria-current="location"
-                    @endif
-                >
-                    <x-employee-icon name="reception" />
-
-                    <span>
-                        Phòng khám và hàng đợi
-                    </span>
+            @if (session('doctor_workspace_mode') === 'examination')
+                <a href="{{ route('doctor.visits.index') }}" class="employee-nav__item {{ request()->routeIs('doctor.visits.*') ? 'is-active' : '' }}" @if(request()->routeIs('doctor.visits.*')) aria-current="page" @endif>
+                    <x-employee-icon name="reception" /><span>Danh sách lượt khám</span>
                 </a>
 
-            @else
+                @if ($canExamine)
 
-                <div
-                    class="employee-nav__item employee-nav__item--disabled"
-                    aria-label="Phòng khám và hàng đợi: Chưa được cấp quyền"
-                >
-                    <x-employee-icon name="reception" />
+                    <a
+                        href="{{ route('doctor.examination.rooms.index') }}"
+                        class="employee-nav__item {{ $examinationActive ? 'is-active' : '' }}"
+                        @if ($examinationActive)
+                            aria-current="location"
+                        @endif
+                    >
+                        <x-employee-icon name="reception" />
 
-                    <span>
-                        Phòng khám và hàng đợi
+                        <span>
+                            Phòng khám và hàng đợi
+                        </span>
+                    </a>
 
-                        <small>
-                            Chưa được cấp quyền
-                        </small>
-                    </span>
+                @else
 
-                    <x-employee-icon name="lock" />
-                </div>
+                    <div
+                        class="employee-nav__item employee-nav__item--disabled"
+                        aria-label="Phòng khám và hàng đợi: Chưa được cấp quyền"
+                    >
+                        <x-employee-icon name="reception" />
 
+                        <span>
+                            Phòng khám và hàng đợi
+
+                            <small>
+                                Chưa được cấp quyền
+                            </small>
+                        </span>
+
+                        <x-employee-icon name="lock" />
+                    </div>
+
+                @endif
             @endif
 
             {{-- TÀI KHOẢN --}}

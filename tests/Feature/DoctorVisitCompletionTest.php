@@ -22,6 +22,7 @@ class DoctorVisitCompletionTest extends TestCase
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
+        $this->withSession(['doctor_workspace_mode' => 'examination']);
         $this->actingAs(User::where('business_code', 'BS000001')->firstOrFail());
     }
 
@@ -59,10 +60,12 @@ class DoctorVisitCompletionTest extends TestCase
         $visit->conclusion()->delete();
         $this->post(route('doctor.visits.complete', $visit))->assertSessionHasErrors('visit');
         $this->assertSame('IN_EXAMINATION', $visit->fresh()->status->name);
-        $this->flushSession()->actingAs(User::where('business_code', 'BS000002')->firstOrFail())
+        $this->flushSession();
+        $this->actingAsDoctorWorkspace(User::where('business_code', 'BS000002')->firstOrFail())
             ->post(route('doctor.visits.complete', $visit))->assertSessionHasErrors('visit');
         $visit->update(['visit_status_id' => VisitStatus::where('name', 'WAITING')->value('id')]);
-        $this->flushSession()->actingAs(User::where('business_code', 'BS000001')->firstOrFail())
+        $this->flushSession();
+        $this->actingAsDoctorWorkspace(User::where('business_code', 'BS000001')->firstOrFail())
             ->post(route('doctor.visits.complete', $visit))->assertSessionHasErrors('visit');
         $this->assertSame('WAITING', $visit->fresh()->status->name);
     }

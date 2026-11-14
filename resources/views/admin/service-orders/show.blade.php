@@ -596,16 +596,16 @@
                                 Người thực hiện
                             </div>
 
-                            @if ($item->performer)
+                            @if ($item->performerDoctor || $item->performer)
 
                                 <div class="service-performer">
 
                                     <strong>
-                                        {{ $item->performer->full_name }}
+                                        {{ $item->performerDoctor?->full_name ?? $item->performer?->full_name }}
                                     </strong>
 
                                     <span>
-                                        @include('admin.layouts.partials.record-code', ['code' => $item->performer->employee_code])
+                                        @include('admin.layouts.partials.record-code', ['code' => $item->performerDoctor?->doctor_code ?? $item->performer?->employee_code])
                                     </span>
 
                                 </div>

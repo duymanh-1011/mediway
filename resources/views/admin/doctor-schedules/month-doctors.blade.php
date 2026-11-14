@@ -40,7 +40,7 @@
                 <tbody>
                     @forelse($doctors as $doctor)
                         <tr>
-                            <td>{{ $doctor->doctor_code }}</td><td>{{ $doctor->full_name }}</td>
+                            <td>@include('admin.layouts.partials.record-code', ['code' => $doctor->doctor_code])</td><td>{{ $doctor->full_name }}</td>
                             <td>{{ $doctor->specialty?->name ?? 'Chưa phân công' }}</td>
                             <td class="schedule-doctor-actions">
                                 <a class="admin-btn admin-btn-detail" href="{{ route('admin.doctor-schedules.month.show', [$doctor, 'month' => $month]) }}">Xem lịch làm việc bác sĩ</a>

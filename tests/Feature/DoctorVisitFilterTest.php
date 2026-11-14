@@ -18,6 +18,7 @@ class DoctorVisitFilterTest extends TestCase
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
+        $this->withSession(['doctor_workspace_mode' => 'examination']);
         $this->actingAs(User::where('business_code', 'BS000001')->firstOrFail());
     }
 

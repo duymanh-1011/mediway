@@ -17,12 +17,6 @@ final class EmployeeAccess
 
     public const TECHNICIAN_CODES = [self::SERVICE_TECHNICIAN, 'LAB_TECHNICIAN', 'IMAGING_TECHNICIAN'];
 
-    private const CAPABILITIES = [
-        'RECEPTIONIST' => ['appointment.view', 'reception.check_in'],
-        'CASHIER' => ['payment.view', 'payment.collect'],
-        self::SERVICE_TECHNICIAN => ['services.view', 'services.process'],
-    ];
-
     public static function typeCode(?string $type): ?string
     {
         return in_array($type, self::TECHNICIAN_CODES, true) ? self::SERVICE_TECHNICIAN : $type;
@@ -30,9 +24,7 @@ final class EmployeeAccess
 
     public static function homeRoute(Employee $employee): string
     {
-        return self::typeCode($employee->detail?->employee_type) === self::SERVICE_TECHNICIAN
-            ? 'employee.services.index'
-            : 'employee.home';
+        return 'employee.home';
     }
 
     public function employee(User $user): ?Employee
@@ -41,18 +33,25 @@ final class EmployeeAccess
         $user->load(['role', 'employee.detail']);
         $employee = $user->employee;
         if ($user->status !== 'ACTIVE' || $user->role?->name !== 'Employee'
-            || $user->role?->status !== 'ACTIVE' || $employee?->status !== 'ACTIVE'
-            || ! isset(self::TYPES[self::typeCode($employee->detail?->employee_type)])) {
+            || $user->role?->status !== 'ACTIVE' || $employee?->status !== 'ACTIVE') {
             return null;
         }
 
         return $employee;
     }
 
-    public function allows(User $user, string $capability): bool
+    public function allows(User $user, string $capability, ?string $workspace): bool
     {
         $employee = $this->employee($user);
 
-        return $employee !== null && in_array($capability, self::CAPABILITIES[self::typeCode($employee->detail->employee_type)], true);
+        if ($employee === null) {
+            return false;
+        }
+
+        return match ($workspace) {
+            'reception' => in_array($capability, ['appointment.view', 'reception.check_in'], true),
+            'cashier' => in_array($capability, ['payment.view', 'payment.collect'], true),
+            default => false,
+        };
     }
 }

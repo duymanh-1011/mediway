@@ -496,6 +496,7 @@ class ServiceOrderController extends Controller
                 'items.serviceStatus:id,name,description,allows_transition',
 
                 'items.performer:id,employee_code,full_name',
+                'items.performerDoctor:id,doctor_code,full_name',
 
                 'items.result',
 

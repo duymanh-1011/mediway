@@ -19,6 +19,7 @@ class AppointmentPaymentDateTest extends TestCase
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
+        $this->withSession(['employee_workspace_mode' => 'cashier']);
     }
 
     private function fee(): Payable
@@ -132,7 +133,7 @@ class AppointmentPaymentDateTest extends TestCase
                 'collected_by_employee_id' => \App\Models\Employee::where('employee_code', 'NV000004')->value('id'),
             ])->assertSessionHasErrors('payment_date');
             $this->flushSession();
-            $this->actingAs(User::where('business_code', 'NV000004')->firstOrFail());
+            $this->actingAsEmployeeWorkspace(User::where('business_code', 'NV000004')->firstOrFail(), 'cashier');
             $this->get(route('employee.payments.collect.create', $fee))
                 ->assertRedirect(route('employee.payments.show', $fee))->assertSessionHasErrors('payment_date');
             $this->post(route('employee.payments.collect.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ExaminationRoomQueue;
+use App\Models\ServiceResult;
 use App\Models\ServiceStatus;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -24,6 +25,16 @@ class AdminTableNumberingTest extends TestCase
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
+
+        ServiceResult::query()->firstOrFail()->forceFill([
+            'template_snapshot' => [
+                'name' => 'Kết quả xét nghiệm',
+                'fields' => [['key' => 'measurements', 'label' => 'Các chỉ số', 'type' => 'measurements']],
+            ],
+            'template_values' => [
+                'measurements' => [['name' => 'Hồng cầu', 'value' => '4,5', 'unit' => 'T/L']],
+            ],
+        ])->save();
     }
 
     private function xpath(string $html): DOMXPath
@@ -55,6 +66,7 @@ class AdminTableNumberingTest extends TestCase
             'specialties' => 'specialties', 'disease-groups' => 'disease_groups', 'service-groups' => 'service_groups',
             'roles' => 'roles', 'patients' => 'patients', 'medicines' => 'medicines', 'payables' => 'payables',
             'medical-services' => 'medical_services', 'examination-rooms' => 'examination_rooms', 'prescriptions' => 'prescriptions',
+            'service-results' => 'service_results',
         ];
         $checked = 0;
         foreach (glob(resource_path('views/admin/*/*.blade.php')) as $file) {
@@ -101,7 +113,7 @@ class AdminTableNumberingTest extends TestCase
                 $checked++;
             }
         }
-        $this->assertSame(54, $checked);
+        $this->assertSame(55, $checked);
     }
 
     public function test_row_numbers_continue_on_the_second_page_and_restart_for_filtered_results(): void

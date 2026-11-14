@@ -206,7 +206,7 @@
                     name="instructions"
                     class="form-control"
                     rows="4"
-                    placeholder="Nhập hướng dẫn hoặc lưu ý cho nhân viên thực hiện..."
+                    placeholder="Nhập hướng dẫn hoặc lưu ý cho bác sĩ thực hiện dịch vụ..."
                 >{{ old('instructions') }}</textarea>
 @error('instructions')<div class="field-error">{{ $message }}</div>@enderror
 

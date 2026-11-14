@@ -140,9 +140,12 @@ class AppointmentController extends Controller
             if ($receptionTiming === 'past_day') {
                 $query->whereDate('appointment_date', '<', today()->toDateString());
             } else {
+                $lateCutoff = config('appointments_auto_cancel.enabled')
+                    ? now()->subMinutes((int) config('appointments_auto_cancel.grace_minutes'))
+                    : now();
                 $query->whereDate('appointment_date', today()->toDateString())
                     ->whereHas('appointmentTimeSlot', fn ($slot) => $slot->whereTime(
-                        Appointment::lateTimeColumn(), Appointment::lateTimeOperator(), now()->format('H:i:s')
+                        Appointment::lateTimeColumn(), Appointment::lateTimeOperator(), $lateCutoff->format('H:i:s')
                     ));
             }
         }

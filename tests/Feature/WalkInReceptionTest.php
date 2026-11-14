@@ -30,6 +30,7 @@ class WalkInReceptionTest extends TestCase
         $this->travelTo(now()->setDate(2026, 10, 23)->setTime(9, 0));
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
+        $this->withSession(['employee_workspace_mode' => 'reception']);
         $this->schedule = DoctorSchedule::create([
             'doctor_id' => Doctor::where('doctor_code', 'BS000001')->value('id'),
             'specialty_id' => Specialty::where('specialty_code', 'CKTMH')->value('id'),
@@ -91,7 +92,7 @@ class WalkInReceptionTest extends TestCase
         ]);
 
         $cashier = Employee::where('employee_code', 'NV000004')->firstOrFail()->user;
-        $this->actingAs($cashier)->post(route('employee.payments.collect.store', $fee), [
+        $this->actingAsEmployeeWorkspace($cashier, 'cashier')->post(route('employee.payments.collect.store', $fee), [
             'payment_method' => 'CASH', 'confirm_payment' => 1,
         ])->assertRedirect(route('employee.payments.show', $fee))->assertSessionHasNoErrors();
         $this->assertSame('PAID', $fee->fresh()->paymentStatus->name);
@@ -127,7 +128,7 @@ class WalkInReceptionTest extends TestCase
         $this->post(route('admin.logout'));
 
         $receptionPage = route('employee.walk-in.create');
-        $this->actingAs($this->receptionist())->post($issue, ['confirm_identity' => 1])->assertNotFound();
+        $this->actingAsEmployeeWorkspace($this->receptionist(), 'reception')->post($issue, ['confirm_identity' => 1])->assertNotFound();
         $this->post(route('employee.walk-in.search'), ['identifier' => $patient->patient_code])->assertRedirect($receptionPage);
         $this->get($receptionPage)->assertOk()->assertSee('Cấp mật khẩu tạm');
         $this->from($receptionPage)->post($issue)->assertSessionHasErrors('confirm_identity');
@@ -276,7 +277,7 @@ class WalkInReceptionTest extends TestCase
         $this->assertSame(1, $visit->queues()->count());
         $this->assertSame('WAITING', $visit->queues()->sole()->status->name);
         $this->flushSession();
-        $this->actingAs($this->receptionist())->get(route('employee.walk-in.show', $visit))->assertSee('Phí khám đã được thanh toán');
+        $this->actingAsEmployeeWorkspace($this->receptionist(), 'reception')->get(route('employee.walk-in.show', $visit))->assertSee('Phí khám đã được thanh toán');
     }
 
     public function test_reception_creates_an_account_and_patient_must_change_temporary_password(): void
@@ -337,6 +338,7 @@ class WalkInReceptionTest extends TestCase
         $store = route('employee.walk-in.store');
         $payload = [
             'patient_mode' => 'existing', 'patient_id' => $patient->id, 'citizen_id_number' => '123456789012',
+            'date_of_birth' => '1985-03-12', 'gender' => 'Nữ',
             'schedule_id' => $this->schedule->id, 'confirm_reception' => 1, 'request_token' => (string) Str::uuid(),
         ];
         $this->post($store, [...$payload, 'phone' => '0902000001'])->assertSessionHasErrors('phone');
@@ -371,7 +373,7 @@ class WalkInReceptionTest extends TestCase
         $this->assertSame($first->reception_queue_number + 1, $second->reception_queue_number);
         $this->assertSame(0, $first->queues()->count());
 
-        $this->actingAs($cashier);
+        $this->actingAsEmployeeWorkspace($cashier, 'cashier');
         foreach ([$second, $first] as $visit) {
             $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
             $this->post(route('employee.payments.collect.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
@@ -422,7 +424,7 @@ class WalkInReceptionTest extends TestCase
         $admin = User::where('business_code', 'QT000001')->firstOrFail();
         foreach (['admin.visits.walk-in.store' => $admin, 'employee.walk-in.store' => $this->receptionist()] as $route => $actor) {
             $this->actingAs($actor)->post(route($route), $payload)->assertSessionHasErrors([
-                'citizen_id_number' => 'Vui lòng nhập số CCCD khi tạo hồ sơ mới.',
+                'citizen_id_number' => 'Vui lòng nhập số CCCD khi tạo hồ sơ mới hoặc liên kết hồ sơ cũ chưa có CCCD.',
             ]);
             $this->post(route($route), [...$payload, 'citizen_id_number' => '01234567890'])->assertSessionHasErrors([
                 'citizen_id_number' => 'CCCD phải gồm 12 chữ số.',
@@ -498,7 +500,13 @@ class WalkInReceptionTest extends TestCase
 
     public function test_wrong_roles_cannot_search_or_submit_walk_in(): void
     {
-        foreach (['NV000002', 'NV000003', 'NV000004', 'BN000001', 'QT000001'] as $code) {
+        foreach (['NV000002', 'NV000003', 'NV000004'] as $code) {
+            $this->flushSession();
+            $this->actingAsEmployeeWorkspace(User::where('business_code', $code)->firstOrFail(), 'reception')->get(route('employee.walk-in.create'))->assertOk();
+            $this->post(route('employee.walk-in.search'), ['identifier' => 'BN000005'])->assertRedirect(route('employee.walk-in.create'));
+            $this->post(route('employee.walk-in.store'), [])->assertSessionHasErrors('patient_mode');
+        }
+        foreach (['BN000001', 'QT000001'] as $code) {
             $this->flushSession();
             $this->actingAs(User::where('business_code', $code)->firstOrFail())->get(route('employee.walk-in.create'))->assertForbidden();
             $this->post(route('employee.walk-in.search'), ['identifier' => 'BN000005'])->assertForbidden();

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\MedicalService;
 use App\Models\ServiceResultTemplate;
+use App\Support\ServiceResultTemplateGroupMap;
 use Illuminate\Database\Seeder;
 
 class ServiceResultTemplateSeeder extends Seeder
@@ -42,27 +43,23 @@ class ServiceResultTemplateSeeder extends Seeder
 
         $records = [];
         foreach ($templates as $name => $fields) {
-            $records[$name] = ServiceResultTemplate::updateOrCreate(
+            $records[$name] = ServiceResultTemplate::firstOrCreate(
                 ['name' => $name],
                 ['description' => 'Mẫu có thể điều chỉnh theo quy trình chuyên môn của cơ sở.', 'fields' => $fields, 'is_active' => true]
             );
         }
 
-        $groupTemplate = [
-            'XN' => $records['Phiếu xét nghiệm'],
-            'CDHA' => $records['Phiếu chẩn đoán hình ảnh'],
-            'SA' => $records['Phiếu chẩn đoán hình ảnh'],
-            'NS' => $records['Phiếu nội soi'],
-            'TDCN' => $records['Phiếu thăm dò chức năng'],
-            'TT' => $records['Phiếu thực hiện dịch vụ'],
-            'PHCN' => $records['Phiếu thực hiện dịch vụ'],
-            'CSSK' => $records['Phiếu thực hiện dịch vụ'],
-        ];
-
         foreach (MedicalService::with('serviceGroups')->get() as $service) {
+            if ($service->service_result_template_id !== null) {
+                continue;
+            }
+
             $codes = $service->serviceGroups->pluck('service_group_code');
-            $template = $codes->count() === 1 ? ($groupTemplate[$codes->first()] ?? null) : null;
-            $service->forceFill(['service_result_template_id' => $template?->id])->save();
+            $templateName = ServiceResultTemplateGroupMap::templateName($codes->all());
+            $template = $templateName ? ($records[$templateName] ?? null) : null;
+            if ($template) {
+                $service->forceFill(['service_result_template_id' => $template->id])->save();
+            }
         }
     }
 }

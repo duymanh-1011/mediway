@@ -22,16 +22,16 @@ class EmployeePortalFoundationTest extends TestCase
         $this->withoutVite();
     }
 
-    public function test_supported_employees_use_common_login_and_legacy_nurse_is_rejected(): void
+    public function test_active_employees_use_common_login_and_choose_a_workspace_after_authentication(): void
     {
         $employee = User::where('business_code', 'NV000002')->firstOrFail();
-        $this->post(route('patient.login.store'), ['phone' => $employee->phone, 'password' => 'Mediway@123'])->assertRedirect(route('employee.services.index'));
-        $this->get(route('employee.services.index'))->assertOk()->assertSee($employee->employee->full_name)->assertSee('Nhóm dịch vụ');
+        $this->post(route('patient.login.store'), ['phone' => $employee->phone, 'password' => 'Mediway@123'])->assertRedirect(route('employee.home'));
+        $this->get(route('employee.home'))->assertOk()->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
         $this->post(route('employee.logout'))->assertRedirect(route('public.home'));
         $nurse = User::where('business_code', 'NV000001')->firstOrFail();
         $nurse->employee->detail()->update(['employee_type' => 'NURSE']);
-        $this->post(route('patient.login.store'), ['phone' => $nurse->phone, 'password' => 'Mediway@123'])->assertSessionHasErrors('phone');
-        $this->assertGuest();
+        $this->post(route('patient.login.store'), ['phone' => $nurse->phone, 'password' => 'Mediway@123'])->assertRedirect(route('employee.home'));
+        $this->get(route('employee.home'))->assertOk()->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
     }
 
     public function test_sample_receptionist_and_cashier_have_separate_departments(): void
@@ -50,8 +50,8 @@ class EmployeePortalFoundationTest extends TestCase
         $accounts = [
             'NV000005' => ['RECEPTIONIST', 'employee.home'],
             'NV000006' => ['CASHIER', 'employee.home'],
-            'NV000007' => ['SERVICE_TECHNICIAN', 'employee.services.index'],
-            'NV000008' => ['SERVICE_TECHNICIAN', 'employee.services.index'],
+            'NV000007' => ['SERVICE_TECHNICIAN', 'employee.home'],
+            'NV000008' => ['SERVICE_TECHNICIAN', 'employee.home'],
         ];
         foreach ($accounts as $code => [$type, $destination]) {
             $user = User::where('business_code', $code)->firstOrFail();
@@ -90,7 +90,7 @@ class EmployeePortalFoundationTest extends TestCase
     public function test_employee_profile_has_separate_read_and_edit_pages(): void
     {
         $user = User::where('business_code', 'NV000002')->firstOrFail();
-        $this->actingAs($user)->get(route('employee.profile'))->assertOk()
+        $this->actingAsEmployeeWorkspace($user, 'reception')->get(route('employee.profile'))->assertOk()
             ->assertSee(route('employee.profile.edit'))->assertDontSee('name="current_address"', false);
         $this->get(route('employee.profile.edit'))->assertOk()->assertSee('name="current_address"', false);
     }
@@ -99,28 +99,28 @@ class EmployeePortalFoundationTest extends TestCase
     {
         $user = User::where('business_code', 'NV000002')->firstOrFail();
         $access = app(EmployeeAccess::class);
-        $this->assertTrue($access->allows($user, 'services.process'));
-        $this->assertFalse($access->allows($user, 'queue.call'));
-        $this->actingAs($user)->get(route('employee.home'))->assertOk()->assertHeader('Cache-Control', 'must-revalidate, no-cache, no-store, private');
-        $user->employee->detail->update(['employee_type' => 'CASHIER']);
-        $this->assertFalse($access->allows($user, 'services.process'));
-        $this->assertTrue($access->allows($user, 'payment.collect'));
-        $this->get(route('employee.home'))->assertOk()->assertSee('Nhân viên thu ngân');
+        $this->assertTrue($access->allows($user, 'reception.check_in', 'reception'));
+        $this->assertTrue($access->allows($user, 'payment.collect', 'cashier'));
+        $this->assertFalse($access->allows($user, 'payment.collect', 'reception'));
+        $this->assertFalse($access->allows($user, 'queue.call', 'reception'));
+        $this->actingAs($user)->get(route('employee.home'))->assertOk()->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
+        $this->post(route('employee.workspace.select'), ['workspace' => 'reception'])->assertRedirect(route('employee.home'));
+        $this->get(route('employee.home'))->assertRedirect(route('employee.reception.index'));
+        $this->post(route('employee.workspace.select'), ['workspace' => 'cashier'])->assertForbidden();
     }
 
-    public function test_three_types_receive_only_their_declared_capabilities(): void
+    public function test_every_legacy_employee_classification_can_choose_either_workspace(): void
     {
         $user = User::where('business_code', 'NV000002')->firstOrFail();
         $detail = $user->employee->detail;
         $access = app(EmployeeAccess::class);
-        $expected = ['RECEPTIONIST' => 'reception.check_in', 'SERVICE_TECHNICIAN' => 'services.process', 'CASHIER' => 'payment.collect'];
-        foreach ($expected as $type => $capability) {
+        foreach (array_keys(EmployeeAccess::TYPES) as $type) {
             $detail->update(['employee_type' => $type]);
-            foreach ($expected as $otherType => $otherCapability) {
-                $this->assertSame($type === $otherType, $access->allows($user, $otherCapability));
-            }
-            $this->assertFalse($access->allows($user, 'queue.call'));
-            $this->actingAs($user)->get(route('employee.home'))->assertOk()->assertSee(EmployeeAccess::TYPES[$type]);
+            $this->assertTrue($access->allows($user, 'reception.check_in', 'reception'));
+            $this->assertTrue($access->allows($user, 'payment.collect', 'cashier'));
+            $this->assertFalse($access->allows($user, 'queue.call', 'reception'));
+            $this->flushSession()->actingAs($user)->get(route('employee.home'))->assertOk()
+                ->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
         }
     }
 
@@ -130,8 +130,10 @@ class EmployeePortalFoundationTest extends TestCase
         foreach (array_keys(EmployeeAccess::TYPES) as $type) {
             $user->employee->detail()->update(['employee_type' => $type]);
             $this->post(route('patient.login.store'), ['phone' => $user->phone, 'password' => 'Mediway@123'])
-                ->assertRedirect(route($type === 'SERVICE_TECHNICIAN' ? 'employee.services.index' : 'employee.home'));
-            $this->get(route('employee.home'))->assertOk()->assertSee(EmployeeAccess::TYPES[$type]);
+                ->assertRedirect(route('employee.home'));
+            $this->get(route('employee.home'))->assertOk()->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
+            $this->post(route('employee.workspace.select'), ['workspace' => 'cashier'])->assertRedirect(route('employee.home'));
+            $this->get(route('employee.home'))->assertRedirect(route('employee.payments.index'));
             $this->post(route('employee.logout'))->assertRedirect(route('public.home'));
             $this->assertGuest();
         }
@@ -140,7 +142,7 @@ class EmployeePortalFoundationTest extends TestCase
     public function test_employee_profile_blocks_privileged_fields_and_updates_only_owned_contact(): void
     {
         $user = User::where('business_code', 'NV000002')->firstOrFail();
-        $this->actingAs($user)->put(route('employee.profile.update'), ['employee_type' => 'CASHIER', 'email' => 'test@example.com'])->assertSessionHasErrors('employee_type');
+        $this->actingAsEmployeeWorkspace($user, 'reception')->put(route('employee.profile.update'), ['employee_type' => 'CASHIER', 'email' => 'test@example.com'])->assertSessionHasErrors('employee_type');
         $this->assertSame('SERVICE_TECHNICIAN', $user->employee->detail->fresh()->employee_type);
         $this->put(route('employee.profile.update'), ['email' => 'test@example.com', 'current_address' => 'Địa chỉ kiểm thử'])->assertRedirect(route('employee.profile'));
         $this->assertSame('test@example.com', $user->employee->detail->fresh()->email);
@@ -149,7 +151,7 @@ class EmployeePortalFoundationTest extends TestCase
     public function test_password_change_requires_current_password_and_never_stores_plaintext(): void
     {
         $user = User::where('business_code', 'NV000002')->firstOrFail();
-        $this->actingAs($user)->put(route('employee.password.update'), ['current_password' => 'wrong', 'password' => 'MoiAnToan@123', 'password_confirmation' => 'MoiAnToan@123'])->assertSessionHasErrors('current_password');
+        $this->actingAsEmployeeWorkspace($user, 'reception')->put(route('employee.password.update'), ['current_password' => 'wrong', 'password' => 'MoiAnToan@123', 'password_confirmation' => 'MoiAnToan@123'])->assertSessionHasErrors('current_password');
         $this->put(route('employee.password.update'), ['current_password' => 'Mediway@123', 'password' => 'MoiAnToan@123', 'password_confirmation' => 'MoiAnToan@123'])->assertRedirect(route('employee.profile'));
         $this->assertTrue(Hash::check('MoiAnToan@123', $user->fresh()->password));
         $this->get(route('employee.profile'))->assertOk();
@@ -158,7 +160,7 @@ class EmployeePortalFoundationTest extends TestCase
     public function test_employee_session_is_revoked_after_password_changes_elsewhere(): void
     {
         $user = User::where('business_code', 'NV000002')->firstOrFail();
-        $this->post(route('patient.login.store'), ['phone' => $user->phone, 'password' => 'Mediway@123'])->assertRedirect(route('employee.services.index'));
+        $this->post(route('patient.login.store'), ['phone' => $user->phone, 'password' => 'Mediway@123'])->assertRedirect(route('employee.home'));
         $this->get(route('employee.home'))->assertOk();
         $user->update(['password' => 'KhacAnToan@123']);
         \Illuminate\Support\Facades\Auth::forgetGuards();
@@ -177,7 +179,7 @@ class EmployeePortalFoundationTest extends TestCase
 
     public function test_already_authenticated_users_opening_common_login_reach_their_own_home(): void
     {
-        foreach (['NV000002' => 'employee.services.index', 'NV000001' => 'employee.home', 'NV000004' => 'employee.home',
+        foreach (['NV000002' => 'employee.home', 'NV000001' => 'employee.home', 'NV000004' => 'employee.home',
             'BN000001' => 'patient.home', 'QT000001' => 'admin.dashboard'] as $code => $destination) {
             $this->flushSession();
             $user = User::where('business_code', $code)->firstOrFail();
@@ -185,13 +187,14 @@ class EmployeePortalFoundationTest extends TestCase
         }
     }
 
-    public function test_menu_links_only_integrated_route_for_the_matching_type(): void
+    public function test_employee_chooser_offers_only_the_two_workspaces(): void
     {
         $user = User::where('business_code', 'NV000002')->firstOrFail();
-        $url = route('employee.services.index');
-        $this->actingAs($user)->get(route('employee.home'))->assertOk()->assertSee('href="'.$url.'"', false);
+        $this->actingAs($user)->get(route('employee.home'))->assertOk()
+            ->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân')
+            ->assertDontSee(route('employee.services.index'));
         $user->employee->detail->update(['employee_type' => 'CASHIER']);
-        $this->get(route('employee.home'))->assertOk()->assertDontSee('href="'.$url.'"', false);
+        $this->get(route('employee.home'))->assertOk()->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
     }
 
     public function test_revoked_employee_cannot_view_portal_but_can_logout(): void
@@ -220,14 +223,15 @@ class EmployeePortalFoundationTest extends TestCase
         $this->assertNull($access->employee($user));
     }
 
-    public function test_capability_middleware_rechecks_type_for_direct_requests(): void
+    public function test_capability_middleware_uses_the_locked_workspace_not_employee_classification(): void
     {
-        \Illuminate\Support\Facades\Route::middleware(\App\Http\Middleware\EmployeeMiddleware::class.':services.process')
+        \Illuminate\Support\Facades\Route::middleware(['web', \App\Http\Middleware\EmployeeMiddleware::class.':reception.check_in'])
             ->post('/employee-test-capability', fn () => response('allowed'));
         $user = User::where('business_code', 'NV000002')->firstOrFail();
-        $this->actingAs($user)->post('/employee-test-capability')->assertOk();
+        $this->actingAsEmployeeWorkspace($user, 'reception')->post('/employee-test-capability')->assertOk();
         $user->employee->detail->update(['employee_type' => 'CASHIER']);
-        $this->post('/employee-test-capability')->assertForbidden();
+        $this->post('/employee-test-capability')->assertOk();
+        $this->post(route('employee.workspace.select'), ['workspace' => 'cashier'])->assertForbidden();
     }
 
     public function test_admin_cannot_change_type_with_unfinished_assigned_service(): void
@@ -279,8 +283,10 @@ class EmployeePortalFoundationTest extends TestCase
                 $this->assertSame($to, $employee->detail->employee_type);
                 $this->assertSame($userId, $employee->user_id);
                 $this->assertSame($code, $employee->employee_code);
-                $this->assertFalse(app(EmployeeAccess::class)->allows($employee->user, $oldCapability));
-                $this->assertTrue(app(EmployeeAccess::class)->allows($employee->user, $newCapability));
+                $this->assertFalse(app(EmployeeAccess::class)->allows($employee->user, 'services.process', 'reception'));
+                $this->assertFalse(app(EmployeeAccess::class)->allows($employee->user, 'services.process', 'cashier'));
+                $this->assertTrue(app(EmployeeAccess::class)->allows($employee->user, 'reception.check_in', 'reception'));
+                $this->assertTrue(app(EmployeeAccess::class)->allows($employee->user, 'payment.collect', 'cashier'));
             }
         }
     }

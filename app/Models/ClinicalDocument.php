@@ -90,9 +90,16 @@ final class ClinicalDocument
         $resolved = realpath($disk->path($path));
         $expectedPath = $root ? $root.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $path) : null;
         if (! $root || ! $resolved || $resolved !== $expectedPath
-            || ! is_file($resolved) || ! is_readable($resolved) || ! $disk->exists($path) || $disk->size($path) < 1) {
+            || ! is_file($resolved) || ! $disk->exists($path) || $disk->size($path) < 1) {
             return false;
         }
+
+        // On Windows, PHP's is_readable() can return false for files that the
+        // current process can actually open. Confirm access through the disk.
+        $stream = $disk->readStream($path);
+        $canRead = is_resource($stream);
+        if ($canRead) fclose($stream);
+        if (! $canRead) return false;
 
         return in_array($disk->mimeType($path), $type === 'pdf'
             ? ['application/pdf'] : ['image/jpeg', 'image/png', 'image/webp'], true);

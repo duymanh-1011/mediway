@@ -89,8 +89,11 @@ class UpdateMedicalServiceRequest extends FormRequest
                 'string',
             ],
 
-            'service_result_template_id' => ['nullable', 'integer', Rule::exists('service_result_templates', 'id')->where(fn ($query) => $query
-                ->where('is_active', true)->orWhere('id', $medicalService->service_result_template_id))],
+            'service_result_template_id' => [
+                Rule::requiredIf(fn () => $this->input('status') === 'ACTIVE'),
+                'nullable', 'integer', Rule::exists('service_result_templates', 'id')->where(fn ($query) => $query
+                    ->where('is_active', true)->orWhere('id', $medicalService->service_result_template_id)),
+            ],
 
             'display_order' => [
                 'required',
@@ -129,6 +132,8 @@ class UpdateMedicalServiceRequest extends FormRequest
 
             'name.required' => 'Vui lòng nhập tên dịch vụ.',
             'name.unique' => 'Tên dịch vụ đã tồn tại. Hãy gán dịch vụ hiện có vào nhóm.',
+            'service_result_template_id.required' => 'Vui lòng gán mẫu kết quả cho dịch vụ đang hoạt động.',
+            'service_result_template_id.exists' => 'Mẫu kết quả không tồn tại hoặc đã ngừng sử dụng.',
 
             'price.required' => 'Vui lòng nhập giá dịch vụ.',
 

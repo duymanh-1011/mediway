@@ -33,6 +33,7 @@ final class D01ExaminationTest extends TestCase
         $this->travelTo(now()->setDate(2026, 10, 15)->setTime(10, 0));
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
+        $this->withSession(['doctor_workspace_mode' => 'examination']);
         $this->user = User::where('business_code', 'BS000001')->firstOrFail();
     }
 

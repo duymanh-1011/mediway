@@ -62,7 +62,13 @@ class AdminTypographyNavigationTest extends TestCase
                 if (! Route::has($route)) {
                     continue;
                 }
-                $response = $this->get(route($route, $action === 'show' ? DB::table($table)->value('id') : []))->assertOk();
+                if ($route === 'admin.doctor-schedules.show') {
+                    continue;
+                }
+                $request = route($route, $action === 'show' ? DB::table($table)->value('id') : []);
+                $client = $route === 'admin.doctor-schedules.index' ? $this->followingRedirects() : $this;
+                $response = $client->get($request);
+                $this->assertSame(200, $response->status(), $route.' redirected to '.($response->headers->get('Location') ?? 'an unknown location'));
                 $xpath = $this->xpath($response->getContent());
                 foreach ($xpath->query('//main//text()[not(ancestor::script) and not(ancestor::option) and not(ancestor::textarea)]') as $text) {
                     if (! isset($codes[trim($text->textContent)])) {

@@ -5,6 +5,7 @@ namespace Tests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -29,5 +30,19 @@ abstract class TestCase extends BaseTestCase
                 'regexp', fn (string $pattern, ?string $value): int => preg_match('~'.str_replace('~', '\\~', $pattern).'~u', $value ?? '') ?: 0, 2
             );
         }
+    }
+
+    protected function actingAsEmployeeWorkspace(User $user, string $workspace): static
+    {
+        $this->withSession(['employee_workspace_mode' => $workspace]);
+
+        return $this->actingAs($user);
+    }
+
+    protected function actingAsDoctorWorkspace(User $user, string $workspace = 'examination'): static
+    {
+        $this->withSession(['doctor_workspace_mode' => $workspace]);
+
+        return $this->actingAs($user);
     }
 }

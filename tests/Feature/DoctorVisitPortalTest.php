@@ -26,6 +26,8 @@ class DoctorVisitPortalTest extends TestCase
         $other = MedicalVisit::where('visit_code', 'LK000002')->firstOrFail();
         $this->post(route('patient.login.store'), ['phone' => $doctor->phone, 'password' => 'Mediway@123'])
             ->assertRedirect(route('doctor.home'));
+        $this->get(route('doctor.home'))->assertOk()->assertSee('Bác sĩ khám bệnh')->assertSee('Bác sĩ thực hiện dịch vụ');
+        $this->post(route('doctor.workspace.select'), ['workspace' => 'examination'])->assertRedirect(route('doctor.home'));
         $this->get(route('doctor.visits.index'))->assertOk()->assertSee($own->visit_code)->assertSee($other->visit_code);
         $this->get(route('doctor.visits.show', $own->id))->assertOk()->assertSee($own->patient->full_name);
         $this->get(route('doctor.visits.show', $other->id))->assertOk();
@@ -53,7 +55,7 @@ class DoctorVisitPortalTest extends TestCase
 
         // Giữ nội dung bác sĩ vừa nhập khi biểu mẫu cần sửa lỗi.
         $visit->update(['visit_status_id' => \App\Models\VisitStatus::where('name', 'IN_EXAMINATION')->value('id')]);
-        $response = $this->actingAs($doctor)->withSession(['_old_input' => [
+        $response = $this->actingAsDoctorWorkspace($doctor)->withSession(['_old_input' => [
             'form_key' => 'clinical_note',
             'record_version' => 'test-version',
             'reason_for_visit' => 'Đau đầu từ hôm qua',
@@ -73,7 +75,7 @@ class DoctorVisitPortalTest extends TestCase
         // Nội dung phải xuất hiện cả khi hồ sơ hoàn tất và khi còn được phép sửa.
         foreach (['COMPLETED', 'IN_EXAMINATION'] as $status) {
             $visit->update(['visit_status_id' => \App\Models\VisitStatus::where('name', $status)->value('id')]);
-            $this->actingAs($doctor)->get(route('doctor.visits.show', $visit->id))
+            $this->actingAsDoctorWorkspace($doctor)->get(route('doctor.visits.show', $visit->id))
                 ->assertOk()->assertSee('Mức độ nhẹ')->assertSee('Theo dõi triệu chứng');
         }
     }
@@ -90,7 +92,7 @@ class DoctorVisitPortalTest extends TestCase
 
         foreach (['COMPLETED', 'IN_EXAMINATION'] as $status) {
             $visit->update(['visit_status_id' => \App\Models\VisitStatus::where('name', $status)->value('id')]);
-            $response = $this->actingAs($doctor)->get(route('doctor.visits.show', $visit->id))->assertOk();
+            $response = $this->actingAsDoctorWorkspace($doctor)->get(route('doctor.visits.show', $visit->id))->assertOk();
             $html = $response->getContent();
             preg_match('/<dl class="doctor-conclusion-summary">(.*?)<\/dl>/s', $html, $summary);
             $this->assertNotEmpty($summary);

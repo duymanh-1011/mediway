@@ -19,6 +19,7 @@ class EmployeePaymentCollectionTest extends TestCase
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
+        $this->withSession(['employee_workspace_mode' => 'cashier']);
     }
 
     private function cashier(): User { return User::where('business_code', 'NV000004')->firstOrFail(); }
@@ -67,7 +68,7 @@ class EmployeePaymentCollectionTest extends TestCase
     {
         $payable = $this->payable();
         $other = User::where('business_code', 'NV000001')->firstOrFail();
-        $this->actingAs($other)->get(route('employee.payments.collect.create', $payable))->assertForbidden();
+        $this->actingAsEmployeeWorkspace($other, 'reception')->get(route('employee.payments.collect.create', $payable))->assertForbidden();
         $this->post(route('employee.payments.collect.store', $payable), $this->payload())->assertForbidden();
     }
 
@@ -172,7 +173,7 @@ class EmployeePaymentCollectionTest extends TestCase
                 'collected_by_employee_id' => $cashier->employee->id,
             ]))->assertSessionHasErrors('collected_by_employee_id');
         $this->flushSession();
-        $this->actingAs($cashier)->post(route('employee.payments.collect.store', $payable), $this->payload())->assertForbidden();
+        $this->actingAsEmployeeWorkspace($cashier, 'cashier')->post(route('employee.payments.collect.store', $payable), $this->payload())->assertForbidden();
         $this->assertSame('UNPAID', $payable->fresh()->paymentStatus->name);
         $this->assertSame(0, $payable->transactions()->where('transaction_result', 'SUCCESS')->count());
     }

@@ -37,6 +37,27 @@ class DoctorMiddleware
             return $this->forbidden($request);
         }
 
+        if (! $request->routeIs('doctor.home', 'doctor.workspace.select')) {
+            $workspace = $request->session()->get('doctor_workspace_mode');
+            if (! in_array($workspace, ['examination', 'services'], true)) {
+                $request->session()->forget('doctor_workspace_mode');
+
+                return redirect()->route('doctor.home');
+            }
+
+            $routeName = (string) $request->route()?->getName();
+            $serviceRoute = str_starts_with($routeName, 'doctor.services.')
+                || str_starts_with($routeName, 'doctor.laboratory.')
+                || str_starts_with($routeName, 'doctor.imaging.');
+            $examinationRoute = str_starts_with($routeName, 'doctor.examination.')
+                || str_starts_with($routeName, 'doctor.visits.');
+
+            if (($serviceRoute && $workspace !== 'services')
+                || ($examinationRoute && $workspace !== 'examination')) {
+                return $this->forbidden($request);
+            }
+        }
+
         // Chỉ tài khoản bác sĩ hợp lệ mới truy cập chức năng khám.
         if (
             $request->routeIs('doctor.examination.*')

@@ -11,7 +11,7 @@
         $visit = $order?->medicalVisit;
         $service = $item?->medicalService;
         $serviceStatus = $item?->serviceStatus;
-        $performer = $item?->performer;
+        $performer = $item?->performerDoctor ?? $item?->performer;
         $doctor = $order?->orderedByDoctor;
 
         $pdfUrl = $result->hasDocument('pdf') ? route('admin.service-results.document', [$result->id, 'pdf']) : null;
@@ -313,7 +313,7 @@
                             </strong>
 
                             <span>
-                                @include('admin.layouts.partials.record-code', ['code' => $performer->employee_code])
+                                @include('admin.layouts.partials.record-code', ['code' => $item?->performerDoctor?->doctor_code ?? $performer->employee_code])
                             </span>
 
                         </div>
@@ -366,8 +366,8 @@
                         @foreach ($result->templateDisplayRows() as $row)
                             <div class="result-text-section"><div class="result-info-label">{{ $row['label'] }}</div>
                                 @if (isset($row['measurements']))
-                                    <div class="table-wrapper"><table class="admin-table"><thead><tr><th>Chỉ số</th><th>Kết quả</th><th>Đơn vị</th><th>Khoảng tham chiếu</th><th>Đánh giá</th></tr></thead><tbody>
-                                        @foreach ($row['measurements'] as $measurement)<tr><td>{{ $measurement['name'] ?? '' }}</td><td>{{ $measurement['value'] ?? '' }}</td><td>{{ $measurement['unit'] ?? '—' }}</td><td>{{ $measurement['reference'] ?? '—' }}</td><td>{{ $measurement['flag'] ?? '—' }}</td></tr>@endforeach
+                                    <div class="table-wrapper"><table class="admin-table"><thead><tr><th scope="col" class="admin-row-number">STT</th><th scope="col">Chỉ số</th><th scope="col">Kết quả</th><th scope="col">Đơn vị</th><th scope="col">Khoảng tham chiếu</th><th scope="col">Đánh giá</th></tr></thead><tbody>
+                                        @foreach ($row['measurements'] as $measurement)<tr><td class="admin-row-number">{{ $loop->iteration }}</td><td>{{ $measurement['name'] ?? '' }}</td><td>{{ $measurement['value'] ?? '' }}</td><td>{{ $measurement['unit'] ?? '—' }}</td><td>{{ $measurement['reference'] ?? '—' }}</td><td>{{ $measurement['flag'] ?? '—' }}</td></tr>@endforeach
                                     </tbody></table></div>
                                 @else
                                     <div class="result-text-content">{{ $row['value'] }}</div>

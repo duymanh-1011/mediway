@@ -53,7 +53,7 @@ class PaymentReadOnlyTest extends TestCase
             ->assertOk()->assertSee($payable->payable_code);
 
         $cashier = User::where('business_code', 'NV000004')->firstOrFail();
-        $this->actingAs($cashier)->post(route('employee.payments.collect.store', $payable), [
+        $this->actingAsEmployeeWorkspace($cashier, 'cashier')->post(route('employee.payments.collect.store', $payable), [
             'payment_method' => 'CASH', 'confirm_payment' => '1',
         ])->assertRedirect(route('employee.payments.show', $payable))->assertSessionHasNoErrors();
         $this->assertSame('PAID', $payable->fresh()->paymentStatus->name);

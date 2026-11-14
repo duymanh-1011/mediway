@@ -6,6 +6,7 @@ use App\Models\BusinessCodeGenerator;
 use App\Models\DiseaseGroup;
 use App\Models\MedicalService;
 use App\Models\ServiceGroup;
+use App\Models\ServiceResultTemplate;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,11 +21,12 @@ class BusinessCodeGenerationTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
+        $labTemplateId = ServiceResultTemplate::where('name', 'Phiếu xét nghiệm')->value('id');
         $cases = [
             ['specialties', 'specialty_code', []],
             ['examination-rooms', 'room_code', ['room_number' => 'NEW101']],
             ['service-groups', 'service_group_code', []],
-            ['medical-services', 'service_code', ['price' => 1000, 'unit' => 'lần', 'service_group_ids' => [ServiceGroup::where('service_group_code', 'XN')->value('id')]]],
+            ['medical-services', 'service_code', ['price' => 1000, 'unit' => 'lần', 'service_result_template_id' => $labTemplateId, 'service_group_ids' => [ServiceGroup::where('service_group_code', 'XN')->value('id')]]],
             ['disease-groups', 'disease_group_code', []],
             ['diseases', 'disease_code', ['disease_group_id' => DiseaseGroup::firstOrFail()->id]],
             ['medicines', 'medicine_code', []],
@@ -59,6 +61,7 @@ class BusinessCodeGenerationTest extends TestCase
         $this->put(route('admin.medical-services.update', $service), [
             'service_code' => 'MANUAL999', 'name' => $service->name, 'price' => $service->price,
             'unit' => $service->unit, 'display_order' => $service->display_order, 'status' => $service->status,
+            'service_result_template_id' => $service->service_result_template_id ?? ServiceResultTemplate::where('name', 'Phiếu xét nghiệm')->value('id'),
             'service_group_ids' => $service->serviceGroups()->pluck('service_groups.id')->all(),
         ])->assertSessionHasErrors('service_code');
         $this->assertSame('DVXN001', $service->fresh()->service_code);

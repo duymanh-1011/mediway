@@ -118,6 +118,45 @@ class ServiceResult extends Model
         return $rows;
     }
 
+    /** Split a saved template into the two sections shown on service result documents. */
+    public function templateSections(): array
+    {
+        $fields = $this->template_snapshot['fields'] ?? [];
+        $values = $this->template_values ?? [];
+        if (! is_array($fields) || ! is_array($values)) {
+            return ['technical' => [], 'conclusion' => filled($this->result_conclusion) ? $this->result_conclusion : 'Chưa ghi nhận kết luận.'];
+        }
+
+        $conclusionKeys = ['conclusion', 'interpretation', 'comment'];
+        $conclusion = null;
+        foreach ($conclusionKeys as $key) {
+            $value = $values[$key] ?? null;
+            if (is_scalar($value) && trim((string) $value) !== '') {
+                $conclusion = (string) $value;
+                break;
+            }
+        }
+        $conclusion ??= is_string($this->result_conclusion) && trim($this->result_conclusion) !== ''
+            ? $this->result_conclusion
+            : 'Chưa ghi nhận kết luận.';
+
+        $technical = [];
+        foreach ($fields as $field) {
+            if (! is_array($field) || ! isset($field['key'], $field['label'])) continue;
+            $key = $field['key'];
+            if (in_array($key, $conclusionKeys, true)) continue;
+            $value = $values[$key] ?? null;
+            if (($field['type'] ?? null) === 'measurements' && is_array($value)) {
+                $measurements = array_values(array_filter($value, 'is_array'));
+                if ($measurements) $technical[] = ['label' => $field['label'], 'measurements' => $measurements];
+            } elseif (is_scalar($value) && trim((string) $value) !== '') {
+                $technical[] = ['label' => $field['label'], 'value' => (string) $value];
+            }
+        }
+
+        return ['technical' => $technical, 'conclusion' => $conclusion];
+    }
+
     /**
      * @param  array<string, mixed>  $values
      */

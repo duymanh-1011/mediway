@@ -9,8 +9,8 @@ use Carbon\CarbonImmutable;
 
 class Appointment extends Model
 {
-    public const BOOKING_ADVANCE_DAYS = 3;
-    public const RECEPTION_ADVANCE_MINUTES = 30;
+    public const BOOKING_ADVANCE_DAYS = 4;
+    public const RECEPTION_ADVANCE_MINUTES = 60;
 
     public static function lateTimeColumn(): string
     {
@@ -80,7 +80,9 @@ class Appointment extends Model
             return 'APPOINTMENT_PAST_DAY';
         }
         if ($this->appointment_date->isToday() && ($time = $this->appointmentTimeSlot?->{self::lateTimeColumn()})) {
-            $currentTime = now()->format('H:i:s');
+            $currentTime = (config('appointments_auto_cancel.enabled')
+                ? now()->subMinutes((int) config('appointments_auto_cancel.grace_minutes'))
+                : now())->format('H:i:s');
             $time = CarbonImmutable::parse($time)->format('H:i:s');
             if ($time < $currentTime || (self::lateTimeOperator() === '<=' && $time === $currentTime)) {
                 return 'APPOINTMENT_LATE';
@@ -125,7 +127,7 @@ class Appointment extends Model
             return 'Không thể xác định thời gian tiếp nhận phù hợp với ca làm việc. Vui lòng kiểm tra lại lịch hẹn.';
         }
         if (now()->lessThan($window['start'])) {
-            return 'Chỉ có thể tiếp nhận từ '.$window['start']->format('H:i').' ngày '.$window['start']->format('d/m/Y').' (tối đa 30 phút trước giờ hẹn và trong ca làm việc của bác sĩ).';
+            return 'Chỉ có thể tiếp nhận từ '.$window['start']->format('H:i').' ngày '.$window['start']->format('d/m/Y').' (tối đa 1 giờ trước giờ hẹn và trong ca làm việc của bác sĩ).';
         }
         if (now()->greaterThanOrEqualTo($window['end'])) {
             return 'Ca làm việc của bác sĩ đã kết thúc lúc '.$window['end']->format('H:i').', không thể tiếp nhận lịch hẹn này.';

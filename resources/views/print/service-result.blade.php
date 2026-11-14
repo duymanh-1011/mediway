@@ -15,6 +15,7 @@
     $detailRows = $detailRows->concat($parameterRows);
     $conclusion = $result->result_conclusion;
     $templateRows = $result->templateDisplayRows();
+    $templateSections = $result->templateSections();
     if (blank($conclusion)) {
         $conclusion = blank($result->result_summary) && ! $parameterRows && $availableAttachments
             ? 'Nội dung kết quả nằm trong tệp đính kèm đã lưu. Vui lòng xem tệp trong trang chi tiết.'
@@ -47,7 +48,8 @@
         <h3 class="print-heading print-result-title">Kết quả {{ $record->medicalService?->name ?: 'dịch vụ' }}</h3>
         @if ($templateRows)
             <div class="print-result-details">
-                @foreach ($templateRows as $row)
+                <p class="print-document-text"><strong>Kỹ thuật:</strong></p>
+                @foreach ($templateSections['technical'] as $row)
                     @if (isset($row['measurements']))
                         <h4>{{ $row['label'] }}</h4>
                         <div class="print-table-wrap"><table class="print-table"><thead><tr><th>Chỉ số</th><th>Kết quả</th><th>Đơn vị</th><th>Khoảng tham chiếu</th><th>Đánh giá</th></tr></thead><tbody>
@@ -57,6 +59,7 @@
                         <p class="print-document-text"><strong>{{ $row['label'] }}:</strong> <span>{{ $row['value'] }}</span></p>
                     @endif
                 @endforeach
+                <p class="print-document-text"><strong>Kết luận:</strong> <span>{{ $templateSections['conclusion'] }}</span></p>
             </div>
         @else
         <section aria-labelledby="result-technique">
@@ -76,6 +79,6 @@
         @endif
     </section>
 
-    <x-print.signature label="NHÂN VIÊN THỰC HIỆN" :name="$record->performer?->full_name"
+    <x-print.signature :label="$record->performerDoctor ? 'BÁC SĨ THỰC HIỆN' : 'NHÂN VIÊN THỰC HIỆN'" :name="$record->performerDoctor?->full_name ?? $record->performer?->full_name"
         :date="$result->resulted_at" fallback="Chưa ghi nhận người thực hiện" />
 </x-print.document>

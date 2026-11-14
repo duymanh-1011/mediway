@@ -8,7 +8,7 @@ use App\Models\ServiceOrder;
 use App\Models\ServiceResult;
 use App\Models\ServiceResultTemplate;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -21,7 +21,7 @@ class EmployeeTechnicalParametersTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->app->make(DatabaseSeeder::class)->setContainer($this->app)->__invoke(['includePracticeData' => true]);
+        $this->app->make(WorkflowFixtureSeeder::class)->setContainer($this->app)->__invoke(['includePracticeData' => true]);
         $this->withoutVite();
         $this->actingAsDoctorWorkspace(User::where('business_code', 'BS000001')->firstOrFail(), 'services');
     }

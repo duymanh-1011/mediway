@@ -9,24 +9,26 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    public function run(?bool $includePracticeData = null): void
+    public function run(?bool $includeExtraAccounts = null): void
     {
-        $includePracticeData ??= app()->environment('local');
-        $practice = ['includePracticeData' => $includePracticeData];
+        $includeExtraAccounts ??= app()->environment(['local', 'testing']);
+        $accounts = ['includeExtraAccounts' => $includeExtraAccounts];
 
         $this->call(RoleSeeder::class);
-        $this->callWith(UserSeeder::class, $practice);
+        $this->callWith(UserSeeder::class, $accounts);
         $this->call(AdministratorSeeder::class);
-        $this->callWith(PatientSeeder::class, $practice);
-        $this->callWith(PatientDetailSeeder::class, $practice);
-        $this->call([PersonalHealthRecordSeeder::class, SpecialtySeeder::class]);
-        $this->callWith(DoctorSeeder::class, $practice);
-        $this->callWith(DoctorDetailSeeder::class, $practice);
+        $this->callWith(PatientSeeder::class, $accounts);
+        $this->callWith(PatientDetailSeeder::class, $accounts);
+        $this->call(SpecialtySeeder::class);
+        $this->callWith(DoctorSeeder::class, $accounts);
+        $this->callWith(DoctorDetailSeeder::class, $accounts);
+        $this->call([EmployeeSeeder::class, EmployeeDetailSeeder::class]);
+
+        if ($includeExtraAccounts) {
+            $this->call(AdditionalEmployeeSeeder::class);
+        }
 
         $this->call([
-            EmployeeSeeder::class,
-            EmployeeDetailSeeder::class,
-
             ExaminationRoomSeeder::class,
             ServiceGroupSeeder::class,
             MedicalServiceSeeder::class,
@@ -36,34 +38,10 @@ class DatabaseSeeder extends Seeder
             MedicineSeeder::class,
             ReferenceMedicinePriceSeeder::class,
             AppointmentStatusSeeder::class,
-        ]);
-        $this->callWith(DoctorScheduleSeeder::class, $practice);
-        $this->callWith(AppointmentTimeSlotSeeder::class, $practice);
-        $this->call([
-            AppointmentSeeder::class,
-
             VisitStatusSeeder::class,
             QueueStatusSeeder::class,
-            MedicalVisitSeeder::class,
-            ExaminationRoomQueueSeeder::class,
-            VisitClinicalNoteSeeder::class,
-            VisitDiagnosisSeeder::class,
-            VisitConclusionSeeder::class,
-
             ServiceStatusSeeder::class,
             PaymentStatusSeeder::class,
-            ServiceOrderSeeder::class,
-            ServiceOrderItemSeeder::class,
-            ServiceResultSeeder::class,
-            PrescriptionSeeder::class,
-            PrescriptionItemSeeder::class,
-            PayableSeeder::class,
-            PaymentTransactionSeeder::class,
-            AuditLogSeeder::class,
         ]);
-
-        if ($includePracticeData) {
-            $this->call([EmployeeDemoExpansionSeeder::class, TechnicalServicePracticeSeeder::class]);
-        }
     }
 }

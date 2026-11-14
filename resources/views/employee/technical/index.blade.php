@@ -1,4 +1,4 @@
-@extends('employee.layout')
+@extends(request()->routeIs('doctor.*') ? 'doctor.layout' : 'employee.layout')
 @section('title', request()->routeIs('doctor.*') ? 'Bác sĩ thực hiện dịch vụ' : 'Thực hiện dịch vụ')
 @section('content')
 @php($catalogueBase = request()->routeIs('doctor.*') ? 'doctor.services' : 'employee.services')

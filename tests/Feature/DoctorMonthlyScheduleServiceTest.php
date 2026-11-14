@@ -12,7 +12,7 @@ use App\Models\MedicalVisit;
 use App\Models\User;
 use App\Models\VisitStatus;
 use App\Services\DoctorMonthlyScheduleService;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -31,7 +31,7 @@ class DoctorMonthlyScheduleServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->service = app(DoctorMonthlyScheduleService::class);
         $this->admin = User::where('business_code', 'QT000001')->firstOrFail();
         $this->legacy = DoctorSchedule::with('appointmentTimeSlots')->orderBy('id')->firstOrFail();

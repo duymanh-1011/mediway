@@ -13,7 +13,7 @@ use App\Models\Specialty;
 use App\Models\User;
 use App\Models\VisitConclusion;
 use App\Models\VisitStatus;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -25,7 +25,7 @@ class DoctorSpecialtyTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(now()->setDate(2026, 10, 23)->setTime(7, 0));
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
     }

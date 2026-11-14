@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\Disease;
 use App\Models\DiseaseGroup;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,7 +16,7 @@ class AdminLookupTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
     }
 

@@ -7,7 +7,7 @@ use App\Models\DoctorSchedule;
 use App\Models\User;
 use App\Services\DoctorMonthlyScheduleService;
 use App\Support\Portal\PatientBookingWindow;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -24,7 +24,7 @@ class DoctorScheduleImportTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $this->sample = DoctorSchedule::whereNotNull('specialty_id')->firstOrFail();

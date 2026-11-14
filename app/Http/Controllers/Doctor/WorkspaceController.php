@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Doctor;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Doctor;
+use App\Models\DoctorSchedule;
 use App\Models\User;
 use App\Rules\PasswordByteLimit;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -22,12 +24,9 @@ class WorkspaceController extends Controller
 
         abort_unless($doctor, 403);
 
-        if ($request->session()->get('doctor_workspace_mode') === 'services') {
-            return redirect()->route('doctor.services.index');
-        }
-
-        if ($request->session()->get('doctor_workspace_mode') === 'examination') {
-            return view('doctor.dashboard', compact('doctor'));
+        $workspace = $request->session()->get('doctor_workspace_mode');
+        if (in_array($workspace, ['examination', 'services'], true)) {
+            return view('doctor.dashboard', compact('doctor', 'workspace'));
         }
 
         $employee = $doctor;
@@ -44,15 +43,25 @@ class WorkspaceController extends Controller
             'workspace.in' => 'Chức năng được chọn không hợp lệ.',
         ]);
 
-        $current = $request->session()->get('doctor_workspace_mode');
-        if ($current !== null && $current !== $data['workspace']) {
-            abort(403, 'Bạn đã chọn chức năng cho phiên đăng nhập này. Vui lòng đăng xuất nếu cần đổi chức năng.');
-        }
-
         $request->session()->put('doctor_workspace_mode', $data['workspace']);
-        $request->session()->regenerate();
 
         return redirect()->route('doctor.home');
+    }
+
+    public function schedule(Request $request)
+    {
+        $doctor = $request->attributes->get('current_doctor');
+        $filters = $request->validate(['month' => ['nullable', 'date_format:Y-m']]);
+        $month = CarbonImmutable::parse(($filters['month'] ?? now()->format('Y-m')).'-01');
+        $schedules = DoctorSchedule::query()
+            ->where('doctor_id', $doctor->id)
+            ->whereBetween('work_date', [$month->toDateString(), $month->endOfMonth()->toDateString()])
+            ->with(['examinationRoom:id,name,room_code', 'specialty:id,name'])
+            ->orderBy('work_date')
+            ->orderBy('start_time')
+            ->get();
+
+        return view('doctor.examination.schedule', compact('doctor', 'month', 'schedules'));
     }
 
     public function profile(Request $request)

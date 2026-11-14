@@ -12,6 +12,8 @@ export default defineConfig({
             'resources/js/employee/payments/collect.js',
             'resources/css/employee.css',
             'resources/js/employee.js',
+            'resources/css/doctor-examination.css',
+            'resources/js/doctor-examination.js',
             'resources/js/print-document.js',
             'resources/css/employee-payments.css',
             'resources/css/payment-receipt.css',

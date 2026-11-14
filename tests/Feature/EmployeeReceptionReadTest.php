@@ -6,7 +6,7 @@ use App\Models\Appointment;
 use App\Models\Employee;
 use App\Models\ExaminationRoomQueue;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,7 +17,7 @@ class EmployeeReceptionReadTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->withSession(['employee_workspace_mode' => 'reception']);
     }

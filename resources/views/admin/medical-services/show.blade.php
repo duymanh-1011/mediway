@@ -18,9 +18,6 @@
 
 
 @section('content')
-    @include('admin.layouts.partials.service-catalog-tabs')
-
-
     {{-- =====================================================
          HEADER
     ====================================================== --}}

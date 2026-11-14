@@ -11,7 +11,7 @@ use App\Models\ExaminationRoom;
 use App\Models\Specialty;
 use App\Models\User;
 use App\Services\DoctorMonthlyScheduleService;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -27,7 +27,7 @@ class AppointmentChangeTest extends TestCase
             now()->setDate(2026, 10, 27)->setTime(8, 0)
         );
 
-        $this->seed(DatabaseSeeder::class);        // M06_TEST_PROFILE_FIXTURE_20261030
+        $this->seed(WorkflowFixtureSeeder::class);        // M06_TEST_PROFILE_FIXTURE_20261030
         \Illuminate\Support\Facades\DB::table('patient_details')
             ->whereIn(
                 'patient_id',

@@ -111,10 +111,12 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::get('/thanh-toan/giao-dich/{transaction}/bien-lai', [\App\Http\Controllers\Employee\PaymentReceiptController::class, 'show',])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.receipt');
 });
 
-// Doctor Portal dùng chung phiên đăng nhập, nhưng khóa cố định một không gian làm việc.
+// Các chức năng bác sĩ dùng chung phiên đăng nhập và kiểm tra chế độ theo từng route.
 Route::prefix('bac-si')->name('doctor.')->middleware([\App\Support\Doctor\DoctorMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function (): void {
     Route::get('/', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'home'])->name('home');
     Route::post('/chon-chuc-nang', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'selectWorkspace'])->name('workspace.select');
+    Route::get('/lich-lam-viec', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'schedule'])->name('schedule');
+    Route::get('/kham-benh/lich-lam-viec', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'schedule'])->name('schedule.legacy');
     Route::get('/ho-so', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'profile'])->name('profile');
     Route::get('/ho-so/chinh-sua', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'editProfile'])->name('profile.edit');
     Route::put('/ho-so', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'updateProfile'])->name('profile.update');
@@ -124,6 +126,7 @@ Route::prefix('bac-si')->name('doctor.')->middleware([\App\Support\Doctor\Doctor
     Route::prefix('kham-benh')->name('examination.')->controller(\App\Http\Controllers\Doctor\ExaminationController::class)->group(function () {
         Route::get('/phong', 'rooms')->name('rooms.index');
         Route::get('/phong/{room}/hang-doi', 'queue')->name('rooms.queue');
+        Route::post('/phong/{room}/hang-doi/loc', 'filterQueue')->name('rooms.queue.filter');
         Route::post('/phong/{room}/hang-doi/{queue}/goi', 'call')->whereNumber('queue')->name('queue.call');
         Route::post('/phong/{room}/hang-doi/{queue}/goi-lai', 'recall')->whereNumber('queue')->name('queue.recall');
         Route::post('/phong/{room}/hang-doi/{queue}/bo-qua', 'skip')->whereNumber('queue')->name('queue.skip');

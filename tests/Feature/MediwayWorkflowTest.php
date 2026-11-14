@@ -20,7 +20,7 @@ use App\Models\Specialty;
 use App\Models\User;
 use App\Models\VisitStatus;
 use Carbon\Carbon;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -32,7 +32,7 @@ class MediwayWorkflowTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(Carbon::parse('2026-10-19 07:00:00'));
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
     }
 

@@ -11,6 +11,7 @@ use App\Models\ServiceResult;
 use App\Models\ClinicalDocument;
 use App\Models\AuditLog;
 use App\Services\DoctorVisitReadiness;
+use App\Services\Doctor\ExaminationQueueWorkflow;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -63,7 +64,7 @@ class VisitController extends Controller
         return view('doctor.visits.index', compact('doctor', 'visits', 'filters', 'statuses', 'hasVisits'));
     }
 
-    public function show(Request $request, int $visit, DoctorVisitReadiness $readiness): View
+    public function show(Request $request, int $visit, DoctorVisitReadiness $readiness, ExaminationQueueWorkflow $queueWorkflow): View
     {
         $doctor = $request->user()->doctor;
         // Chỉ tài khoản bác sĩ hợp lệ đã qua middleware mới đến được đây.
@@ -86,7 +87,12 @@ class VisitController extends Controller
         $dispositionOptions = $canEdit ? VisitConclusion::where('doctor_id', $doctor->id)
             ->whereNotNull('disposition')->where('disposition', '!=', '')
             ->distinct()->orderBy('disposition')->limit(30)->pluck('disposition') : collect();
-        return view('doctor.visits.show', compact('doctor', 'record', 'check', 'conclusionPrerequisites', 'canEdit', 'canEditBeforePrescription', 'prescriptionLocked', 'conclusionLocked', 'canComplete', 'diseases', 'dispositionOptions'));
+        $queueControls = $queueWorkflow->actionsForVisit($record);
+        $backUrl = $record->examinationRoom?->status === 'ACTIVE'
+            ? route('doctor.examination.rooms.queue', ['room' => $record->examinationRoom, 'date' => $record->checked_in_at?->toDateString()])
+            : route('doctor.examination.rooms.index');
+
+        return view('doctor.visits.show', compact('doctor', 'record', 'check', 'conclusionPrerequisites', 'canEdit', 'canEditBeforePrescription', 'prescriptionLocked', 'conclusionLocked', 'canComplete', 'diseases', 'dispositionOptions', 'queueControls', 'backUrl'));
     }
 
     public function complete(Request $request, int $visit, DoctorVisitReadiness $readiness): RedirectResponse

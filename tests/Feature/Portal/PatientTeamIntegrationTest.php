@@ -10,7 +10,7 @@ use App\Models\MedicalService;
 use App\Models\ServiceOrder;
 use App\Models\User;
 use Carbon\Carbon;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,7 +21,7 @@ class PatientTeamIntegrationTest extends TestCase
     public function test_portal_booking_connects_reception_queue_and_cashier_to_patient_views(): void
     {
         $this->travelTo(Carbon::parse('2026-10-27 08:00:00'));
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $admin = User::where('business_code', 'QT000001')->firstOrFail();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();

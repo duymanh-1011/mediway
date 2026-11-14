@@ -1,4 +1,4 @@
-<x-portal.button type="button" variant="secondary" :data-d01-dialog="$dialogId" aria-haspopup="dialog">{{ $label }}</x-portal.button>
+<x-portal.button type="button" :variant="$variant ?? 'secondary'" :data-d01-dialog="$dialogId" aria-haspopup="dialog">{{ $label }}</x-portal.button>
 
 <dialog id="{{ $dialogId }}" class="portal-modal d01-dialog" aria-labelledby="{{ $dialogId }}-title">
     <div class="portal-modal__content">

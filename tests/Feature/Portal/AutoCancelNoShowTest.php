@@ -5,7 +5,7 @@ namespace Tests\Feature\Portal;
 use App\Models\Appointment;
 use App\Models\AppointmentStatus;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -24,7 +24,7 @@ class AutoCancelNoShowTest extends TestCase
                 ->setTime(12, 0, 0)
         );
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
 
         config()->set(
             'appointments_auto_cancel.enabled',

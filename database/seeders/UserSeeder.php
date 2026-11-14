@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    public function run(bool $includePracticeData = false): void
+    public function run(bool $includeExtraAccounts = false): void
     {
         $users = [
             ['business_code' => 'QT000001', 'phone' => '0901000001', 'role' => 'Administrator'],
@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
             ['business_code' => 'NV000004', 'phone' => '0904000004', 'role' => 'Employee'],
         ];
 
-        if ($includePracticeData) {
+        if ($includeExtraAccounts) {
             $users = [...$users,
                 ['business_code' => 'BN000006', 'phone' => '0902000006', 'role' => 'Patient'],
                 ['business_code' => 'BN000007', 'phone' => '0902000007', 'role' => 'Patient'],

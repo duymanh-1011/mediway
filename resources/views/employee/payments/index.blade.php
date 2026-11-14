@@ -55,16 +55,14 @@
 
             </div>
 
-            <form method="POST" action="{{ route('employee.payments.filter') }}" id="f08-payable-filter" autocomplete="off">
+            <form method="POST" action="{{ route('employee.payments.filter') }}" id="f08-payable-filter" class="workspace-filter workspace-filter--three-columns" aria-label="Lọc khoản phải thu" autocomplete="off">
                 @csrf
                 @isset($filters['search'])
                     <input type="hidden" name="search" value="{{ $filters['search'] }}">
                 @endisset
 
-                <div class="f08-grid">
-
                     {{-- TÌM KIẾM --}}
-                    <div class="f08-field">
+                    <div class="workspace-filter__field workspace-filter__field--search">
 
                         <label for="f08-q">
                             Tìm kiếm
@@ -76,7 +74,7 @@
                     </div>
 
                     {{-- LOẠI KHOẢN THU --}}
-                    <div class="f08-field">
+                    <div class="workspace-filter__field">
 
                         <label for="f08-type">
                             Loại khoản thu
@@ -108,7 +106,7 @@
                     </div>
 
                     {{-- TRẠNG THÁI --}}
-                    <div class="f08-field">
+                    <div class="workspace-filter__field">
 
                         <label for="f08-status">
                             Trạng thái thanh toán
@@ -142,7 +140,7 @@
                     </div>
 
                     {{-- PHƯƠNG THỨC --}}
-                    <div class="f08-field">
+                    <div class="workspace-filter__field">
 
                         <label for="f08-method">
                             Phương thức thanh toán
@@ -171,7 +169,7 @@
                     </div>
 
                     {{-- TỪ NGÀY --}}
-                    <div class="f08-field">
+                    <div class="workspace-filter__field">
 
                         <label for="f08-from">
                             Từ ngày
@@ -182,7 +180,7 @@
                     </div>
 
                     {{-- ĐẾN NGÀY --}}
-                    <div class="f08-field">
+                    <div class="workspace-filter__field">
 
                         <label for="f08-to">
                             Đến ngày
@@ -192,19 +190,7 @@
 
                     </div>
 
-                </div>
-
-                <div class="f08-actions">
-
-                    <button class="f08-btn f08-btn-primary" type="submit">
-                        ⌕ Áp dụng bộ lọc
-                    </button>
-
-                    <button class="f08-btn" type="submit" name="reset" value="1" formnovalidate>
-                        Xóa bộ lọc
-                    </button>
-
-                </div>
+                <x-workspace-filter-actions />
 
             </form>
 

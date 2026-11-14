@@ -11,7 +11,7 @@ use App\Models\Patient;
 use App\Models\PaymentStatus;
 use App\Models\Specialty;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -28,7 +28,7 @@ class WalkInReceptionTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(now()->setDate(2026, 10, 23)->setTime(9, 0));
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->withSession(['employee_workspace_mode' => 'reception']);
         $this->schedule = DoctorSchedule::create([

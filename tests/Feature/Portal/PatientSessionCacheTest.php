@@ -3,7 +3,7 @@
 namespace Tests\Feature\Portal;
 
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -13,7 +13,7 @@ class PatientSessionCacheTest extends TestCase
 
     public function test_patient_pages_are_not_cached_and_logout_blocks_return_access(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
 

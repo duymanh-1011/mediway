@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\PaymentTransaction;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -21,7 +21,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_receipt_headers_show_the_correct_identifiers_without_collection_date_or_time(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $cashier = User::where('business_code', 'NV000004')->firstOrFail();
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')->whereHas('payable')->firstOrFail();
@@ -69,7 +69,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_exam_receipt_shows_full_citizen_id_and_omits_the_removed_fields(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')
             ->whereHas('payable.medicalVisit.patient.user')->with('payable.medicalVisit.patient.user')->firstOrFail();
@@ -103,7 +103,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_exam_receipt_displays_dash_for_missing_patient_data(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')
             ->whereHas('payable.medicalVisit.patient')->with('payable.medicalVisit.patient')->firstOrFail();
@@ -121,7 +121,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_receipt_reads_transaction_amount_in_vietnamese_without_modifying_financial_data(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $cashier = User::where('business_code', 'NV000004')->firstOrFail();
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')
@@ -146,7 +146,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_receipt_requires_authorization_and_successful_cash_transaction(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')->firstOrFail();
         $url = route('employee.payments.receipt', $transaction);
@@ -161,7 +161,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_receipt_maps_each_fee_type_and_uses_the_payable_description_and_transaction_amount(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')->whereHas('payable')->firstOrFail();
         $this->actingAs(User::where('business_code', 'NV000004')->firstOrFail());
@@ -207,7 +207,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_receipt_displays_only_the_service_belonging_to_the_payable(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $item = \App\Models\ServiceOrderItem::with(['medicalService', 'payable.medicalVisit.patient.user'])
             ->whereHas('medicalService')->whereHas('payable.medicalVisit.patient.user')->firstOrFail();
@@ -259,7 +259,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_receipt_displays_actual_prescription_items_without_other_visits_items(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $prescription = \App\Models\Prescription::with('items.medicine')->whereHas('items')->firstOrFail();
         $total = 0;
@@ -312,7 +312,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_patient_and_guest_cannot_view_another_patients_receipt_by_id(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')
@@ -325,7 +325,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_receipt_rejects_mismatched_visit_and_missing_service_price(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $item = \App\Models\ServiceOrderItem::with(['serviceOrder', 'payable'])->whereHas('payable')->firstOrFail();
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')->firstOrFail();
@@ -338,7 +338,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_service_receipt_builder_rejects_missing_price_even_if_an_item_is_present(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $item = \App\Models\ServiceOrderItem::with(['medicalService.serviceGroups', 'serviceOrder.orderedByDoctor', 'payable'])
             ->whereHas('payable')->whereHas('medicalService')->firstOrFail();
         $payable = $item->payable;
@@ -354,7 +354,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_receipt_rejects_incomplete_prescription_prices_without_writing(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $prescription = \App\Models\Prescription::with('items')->whereHas('items')->firstOrFail();
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')->whereHas('payable')->firstOrFail();
@@ -367,7 +367,7 @@ class EmployeePaymentReceiptTest extends TestCase
 
     public function test_receipt_rejects_empty_or_cross_visit_prescription(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $prescription = \App\Models\Prescription::with('items')->whereHas('items')->firstOrFail();
         $transaction = PaymentTransaction::where('transaction_result', 'SUCCESS')->where('payment_method', 'CASH')->whereHas('payable')->firstOrFail();

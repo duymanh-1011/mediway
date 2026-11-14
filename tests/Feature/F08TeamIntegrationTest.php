@@ -8,7 +8,7 @@ use App\Models\DoctorSchedule;
 use App\Models\ExaminationRoom;
 use App\Models\User;
 use Carbon\Carbon;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -19,7 +19,7 @@ class F08TeamIntegrationTest extends TestCase
 
     public function test_admin_order_service_then_cashier_collects_and_opens_matching_receipt(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $visit = \App\Models\MedicalVisit::whereDoesntHave('serviceOrders')->firstOrFail();
         $visit->update(['appointment_id' => null, 'visit_status_id' => \App\Models\VisitStatus::where('name', 'IN_EXAMINATION')->value('id')]);
@@ -71,7 +71,7 @@ class F08TeamIntegrationTest extends TestCase
 
     public function test_confirmed_medicine_purchase_then_cashier_collects_and_opens_receipt(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $medicine = \App\Models\Medicine::where('status', 'ACTIVE')->where('unit', 'viên')->firstOrFail();
         $medicine->update(['price_per_unit' => 2000]);
@@ -104,7 +104,7 @@ class F08TeamIntegrationTest extends TestCase
     public function test_patient_booking_reception_cashier_queue_audit_and_exam_receipt(): void
     {
         $this->travelTo(Carbon::parse('2026-10-27 08:00:00', 'Asia/Ho_Chi_Minh'));
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $admin = User::where('business_code', 'QT000001')->firstOrFail();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();

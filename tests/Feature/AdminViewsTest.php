@@ -9,7 +9,7 @@ use App\Models\Payable;
 use App\Models\ServiceResult;
 use App\Models\User;
 use App\Models\VisitStatus;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,7 +25,7 @@ class AdminViewsTest extends TestCase
 
     public function test_admin_get_routes_render_without_server_errors(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->get(route('admin.login'))->assertOk();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
@@ -84,7 +84,7 @@ class AdminViewsTest extends TestCase
             $this->markTestSkipped('Môi trường PHP hiện tại thiếu ext-zip; kiểm thử tải mẫu Excel cần được chạy trên staging có ext-zip.');
         }
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $this->get(route('admin.doctor-schedules.month.template'))->assertOk();
@@ -92,7 +92,7 @@ class AdminViewsTest extends TestCase
 
     public function test_catalog_and_status_pages_display_vietnamese_labels(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $untranslated = [];
@@ -109,7 +109,7 @@ class AdminViewsTest extends TestCase
 
     public function test_localization_covers_the_unpaid_payment_confirmation_form(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $payable = Payable::where('payable_code', 'PT000004')->firstOrFail();
@@ -125,7 +125,7 @@ class AdminViewsTest extends TestCase
 
     public function test_localization_covers_employee_validation_messages_and_field_names(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
 
@@ -144,7 +144,7 @@ class AdminViewsTest extends TestCase
 
     public function test_localization_translates_reception_sources_and_historical_descriptions_without_rewriting_data(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $visit = MedicalVisit::where('reception_source', 'KIOSK')->firstOrFail();
@@ -164,7 +164,7 @@ class AdminViewsTest extends TestCase
 
     public function test_service_result_actions_use_shared_buttons_and_edit_has_a_header_back_link(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $result = ServiceResult::query()->firstOrFail();

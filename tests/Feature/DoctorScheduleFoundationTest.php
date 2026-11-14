@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Carbon\CarbonImmutable;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +39,7 @@ class DoctorScheduleFoundationTest extends TestCase
 
     public function test_shift_key_allows_two_legacy_rows_but_rejects_a_duplicate_standard_shift_even_if_inactive(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $data = $this->scheduleData();
         DB::table('doctor_schedules')->insert([
             $data,
@@ -58,7 +58,7 @@ class DoctorScheduleFoundationTest extends TestCase
 
     public function test_database_rejects_unknown_shift_codes(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
 
         $this->expectException(QueryException::class);
         $this->expectExceptionMessage('shift_code');
@@ -67,7 +67,7 @@ class DoctorScheduleFoundationTest extends TestCase
 
     public function test_admin_time_overlap_check_includes_legacy_rows_and_does_not_move_them(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $data = $this->scheduleData();

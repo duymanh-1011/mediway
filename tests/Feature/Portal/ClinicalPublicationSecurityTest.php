@@ -6,7 +6,7 @@ use App\Models\Prescription;
 use App\Models\ServiceResult;
 use App\Models\ServiceStatus;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -17,7 +17,7 @@ class ClinicalPublicationSecurityTest extends TestCase
 
     public function test_saved_service_results_are_visible_before_completion(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $user = User::where('business_code', 'BN000001')->firstOrFail();
         $result = ServiceResult::whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($q) => $q->where('patient_id', $user->patient->id))->firstOrFail();
@@ -39,7 +39,7 @@ class ClinicalPublicationSecurityTest extends TestCase
 
     public function test_only_own_completed_results_are_visible_regardless_of_legacy_flag(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $user = User::where('business_code', 'BN000001')->firstOrFail();
         $other = User::where('business_code', 'BN000002')->firstOrFail();
@@ -61,7 +61,7 @@ class ClinicalPublicationSecurityTest extends TestCase
 
     public function test_completed_legacy_result_needs_no_admin_publication_action(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
         $result = ServiceResult::whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($query) => $query->where('patient_id', $patient->patient->id))->firstOrFail();
@@ -77,7 +77,7 @@ class ClinicalPublicationSecurityTest extends TestCase
 
     public function test_completed_records_are_visible_without_legacy_publication_columns(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $user = User::where('business_code', 'BN000001')->firstOrFail();
         $prescription = Prescription::whereHas('medicalVisit', fn ($q) => $q->where('patient_id', $user->patient->id))->firstOrFail();
@@ -99,7 +99,7 @@ class ClinicalPublicationSecurityTest extends TestCase
 
     public function test_service_pdf_is_visible_before_completion_but_not_for_cancelled_order(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $disk = \Illuminate\Support\Facades\Storage::fake('local');
         $user = User::where('business_code', 'BN000001')->firstOrFail();

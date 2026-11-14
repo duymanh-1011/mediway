@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\MedicalService;
 use App\Models\ServiceGroup;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -85,7 +85,7 @@ class DataConstraintsTest extends TestCase
         if (DB::getDriverName() !== 'mysql') {
             $this->markTestSkipped('Ràng buộc CHECK được kiểm tra bằng MySQL.');
         }
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         foreach ([
             ['payables', 'amount', 'payables_amount_check'],
             ['service_order_items', 'price_at_order', 'service_items_values_check'],

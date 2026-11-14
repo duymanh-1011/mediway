@@ -10,6 +10,51 @@ use Illuminate\Validation\ValidationException;
 
 final class ExaminationQueueWorkflow
 {
+    public function actionsForVisit(MedicalVisit $visit): array
+    {
+        if ($visit->examination_ended_at || ! $visit->status?->allows_transition
+            || $visit->examinationRoom?->status !== 'ACTIVE') {
+            return [];
+        }
+
+        $stage = $visit->displayStatus();
+        $type = match ($stage) {
+            'WAITING' => $visit->examination_started_at ? null : 'INITIAL_EXAM',
+            'WAITING_FOR_RETURN' => 'RETURN_AFTER_SERVICE',
+            default => null,
+        };
+
+        if (! $type || $visit->appointment?->isScheduledInFuture()
+            || ($type === 'INITIAL_EXAM' && $visit->appointment && ! $visit->appointment->isScheduledForToday())) {
+            return [];
+        }
+
+        $queue = $visit->queues()
+            ->with('status')
+            ->where('queue_type', $type)
+            ->whereHas('status', fn ($status) => $status->whereIn('name', ['WAITING', 'CALLED', 'SKIPPED']))
+            ->latest('id')
+            ->first();
+        if (! $queue?->status?->is_active || ! $queue->status->allows_transition) {
+            return [];
+        }
+        $queue->setRelation('medicalVisit', $visit);
+
+        return [
+            'queue' => $queue,
+            'actions' => match ($queue->status->name) {
+                'WAITING' => ['call'],
+                'SKIPPED' => ['recall'],
+                'CALLED' => ['recall', 'start'],
+            },
+            'expected' => [
+                'expected_status' => $queue->status->name,
+                'expected_calls' => $queue->call_count,
+                'expected_phase' => $this->phaseToken($queue),
+            ],
+        ];
+    }
+
     public function phaseToken(ExaminationRoomQueue $queue): string
     {
         $latestOrder = null;

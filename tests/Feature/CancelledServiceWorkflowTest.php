@@ -14,7 +14,7 @@ use App\Models\ServiceResult;
 use App\Models\ServiceStatus;
 use App\Models\User;
 use App\Models\VisitStatus;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -27,7 +27,7 @@ class CancelledServiceWorkflowTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(now()->setDate(2026, 10, 15)->setTime(9, 0));
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $visit = $this->order()->medicalVisit;

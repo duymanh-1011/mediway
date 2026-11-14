@@ -11,7 +11,7 @@ use App\Models\QueueStatus;
 use App\Models\Specialty;
 use App\Models\User;
 use App\Models\VisitStatus;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -25,7 +25,7 @@ class QueueReadOnlyTest extends TestCase
         parent::setUp();
 
         $this->seed(
-            DatabaseSeeder::class
+            WorkflowFixtureSeeder::class
         );
 
         $this->withoutVite();

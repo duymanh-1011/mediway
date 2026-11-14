@@ -9,7 +9,7 @@ use App\Models\Medicine;
 use App\Models\User;
 use App\Models\VisitStatus;
 use App\Services\DoctorClinicalVersion;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,7 +20,7 @@ class DoctorSharedAccessTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->withSession(['doctor_workspace_mode' => 'examination']);
         $this->actingAs(User::where('business_code', 'BS000001')->firstOrFail());

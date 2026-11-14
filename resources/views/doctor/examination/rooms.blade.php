@@ -22,8 +22,8 @@
         </div>
 
         <form id="doctor-room-filter" action="{{ route('doctor.examination.rooms.index') }}" method="get"
-            class="employee-card employee-filter doctor-rooms__filter" aria-label="Lọc phòng khám" autocomplete="off">
-            <div class="doctor-rooms__filter-field">
+            class="employee-card workspace-filter workspace-filter--spaced" aria-label="Lọc phòng khám" autocomplete="off">
+            <div class="workspace-filter__field">
                 <label for="room-search">
                     Tên phòng
                 </label>
@@ -32,7 +32,7 @@
                     placeholder="Nhập tên phòng…" value="{{ $filters['q'] ?? '' }}" autocomplete="off">
             </div>
 
-            <div class="doctor-rooms__filter-field">
+            <div class="workspace-filter__field">
                 <label for="room-specialty">
                     Chuyên khoa
                 </label>
@@ -53,15 +53,7 @@
                 </select>
             </div>
 
-            <div class="doctor-rooms__filter-actions">
-                <x-portal.button type="submit">
-                    Tìm kiếm
-                </x-portal.button>
-
-                <a class="portal-btn portal-btn--secondary" href="{{ route('doctor.examination.rooms.index') }}">
-                    Xóa bộ lọc
-                </a>
-            </div>
+            <x-workspace-filter-actions :reset-url="route('doctor.examination.rooms.index')" />
         </form>
 
         <section class="employee-card doctor-examination__results" aria-labelledby="room-list-title">
@@ -99,12 +91,10 @@
                         @forelse ($rooms as $room)
 
                             @php
-                                $roomSchedules = collect($schedules ?? [])->get($room->id, []);
-                                $assignedDoctors = collect($roomSchedules)->groupBy(fn ($schedule) =>
-                                    $schedule->doctor_id !== null
-                                        ? 'doctor-'.$schedule->doctor_id
-                                        : 'schedule-'.$schedule->id
-                                );
+                                $assignedDoctors = collect($schedules->get($room->id, []))
+                                    ->unique('doctor_id')
+                                    ->pluck('doctor')
+                                    ->filter();
                                 $waitingCount = data_get($room, 'waiting_count');
                                 $statusClass = match (strtoupper((string) $room->status)) {
                                     'ACTIVE' => 'active',
@@ -138,52 +128,12 @@
                                 <td>
                                     <div class="doctor-rooms__assignment-list">
 
-                                        @forelse ($assignedDoctors as $doctorShifts)
-
-                                            @php
-                                                $assignedDoctor = $doctorShifts->first()?->doctor;
-                                                $visibleShifts = $doctorShifts
-                                                    ->filter(fn ($shift) => filled($shift->start_time) && filled($shift->end_time))
-                                                    ->unique(fn ($shift) => (string) $shift->start_time.'|'.(string) $shift->end_time);
-                                                $onDuty = $visibleShifts->contains(fn($shift) =>
-                                                    (string) $shift->start_time <= $now->toTimeString()
-                                                    && (string) $shift->end_time > $now->toTimeString());
-                                            @endphp
-
-                                            <div class="doctor-rooms__assignment">
-
-                                                <div class="doctor-rooms__assignment-name">
-
-                                                    <span class="doctor-rooms__assignment-icon" aria-hidden="true">
-                                                        <x-employee-icon name="user" />
-                                                    </span>
-
-                                                    <strong>
-                                                        {{ $assignedDoctor?->full_name ?? 'Chưa cập nhật tên' }}
-                                                    </strong>
-
-                                                </div>
-
-                                                <div class="doctor-rooms__assignment-shifts">
-
-                                                    @forelse ($visibleShifts as $shift)
-
-                                                        <span class="doctor-rooms__shift">
-                                                            {{ substr((string) $shift->start_time, 0, 5) }}
-                                                            –
-                                                            {{ substr((string) $shift->end_time, 0, 5) }}
-                                                        </span>
-
-                                                    @empty
-
-                                                        <span class="doctor-examination__meta">
-                                                            Chưa cập nhật giờ làm
-                                                        </span>
-
-                                                    @endforelse
-
-                                                </div>
-
+                                        @forelse ($assignedDoctors as $assignedDoctor)
+                                            <div class="doctor-rooms__assignment-name">
+                                                <span class="doctor-rooms__assignment-icon" aria-hidden="true">
+                                                    <x-employee-icon name="user" />
+                                                </span>
+                                                <strong>{{ $assignedDoctor->full_name }}</strong>
                                             </div>
 
                                         @empty

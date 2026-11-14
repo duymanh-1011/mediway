@@ -6,7 +6,7 @@ use App\Models\Payable;
 use App\Models\PaymentStatus;
 use App\Models\PaymentTransaction;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,7 +17,7 @@ class EmployeePayableReadOnlyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->withSession(['employee_workspace_mode' => 'cashier']);
     }
@@ -61,7 +61,8 @@ class EmployeePayableReadOnlyTest extends TestCase
         $cashier->employee->detail()->update(['employee_type' => 'SERVICE_TECHNICIAN']);
         $this->flushSession();
         $this->actingAsEmployeeWorkspace($cashier, 'cashier')->get(route('employee.payments.show', $payable))->assertOk();
-        $this->post(route('employee.workspace.select'), ['workspace' => 'reception'])->assertForbidden();
+        $this->post(route('employee.workspace.select'), ['workspace' => 'reception'])->assertRedirect(route('employee.home'));
+        $this->get(route('employee.payments.show', $payable))->assertForbidden();
     }
 
     public function test_detail_retains_expandable_history_and_restricts_receipt_links(): void

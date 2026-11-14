@@ -1,4 +1,4 @@
-@extends('employee.layout')
+@extends(request()->routeIs('doctor.*') ? 'doctor.layout' : 'employee.layout')
 @section('title', $title)
 @section('content')
 @php

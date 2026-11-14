@@ -9,7 +9,6 @@
     <strong aria-current="page">{{ $serviceGroup->name }}</strong>
 @endsection
 @section('content')
-    @include('admin.layouts.partials.service-catalog-tabs')
     <div class="admin-page-header">
         <div>
             <h1>{{ $serviceGroup->name }}</h1>

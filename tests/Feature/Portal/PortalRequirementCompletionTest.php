@@ -8,7 +8,7 @@ use App\Models\Doctor;
 use App\Models\Specialty;
 use App\Models\User;
 use Carbon\Carbon;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -28,7 +28,7 @@ class PortalRequirementCompletionTest extends TestCase
         );
 
         $this->seed(
-            DatabaseSeeder::class
+            WorkflowFixtureSeeder::class
         );
 
         $this->withoutVite();

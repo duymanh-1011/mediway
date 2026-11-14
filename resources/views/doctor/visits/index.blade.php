@@ -7,12 +7,27 @@
     <span class="employee-welcome__identity"><x-employee-icon name="shield" /> Bác sĩ · {{ $doctor->doctor_code }}</span>
 </div><div class="employee-welcome__art" aria-hidden="true"><div class="employee-welcome__ring"></div><span><x-employee-icon name="reception" /></span><i></i></div></section>
 <section class="employee-section"><div class="employee-section__heading"><div><p class="portal-eyebrow">KHÔNG GIAN LÀM VIỆC</p><h2>Danh sách lượt khám</h2><p>Chọn lượt khám để xem thông tin và hồ sơ liên quan.</p></div></div>
-    <form method="get" action="{{ route('doctor.visits.index') }}" class="tech-filter doctor-visit-filter" aria-label="Lọc lượt khám">
-        <label class="tech-filter__search" for="visit-search">Tìm bệnh nhân hoặc lượt khám<input id="visit-search" name="q" type="search" maxlength="100" value="{{ old('q', $filters['q'] ?? '') }}" placeholder="Tên, mã bệnh nhân hoặc mã lượt khám"></label>
-        <label for="visit-from">Từ ngày<input id="visit-from" type="date" name="date_from" value="{{ old('date_from', $filters['date_from'] ?? '') }}"></label>
-        <label for="visit-to">Đến ngày<input id="visit-to" type="date" name="date_to" value="{{ old('date_to', $filters['date_to'] ?? '') }}"></label>
-        <label for="visit-status">Trạng thái<select id="visit-status" name="status"><option value="">Tất cả</option>@foreach($statuses as $status)<option value="{{ $status->id }}" @selected((string) old('status', $filters['status'] ?? '') === (string) $status->id)>{{ $status->description ?: $status->name }}{{ $status->is_active ? '' : ' (ngừng sử dụng)' }}</option>@endforeach</select></label>
-        <div class="doctor-visit-filter__actions"><button type="submit" class="portal-btn portal-btn--primary">Lọc danh sách</button><a href="{{ route('doctor.visits.index') }}" class="portal-btn portal-btn--secondary">Xóa lọc</a></div>
+    <form method="get" action="{{ route('doctor.visits.index') }}" class="employee-card workspace-filter workspace-filter--spaced" aria-label="Lọc lượt khám">
+        <label class="workspace-filter__field workspace-filter__field--search" for="visit-search">Tìm lượt khám
+            <input id="visit-search" name="q" type="search" maxlength="100" value="{{ old('q', $filters['q'] ?? '') }}" placeholder="Tên, mã bệnh nhân hoặc mã lượt khám">
+        </label>
+        <label class="workspace-filter__field" for="visit-from">Từ ngày
+            <input id="visit-from" type="date" name="date_from" value="{{ old('date_from', $filters['date_from'] ?? '') }}">
+        </label>
+        <label class="workspace-filter__field" for="visit-to">Đến ngày
+            <input id="visit-to" type="date" name="date_to" value="{{ old('date_to', $filters['date_to'] ?? '') }}">
+        </label>
+        <label class="workspace-filter__field" for="visit-status">Trạng thái
+            <select id="visit-status" name="status">
+                <option value="">Tất cả</option>
+                @foreach ($statuses as $status)
+                    <option value="{{ $status->id }}" @selected((string) old('status', $filters['status'] ?? '') === (string) $status->id)>
+                        {{ $status->description ?: $status->name }}{{ $status->is_active ? '' : ' (ngừng sử dụng)' }}
+                    </option>
+                @endforeach
+            </select>
+        </label>
+        <x-workspace-filter-actions :reset-url="route('doctor.visits.index')" />
     </form>
     <div class="tech-panel">
         @forelse($visits as $visit)

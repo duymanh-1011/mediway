@@ -46,7 +46,7 @@
                             </span>
                         </li>
 
-                    @elseif(request()->routeIs('doctor.profile', 'doctor.examination.*', 'doctor.visits.*'))
+                    @else
 
                         <li>
                             <a href="{{ route('doctor.home') }}">

@@ -8,7 +8,7 @@ use App\Models\MedicalService;
 use App\Models\ServiceGroup;
 use App\Models\ServiceResultTemplate;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -19,7 +19,7 @@ class BusinessCodeGenerationTest extends TestCase
 
     public function test_every_catalog_store_assigns_a_code_without_trusting_submitted_code(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $labTemplateId = ServiceResultTemplate::where('name', 'Phiếu xét nghiệm')->value('id');
         $cases = [
@@ -44,7 +44,7 @@ class BusinessCodeGenerationTest extends TestCase
 
     public function test_create_forms_preview_codes_readonly_without_reserving_them(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         foreach (['specialties', 'examination-rooms', 'service-groups', 'medical-services', 'disease-groups', 'diseases', 'medicines'] as $module) {
@@ -55,7 +55,7 @@ class BusinessCodeGenerationTest extends TestCase
 
     public function test_existing_catalog_codes_cannot_be_changed_through_update(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $service = MedicalService::where('service_code', 'DVXN001')->firstOrFail();
         $this->put(route('admin.medical-services.update', $service), [

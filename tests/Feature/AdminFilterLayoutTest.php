@@ -8,7 +8,7 @@ use App\Models\Employee;
 use App\Models\Patient;
 use App\Models\ServiceGroup;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,7 +21,7 @@ class AdminFilterLayoutTest extends TestCase
 
     public function test_admin_filters_are_standalone_named_panels_with_shared_grid_and_actions(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $checked = 0;
@@ -86,7 +86,7 @@ class AdminFilterLayoutTest extends TestCase
 
     public function test_filter_values_results_and_reset_link_are_preserved(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $employee = User::where('business_code', 'NV000004')->firstOrFail();
@@ -103,7 +103,7 @@ class AdminFilterLayoutTest extends TestCase
 
     public function test_employee_type_labels_are_vietnamese_without_changing_values(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $html = $this->get(route('admin.employees.index'))->assertOk()->getContent();
@@ -116,7 +116,7 @@ class AdminFilterLayoutTest extends TestCase
 
     public function test_patient_search_uses_session_references_for_phone_and_citizen_id(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $patient = Patient::where('patient_code', 'BN000001')->firstOrFail();
         $index = route('admin.patients.index');
@@ -145,7 +145,7 @@ class AdminFilterLayoutTest extends TestCase
 
     public function test_employee_form_displays_vietnamese_but_persists_the_original_code(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $employee = Employee::where('employee_code', 'NV000004')->firstOrFail();

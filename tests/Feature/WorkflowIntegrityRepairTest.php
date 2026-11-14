@@ -14,7 +14,7 @@ use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceStatus;
 use App\Models\WorkflowIntegrityRepair;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -28,7 +28,7 @@ class WorkflowIntegrityRepairTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(now()->setDate(2026, 10, 19)->setTime(9, 0));
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         Storage::fake('local');
     }
 

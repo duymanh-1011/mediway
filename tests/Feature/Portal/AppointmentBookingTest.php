@@ -8,7 +8,7 @@ use App\Models\DoctorSchedule;
 use App\Models\ExaminationRoom;
 use App\Models\Specialty;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -26,7 +26,7 @@ class AppointmentBookingTest extends TestCase
                 ->setTime(8, 0, 0)
         );
 
-        $this->seed(DatabaseSeeder::class);        // M06_TEST_PROFILE_FIXTURE_20261030
+        $this->seed(WorkflowFixtureSeeder::class);        // M06_TEST_PROFILE_FIXTURE_20261030
         \Illuminate\Support\Facades\DB::table('patient_details')
             ->whereIn(
                 'patient_id',

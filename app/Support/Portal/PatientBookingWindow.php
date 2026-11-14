@@ -16,7 +16,7 @@ class PatientBookingWindow
 
     public static function lastDate(): string
     {
-        return self::now()->addDays(2)->toDateString();
+        return self::now()->addDays(4)->toDateString();
     }
 
     public static function ensureAllows(DoctorSchedule $schedule, AppointmentTimeSlot $slot): void
@@ -32,7 +32,7 @@ class PatientBookingWindow
     {
         $now = self::now();
         $date = $schedule->work_date->toDateString();
-        if ($date < $now->toDateString() || $date > $now->addDays(2)->toDateString()
+        if ($date < $now->toDateString() || $date > $now->addDays(4)->toDateString()
             || $schedule->status !== 'ACTIVE' || $slot->status !== 'ACTIVE') {
             return false;
         }

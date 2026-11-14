@@ -262,7 +262,7 @@
                         <div class="form-group">
 
                             <label for="verified_by_user_id">
-                                Kỹ thuật viên xác nhận
+                                Bác sĩ xác nhận
                             </label>
 
                             <select

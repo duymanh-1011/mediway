@@ -60,6 +60,6 @@
         </section>
     </section>
 
-    <x-print.signature label="NHÂN VIÊN THỰC HIỆN" :name="$record->performer?->full_name"
+    <x-print.signature :label="$record->performerDoctor ? 'BÁC SĨ THỰC HIỆN' : 'NHÂN VIÊN THỰC HIỆN'" :name="$record->performerDoctor?->full_name ?? $record->performer?->full_name"
         :date="$result->resulted_at" fallback="Chưa ghi nhận người thực hiện" />
 </x-print.document>

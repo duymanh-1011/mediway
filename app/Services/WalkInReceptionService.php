@@ -37,12 +37,36 @@ class WalkInReceptionService
             $schedule = DoctorSchedule::whereKey($data['schedule_id'])->lockForUpdate()->firstOrFail();
             if ($schedule->status !== 'ACTIVE' || ! $schedule->work_date?->isToday()
                 || now()->format('H:i:s') < $schedule->start_time || now()->format('H:i:s') >= $schedule->end_time) {
-                throw ValidationException::withMessages(['schedule_id' => 'Ca làm việc không còn hoạt động tại thời điểm tiếp nhận.']);
+                throw ValidationException::withMessages(['schedule_id' => 'Phòng khám hoặc bác sĩ vừa ngừng tiếp nhận. Vui lòng chọn lại phòng khám.']);
             }
             $doctor = Doctor::whereKey($schedule->doctor_id)->lockForUpdate()->firstOrFail();
             $patientRole = Role::where('name', 'Patient')->where('status', 'ACTIVE')->sharedLock()->first();
             if ($data['patient_mode'] === 'existing') {
                 $patient = Patient::whereKey($data['patient_id'])->lockForUpdate()->firstOrFail();
+                $identityUpdates = [];
+                if (blank($patient->date_of_birth)) {
+                    if (blank($data['date_of_birth'] ?? null)) {
+                        throw ValidationException::withMessages(['date_of_birth' => 'Vui lòng bổ sung ngày sinh còn thiếu trong hồ sơ bệnh nhân.']);
+                    }
+                    $identityUpdates['date_of_birth'] = $data['date_of_birth'];
+                }
+                if (blank($patient->gender)) {
+                    if (blank($data['gender'] ?? null)) {
+                        throw ValidationException::withMessages(['gender' => 'Vui lòng bổ sung giới tính còn thiếu trong hồ sơ bệnh nhân.']);
+                    }
+                    $identityUpdates['gender'] = $data['gender'];
+                }
+                if ($identityUpdates !== []) {
+                    $oldIdentity = array_intersect_key($patient->getOriginal(), $identityUpdates);
+                    $patient->update($identityUpdates);
+                    AuditLog::create([
+                        'user_id' => $actor->id, 'role_name_snapshot' => $roleName, 'action' => 'UPDATE',
+                        'entity_type' => 'Patient', 'entity_id' => $patient->id, 'entity_business_code' => $patient->patient_code,
+                        'old_values' => $oldIdentity, 'new_values' => $identityUpdates,
+                        'description' => 'Bổ sung ngày sinh hoặc giới tính còn thiếu khi tiếp nhận khám trực tiếp.',
+                        'ip_address' => request()->ip(), 'user_agent' => mb_substr((string) request()->userAgent(), 0, 500), 'performed_at' => now(),
+                    ]);
+                }
             } else {
                 $patient = Patient::create(['user_id' => null, 'patient_code' => app(PatientCodeService::class)->next(),
                     'full_name' => trim($data['full_name']), 'date_of_birth' => $data['date_of_birth'], 'gender' => $data['gender'], 'status' => 'ACTIVE']);
@@ -51,7 +75,7 @@ class WalkInReceptionService
             $room = ExaminationRoom::whereKey($schedule->examination_room_id)->lockForUpdate()->firstOrFail();
             if ($doctor->status !== 'ACTIVE' || $patient->status !== 'ACTIVE' || $specialty->status !== 'ACTIVE'
                 || $room->status !== 'ACTIVE' || ! $doctor->canPracticeSpecialty((int) $specialty->id)) {
-                throw ValidationException::withMessages(['schedule_id' => 'Bệnh nhân hoặc thông tin bác sĩ, chuyên khoa, phòng khám không còn hợp lệ.']);
+                throw ValidationException::withMessages(['schedule_id' => 'Bệnh nhân hoặc thông tin bác sĩ, chuyên khoa, phòng khám không còn hợp lệ. Vui lòng chọn lại phòng khám.']);
             }
             if (MedicalVisit::where('patient_id', $patient->id)->where('doctor_id', $doctor->id)
                 ->whereDate('checked_in_at', today())->whereHas('status', fn ($q) => $q->whereIn('name', ['WAITING', 'IN_EXAMINATION', 'WAITING_FOR_SERVICE', 'RETURNING']))

@@ -18,9 +18,9 @@ class ReceptionAccess
         }
 
         $employee = Employee::where('user_id', $actor->id)->lockForUpdate()->first();
-        $detail = $employee?->detail()->lockForUpdate()->first();
+        $employee?->detail()->lockForUpdate()->first();
         if (! $user || $user->status !== 'ACTIVE' || $user->role?->name !== 'Employee'
-            || $user->role?->status !== 'ACTIVE' || $employee?->status !== 'ACTIVE' || $detail?->employee_type !== 'RECEPTIONIST') {
+            || $user->role?->status !== 'ACTIVE' || $employee?->status !== 'ACTIVE') {
             abort(403, 'Bạn không còn quyền tiếp nhận bệnh nhân.');
         }
     }

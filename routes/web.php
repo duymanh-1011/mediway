@@ -77,6 +77,7 @@ require __DIR__ . '/employee-reception.php';
 
 Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\EmployeeMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function () {
     Route::get('/', [\App\Http\Controllers\Employee\WorkspaceController::class, 'home'])->name('home');
+    Route::post('/chon-chuc-nang', [\App\Http\Controllers\Employee\WorkspaceController::class, 'selectWorkspace'])->name('workspace.select');
     Route::get('/ho-so', [\App\Http\Controllers\Employee\WorkspaceController::class, 'profile'])->name('profile');
     Route::get('/ho-so/chinh-sua', [\App\Http\Controllers\Employee\WorkspaceController::class, 'editProfile'])->name('profile.edit');
     Route::put('/ho-so', [\App\Http\Controllers\Employee\WorkspaceController::class, 'updateProfile'])->name('profile.update');
@@ -109,6 +110,31 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::get('/thanh-toan/{payable}', [\App\Http\Controllers\Employee\PayableController::class, 'show'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.show');
     Route::get('/thanh-toan/giao-dich/{transaction}/bien-lai', [\App\Http\Controllers\Employee\PaymentReceiptController::class, 'show',])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.receipt');
 });
+
+Route::prefix('bac-si')->name('doctor.')
+    ->middleware([\App\Http\Middleware\DoctorMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])
+    ->group(function (): void {
+        Route::get('/', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'home'])->name('home');
+        Route::post('/chon-chuc-nang', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'selectWorkspace'])->name('workspace.select');
+        Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->name('logout');
+
+        foreach (['dich-vu' => 'services', 'xet-nghiem' => 'laboratory', 'chan-doan-hinh-anh' => 'imaging'] as $path => $routeName) {
+            Route::prefix($path)->name($routeName.'.')->group(function () use ($routeName): void {
+                $controller = \App\Http\Controllers\Employee\TechnicalServiceController::class;
+                Route::get('/', [$controller, 'index'])->name('index');
+                if ($routeName === 'services') {
+                    Route::get('/nhom/{group}/{service}', [$controller, 'orders'])->name('orders');
+                    Route::post('/nhom/{group}/{service}', [$controller, 'filterOrders'])->name('orders.filter');
+                }
+                Route::get('/{item}', [$controller, 'show'])->whereNumber('item')->name('show');
+                Route::get('/{item}/phieu-ket-qua', [$controller, 'printResult'])->whereNumber('item')->name('print');
+                Route::get('/{item}/tep/{type}', [$controller, 'document'])->whereNumber('item')->where('type', 'pdf|image')->name('document');
+                Route::post('/{item}/bat-dau', [$controller, 'start'])->whereNumber('item')->name('start');
+                Route::post('/{item}/ket-qua', [$controller, 'save'])->whereNumber('item')->name('save');
+                Route::post('/{item}/hoan-tat', [$controller, 'complete'])->whereNumber('item')->name('complete');
+            });
+        }
+    });
 
 
 Route::prefix('tai-khoan')->name('patient.')->group(function () {

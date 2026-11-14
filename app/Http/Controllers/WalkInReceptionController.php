@@ -40,9 +40,19 @@ class WalkInReceptionController extends Controller
                 ->whereHas('specialty', fn ($q) => $q->where('status', 'ACTIVE'))
                 ->whereHas('examinationRoom', fn ($q) => $q->where('status', 'ACTIVE'))
                 ->with(['doctor:id,full_name', 'specialty:id,name', 'examinationRoom:id,name'])->orderBy('start_time')->get();
+            $roomIds = $schedules->pluck('examination_room_id')->unique()->values();
+            $roomVisitCounts = $roomIds->isEmpty()
+                ? collect()
+                : MedicalVisit::query()
+                    ->selectRaw('examination_room_id, COUNT(*) as aggregate')
+                    ->whereIn('examination_room_id', $roomIds)
+                    ->whereDate('checked_in_at', today())
+                    ->whereHas('status', fn ($q) => $q->whereIn('name', ['WAITING', 'IN_EXAMINATION', 'WAITING_FOR_SERVICE', 'RETURNING']))
+                    ->groupBy('examination_room_id')
+                    ->pluck('aggregate', 'examination_room_id');
             $activation = $request->session()->pull($matchesKey.'_activation');
 
-            return response()->view('reception.walk-in', compact('isAdmin', 'employee', 'patients', 'schedules', 'searched', 'activation'))
+            return response()->view('reception.walk-in', compact('isAdmin', 'employee', 'patients', 'schedules', 'roomVisitCounts', 'searched', 'activation'))
                 ->header('Cache-Control', 'private, no-store');
         } catch (QueryException $exception) {
             logger()->error('Không thể tải tiếp đón trực tiếp.', ['exception' => get_class($exception)]);
@@ -77,8 +87,8 @@ class WalkInReceptionController extends Controller
             'patient_mode' => ['required', Rule::in(['existing', 'new'])],
             'patient_id' => ['exclude_unless:patient_mode,existing', 'required', 'integer', Rule::exists('patients', 'id')],
             'full_name' => ['exclude_unless:patient_mode,new', 'required', 'string', 'max:120', 'regex:/\S/u'],
-            'date_of_birth' => ['exclude_unless:patient_mode,new', 'required', 'date_format:Y-m-d', 'before_or_equal:today'],
-            'gender' => ['exclude_unless:patient_mode,new', 'required', Rule::in(['Nam', 'Nữ', 'Khác'])],
+            'date_of_birth' => ['required_if:patient_mode,new', 'nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'gender' => ['required_if:patient_mode,new', 'nullable', Rule::in(['Nam', 'Nữ', 'Khác'])],
             'citizen_id_number' => ['required_if:patient_mode,new', 'nullable', 'string', Rule::when($isNewPatient, ['regex:/^[0-9]{12}$/D'])],
             'phone' => ['required_if:patient_mode,new', 'nullable', 'string', Rule::when($isNewPatient, ['regex:/^0[0-9]{9}$/D'])],
             'current_address' => ['exclude_unless:patient_mode,new', 'nullable', 'string', 'max:255'],
@@ -91,8 +101,8 @@ class WalkInReceptionController extends Controller
             'patient_mode.required' => 'Vui lòng chọn bệnh nhân có hồ sơ hoặc tạo hồ sơ mới.',
             'patient_id.required' => 'Vui lòng tìm và chọn bệnh nhân đã có hồ sơ.',
             'full_name.required' => 'Vui lòng nhập họ tên bệnh nhân.', 'full_name.regex' => 'Họ tên không được để trống.',
-            'date_of_birth.required' => 'Vui lòng nhập ngày sinh.', 'date_of_birth.before_or_equal' => 'Ngày sinh không thể ở tương lai.',
-            'gender.required' => 'Vui lòng chọn giới tính.',
+            'date_of_birth.required_if' => 'Vui lòng nhập ngày sinh.', 'date_of_birth.before_or_equal' => 'Ngày sinh không thể ở tương lai.',
+            'gender.required_if' => 'Vui lòng chọn giới tính.',
             'citizen_id_number.required_if' => 'Vui lòng nhập số CCCD khi tạo hồ sơ mới.',
             'citizen_id_number.regex' => 'CCCD phải gồm 12 chữ số.',
             'phone.required_if' => 'Vui lòng nhập số điện thoại để tạo tài khoản bệnh nhân.',
@@ -100,7 +110,7 @@ class WalkInReceptionController extends Controller
             'current_address.max' => 'Địa chỉ không được vượt quá 255 ký tự.',
             'reason_for_visit.max' => 'Lý do khám không được vượt quá 1.000 ký tự.',
             'confirm_search.accepted' => 'Vui lòng xác nhận đã tìm hồ sơ trước khi tạo mới.',
-            'schedule_id.required' => 'Vui lòng chọn ca khám đang hoạt động.',
+            'schedule_id.required' => 'Vui lòng chọn phòng khám đang tiếp nhận.',
             'confirm_reception.accepted' => 'Vui lòng xác nhận thông tin tiếp nhận.',
         ]);
         if ($data['patient_mode'] === 'existing' && ! in_array((int) $data['patient_id'], $request->session()->get($matchesKey, []), true)) {

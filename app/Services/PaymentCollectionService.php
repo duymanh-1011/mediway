@@ -59,8 +59,8 @@ class PaymentCollectionService
                     */
                     $visit = MedicalVisit::with(['status', 'appointment'])->whereKey($payable->medical_visit_id)->lockForUpdate()->firstOrFail();
                     $collector = Employee::whereKey($validated['collected_by_employee_id'])->where('status', 'ACTIVE')->lockForUpdate()->first();
-                    $detail = $collector?->detail()->lockForUpdate()->first();
-                    if (! $collector || $detail?->employee_type !== 'CASHIER') {
+                    $collector?->detail()->lockForUpdate()->first();
+                    if (! $collector) {
                         throw ValidationException::withMessages(['collected_by_employee_id' => 'Nhân viên thu ngân không còn hợp lệ hoặc không hoạt động. Vui lòng chọn lại.']);
                     }
                     $item = $payable->service_order_item_id

@@ -11,7 +11,7 @@ class Employee extends Model
 {
     public function scopeActiveCashiers(Builder $query): void
     {
-        $query->where('status', 'ACTIVE')->whereHas('detail', fn (Builder $detail) => $detail->where('employee_type', 'CASHIER'));
+        $query->where('status', 'ACTIVE');
     }
 
     protected $table = 'employees';

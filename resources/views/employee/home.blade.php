@@ -1,52 +1,56 @@
-@extends('employee.layout')
-@section('title', 'Tổng quan')
-@section('content')
-@php
-    $employeeType = \App\Support\EmployeeAccess::typeCode($employee->detail->employee_type);
-    $employeeTypeName = \App\Support\EmployeeAccess::TYPES[$employeeType];
-    $groups = [
-        'RECEPTIONIST' => ['Tiếp đón và lịch hẹn', 'Hỗ trợ tiếp nhận và theo dõi lịch hẹn.', 'employee.reception.index', 'reception'],
-        'SERVICE_TECHNICIAN' => ['Thực hiện dịch vụ', 'Nhận chỉ định và ghi nhận kết quả kỹ thuật.', 'employee.services.index', 'services'],
-        'CASHIER' => ['Thu ngân và thanh toán', 'Theo dõi khoản thu và giao dịch.', 'employee.payments.index', 'payment'],
-    ];
-    [$currentTitle, $currentDescription, $currentRoute, $currentIcon] = $groups[$employeeType];
-    $currentAvailable = \Illuminate\Support\Facades\Route::has($currentRoute);
-@endphp
-<section class="employee-welcome">
-    <div class="employee-welcome__copy">
-        <p class="portal-eyebrow">KHU VỰC NHÂN VIÊN</p>
-        <h1>Xin chào, {{ $employee->full_name }}</h1>
-        <p>Chúc bạn một ngày làm việc hiệu quả tại Mediway.</p>
-        <span class="employee-welcome__identity"><x-employee-icon name="shield" /> {{ $employeeTypeName }} <span aria-hidden="true">·</span> {{ $employee->employee_code }}</span>
-    </div>
-    <div class="employee-welcome__art" aria-hidden="true"><div class="employee-welcome__ring"></div><span><x-employee-icon name="reception" /></span><i></i></div>
-</section>
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chọn chức năng - Mediway</title>
+    @vite(['resources/css/portal.css', 'resources/css/portal-consistency.css', 'resources/css/employee.css', 'resources/js/portal.js', 'resources/js/employee.js'])
+</head>
+<body class="portal-body employee-body workspace-select-page">
+    <header class="employee-header">
+        <div class="employee-header__inner">
+            <a class="portal-brand" href="{{ route('public.home') }}" aria-label="Mediway"><span aria-hidden="true">✦</span> Mediway</a>
+            <div class="employee-header__right">
+                <div class="employee-account" aria-label="Tài khoản nhân viên {{ $employee->full_name }}">
+                    <span class="employee-account__avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr(trim($employee->full_name), 0, 1)) }}</span>
+                    <span class="employee-account__text"><small>Nhân viên</small><strong>{{ $employee->full_name }}</strong></span>
+                </div>
+                <form method="post" action="{{ route('employee.logout') }}">@csrf<button type="submit" class="portal-btn portal-btn--secondary employee-logout">Đăng xuất</button></form>
+            </div>
+        </div>
+    </header>
 
-<section class="employee-section" aria-labelledby="employee-overview-title">
-    <div class="employee-section__heading"><div><p class="portal-eyebrow">KHÔNG GIAN LÀM VIỆC</p><h2 id="employee-overview-title">Tổng quan của bạn</h2><p>Thông tin tài khoản và công việc theo vị trí của bạn.</p></div></div>
-    <div class="employee-grid">
-        <section class="employee-card employee-overview-card">
-            <div class="employee-card__heading"><span class="employee-card__icon"><x-employee-icon name="user" /></span><div><h3>Thông tin nhân viên</h3><p>Thông tin hồ sơ của bạn tại Mediway</p></div></div>
-            <dl class="employee-facts"><div><dt>Mã nhân viên</dt><dd>{{ $employee->employee_code }}</dd></div><div><dt>Vị trí công việc</dt><dd>{{ $employeeTypeName }}</dd></div><div><dt>Trạng thái</dt><dd><span class="employee-status"><span aria-hidden="true"></span>Đang hoạt động</span></dd></div><div><dt>Bộ phận</dt><dd>{{ $employee->detail->department ?: 'Chưa cập nhật' }}</dd></div></dl>
-            <a class="employee-card__link" href="{{ route('employee.profile') }}">Xem hồ sơ cá nhân <x-employee-icon name="arrow" /></a>
-        </section>
-        <section class="employee-card employee-overview-card">
-            <div class="employee-card__heading"><span class="employee-card__icon"><x-employee-icon name="calendar" /></span><div><h3>Công việc của bạn</h3><p>Chức năng theo vị trí hiện tại</p></div></div>
-            <div class="employee-work"><span class="employee-work__icon"><x-employee-icon :name="$currentIcon" /></span><div><h4>{{ $currentTitle }}</h4><p>{{ $currentDescription }}</p>@if($currentAvailable)<a class="employee-card__link" href="{{ route($currentRoute) }}">Mở chức năng <x-employee-icon name="arrow" /></a>@else<span class="employee-work__status">Chưa tích hợp</span>@endif</div></div>
-            @if($work)<div class="employee-work__summary"><span>{{ $work['label'] }}</span><strong>{{ $work['count'] }}</strong></div>@endif
-        </section>
-    </div>
-</section>
-
-<section class="employee-section" aria-labelledby="employee-functions-title">
-    <div class="employee-section__heading"><div><p class="portal-eyebrow">CHỨC NĂNG</p><h2 id="employee-functions-title">Các nhóm công việc</h2><p>Truy cập chức năng phù hợp với vị trí của bạn.</p></div></div>
-    <div class="employee-services__grid">
-        @foreach ($groups as $type => [$label, $description, $routeName, $icon])
-            @php($available = $employeeType === $type && \Illuminate\Support\Facades\Route::has($routeName))
-            @if($available)<a class="employee-service" href="{{ route($routeName) }}">@else<div class="employee-service">@endif
-                <span class="employee-service__icon"><x-employee-icon :name="$icon" /></span><h3>{{ $label }}</h3><p>{{ $description }}</p><span class="employee-service__status">{{ $available ? 'Mở chức năng' : ($employeeType === $type ? 'Chưa tích hợp' : 'Không thuộc quyền của bạn') }} @if($available)<x-employee-icon name="arrow" />@endif</span>
-            @if($available)</a>@else</div>@endif
-        @endforeach
-    </div>
-</section>
-@endsection
+    <main class="workspace-select" id="main-content">
+        <div class="workspace-select__intro">
+            <span class="workspace-select__eyebrow">KHÔNG GIAN LÀM VIỆC</span>
+            <h1>Xin chào, {{ $employee->full_name }}</h1>
+            <p>Vui lòng chọn chức năng cho phiên làm việc này.</p>
+        </div>
+        <div class="workspace-select__grid" aria-label="Chọn chức năng nhân viên">
+            <form method="post" action="{{ route('employee.workspace.select') }}">
+                @csrf<input type="hidden" name="workspace" value="reception">
+                <button type="submit" class="workspace-choice workspace-choice--reception">
+                    <span class="workspace-choice__icon"><x-employee-icon name="reception" /></span>
+                    <span class="workspace-choice__title">Nhân viên tiếp đón</span>
+                    <span class="workspace-choice__description">Tiếp nhận lịch hẹn, khám trực tiếp và theo dõi bệnh nhân.</span>
+                    <span class="workspace-choice__action">Vào chức năng <span aria-hidden="true">→</span></span>
+                    <span class="workspace-choice__glow" aria-hidden="true"></span>
+                </button>
+            </form>
+            <form method="post" action="{{ route('employee.workspace.select') }}">
+                @csrf<input type="hidden" name="workspace" value="cashier">
+                <button type="submit" class="workspace-choice workspace-choice--cashier">
+                    <span class="workspace-choice__icon"><x-employee-icon name="payment" /></span>
+                    <span class="workspace-choice__title">Nhân viên thu ngân</span>
+                    <span class="workspace-choice__description">Tra cứu khoản phải thu, ghi nhận thanh toán và in biên lai.</span>
+                    <span class="workspace-choice__action">Vào chức năng <span aria-hidden="true">→</span></span>
+                    <span class="workspace-choice__glow" aria-hidden="true"></span>
+                </button>
+            </form>
+        </div>
+        @if(session('success'))<div class="portal-alert portal-alert--success" role="status">{{ session('success') }}</div>@endif
+        @if($errors->any())<div class="portal-alert portal-alert--error" role="alert">{{ $errors->first() }}</div>@endif
+        <p class="workspace-select__note"><span aria-hidden="true">🔒</span> Chức năng đã chọn sẽ được khóa đến khi bạn đăng xuất.</p>
+    </main>
+</body>
+</html>

@@ -230,3 +230,42 @@ body.employee-body .employee-profile .portal-btn{display:inline-flex;align-items
     .tech-detail-page :is(.tech-parameter-row,.tech-detail-row) .portal-btn{justify-self:start}
     .tech-detail-page .tech-parameters div{grid-template-columns:minmax(0,1fr);gap:4px}
 }
+
+/* Full-screen workspace selection shown once after staff/doctor login. */
+.workspace-select-page{min-height:100vh;background:radial-gradient(ellipse at 50% 38%,#fff 0%,#f5f8fd 52%,#edf3fb 100%)}
+.workspace-select{width:min(calc(100% - 40px),1050px);min-height:calc(100vh - 73px);margin:0 auto;display:flex;flex-direction:column;justify-content:center;padding:64px 0 76px}
+.workspace-select__intro{text-align:center;margin:0 auto 38px;animation:workspace-fade-in .55s ease both}
+.workspace-select__eyebrow{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#2860d7;font-size:11px;font-weight:750;letter-spacing:.14em}
+.workspace-select__eyebrow::before,.workspace-select__eyebrow::after{content:"";width:22px;height:1px;background:#a9c5f4}
+.workspace-select__intro h1{margin:0;color:#17283e;font-size:clamp(28px,4vw,38px);line-height:1.2;font-weight:750;letter-spacing:-.035em}
+.workspace-select__intro p{margin:11px 0 0;color:#667b97;font-size:15px}
+.workspace-select__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;width:100%;perspective:1200px}
+.workspace-select__grid>form{display:flex;min-width:0;margin:0;animation:workspace-card-in .65s cubic-bezier(.2,.75,.25,1) both}
+.workspace-select__grid>form[hidden]{display:none}
+.workspace-select__grid>form:nth-child(2){animation-delay:90ms}
+.workspace-choice{position:relative;isolation:isolate;overflow:hidden;display:flex;flex:1;flex-direction:column;align-items:flex-start;min-width:0;min-height:290px;padding:30px 32px;border:1px solid #d8e3f2;border-radius:20px;background:rgb(255 255 255 / 94%);color:#17283e;text-align:left;text-decoration:none;box-shadow:0 12px 30px rgb(37 62 99 / 6%),inset 0 1px 0 rgb(255 255 255 / 90%);cursor:pointer;transition:transform .28s cubic-bezier(.2,.75,.25,1),border-color .25s ease,box-shadow .28s ease,background .25s ease}
+.workspace-choice:hover{transform:translateY(-8px) rotateX(1deg);border-color:#a8c5f3;background:#fff;box-shadow:0 24px 48px rgb(37 99 235 / 14%),0 5px 12px rgb(31 55 85 / 5%)}
+.workspace-choice:active{transform:translateY(-2px) scale(.99);transition-duration:.12s}
+.workspace-choice--reception:hover,.workspace-choice--examination:hover{border-color:#92b9fb}
+.workspace-choice--cashier:hover,.workspace-choice--services:hover{border-color:#a6b1ff}
+.workspace-choice__icon{position:relative;z-index:1;display:grid;place-items:center;width:58px;height:58px;border:1px solid #dce9ff;border-radius:17px;background:linear-gradient(145deg,#f4f8ff,#e8f1ff);color:#2563eb;box-shadow:0 7px 18px rgb(37 99 235 / 9%);transition:transform .3s cubic-bezier(.2,.75,.25,1),box-shadow .3s ease}
+.workspace-choice:hover .workspace-choice__icon{transform:translateY(-2px) rotate(-5deg) scale(1.06);box-shadow:0 12px 24px rgb(37 99 235 / 17%)}
+.workspace-choice__icon .employee-icon{width:27px;height:27px;flex-basis:27px}
+.workspace-choice__title,.workspace-choice__description,.workspace-choice__action{position:relative;z-index:1}
+.workspace-choice__title{margin-top:24px;color:#172b46;font-size:21px;font-weight:750;line-height:1.3;letter-spacing:-.02em}
+.workspace-choice__description{max-width:38ch;margin-top:9px;color:#687b94;font-size:14px;line-height:1.65}
+.workspace-choice__action{display:flex;align-items:center;gap:9px;margin-top:auto;padding-top:24px;color:#245bd6;font-size:13px;font-weight:700}
+.workspace-choice__action span{display:inline-grid;place-items:center;width:25px;height:25px;border-radius:50%;background:#edf4ff;transition:transform .24s ease,background .24s ease}
+.workspace-choice:hover .workspace-choice__action span{transform:translateX(4px);background:#e2edff}
+.workspace-choice__glow{position:absolute;z-index:-1;right:-75px;bottom:-105px;width:255px;height:255px;border-radius:50%;background:radial-gradient(circle,rgb(103 160 255 / 13%) 0%,rgb(103 160 255 / 0%) 70%);transition:transform .35s ease,opacity .35s ease;opacity:.65}
+.workspace-choice--cashier .workspace-choice__glow,.workspace-choice--services .workspace-choice__glow{background:radial-gradient(circle,rgb(126 116 255 / 15%) 0%,rgb(126 116 255 / 0%) 70%)}
+.workspace-choice:hover .workspace-choice__glow{transform:scale(1.35);opacity:1}
+.workspace-select__note{display:flex;align-items:center;justify-content:center;gap:7px;margin:25px 0 0;color:#7a8ba0;font-size:12px;text-align:center}
+.workspace-select-page .portal-alert{max-width:620px;margin:20px auto 0}
+.doctor-examination-placeholder{max-width:760px;padding:26px}
+.doctor-examination-placeholder>p{margin:20px 0 0;color:#687b94;line-height:1.65}
+@keyframes workspace-fade-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes workspace-card-in{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:700px){.workspace-select{width:calc(100% - 32px);min-height:calc(100vh - 66px);padding:48px 0}.workspace-select__intro{margin-bottom:26px}.workspace-select__grid{grid-template-columns:1fr;gap:14px}.workspace-choice{min-height:230px;padding:23px 24px;border-radius:16px}.workspace-choice__title{margin-top:18px;font-size:19px}.workspace-choice__action{padding-top:18px}}
+@media(max-width:420px){.workspace-select__intro h1{font-size:26px}.workspace-select__intro p{font-size:14px}.workspace-choice{min-height:215px;padding:21px}.workspace-choice__icon{width:50px;height:50px;border-radius:15px}}
+@media(prefers-reduced-motion:reduce){.workspace-select-page *{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}

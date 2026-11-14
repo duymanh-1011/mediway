@@ -1,9 +1,10 @@
 @extends('employee.layout')
-@section('title', 'Thực hiện dịch vụ')
+@section('title', request()->routeIs('doctor.*') ? 'Bác sĩ thực hiện dịch vụ' : 'Thực hiện dịch vụ')
 @section('content')
+@php($catalogueBase = request()->routeIs('doctor.*') ? 'doctor.services' : 'employee.services')
 @include('employee.technical._heading', [
-    'eyebrow' => 'KHU VỰC NHÂN VIÊN',
-    'heading' => 'Thực hiện dịch vụ',
+    'eyebrow' => request()->routeIs('doctor.*') ? 'KHU VỰC BÁC SĨ' : 'KHU VỰC NHÂN VIÊN',
+    'heading' => request()->routeIs('doctor.*') ? 'Bác sĩ thực hiện dịch vụ' : 'Thực hiện dịch vụ',
     'description' => 'Mở nhóm dịch vụ, chọn dịch vụ và xem các chỉ định cần xử lý.',
 ])
 
@@ -15,7 +16,7 @@
             <p>Chọn nhóm để xem các dịch vụ và số chỉ định hiện tại.</p>
         </div>
         @if ($shortcutGroups)
-            <a class="portal-btn portal-btn--secondary" href="{{ route('employee.services.index') }}">Xem tất cả nhóm</a>
+            <a class="portal-btn portal-btn--secondary" href="{{ route($catalogueBase.'.index') }}">Xem tất cả nhóm</a>
         @endif
     </div>
 
@@ -30,7 +31,7 @@
                 <ul class="tech-group__services">
                     @forelse ($group['services'] as $service)
                         <li>
-                            <a class="tech-service-link" href="{{ route('employee.services.orders', ['group' => $group['code'], 'service' => $service->service_code]) }}">
+                            <a class="tech-service-link" href="{{ route($routePrefix.'.orders', ['group' => $group['code'], 'service' => $service->service_code]) }}">
                                 <span class="tech-service-link__name">{{ $service->name }}</span>
                                 <span class="tech-service-link__count">{{ $service->current_order_count }} chỉ định hiện tại</span>
                                 <x-employee-icon name="arrow" />

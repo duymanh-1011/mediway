@@ -45,7 +45,7 @@
                     $order = $item->serviceOrder;
                     $patient = $order?->medicalVisit?->patient;
                 @endphp
-                <a class="employee-card tech-card" href="{{ route('employee.services.show', ['item' => $item->id, ...$listQuery]) }}">
+                <a class="employee-card tech-card" href="{{ route($routePrefix.'.show', ['item' => $item->id, ...$listQuery]) }}">
                     <div class="tech-card__body">
                         <p class="tech-label">Phiếu chỉ định</p>
                         <h3>{{ $order?->service_order_code ?? 'Chưa có mã phiếu' }}</h3>
@@ -54,7 +54,7 @@
                     </div>
                     <div class="tech-card__meta">
                         <span class="tech-status tech-status--{{ $displayStatus['tone'] }}">{{ $displayStatus['label'] }}</span>
-                        <span>{{ $item->performed_by_employee_id ? 'Việc của tôi' : 'Chưa có người thực hiện' }}</span>
+                        <span>{{ $item->performed_by_doctor_id ? 'Việc của tôi' : ($item->performed_by_employee_id ? 'Đang phân công cũ' : 'Chưa có người thực hiện') }}</span>
                         <span class="employee-card__link">Xem chỉ định <x-employee-icon name="arrow" /></span>
                     </div>
                 </a>

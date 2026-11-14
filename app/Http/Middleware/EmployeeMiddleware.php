@@ -23,7 +23,26 @@ class EmployeeMiddleware
             if ($request->expectsJson()) abort(403, 'Tài khoản không có quyền truy cập khu vực nhân viên.');
             return response()->view('employee.forbidden', ['message' => 'Tài khoản không có quyền truy cập khu vực nhân viên hoặc đã ngừng hoạt động.'], 403);
         }
-        if ($capability !== null && ! $access->allows($request->user(), $capability)) {
+        // The chooser and selector endpoint are the only employee workspace routes
+        // available before a choice is made. The selection cannot be changed until logout.
+        if (! $request->routeIs('employee.home', 'employee.workspace.select')) {
+            $workspace = $request->session()->get('employee_workspace_mode');
+            if (! in_array($workspace, ['reception', 'cashier'], true)) {
+                $request->session()->forget('employee_workspace_mode');
+                return redirect()->route('employee.home');
+            }
+
+            $route = (string) $request->route()?->getName();
+            $receptionRoute = str_starts_with($route, 'employee.reception.')
+                || str_starts_with($route, 'employee.appointments.')
+                || str_starts_with($route, 'employee.walk-in.');
+            $cashierRoute = str_starts_with($route, 'employee.payments.');
+
+            if (($receptionRoute && $workspace !== 'reception') || ($cashierRoute && $workspace !== 'cashier')) {
+                abort(403, 'Chức năng này không thuộc không gian làm việc đã chọn.');
+            }
+        }
+        if ($capability !== null && ! $access->allows($request->user(), $capability, $request->session()->get('employee_workspace_mode'))) {
             if ($request->expectsJson()) abort(403, 'Bạn không có quyền thực hiện chức năng này.');
             return response()->view('employee.forbidden', ['message' => 'Bạn không có quyền thực hiện chức năng này.'], 403);
         }

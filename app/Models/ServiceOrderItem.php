@@ -29,6 +29,7 @@ class ServiceOrderItem extends Model
         'started_at',
         'completed_at',
         'performed_by_employee_id',
+        'performed_by_doctor_id',
         'execution_notes',
     ];
 
@@ -115,6 +116,11 @@ class ServiceOrderItem extends Model
             Employee::class,
             'performed_by_employee_id'
         );
+    }
+
+    public function performerDoctor(): BelongsTo
+    {
+        return $this->belongsTo(Doctor::class, 'performed_by_doctor_id');
     }
 
     /**

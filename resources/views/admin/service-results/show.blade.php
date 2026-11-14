@@ -11,7 +11,7 @@
         $visit = $order?->medicalVisit;
         $service = $item?->medicalService;
         $serviceStatus = $item?->serviceStatus;
-        $performer = $item?->performer;
+        $performer = $item?->performerDoctor ?? $item?->performer;
         $doctor = $order?->orderedByDoctor;
 
         $pdfUrl = $result->hasDocument('pdf') ? route('admin.service-results.document', [$result->id, 'pdf']) : null;
@@ -313,7 +313,7 @@
                             </strong>
 
                             <span>
-                                @include('admin.layouts.partials.record-code', ['code' => $performer->employee_code])
+                                @include('admin.layouts.partials.record-code', ['code' => $item?->performerDoctor?->doctor_code ?? $performer->employee_code])
                             </span>
 
                         </div>

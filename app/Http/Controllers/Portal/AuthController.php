@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -48,19 +47,15 @@ class AuthController extends Controller
         if ($user instanceof User && ($employee = app(EmployeeAccess::class)->employee($user))) {
             RateLimiter::clear($key);
             $request->session()->forget('url.intended');
+            $request->session()->forget(['employee_workspace_mode', 'doctor_workspace_mode']);
             $request->session()->put('password_hash_'.Auth::getDefaultDriver(), Auth::guard()->hashPasswordForCookie($user->getAuthPassword()));
             return redirect()->route(EmployeeAccess::homeRoute($employee))->with('success', 'Đăng nhập thành công.');
         }
-        // The Doctor Portal is supplied by its owner. Do not create or route to
-        // a placeholder when that portal has not been installed.
-        if ($user instanceof User && Route::has('doctor.home')) {
-            $user->load(['role', 'doctor']);
-            if ($user->status === 'ACTIVE' && $user->role?->name === 'Doctor'
-                && $user->role?->status === 'ACTIVE' && $user->doctor?->status === 'ACTIVE') {
-                RateLimiter::clear($key);
-                $request->session()->forget('url.intended');
-                return redirect()->route('doctor.home')->with('success', 'Đăng nhập thành công.');
-            }
+        if ($user instanceof User && app(\App\Support\DoctorAccess::class)->doctor($user)) {
+            RateLimiter::clear($key);
+            $request->session()->forget('url.intended');
+            $request->session()->forget(['employee_workspace_mode', 'doctor_workspace_mode']);
+            return redirect()->route('doctor.home')->with('success', 'Đăng nhập thành công.');
         }
         if (! $user instanceof User || ! $user->canAccessPortal()) {
             RateLimiter::hit($key, 60);

@@ -16,6 +16,25 @@ class PatientResultsVisibilityTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_doctor_notes_are_shown_on_own_prescription_views_and_print(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->withoutVite();
+        $patient = User::where('business_code', 'BN000001')->firstOrFail();
+        $other = User::where('business_code', 'BN000002')->firstOrFail();
+        $prescription = Prescription::whereHas('medicalVisit', fn ($query) => $query->where('patient_id', $patient->patient->id))->firstOrFail();
+        $prescription->update(['doctor_notes' => 'Ghi chú bác sĩ kiểm thử']);
+
+        $this->actingAs($patient)->get(route('patient.prescriptions'))->assertOk()->assertSee('Ghi chú bác sĩ kiểm thử');
+        $this->get(route('patient.results.visit', ['visit' => $prescription->medical_visit_id, 'tab' => 'don-thuoc']))->assertOk()->assertSee('Ghi chú bác sĩ kiểm thử');
+        $this->get(route('patient.prescriptions.show', $prescription))->assertOk()->assertSee('Ghi chú của bác sĩ')->assertSee('Ghi chú bác sĩ kiểm thử');
+        $this->actingAs($other)->get(route('patient.prescriptions.show', $prescription))->assertNotFound();
+        $this->get(route('patient.prescriptions'))->assertOk()->assertDontSee('Ghi chú bác sĩ kiểm thử');
+
+        $prescription->update(['doctor_notes' => null]);
+        $this->actingAs($patient)->get(route('patient.prescriptions.show', $prescription))->assertOk()->assertDontSee('Ghi chú của bác sĩ');
+    }
+
     public function test_patient_sees_own_completed_visit_prescription_without_publication_and_cannot_open_others(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -95,7 +114,7 @@ class PatientResultsVisibilityTest extends TestCase
             ->assertSeeInOrder(['</table>', 'Lưu ý chung', 'BÁC SĨ KÊ ĐƠN'], false);
     }
 
-    public function test_prescription_access_follows_visit_completion_for_list_detail_pdf_and_notifications(): void
+    public function test_prescription_is_accessible_before_visit_completion(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
@@ -109,11 +128,11 @@ class PatientResultsVisibilityTest extends TestCase
         $this->actingAs($patient);
         foreach (['WAITING', 'IN_EXAMINATION', 'WAITING_FOR_SERVICE'] as $status) {
             $visit->update(['visit_status_id' => VisitStatus::where('name', $status)->firstOrFail()->id]);
-            $this->get(route('patient.prescriptions'))->assertOk()->assertDontSee($prescription->prescription_code);
-            $this->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'don-thuoc']))->assertOk()->assertDontSee($prescription->prescription_code);
-            $this->get(route('patient.prescriptions.show', $prescription))->assertNotFound();
-            $this->get(route('patient.prescriptions.document', $prescription))->assertNotFound();
-            $this->get(route('patient.notifications', ['danh-muc' => 'ket-qua']))->assertOk()->assertDontSee($prescription->prescription_code);
+            $this->get(route('patient.prescriptions'))->assertOk()->assertSee($prescription->prescription_code);
+            $this->get(route('patient.results.visit', ['visit' => $visit->id, 'tab' => 'don-thuoc']))->assertOk()->assertSee($prescription->prescription_code);
+            $this->get(route('patient.prescriptions.show', $prescription))->assertOk();
+            $this->get(route('patient.prescriptions.document', $prescription))->assertOk();
+            $this->get(route('patient.notifications', ['danh-muc' => 'ket-qua']))->assertOk()->assertSee($prescription->prescription_code);
         }
         $visit->update(['visit_status_id' => VisitStatus::where('name', 'COMPLETED')->firstOrFail()->id]);
         $this->assertSame('PRIVATE', $prescription->fresh()->patient_publication_status);

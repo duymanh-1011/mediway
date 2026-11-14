@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\MedicalService;
 use App\Models\ServiceGroup;
+use App\Models\ServiceResultTemplate;
 use App\Models\User;
 use Database\Seeders\AdministratorSeeder;
 use Database\Seeders\RoleSeeder;
@@ -19,7 +20,7 @@ class ServiceCatalogTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed([RoleSeeder::class, UserSeeder::class, AdministratorSeeder::class]);
+        $this->seed([RoleSeeder::class, UserSeeder::class, AdministratorSeeder::class, \Database\Seeders\ServiceResultTemplateSeeder::class]);
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
     }
 
@@ -30,7 +31,8 @@ class ServiceCatalogTest extends TestCase
 
     private function serviceData(array $groups): array
     {
-        return ['service_code' => 'TEST001', 'name' => 'Xét nghiệm kiểm thử', 'price' => 100000, 'unit' => 'lần', 'status' => 'ACTIVE', 'display_order' => 0, 'service_group_ids' => $groups];
+        return ['service_code' => 'TEST001', 'name' => 'Xét nghiệm kiểm thử', 'price' => 100000, 'unit' => 'lần', 'status' => 'ACTIVE', 'display_order' => 0,
+            'service_result_template_id' => ServiceResultTemplate::where('name', 'Phiếu xét nghiệm')->value('id'), 'service_group_ids' => $groups];
     }
 
     public function test_one_service_can_belong_to_multiple_groups_and_be_filtered_from_either(): void
@@ -75,6 +77,16 @@ class ServiceCatalogTest extends TestCase
         $this->post(route('admin.medical-services.store'), [...$data, 'service_code' => 'TEST002'])->assertSessionHasErrors('name');
         $group->update(['status' => 'INACTIVE']);
         $this->post(route('admin.medical-services.store'), [...$data, 'name' => 'Tên mới', 'service_code' => 'TEST002'])->assertSessionHasErrors('service_group_ids.0');
+    }
+
+    public function test_active_service_requires_a_result_template(): void
+    {
+        $group = $this->group('XN');
+        $data = $this->serviceData([$group->id]);
+        unset($data['service_result_template_id']);
+
+        $this->post(route('admin.medical-services.store'), $data)->assertSessionHasErrors('service_result_template_id');
+        $this->assertDatabaseCount('medical_services', 0);
     }
 
     public function test_update_keeps_its_own_name_but_cannot_take_another_services_name(): void

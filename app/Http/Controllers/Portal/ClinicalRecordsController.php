@@ -8,7 +8,7 @@ use App\Models\ClinicalDocument;
 use App\Models\PaymentTransaction;
 use App\Models\Prescription;
 use App\Models\ServiceResult;
-use App\Support\Portal\ClinicalPublication;
+use App\Support\Portal\PatientClinicalRecords;
 use App\Support\PatientVisitServices;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -25,9 +25,9 @@ class ClinicalRecordsController extends Controller
         $visits = $patient->medicalVisits()
             ->with(['doctor:id,full_name', 'specialty:id,name', 'status:id,name,description',
                 'conclusion', 'diagnoses.disease:id,name,disease_code',
-                'prescription' => fn ($query) => ClinicalPublication::restrict($query, 'prescriptions'),
+                'prescription' => fn ($query) => PatientClinicalRecords::restrict($query, 'prescriptions'),
                 'serviceOrders.items.medicalService.serviceGroups', 'serviceOrders.items.serviceStatus',
-                'serviceOrders.items.result' => fn ($query) => ClinicalPublication::restrict($query, 'service_results')])
+                'serviceOrders.items.result' => fn ($query) => PatientClinicalRecords::restrict($query, 'service_results')])
             ->orderByDesc('checked_in_at')
             ->orderByDesc('id')->paginate(10)->withQueryString();
         $recoveredEndTimes = $this->recordedCompletionTimes($visits->getCollection());
@@ -43,10 +43,10 @@ class ClinicalRecordsController extends Controller
         $record = $patient->medicalVisits()->with([
             'doctor:id,full_name', 'specialty:id,name', 'status:id,name,description', 'examinationRoom:id,name',
             'conclusion', 'diagnoses.disease:id,name,disease_code',
-            'prescription' => fn ($query) => ClinicalPublication::restrict($query, 'prescriptions'),
+            'prescription' => fn ($query) => PatientClinicalRecords::restrict($query, 'prescriptions'),
             'prescription.doctor', 'prescription.items.medicine',
             'serviceOrders.items.medicalService.serviceGroups', 'serviceOrders.items.serviceStatus', 'serviceOrders.items.performer:id,full_name',
-            'serviceOrders.items.result' => fn ($query) => ClinicalPublication::restrict($query, 'service_results'),
+            'serviceOrders.items.result' => fn ($query) => PatientClinicalRecords::restrict($query, 'service_results'),
             'payables.serviceOrderItem.medicalService',
             'payables.transactions' => fn ($query) => $query->where('transaction_result', 'SUCCESS')->with('collector:id,full_name'),
         ])->findOrFail($visit);
@@ -94,11 +94,12 @@ class ClinicalRecordsController extends Controller
             ->where('transaction_result', 'SUCCESS')
             ->where('payment_method', 'CASH')
             ->whereHas('payable.medicalVisit', fn ($record) => $record->whereKey($visit)->where('patient_id', $patient->id))
-            ->with(['collector:id,full_name', 'payable.medicalVisit', 'payable.serviceOrderItem.medicalService'])
+            ->with(['collector:id,full_name', 'payable.medicalVisit.status', 'payable.serviceOrderItem.medicalService'])
             ->findOrFail($transaction);
 
         if ($receipt->payable->payment_type === 'MEDICINE_FEE') {
-            ClinicalPublication::restrict(Prescription::query(), 'prescriptions')
+            abort_unless($receipt->payable->medicalVisit?->status?->name === 'COMPLETED', 404);
+            PatientClinicalRecords::restrict(Prescription::query(), 'prescriptions')
                 ->whereKey($receipt->payable->prescription_id)
                 ->where('medical_visit_id', $visit)
                 ->firstOrFail();
@@ -158,9 +159,9 @@ class ClinicalRecordsController extends Controller
         $patient = $request->user()->patient;
         abort_unless($patient && $patient->status === 'ACTIVE', 404);
 
-        $record = ClinicalPublication::restrict(Prescription::query(), 'prescriptions')->whereHas('medicalVisit', fn ($visit) => $visit->where('patient_id', $patient->id))
+        $record = PatientClinicalRecords::restrict(Prescription::query(), 'prescriptions')->whereHas('medicalVisit', fn ($visit) => $visit->where('patient_id', $patient->id))
             ->with(['doctor:id,full_name', 'medicalVisit.diagnoses.disease:id,disease_code,name',
-                'medicalVisit.examinationRoom:id,name', 'items.medicine'])
+                'medicalVisit.examinationRoom:id,name', 'medicalVisit.status', 'items.medicine'])
             ->findOrFail($prescription);
 
         $patient->load('detail:id,patient_id,current_address,permanent_address,citizen_id_number');
@@ -197,7 +198,7 @@ class ClinicalRecordsController extends Controller
             abort_unless(is_string($visitId) && ctype_digit($visitId) && (int) $visitId > 0, 404);
             $patient->medicalVisits()->whereKey((int) $visitId)->firstOrFail();
         }
-        $prescriptions = ClinicalPublication::restrict(Prescription::query(), 'prescriptions')
+        $prescriptions = PatientClinicalRecords::restrict(Prescription::query(), 'prescriptions')
             ->whereHas('medicalVisit', fn ($visit) => $visit
                 ->where('patient_id', $patient->id))
             ->when($visitId !== null, fn ($query) => $query->where('medical_visit_id', (int) $visitId))
@@ -228,7 +229,7 @@ class ClinicalRecordsController extends Controller
         $patient = $request->user()->patient;
         abort_unless($patient && $patient->status === 'ACTIVE', 404);
 
-        return ClinicalPublication::restrict(ServiceResult::query(), 'service_results')
+        return PatientClinicalRecords::restrict(ServiceResult::query(), 'service_results')
             ->whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($visit) => $visit->where('patient_id', $patient->id))
             ->findOrFail($result);
     }
@@ -239,7 +240,7 @@ class ClinicalRecordsController extends Controller
         $patient = $request->user()->patient;
         abort_unless($patient && $patient->status === 'ACTIVE', 404);
 
-        $record = ClinicalPublication::restrict(Prescription::query(), 'prescriptions')
+        $record = PatientClinicalRecords::restrict(Prescription::query(), 'prescriptions')
             ->whereKey($prescription)
             ->whereHas('medicalVisit', fn ($visit) => $visit
                 ->where('patient_id', $patient->id))

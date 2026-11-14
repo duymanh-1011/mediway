@@ -83,13 +83,17 @@ class MedicalVisit extends Model
             'serviceOrders as has_unresolved_service_items' => fn ($orders) => $orders->whereHas('items', fn ($items) => $items->unresolved()),
             'queues as has_return_queue' => fn ($queues) => $queues->where('queue_type', 'RETURN_AFTER_SERVICE')
                 ->whereHas('status', fn ($status) => $status->whereIn('name', ['WAITING', 'CALLED', 'SKIPPED'])),
+            // Nạp cùng danh sách để không truy vấn khoản thu riêng cho từng lượt khám.
+            'payables as has_unpaid_examination_fee' => fn ($payables) => $payables
+                ->where('payment_type', 'EXAMINATION_FEE')
+                ->whereDoesntHave('paymentStatus', fn ($status) => $status->where('name', 'PAID')),
         ]);
     }
 
     public function displayStatus(): ?string
     {
         $status = $this->status?->name;
-        if ($status === 'WAITING' && $this->hasUnpaidExaminationFee()) {
+        if ($status === 'WAITING' && ($this->getAttribute('has_unpaid_examination_fee') ?? $this->hasUnpaidExaminationFee())) {
             return 'WAITING_FOR_PAYMENT';
         }
         if ($status !== 'WAITING_FOR_SERVICE') {

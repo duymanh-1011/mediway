@@ -52,14 +52,14 @@ class F08TeamIntegrationTest extends TestCase
             'payment_method' => 'CASH', 'confirm_payment' => 1, 'collected_by_employee_id' => $cashier->employee->id,
         ])->assertSessionHasErrors('payment_method');
         $this->flushSession();
-        $this->actingAs($cashier)->post(route('employee.payments.collect.store', $fee), [
+        $this->actingAsEmployeeWorkspace($cashier, 'cashier')->post(route('employee.payments.collect.store', $fee), [
             'payment_method' => 'CASH', 'confirm_payment' => 1,
         ])->assertSessionHasErrors('payment_method');
         $this->assertSame('UNPAID', $fee->fresh()->paymentStatus->name);
         $this->assertSame(0, $fee->transactions()->count());
         $fee->update(['amount' => $item->price_at_order]);
         $this->flushSession();
-        $this->actingAs($cashier)->post(route('employee.payments.collect.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])
+        $this->actingAsEmployeeWorkspace($cashier, 'cashier')->post(route('employee.payments.collect.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])
             ->assertRedirect(route('employee.payments.show', $fee))->assertSessionHasNoErrors();
         $transaction = $fee->fresh()->transactions()->where('transaction_result', 'SUCCESS')->sole();
         $this->assertSame('PAID', $fee->fresh()->paymentStatus->name);
@@ -91,7 +91,7 @@ class F08TeamIntegrationTest extends TestCase
         $this->assertSame('UNPAID', $fee->paymentStatus->name);
         $cashier = User::where('business_code', 'NV000004')->firstOrFail();
         $this->flushSession();
-        $this->actingAs($cashier)->post(route('employee.payments.collect.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])
+        $this->actingAsEmployeeWorkspace($cashier, 'cashier')->post(route('employee.payments.collect.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])
             ->assertRedirect(route('employee.payments.show', $fee))->assertSessionHasNoErrors();
         $transaction = $fee->fresh()->transactions()->where('transaction_result', 'SUCCESS')->sole();
         $this->assertSame('PAID', $fee->fresh()->paymentStatus->name);
@@ -124,7 +124,7 @@ class F08TeamIntegrationTest extends TestCase
         $this->travelTo(Carbon::parse($date.' 09:00:00', 'Asia/Ho_Chi_Minh'));
         $receptionist = User::where('business_code', 'NV000001')->firstOrFail();
         $this->flushSession();
-        $this->actingAs($receptionist)->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])
+        $this->actingAsEmployeeWorkspace($receptionist, 'reception')->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])
             ->assertRedirect(route('employee.appointments.show', $appointment))->assertSessionHasNoErrors();
         $visit = $appointment->fresh()->medicalVisit;
         $this->assertNotNull($visit);
@@ -134,7 +134,7 @@ class F08TeamIntegrationTest extends TestCase
         $this->assertSame(0, $visit->queues()->count());
         $cashier = User::where('business_code', 'NV000004')->firstOrFail();
         $this->flushSession();
-        $this->actingAs($cashier)->post(route('employee.payments.collect.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])
+        $this->actingAsEmployeeWorkspace($cashier, 'cashier')->post(route('employee.payments.collect.store', $fee), ['payment_method' => 'CASH', 'confirm_payment' => 1])
             ->assertRedirect(route('employee.payments.show', $fee))->assertSessionHasNoErrors();
         $transaction = $fee->fresh()->transactions()->where('transaction_result', 'SUCCESS')->sole();
         $this->assertSame('PAID', $fee->fresh()->paymentStatus->name);

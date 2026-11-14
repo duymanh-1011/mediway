@@ -67,7 +67,7 @@ class MediwayWorkflowTest extends TestCase
         $visit = $appointment->fresh()->medicalVisit;
         $fee = $visit->payables()->where('payment_type', 'EXAMINATION_FEE')->sole();
         $cashier = User::where('business_code', 'NV000004')->firstOrFail();
-        $this->flushSession()->actingAs($cashier);
+        $this->flushSession()->actingAsEmployeeWorkspace($cashier, 'cashier');
         $url = route('employee.payments.collect.store', $fee);
         $this->post($url, ['payment_method' => 'CASH', 'confirm_payment' => 1])->assertSessionHasNoErrors();
         $transaction = $fee->transactions()->where('transaction_result', 'SUCCESS')->sole();

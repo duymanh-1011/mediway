@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreMedicalServiceRequest;
 use App\Http\Requests\Admin\UpdateMedicalServiceRequest;
 use App\Models\MedicalService;
 use App\Models\ServiceGroup;
+use App\Models\ServiceResultTemplate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +30,7 @@ class MedicalServiceController extends Controller
         $status = $filters['status'] ?? null;
         $minPrice = $filters['min_price'] ?? null;
         $maxPrice = $filters['max_price'] ?? null;
-        $medicalServices = MedicalService::query()->with('serviceGroups')
+        $medicalServices = MedicalService::query()->with(['serviceGroups', 'resultTemplate'])
             ->when($keyword !== '', fn ($q) => $q->where(fn ($q) => $q
                 ->where('service_code', 'like', "%{$keyword}%")->orWhere('name', 'like', "%{$keyword}%")))
             ->when($serviceGroupId, fn ($q) => $q->whereHas('serviceGroups', fn ($q) => $q->whereKey($serviceGroupId)))
@@ -51,7 +52,8 @@ class MedicalServiceController extends Controller
         $serviceGroups = ServiceGroup::where('status', 'ACTIVE')->orderBy('display_order')->orderBy('name')->get();
         $selectedGroupIds = $serviceGroups->where('id', $request->integer('group_id'))->values()->modelKeys();
 
-        return view('admin.medical-services.create', compact('serviceGroups', 'selectedGroupIds'));
+        $resultTemplates = ServiceResultTemplate::where('is_active', true)->orderBy('name')->get();
+        return view('admin.medical-services.create', compact('serviceGroups', 'selectedGroupIds', 'resultTemplates'));
     }
 
     public function store(StoreMedicalServiceRequest $request): RedirectResponse
@@ -72,7 +74,7 @@ class MedicalServiceController extends Controller
 
     public function show(MedicalService $medicalService): View
     {
-        $medicalService->load('serviceGroups');
+        $medicalService->load(['serviceGroups', 'resultTemplate']);
         $serviceOrderItemCount = $medicalService->serviceOrderItems()->count();
         $orderedValue = $medicalService->serviceOrderItems()->sum('price_at_order');
         $recentOrderItems = DB::table('service_order_items')
@@ -89,12 +91,15 @@ class MedicalServiceController extends Controller
 
     public function edit(MedicalService $medicalService): View
     {
-        $medicalService->load('serviceGroups');
+        $medicalService->load(['serviceGroups', 'resultTemplate']);
         $serviceGroups = ServiceGroup::where('status', 'ACTIVE')
             ->orWhereHas('medicalServices', fn ($q) => $q->whereKey($medicalService->id))
             ->orderBy('display_order')->orderBy('name')->get();
+        $resultTemplates = ServiceResultTemplate::where('is_active', true)
+            ->when($medicalService->service_result_template_id, fn ($query) => $query->orWhere('id', $medicalService->service_result_template_id))
+            ->orderBy('name')->get();
 
-        return view('admin.medical-services.edit', compact('medicalService', 'serviceGroups'));
+        return view('admin.medical-services.edit', compact('medicalService', 'serviceGroups', 'resultTemplates'));
     }
 
     public function update(UpdateMedicalServiceRequest $request, MedicalService $medicalService): RedirectResponse
@@ -130,6 +135,12 @@ class MedicalServiceController extends Controller
 
     public function activate(MedicalService $medicalService): RedirectResponse
     {
+        if (! $medicalService->resultTemplate?->is_active) {
+            throw ValidationException::withMessages([
+                'service_result_template_id' => 'Hãy gán một mẫu kết quả đang sử dụng trước khi kích hoạt dịch vụ.',
+            ]);
+        }
+
         $medicalService->update(['status' => 'ACTIVE']);
 
         return back()->with('success', 'Đã kích hoạt lại dịch vụ y tế.');

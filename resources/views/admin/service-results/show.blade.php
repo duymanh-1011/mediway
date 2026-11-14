@@ -360,6 +360,22 @@
 
             <div class="result-detail-main">
 
+                @if ($result->template_snapshot)
+                    <div class="result-card">
+                        <div class="result-card-header"><div><h2>{{ $result->template_snapshot['name'] ?? 'Phiếu kết quả' }}</h2><p>Thông tin được lưu theo mẫu tại thời điểm lập phiếu.</p></div></div>
+                        @foreach ($result->templateDisplayRows() as $row)
+                            <div class="result-text-section"><div class="result-info-label">{{ $row['label'] }}</div>
+                                @if (isset($row['measurements']))
+                                    <div class="table-wrapper"><table class="admin-table"><thead><tr><th scope="col" class="admin-row-number">STT</th><th scope="col">Chỉ số</th><th scope="col">Kết quả</th><th scope="col">Đơn vị</th><th scope="col">Khoảng tham chiếu</th><th scope="col">Đánh giá</th></tr></thead><tbody>
+                                        @foreach ($row['measurements'] as $measurement)<tr><td class="admin-row-number">{{ $loop->iteration }}</td><td>{{ $measurement['name'] ?? '' }}</td><td>{{ $measurement['value'] ?? '' }}</td><td>{{ $measurement['unit'] ?? '—' }}</td><td>{{ $measurement['reference'] ?? '—' }}</td><td>{{ $measurement['flag'] ?? '—' }}</td></tr>@endforeach
+                                    </tbody></table></div>
+                                @else
+                                    <div class="result-text-content">{{ $row['value'] }}</div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @else
                 {{-- Summary --}}
                 <div class="result-card">
 
@@ -478,7 +494,20 @@
                     @endif
 
                 </div>
+                @endif
 
+                {{-- Dùng cùng cách đọc dữ liệu kỹ thuật đã lưu như trang bác sĩ và bệnh nhân. --}}
+                @if ($technicalRows = $result->technicalDetailRows())
+                    <div class="result-card">
+                        <div class="result-card-header"><div>
+                            <h2>Thông tin kỹ thuật bổ sung</h2>
+                            <p>Thông tin kỹ thuật đã được ghi nhận cho dịch vụ.</p>
+                        </div></div>
+                        <div class="result-parameters">
+                            @include('admin.layouts.partials.value-list', ['valueRows' => $technicalRows])
+                        </div>
+                    </div>
+                @endif
             </div>
 
 

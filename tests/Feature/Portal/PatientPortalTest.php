@@ -67,7 +67,7 @@ class PatientPortalTest extends TestCase
         }
     }
 
-    public function test_common_login_dispatches_admin_but_does_not_grant_unimplemented_roles(): void
+    public function test_common_login_dispatches_admin_doctor_and_employee(): void
     {
         $login = $this->get(route('patient.login'))->assertOk()->assertSee('Đăng nhập - Mediway')
             ->assertDontSee('CỔNG BỆNH NHÂN');
@@ -77,11 +77,9 @@ class PatientPortalTest extends TestCase
             ->assertRedirect(route('admin.dashboard'));
         $this->get(route('admin.dashboard'))->assertOk();
         $this->post(route('admin.logout'));
-        foreach (['BS000001'] as $code) {
-            $user = User::where('business_code', $code)->firstOrFail();
-            $this->post(route('patient.login.store'), ['phone' => $user->phone, 'password' => 'Mediway@123'])->assertSessionHasErrors('phone');
-            $this->assertGuest();
-        }
+        $doctor = User::where('business_code', 'BS000001')->firstOrFail();
+        $this->post(route('patient.login.store'), ['phone' => $doctor->phone, 'password' => 'Mediway@123'])->assertRedirect(route('doctor.home'));
+        $this->post(route('doctor.logout'));
         $receptionist = User::where('business_code', 'NV000001')->firstOrFail();
         $this->post(route('patient.login.store'), ['phone' => $receptionist->phone, 'password' => 'Mediway@123'])
             ->assertRedirect(route('employee.home'));

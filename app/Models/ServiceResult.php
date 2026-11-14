@@ -17,6 +17,8 @@ class ServiceResult extends Model
         'result_conclusion',
         'result_parameters',
         'technical_details',
+        'template_snapshot',
+        'template_values',
         'result_pdf_path',
         'result_image_path',
         'verified_by_user_id',
@@ -27,6 +29,8 @@ class ServiceResult extends Model
     protected $casts = [
         'result_parameters' => 'array',
         'technical_details' => 'array',
+        'template_snapshot' => 'array',
+        'template_values' => 'array',
         'resulted_at' => 'datetime',
     ];
 
@@ -37,6 +41,7 @@ class ServiceResult extends Model
         return hash('sha256', json_encode([
             $result->id, $result->result_summary, $result->result_conclusion,
             $result->result_parameters, $result->technical_details, $result->result_pdf_path, $result->result_image_path,
+            $result->template_snapshot, $result->template_values,
             $result->verified_by_user_id, $result->patient_publication_status,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
     }
@@ -93,6 +98,65 @@ class ServiceResult extends Model
             : array_map(fn ($row) => ['label' => $row['name'], 'value' => $row['value']], $rows);
     }
 
+    /** Return safe label/value rows from the immutable template copy saved with this result. */
+    public function templateDisplayRows(): array
+    {
+        $fields = $this->template_snapshot['fields'] ?? [];
+        $values = $this->template_values ?? [];
+        if (! is_array($fields) || ! is_array($values)) return [];
+
+        $rows = [];
+        foreach ($fields as $field) {
+            if (! is_array($field) || ! isset($field['key'], $field['label'])) continue;
+            $value = $values[$field['key']] ?? null;
+            if (($field['type'] ?? null) === 'measurements' && is_array($value)) {
+                $rows[] = ['label' => $field['label'], 'measurements' => array_values(array_filter($value, 'is_array'))];
+            } elseif (is_scalar($value) && trim((string) $value) !== '') {
+                $rows[] = ['label' => $field['label'], 'value' => (string) $value];
+            }
+        }
+        return $rows;
+    }
+
+    /** Split a saved template into the two sections shown on service result documents. */
+    public function templateSections(): array
+    {
+        $fields = $this->template_snapshot['fields'] ?? [];
+        $values = $this->template_values ?? [];
+        if (! is_array($fields) || ! is_array($values)) {
+            return ['technical' => [], 'conclusion' => filled($this->result_conclusion) ? $this->result_conclusion : 'Chưa ghi nhận kết luận.'];
+        }
+
+        $conclusionKeys = ['conclusion', 'interpretation', 'comment'];
+        $conclusion = null;
+        foreach ($conclusionKeys as $key) {
+            $value = $values[$key] ?? null;
+            if (is_scalar($value) && trim((string) $value) !== '') {
+                $conclusion = (string) $value;
+                break;
+            }
+        }
+        $conclusion ??= is_string($this->result_conclusion) && trim($this->result_conclusion) !== ''
+            ? $this->result_conclusion
+            : 'Chưa ghi nhận kết luận.';
+
+        $technical = [];
+        foreach ($fields as $field) {
+            if (! is_array($field) || ! isset($field['key'], $field['label'])) continue;
+            $key = $field['key'];
+            if (in_array($key, $conclusionKeys, true)) continue;
+            $value = $values[$key] ?? null;
+            if (($field['type'] ?? null) === 'measurements' && is_array($value)) {
+                $measurements = array_values(array_filter($value, 'is_array'));
+                if ($measurements) $technical[] = ['label' => $field['label'], 'measurements' => $measurements];
+            } elseif (is_scalar($value) && trim((string) $value) !== '') {
+                $technical[] = ['label' => $field['label'], 'value' => (string) $value];
+            }
+        }
+
+        return ['technical' => $technical, 'conclusion' => $conclusion];
+    }
+
     /**
      * @param  array<string, mixed>  $values
      */
@@ -101,6 +165,16 @@ class ServiceResult extends Model
         foreach (['result_summary', 'result_conclusion'] as $field) {
             if (is_string($values[$field] ?? null) && trim($values[$field]) !== '') {
                 return true;
+            }
+        }
+
+        $templateValues = $values['template_values'] ?? null;
+        if (is_string($templateValues)) $templateValues = json_decode($templateValues, true);
+        if (is_array($templateValues)) {
+            foreach ($templateValues as $value) {
+                if (is_scalar($value) && trim((string) $value) !== '') return true;
+                if (is_array($value) && collect($value)->contains(fn ($row) => is_array($row)
+                    && collect($row)->contains(fn ($cell) => is_scalar($cell) && trim((string) $cell) !== ''))) return true;
             }
         }
 

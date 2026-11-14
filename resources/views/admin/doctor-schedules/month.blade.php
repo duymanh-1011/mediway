@@ -12,7 +12,7 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">Lịch làm việc · {{ $doctor->full_name }}</h1>
-            <p class="page-description">{{ $doctor->doctor_code }}{{ $doctor->specialty ? ' · '.$doctor->specialty->name : '' }}</p>
+            <p class="page-description">@include('admin.layouts.partials.record-code', ['code' => $doctor->doctor_code]){{ $doctor->specialty ? ' · '.$doctor->specialty->name : '' }}</p>
         </div>
         <div class="header-actions">
             <a class="admin-btn admin-btn-secondary" href="{{ route('admin.doctor-schedules.month.index', ['month' => $month]) }}">Danh sách bác sĩ</a>

@@ -39,6 +39,8 @@ export function initializeServiceOrderPicker(root = document) {
         if (event.target.name === 'medical_service_ids[]') updateSelectedCount();
     });
     searchField.hidden = false;
+    const selectionSummary = picker.querySelector('[data-selection-summary]');
+    if (selectionSummary) selectionSummary.hidden = false;
     filterServices();
     updateSelectedCount();
 }

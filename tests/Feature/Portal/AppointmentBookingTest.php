@@ -282,12 +282,14 @@ class AppointmentBookingTest extends TestCase
         ]);
         [, $tomorrow] = $this->createSlot(daysFromToday: 1);
         [, $dayAfter] = $this->createSlot(daysFromToday: 2);
-        [, $tooLate] = $this->createSlot(daysFromToday: 3);
+        [, $fourthDay] = $this->createSlot(daysFromToday: 4);
+        [, $tooLate] = $this->createSlot(daysFromToday: 5);
 
         $this->travelTo(today()->setTime(9, 0));
         $this->get(route('patient.appointments.create', $morning))->assertRedirect(route('patient.doctors.index'));
         $this->get(route('patient.appointments.create', $afternoon))->assertOk();
         $this->get(route('patient.appointments.create', $tooLate))->assertRedirect(route('patient.doctors.index'));
+        $this->get(route('patient.appointments.create', $fourthDay))->assertOk();
         $this->travelTo(today()->setTime(13, 29));
         $this->get(route('patient.appointments.create', $afternoon))->assertOk();
         $this->travelTo(today()->setTime(13, 30));

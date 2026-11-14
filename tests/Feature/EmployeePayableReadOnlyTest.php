@@ -19,6 +19,7 @@ class EmployeePayableReadOnlyTest extends TestCase
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
+        $this->withSession(['employee_workspace_mode' => 'cashier']);
     }
 
     private function account(string $code): User
@@ -59,7 +60,8 @@ class EmployeePayableReadOnlyTest extends TestCase
         $cashier = $this->account('NV000002');
         $cashier->employee->detail()->update(['employee_type' => 'SERVICE_TECHNICIAN']);
         $this->flushSession();
-        $this->actingAs($cashier)->get(route('employee.payments.show', $payable))->assertForbidden();
+        $this->actingAsEmployeeWorkspace($cashier, 'cashier')->get(route('employee.payments.show', $payable))->assertOk();
+        $this->post(route('employee.workspace.select'), ['workspace' => 'reception'])->assertForbidden();
     }
 
     public function test_detail_retains_expandable_history_and_restricts_receipt_links(): void
@@ -105,15 +107,20 @@ class EmployeePayableReadOnlyTest extends TestCase
         $this->assertSame('Tiền thuốc', (new Payable(['payment_type' => 'MEDICINE_FEE']))->displayContent());
     }
 
-    public function test_other_employee_types_cannot_open_cashier_list(): void
+    public function test_each_employee_type_can_choose_cashier_but_other_roles_cannot_open_cashier_list(): void
     {
         foreach (['SERVICE_TECHNICIAN', 'RECEPTIONIST'] as $type) {
             $user = $this->account('NV000002');
             $user->employee->detail()->update(['employee_type' => $type]);
-            $this->actingAs($user)
+            $this->actingAsEmployeeWorkspace($user, 'cashier')
                 ->get(route('employee.payments.index'))
-                ->assertForbidden();
-            $this->post(route('employee.payments.filter'), ['q' => 'PT000012'])->assertForbidden();
+                ->assertOk();
+            $this->post(route('employee.payments.filter'), ['q' => 'PT000012'])->assertRedirect();
+        }
+
+        foreach (['BN000001', 'QT000001'] as $code) {
+            $this->flushSession()->actingAs(User::where('business_code', $code)->firstOrFail())
+                ->get(route('employee.payments.index'))->assertForbidden();
         }
     }
 
@@ -174,7 +181,7 @@ class EmployeePayableReadOnlyTest extends TestCase
         $this->get(route('employee.payments.index', ['q' => $phone]))->assertRedirect(route('employee.payments.index'));
         $url = $this->searchUrl($phone);
         $this->flushSession();
-        $this->actingAs($cashier)->get($url)->assertRedirect(route('employee.payments.index'));
+        $this->actingAsEmployeeWorkspace($cashier, 'cashier')->get($url)->assertRedirect(route('employee.payments.index'));
     }
 
     public function test_medicine_fee_filter_works_before_and_after_a_charge_is_created(): void
@@ -259,13 +266,15 @@ class EmployeePayableReadOnlyTest extends TestCase
         $this->assertSame($transactionCount, PaymentTransaction::count());
     }
 
-    public function test_cashier_loses_access_immediately_after_type_change(): void
+    public function test_selected_workspace_ignores_legacy_type_but_revocation_takes_effect_immediately(): void
     {
         $cashier = $this->account('NV000004');
         $this->actingAs($cashier)
             ->get(route('employee.payments.index'))->assertOk();
 
         $cashier->employee->detail()->update(['employee_type' => 'SERVICE_TECHNICIAN']);
+        $this->get(route('employee.payments.index'))->assertOk();
+        $cashier->employee->update(['status' => 'INACTIVE']);
         $this->get(route('employee.payments.index'))->assertForbidden();
     }
 

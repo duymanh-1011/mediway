@@ -19,6 +19,7 @@ class EmployeeReceptionReadTest extends TestCase
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
+        $this->withSession(['employee_workspace_mode' => 'reception']);
     }
 
     private function receptionist(): User
@@ -55,8 +56,8 @@ class EmployeeReceptionReadTest extends TestCase
         $this->get(route('employee.appointments.index'))->assertRedirect(route('patient.login'));
         foreach (['NV000002', 'NV000003', 'NV000004'] as $code) {
             $this->flushSession();
-            $this->actingAs(Employee::where('employee_code', $code)->firstOrFail()->user)
-                ->get(route('employee.appointments.index'))->assertForbidden();
+            $user = Employee::where('employee_code', $code)->firstOrFail()->user;
+            $this->actingAsEmployeeWorkspace($user, 'reception')->get(route('employee.appointments.index'))->assertOk();
         }
         foreach (['QT000001', 'BN000001', 'BS000001'] as $code) {
             $this->flushSession();
@@ -65,9 +66,11 @@ class EmployeeReceptionReadTest extends TestCase
         }
         $user = $this->receptionist();
         $this->flushSession();
-        $this->actingAs($user)->get(route('employee.appointments.index'))->assertOk();
+        $this->actingAsEmployeeWorkspace($user, 'reception')->get(route('employee.appointments.index'))->assertOk();
         $user->employee->detail->update(['employee_type' => 'CASHIER']);
-        $this->get(route('employee.appointments.index'))->assertForbidden();
-        $this->post(route('employee.appointments.filter'), ['q' => ''])->assertForbidden();
+        $this->get(route('employee.appointments.index'))->assertOk();
+        $this->post(route('employee.appointments.filter'), ['q' => ''])->assertRedirect();
+        $this->flushSession();
+        $this->actingAsEmployeeWorkspace($user, 'cashier')->get(route('employee.appointments.index'))->assertForbidden();
     }
 }

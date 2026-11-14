@@ -75,10 +75,16 @@ class PatientDocumentController extends Controller
         $root = realpath($disk->path(''));
         $resolved = realpath($disk->path($path));
         $expected = $root ? $root.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $path) : null;
-        if (! $root || ! $resolved || $resolved !== $expected || ! is_file($resolved) || ! is_readable($resolved)
+        if (! $root || ! $resolved || $resolved !== $expected || ! is_file($resolved)
             || ! $disk->exists($path) || $disk->size($path) < 1) {
             return false;
         }
+
+        // Kiểm tra quyền đọc qua filesystem disk; is_readable() có thể trả false
+        // với tệp thử nghiệm trên Windows dù Laravel vẫn đọc được tệp.
+        $stream = $disk->readStream($path);
+        if (! is_resource($stream)) return false;
+        fclose($stream);
 
         $mime = $disk->mimeType($path);
 

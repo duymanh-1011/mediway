@@ -35,6 +35,7 @@ class AdminViewsTest extends TestCase
             'specialties' => 'specialties', 'examination-rooms' => 'examination_rooms', 'service-groups' => 'service_groups',
             'medical-services' => 'medical_services', 'disease-groups' => 'disease_groups', 'diseases' => 'diseases', 'medicines' => 'medicines',
             'appointment-statuses' => 'appointment_statuses', 'doctor-schedules' => 'doctor_schedules', 'appointment-time-slots' => 'appointment_time_slots',
+            'service-result-templates' => 'service_result_templates',
             'appointments' => 'appointments', 'visit-statuses' => 'visit_statuses', 'queue-statuses' => 'queue_statuses',
             'visits' => 'medical_visits', 'queues' => 'examination_room_queues', 'clinical-notes' => 'visit_clinical_notes',
             'diagnoses' => 'visit_diagnoses', 'conclusions' => 'visit_conclusions', 'service-statuses' => 'service_statuses',
@@ -45,6 +46,9 @@ class AdminViewsTest extends TestCase
         foreach (Route::getRoutes() as $route) {
             $name = $route->getName();
             if (! $name || ! str_starts_with($name, 'admin.') || ! in_array('GET', $route->methods(), true) || str_contains($name, 'document')) {
+                continue;
+            }
+            if ($name === 'admin.doctor-schedules.month.template' && ! extension_loaded('zip')) {
                 continue;
             }
             $module = explode('.', $name)[1];
@@ -72,6 +76,18 @@ class AdminViewsTest extends TestCase
             $checked++;
         }
         $this->assertGreaterThan(100, $checked);
+    }
+
+    public function test_schedule_import_template_route_is_available_when_zip_extension_is_installed(): void
+    {
+        if (! extension_loaded('zip')) {
+            $this->markTestSkipped('Môi trường PHP hiện tại thiếu ext-zip; kiểm thử tải mẫu Excel cần được chạy trên staging có ext-zip.');
+        }
+
+        $this->seed(DatabaseSeeder::class);
+        $this->withoutVite();
+        $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
+        $this->get(route('admin.doctor-schedules.month.template'))->assertOk();
     }
 
     public function test_catalog_and_status_pages_display_vietnamese_labels(): void

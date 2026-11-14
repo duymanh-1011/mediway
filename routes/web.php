@@ -111,30 +111,59 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::get('/thanh-toan/giao-dich/{transaction}/bien-lai', [\App\Http\Controllers\Employee\PaymentReceiptController::class, 'show',])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.receipt');
 });
 
-Route::prefix('bac-si')->name('doctor.')
-    ->middleware([\App\Http\Middleware\DoctorMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])
-    ->group(function (): void {
-        Route::get('/', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'home'])->name('home');
-        Route::post('/chon-chuc-nang', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'selectWorkspace'])->name('workspace.select');
-        Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->name('logout');
+// Doctor Portal dùng chung phiên đăng nhập, nhưng khóa cố định một không gian làm việc.
+Route::prefix('bac-si')->name('doctor.')->middleware([\App\Support\Doctor\DoctorMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function (): void {
+    Route::get('/', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'home'])->name('home');
+    Route::post('/chon-chuc-nang', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'selectWorkspace'])->name('workspace.select');
+    Route::get('/ho-so', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'profile'])->name('profile');
+    Route::get('/ho-so/chinh-sua', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/ho-so', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/ho-so/doi-mat-khau', [\App\Http\Controllers\Doctor\WorkspaceController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.change');
+    Route::post('/dang-xuat', [PortalAuthController::class, 'destroy'])->name('logout');
 
-        foreach (['dich-vu' => 'services', 'xet-nghiem' => 'laboratory', 'chan-doan-hinh-anh' => 'imaging'] as $path => $routeName) {
-            Route::prefix($path)->name($routeName.'.')->group(function () use ($routeName): void {
-                $controller = \App\Http\Controllers\Employee\TechnicalServiceController::class;
-                Route::get('/', [$controller, 'index'])->name('index');
-                if ($routeName === 'services') {
-                    Route::get('/nhom/{group}/{service}', [$controller, 'orders'])->name('orders');
-                    Route::post('/nhom/{group}/{service}', [$controller, 'filterOrders'])->name('orders.filter');
-                }
-                Route::get('/{item}', [$controller, 'show'])->whereNumber('item')->name('show');
-                Route::get('/{item}/phieu-ket-qua', [$controller, 'printResult'])->whereNumber('item')->name('print');
-                Route::get('/{item}/tep/{type}', [$controller, 'document'])->whereNumber('item')->where('type', 'pdf|image')->name('document');
-                Route::post('/{item}/bat-dau', [$controller, 'start'])->whereNumber('item')->name('start');
-                Route::post('/{item}/ket-qua', [$controller, 'save'])->whereNumber('item')->name('save');
-                Route::post('/{item}/hoan-tat', [$controller, 'complete'])->whereNumber('item')->name('complete');
-            });
-        }
+    Route::prefix('kham-benh')->name('examination.')->controller(\App\Http\Controllers\Doctor\ExaminationController::class)->group(function () {
+        Route::get('/phong', 'rooms')->name('rooms.index');
+        Route::get('/phong/{room}/hang-doi', 'queue')->name('rooms.queue');
+        Route::post('/phong/{room}/hang-doi/{queue}/goi', 'call')->whereNumber('queue')->name('queue.call');
+        Route::post('/phong/{room}/hang-doi/{queue}/goi-lai', 'recall')->whereNumber('queue')->name('queue.recall');
+        Route::post('/phong/{room}/hang-doi/{queue}/bo-qua', 'skip')->whereNumber('queue')->name('queue.skip');
+        Route::post('/phong/{room}/hang-doi/{queue}/bat-dau', 'start')->whereNumber('queue')->name('visits.start');
+        Route::post('/phong/{room}/luot-kham/{visit}/hoan-tat', 'complete')->whereNumber('visit')->name('visits.complete');
     });
+    Route::get('/kham-benh/luot-kham/{visit}', [\App\Http\Controllers\Doctor\VisitController::class, 'show'])->whereNumber('visit')->name('examination.visits.show');
+
+    // Trang hồ sơ và các thao tác khám được giới hạn theo lượt được phân công.
+    Route::get('/luot-kham', [\App\Http\Controllers\Doctor\VisitController::class, 'index'])->name('visits.index');
+    Route::get('/luot-kham/{visit}', [\App\Http\Controllers\Doctor\VisitController::class, 'show'])->whereNumber('visit')->name('visits.show');
+    Route::get('/luot-kham/{visit}/ket-qua/{result}/tep/{type}', [\App\Http\Controllers\Doctor\VisitController::class, 'resultDocument'])->whereNumber(['visit', 'result'])->where('type', 'pdf|image')->name('visits.results.document');
+    Route::get('/luot-kham/{visit}/chi-dinh', [\App\Http\Controllers\Doctor\ServiceOrderController::class, 'create'])->whereNumber('visit')->name('visits.orders.create');
+    Route::post('/luot-kham/{visit}/chi-dinh', [\App\Http\Controllers\Doctor\ServiceOrderController::class, 'store'])->whereNumber('visit')->name('visits.orders.store');
+    Route::put('/luot-kham/{visit}/noi-dung-kham', [\App\Http\Controllers\Doctor\ClinicalController::class, 'saveNote'])->whereNumber('visit')->name('visits.clinical.update');
+    Route::post('/luot-kham/{visit}/chan-doan', [\App\Http\Controllers\Doctor\ClinicalController::class, 'storeDiagnosis'])->whereNumber('visit')->name('visits.diagnoses.store');
+    Route::put('/luot-kham/{visit}/chan-doan/{diagnosis}', [\App\Http\Controllers\Doctor\ClinicalController::class, 'updateDiagnosis'])->whereNumber(['visit', 'diagnosis'])->name('visits.diagnoses.update');
+    Route::get('/luot-kham/{visit}/don-thuoc/tao', [\App\Http\Controllers\Doctor\PrescriptionController::class, 'create'])->whereNumber('visit')->name('visits.prescriptions.create');
+    Route::post('/luot-kham/{visit}/don-thuoc', [\App\Http\Controllers\Doctor\PrescriptionController::class, 'store'])->whereNumber('visit')->name('visits.prescriptions.store');
+    Route::get('/luot-kham/{visit}/don-thuoc/in', [\App\Http\Controllers\Doctor\PrescriptionController::class, 'print'])->whereNumber('visit')->name('visits.prescriptions.print');
+    Route::put('/luot-kham/{visit}/ket-luan', [\App\Http\Controllers\Doctor\ConclusionController::class, 'save'])->whereNumber('visit')->name('visits.conclusion.save');
+    Route::post('/luot-kham/{visit}/hoan-tat', [\App\Http\Controllers\Doctor\VisitController::class, 'complete'])->whereNumber('visit')->name('visits.complete');
+
+    foreach (['dich-vu' => 'services', 'xet-nghiem' => 'laboratory', 'chan-doan-hinh-anh' => 'imaging'] as $path => $routeName) {
+        Route::prefix($path)->name($routeName.'.')->group(function () use ($routeName): void {
+            $controller = \App\Http\Controllers\Employee\TechnicalServiceController::class;
+            Route::get('/', [$controller, 'index'])->name('index');
+            if ($routeName === 'services') {
+                Route::get('/nhom/{group}/{service}', [$controller, 'orders'])->name('orders');
+                Route::post('/nhom/{group}/{service}', [$controller, 'filterOrders'])->name('orders.filter');
+            }
+            Route::get('/{item}', [$controller, 'show'])->whereNumber('item')->name('show');
+            Route::get('/{item}/phieu-ket-qua', [$controller, 'printResult'])->whereNumber('item')->name('print');
+            Route::get('/{item}/tep/{type}', [$controller, 'document'])->whereNumber('item')->where('type', 'pdf|image')->name('document');
+            Route::post('/{item}/bat-dau', [$controller, 'start'])->whereNumber('item')->name('start');
+            Route::post('/{item}/ket-qua', [$controller, 'save'])->whereNumber('item')->name('save');
+            Route::post('/{item}/hoan-tat', [$controller, 'complete'])->whereNumber('item')->name('complete');
+        });
+    }
+});
 
 
 Route::prefix('tai-khoan')->name('patient.')->group(function () {
@@ -179,6 +208,8 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
     Route::middleware(PatientMiddleware::class)->get('/ket-qua/{result}/tai-lieu/{type}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'resultDocument'])->where('type', 'result_pdf|result_image')->name('results.document');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptions'])->name('prescriptions');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc/{prescription}', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescription'])->whereNumber('prescription')->name('prescriptions.show');
+    Route::middleware(PatientMiddleware::class)->get('/don-thuoc/{prescription}/mua-thuoc', [\App\Http\Controllers\Portal\PrescriptionPurchaseController::class, 'show'])->whereNumber('prescription')->name('prescriptions.purchase.show');
+    Route::middleware(PatientMiddleware::class)->post('/don-thuoc/{prescription}/mua-thuoc', [\App\Http\Controllers\Portal\PrescriptionPurchaseController::class, 'store'])->whereNumber('prescription')->name('prescriptions.purchase.store');
     Route::middleware(PatientMiddleware::class)->get('/don-thuoc/{prescription}/pdf', [\App\Http\Controllers\Portal\ClinicalRecordsController::class, 'prescriptionDocument'])->name('prescriptions.document');
     Route::middleware(PatientMiddleware::class)->group(function () {
         Route::middleware(PatientMiddleware::class)->group(function () {
@@ -449,6 +480,8 @@ Route::prefix('admin')
             Route::patch('catalog/{catalog}/{id}/status', [CatalogStatusController::class, 'update'])->whereNumber('id')->name('catalog.status');
             Route::patch('service-groups/{serviceGroup}/activate', [ServiceGroupController::class, 'activate'])->name('service-groups.activate');
             Route::patch('medical-services/{medicalService}/activate', [MedicalServiceController::class, 'activate'])->name('medical-services.activate');
+            Route::resource('service-result-templates', \App\Http\Controllers\Admin\ServiceResultTemplateController::class)
+                ->only(['index', 'create', 'store', 'edit', 'update']);
 
             /*
             |--------------------------------------------------------------------------
@@ -653,7 +686,7 @@ Route::prefix('admin')
             Route::post('/visits/walk-in/search', [WalkInReceptionController::class, 'search'])->name('visits.walk-in.search');
             Route::post('/visits/walk-in/{patient}/activation-code', [WalkInReceptionController::class, 'issueActivation'])->whereNumber('patient')->name('visits.walk-in.activation');
             Route::post('/visits/walk-in', [WalkInReceptionController::class, 'store'])->block()->name('visits.walk-in.store');
-            Route::get('/visits/walk-in/{visit}/credentials', static fn (string $visit) => redirect()->route('admin.visits.show', $visit))
+            Route::get('/visits/walk-in/{visit}/credentials', static fn(string $visit) => redirect()->route('admin.visits.show', $visit))
                 ->whereNumber('visit')->name('visits.walk-in.credentials');
             Route::get('/visits/{visit}/reception-slip', ReceptionSlipController::class)->whereNumber('visit')->name('visits.reception-slip');
 

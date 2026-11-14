@@ -44,16 +44,16 @@ class AppointmentBookingSelectionTest extends TestCase
             'appointment_time_slot_id' => $slot->id, 'reason_for_visit' => 'Khám theo lịch'];
     }
 
-    public function test_only_today_through_the_third_following_day_are_exposed_and_bookable(): void
+    public function test_only_today_through_the_fourth_following_day_are_exposed_and_bookable(): void
     {
         $today = $this->slot(0);
-        $last = $this->slot(3);
-        $outside = $this->slot(4);
+        $last = $this->slot(4);
+        $outside = $this->slot(5);
         $response = $this->get(route('admin.appointments.create'))->assertOk();
         $this->assertEqualsCanonicalizing([$today->doctor_schedule_id, $last->doctor_schedule_id], $response->viewData('schedules')->pluck('id')->all());
         preg_match('/<script[^>]*data-booking-schedules>(.*?)<\/script>/s', $response->getContent(), $metadata);
         $data = json_decode($metadata[1], true, 512, JSON_THROW_ON_ERROR);
-        $this->assertEqualsCanonicalizing(['2026-10-23', '2026-10-26'], array_column($data, 'date'));
+        $this->assertEqualsCanonicalizing(['2026-10-23', '2026-10-27'], array_column($data, 'date'));
         foreach (['doctor', 'room', 'specialty'] as $kind) {
             $response->assertSee('data-booking-kind="'.$kind.'"', false);
         }

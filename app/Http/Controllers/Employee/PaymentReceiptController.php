@@ -26,7 +26,7 @@ class PaymentReceiptController extends Controller
         // Không tin vào việc ẩn nút trên giao diện.
         abort_unless(
             $user
-                && $access->allows($user, 'payment.view'),
+                && $access->allows($user, 'payment.view', $request->session()->get('employee_workspace_mode')),
             403,
             'Bạn không có quyền xem biên lai thanh toán.'
         );

@@ -9,7 +9,7 @@ use Carbon\CarbonImmutable;
 
 class Appointment extends Model
 {
-    public const BOOKING_ADVANCE_DAYS = 3;
+    public const BOOKING_ADVANCE_DAYS = 4;
     public const RECEPTION_ADVANCE_MINUTES = 60;
 
     public static function lateTimeColumn(): string

@@ -31,7 +31,7 @@
                 <ul class="tech-group__services">
                     @forelse ($group['services'] as $service)
                         <li>
-                            <a class="tech-service-link" href="{{ route($routePrefix.'.orders', ['group' => $group['code'], 'service' => $service->service_code]) }}">
+                            <a class="tech-service-link" href="{{ route($catalogueBase.'.orders', ['group' => $group['code'], 'service' => $service->service_code]) }}">
                                 <span class="tech-service-link__name">{{ $service->name }}</span>
                                 <span class="tech-service-link__count">{{ $service->current_order_count }} chỉ định hiện tại</span>
                                 <x-employee-icon name="arrow" />

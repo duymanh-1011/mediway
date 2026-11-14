@@ -85,7 +85,7 @@ class PayableController extends Controller
         $access = app(EmployeeAccess::class);
 
         abort_unless(
-            $user && $access->allows($user, 'payment.view'),
+            $user && $access->allows($user, 'payment.view', $request->session()->get('employee_workspace_mode')),
             403
         );
 
@@ -258,7 +258,7 @@ class PayableController extends Controller
         $access = app(EmployeeAccess::class);
 
         abort_unless(
-            $user && $access->allows($user, 'payment.view'),
+            $user && $access->allows($user, 'payment.view', $request->session()->get('employee_workspace_mode')),
             403
         );
 

@@ -28,6 +28,7 @@ class EmployeeReceptionWorkflowTest extends TestCase
         $this->travelTo(now()->setDate(2026, 10, 23)->setTime(7, 0));
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
+        $this->withSession(['employee_workspace_mode' => 'reception']);
     }
 
     private function booked(): Appointment
@@ -52,7 +53,7 @@ class EmployeeReceptionWorkflowTest extends TestCase
     {
         $appointment = $this->booked();
         $employee = Employee::where('employee_code', 'NV000001')->firstOrFail();
-        $this->actingAs($employee->user)->get(route('employee.appointments.show', $appointment))->assertOk()->assertSee('Xác nhận tiếp nhận');
+        $this->actingAsEmployeeWorkspace($employee->user, 'reception')->get(route('employee.appointments.show', $appointment))->assertOk()->assertSee('Xác nhận tiếp nhận');
         $this->post(route('employee.appointments.check-in', $appointment), [])->assertSessionHasErrors('confirm_reception');
         $this->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])->assertSessionHasNoErrors();
         $visit = $appointment->fresh()->medicalVisit;
@@ -94,48 +95,48 @@ class EmployeeReceptionWorkflowTest extends TestCase
         $this->post(route('admin.queues.call', $queue))->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->assertSame('CALLED', $queue->fresh()->status->name);
         $this->flushSession();
-        $this->actingAs($employee->user)->get(route('employee.appointments.show', $appointment))->assertOk()
+        $this->actingAsEmployeeWorkspace($employee->user, 'reception')->get(route('employee.appointments.show', $appointment))->assertOk()
             ->assertSee($visit->visit_code)->assertDontSee('Gọi bệnh nhân')->assertDontSee('/nhan-vien/hang-doi', false);
         $this->flushSession();
         $this->actingAs($appointment->patient->user)->get(route('patient.appointments.show', $appointment))->assertOk()->assertSee('Đã tiếp nhận');
         $this->get($slip)->assertForbidden();
     }
 
-    public function test_cancelled_appointment_and_changed_employee_type_cannot_be_received(): void
+    public function test_cancelled_appointment_is_rejected_but_employee_classification_does_not_revoke_workspace(): void
     {
         $appointment = $this->booked();
         $employee = Employee::where('employee_code', 'NV000001')->firstOrFail();
         $appointment->update(['appointment_status_id' => AppointmentStatus::where('name', 'CANCELLED')->value('id')]);
-        $this->actingAs($employee->user)->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])->assertSessionHasErrors('appointment');
+        $this->actingAsEmployeeWorkspace($employee->user, 'reception')->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])->assertSessionHasErrors('appointment');
         $this->assertFalse($appointment->medicalVisit()->exists());
         $appointment->update(['appointment_status_id' => AppointmentStatus::where('name', 'BOOKED')->value('id')]);
         $employee->detail->update(['employee_type' => 'CASHIER']);
-        $this->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])->assertForbidden();
-        $this->assertFalse($appointment->medicalVisit()->exists());
+        $this->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])->assertSessionHasNoErrors();
+        $this->assertTrue($appointment->medicalVisit()->exists());
     }
 
     public function test_failure_creating_fee_rolls_back_visit_and_appointment(): void
     {
         $appointment = $this->booked();
         PaymentStatus::where('name', 'UNPAID')->update(['is_active' => false]);
-        $this->actingAs(Employee::where('employee_code', 'NV000001')->firstOrFail()->user)
+        $this->actingAsEmployeeWorkspace(Employee::where('employee_code', 'NV000001')->firstOrFail()->user, 'reception')
             ->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])->assertSessionHasErrors('appointment');
         $this->assertFalse($appointment->medicalVisit()->exists());
         $this->assertSame('BOOKED', $appointment->fresh()->appointmentStatus->name);
     }
 
-    public function test_service_rechecks_employee_type_after_it_was_changed(): void
+    public function test_service_rechecks_employee_account_after_classification_changes(): void
     {
         $appointment = $this->booked();
         $employee = Employee::where('employee_code', 'NV000001')->firstOrFail();
         $staleUser = $employee->user;
         $employee->detail->update(['employee_type' => 'CASHIER']);
         try {
-            app(AppointmentReceptionService::class)->checkIn($appointment, $staleUser, true);
-            $this->fail('Tiếp nhận phải bị từ chối khi nhân viên đã đổi loại.');
+            $visit = app(AppointmentReceptionService::class)->checkIn($appointment, $staleUser, true);
+            $this->assertNotNull($visit->id);
         } catch (HttpException $exception) {
-            $this->assertSame(403, $exception->getStatusCode());
+            $this->fail('Đổi phân loại nhân viên không được thu hồi workspace đã chọn: '.$exception->getMessage());
         }
-        $this->assertFalse($appointment->medicalVisit()->exists());
+        $this->assertTrue($appointment->medicalVisit()->exists());
     }
 }

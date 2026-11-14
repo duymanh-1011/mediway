@@ -83,14 +83,23 @@ class WalkInReceptionController extends Controller
         $isAdmin = $request->routeIs('admin.visits.walk-in.*');
         $matchesKey = $this->matchesKey($request);
         $isNewPatient = $request->input('patient_mode') === 'new';
+        $existingPatient = null;
+        if (! $isNewPatient && is_numeric($request->input('patient_id'))
+            && in_array((int) $request->input('patient_id'), $request->session()->get($matchesKey, []), true)) {
+            $existingPatient = Patient::with(['detail:id,patient_id,citizen_id_number', 'user:id'])->find((int) $request->input('patient_id'));
+        }
+        $needsBirthDate = $isNewPatient || ($existingPatient !== null && blank($existingPatient->date_of_birth));
+        $needsGender = $isNewPatient || ($existingPatient !== null && blank($existingPatient->gender));
+        $needsAccount = $isNewPatient || ($existingPatient !== null && $existingPatient->user_id === null);
+        $needsCitizenId = $isNewPatient || ($needsAccount && blank($existingPatient?->detail?->citizen_id_number));
         $data = $request->validate([
             'patient_mode' => ['required', Rule::in(['existing', 'new'])],
             'patient_id' => ['exclude_unless:patient_mode,existing', 'required', 'integer', Rule::exists('patients', 'id')],
             'full_name' => ['exclude_unless:patient_mode,new', 'required', 'string', 'max:120', 'regex:/\S/u'],
-            'date_of_birth' => ['required_if:patient_mode,new', 'nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
-            'gender' => ['required_if:patient_mode,new', 'nullable', Rule::in(['Nam', 'Nữ', 'Khác'])],
-            'citizen_id_number' => ['required_if:patient_mode,new', 'nullable', 'string', Rule::when($isNewPatient, ['regex:/^[0-9]{12}$/D'])],
-            'phone' => ['required_if:patient_mode,new', 'nullable', 'string', Rule::when($isNewPatient, ['regex:/^0[0-9]{9}$/D'])],
+            'date_of_birth' => $needsBirthDate ? ['required', 'date_format:Y-m-d', 'before_or_equal:today'] : ['exclude'],
+            'gender' => $needsGender ? ['required', Rule::in(['Nam', 'Nữ', 'Khác'])] : ['exclude'],
+            'citizen_id_number' => $needsCitizenId ? ['required', 'string', 'regex:/^[0-9]{12}$/D'] : ['exclude'],
+            'phone' => $needsAccount ? ['required', 'string', 'regex:/^0[0-9]{9}$/D'] : ['exclude'],
             'current_address' => ['exclude_unless:patient_mode,new', 'nullable', 'string', 'max:255'],
             'reason_for_visit' => ['nullable', 'string', 'max:1000'],
             'confirm_search' => ['exclude_unless:patient_mode,new', 'accepted'],
@@ -101,11 +110,11 @@ class WalkInReceptionController extends Controller
             'patient_mode.required' => 'Vui lòng chọn bệnh nhân có hồ sơ hoặc tạo hồ sơ mới.',
             'patient_id.required' => 'Vui lòng tìm và chọn bệnh nhân đã có hồ sơ.',
             'full_name.required' => 'Vui lòng nhập họ tên bệnh nhân.', 'full_name.regex' => 'Họ tên không được để trống.',
-            'date_of_birth.required_if' => 'Vui lòng nhập ngày sinh.', 'date_of_birth.before_or_equal' => 'Ngày sinh không thể ở tương lai.',
-            'gender.required_if' => 'Vui lòng chọn giới tính.',
-            'citizen_id_number.required_if' => 'Vui lòng nhập số CCCD khi tạo hồ sơ mới.',
+            'date_of_birth.required' => 'Vui lòng nhập ngày sinh.', 'date_of_birth.before_or_equal' => 'Ngày sinh không thể ở tương lai.',
+            'gender.required' => 'Vui lòng chọn giới tính.',
+            'citizen_id_number.required' => 'Vui lòng nhập số CCCD khi tạo hồ sơ mới hoặc liên kết hồ sơ cũ chưa có CCCD.',
             'citizen_id_number.regex' => 'CCCD phải gồm 12 chữ số.',
-            'phone.required_if' => 'Vui lòng nhập số điện thoại để tạo tài khoản bệnh nhân.',
+            'phone.required' => 'Vui lòng nhập số điện thoại để tạo tài khoản bệnh nhân.',
             'phone.regex' => 'Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0.',
             'current_address.max' => 'Địa chỉ không được vượt quá 255 ký tự.',
             'reason_for_visit.max' => 'Lý do khám không được vượt quá 1.000 ký tự.',

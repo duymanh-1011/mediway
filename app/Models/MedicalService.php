@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MedicalService extends Model
@@ -18,6 +19,7 @@ class MedicalService extends Model
         'estimated_duration_minutes',
         'preparation_instructions',
         'precautions',
+        'service_result_template_id',
         'display_order',
         'status',
     ];
@@ -52,5 +54,10 @@ class MedicalService extends Model
             ServiceOrderItem::class,
             'medical_service_id'
         );
+    }
+
+    public function resultTemplate(): BelongsTo
+    {
+        return $this->belongsTo(ServiceResultTemplate::class, 'service_result_template_id');
     }
 }

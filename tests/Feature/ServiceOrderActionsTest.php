@@ -7,6 +7,7 @@ use App\Models\MedicalVisit;
 use App\Models\PaymentStatus;
 use App\Models\QueueStatus;
 use App\Models\ServiceGroup;
+use App\Models\ServiceResultTemplate;
 use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceStatus;
@@ -76,6 +77,7 @@ class ServiceOrderActionsTest extends TestCase
         $this->post(route('admin.medical-services.store'), [
             'name' => 'Dịch vụ mới kiểm thử thao tác', 'price' => 120000, 'unit' => 'lần',
             'status' => 'ACTIVE', 'display_order' => 0,
+            'service_result_template_id' => ServiceResultTemplate::where('name', 'Phiếu xét nghiệm')->value('id'),
             'service_group_ids' => [ServiceGroup::where('service_group_code', 'XN')->value('id')],
         ])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $service = MedicalService::where('name', 'Dịch vụ mới kiểm thử thao tác')->firstOrFail();

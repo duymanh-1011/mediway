@@ -11,7 +11,6 @@ use App\Models\MedicalVisit;
 use App\Models\Prescription;
 use App\Models\Medicine;
 use App\Models\Payable;
-use App\Models\PaymentStatus;
 use App\Models\Doctor;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
@@ -38,16 +37,16 @@ class PrescriptionController extends Controller
         return view('admin.prescriptions.create', compact('visit', 'medicines', 'saleUnits'));
     }
 
-    public function store(StorePrescriptionRequest $request, MedicalVisit $visit)
+    public function store(StorePrescriptionRequest $request, MedicalVisit $visit, ?int $actorDoctorId = null)
     {
         $data = $request->validated();
-        $prescription = DB::transaction(function () use ($visit, $data, $request) {
+        $prescription = DB::transaction(function () use ($visit, $data, $request, $actorDoctorId) {
             $lockedVisit = $visit->lockForClinicalWrite();
             ClinicalTimeline::assertEventTime(now()->format('Y-m-d H:i:s'), $lockedVisit->examination_started_at ?? $lockedVisit->checked_in_at, 'prescription', 'Thời điểm kê đơn');
             if ($lockedVisit->prescription()->exists()) {
                 throw ValidationException::withMessages(['prescription' => 'Lượt khám này đã có đơn thuốc.']);
             }
-            $doctor = Doctor::whereKey($lockedVisit->doctor_id)->lockForUpdate()->first();
+            $doctor = Doctor::whereKey($actorDoctorId ?? $lockedVisit->doctor_id)->lockForUpdate()->first();
             if (! $doctor || $doctor->status !== 'ACTIVE') {
                 throw ValidationException::withMessages(['prescription' => 'Bác sĩ của lượt khám không còn hoạt động. Vui lòng kiểm tra lại.']);
             }
@@ -84,12 +83,12 @@ class PrescriptionController extends Controller
             } while (Prescription::where('prescription_code', $code)->exists());
             $prescription = Prescription::create([
                 'prescription_code' => $code, 'medical_visit_id' => $lockedVisit->id,
-                'doctor_id' => $lockedVisit->doctor_id, 'prescribed_at' => now(), 'status' => 'ACTIVE',
+                'doctor_id' => $actorDoctorId ?? $lockedVisit->doctor_id, 'prescribed_at' => now(), 'status' => 'ACTIVE',
                 'general_instructions' => $data['general_instructions'] ?? null, 'doctor_notes' => $data['doctor_notes'] ?? null,
             ]);
             $prescription->items()->createMany($items);
             AuditLog::create([
-                'user_id' => $request->user()->id, 'role_name_snapshot' => 'Administrator', 'action' => 'CREATE',
+                'user_id' => $request->user()->id, 'role_name_snapshot' => $request->user()->role?->name, 'action' => 'CREATE',
                 'entity_type' => 'prescriptions', 'entity_id' => $prescription->id, 'entity_business_code' => $code,
                 'old_values' => [], 'new_values' => ['medical_visit_id' => $lockedVisit->id, 'medicine_count' => $ids->count()],
                 'description' => 'Tạo đơn thuốc '.$code.'.', 'ip_address' => $request->ip(),
@@ -101,41 +100,10 @@ class PrescriptionController extends Controller
         return redirect()->route('admin.prescriptions.show', $prescription)->with('success', 'Tạo đơn thuốc thành công.');
     }
 
-    public function createPayable(Request $request, Prescription $prescription)
+    public function createPayable(Request $request, Prescription $prescription, \App\Services\PrescriptionPayableService $service)
     {
         $request->validate(['confirm_purchase' => ['accepted']]);
-        $payable = DB::transaction(function () use ($prescription, $request) {
-            MedicalVisit::whereKey($prescription->medical_visit_id)->lockForUpdate()->firstOrFail();
-            $prescription = Prescription::with('items')->whereKey($prescription->id)->lockForUpdate()->firstOrFail();
-            if ($prescription->status !== 'ACTIVE') {
-                throw ValidationException::withMessages(['confirm_purchase' => 'Chỉ có thể tạo khoản thu cho đơn thuốc đang hiệu lực.']);
-            }
-            if (Payable::where('prescription_id', $prescription->id)->whereDoesntHave('paymentStatus', fn ($q) => $q->where('name', 'CANCELLED'))->exists()) {
-                throw ValidationException::withMessages(['confirm_purchase' => 'Đơn thuốc này đã có khoản thu. Vui lòng kiểm tra khoản thu hiện có.']);
-            }
-            $total = $prescription->pricedTotal();
-            if ($total === null || (float) $total <= 0) {
-                throw ValidationException::withMessages(['confirm_purchase' => 'Đơn thuốc chưa có đủ giá hợp lệ; cần đối chiếu trước khi thu tiền.']);
-            }
-            $unpaid = PaymentStatus::where('name', 'UNPAID')->where('is_active', true)->first();
-            if (! $unpaid) throw ValidationException::withMessages(['confirm_purchase' => 'Chưa cấu hình trạng thái chưa thanh toán.']);
-            do { $code = 'PT'.strtoupper(Str::random(20)); } while (Payable::where('payable_code', $code)->exists());
-            $payable = Payable::create([
-                'payable_code' => $code, 'medical_visit_id' => $prescription->medical_visit_id,
-                'prescription_id' => $prescription->id, 'payment_type' => 'MEDICINE_FEE',
-                'description' => 'Tiền thuốc - '.$prescription->prescription_code,
-                'amount' => $total, 'payment_status_id' => $unpaid->id, 'generated_at' => now(),
-            ]);
-            AuditLog::create([
-                'user_id' => $request->user()->id, 'role_name_snapshot' => $request->user()->role?->name,
-                'action' => 'CREATE', 'entity_type' => 'payables', 'entity_id' => $payable->id,
-                'entity_business_code' => $code, 'old_values' => [],
-                'new_values' => ['prescription_id' => $prescription->id, 'amount' => $total],
-                'description' => 'Tạo khoản thu tiền thuốc cho đơn '.$prescription->prescription_code.'.',
-                'ip_address' => $request->ip(), 'user_agent' => mb_substr((string) $request->userAgent(), 0, 500), 'performed_at' => now(),
-            ]);
-            return $payable;
-        }, 3);
+        $payable = $service->create($prescription, $request);
         return redirect()->route('admin.payables.show', $payable)->with('success', 'Đã tạo khoản thu tiền thuốc.');
     }
 

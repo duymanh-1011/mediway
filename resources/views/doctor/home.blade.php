@@ -33,7 +33,7 @@
             <a class="workspace-choice workspace-choice--examination" href="#" data-select-workspace="doctor-examination-select">
                 <span class="workspace-choice__icon"><x-employee-icon name="user" /></span>
                 <span class="workspace-choice__title">Bác sĩ khám bệnh</span>
-                <span class="workspace-choice__description">Không gian khám bệnh sẽ được kết nối khi hoàn thiện.</span>
+                <span class="workspace-choice__description">Quản lý phòng khám, hàng đợi và hồ sơ khám bệnh.</span>
                 <span class="workspace-choice__action">Chọn chức năng <span aria-hidden="true">→</span></span>
                 <span class="workspace-choice__glow" aria-hidden="true"></span>
             </a>

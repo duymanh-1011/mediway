@@ -3,6 +3,7 @@
 namespace App\Support\Portal;
 
 use App\Models\AppointmentTimeSlot;
+use App\Models\Appointment;
 use App\Models\DoctorSchedule;
 use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
@@ -16,7 +17,7 @@ class PatientBookingWindow
 
     public static function lastDate(): string
     {
-        return self::now()->addDays(4)->toDateString();
+        return self::now()->addDays(Appointment::BOOKING_ADVANCE_DAYS)->toDateString();
     }
 
     public static function ensureAllows(DoctorSchedule $schedule, AppointmentTimeSlot $slot): void
@@ -32,7 +33,7 @@ class PatientBookingWindow
     {
         $now = self::now();
         $date = $schedule->work_date->toDateString();
-        if ($date < $now->toDateString() || $date > $now->addDays(4)->toDateString()
+        if ($date < $now->toDateString() || $date > $now->addDays(Appointment::BOOKING_ADVANCE_DAYS)->toDateString()
             || $schedule->status !== 'ACTIVE' || $slot->status !== 'ACTIVE') {
             return false;
         }

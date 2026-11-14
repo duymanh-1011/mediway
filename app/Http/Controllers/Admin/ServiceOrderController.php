@@ -163,7 +163,8 @@ class ServiceOrderController extends Controller
      */
     public function store(
         StoreServiceOrderRequest $request,
-        MedicalVisit $visit
+        MedicalVisit $visit,
+        ?int $actorDoctorId = null
     ) {
         $visit->load([
             'doctor',
@@ -255,7 +256,8 @@ class ServiceOrderController extends Controller
                 $pendingServiceStatus,
                 $unpaidPaymentStatus,
                 $selectedServiceIds,
-                $services
+                $services,
+                $actorDoctorId
             ) {
                 $visit = MedicalVisit::with('status')->whereKey($visit->id)->lockForUpdate()->firstOrFail();
                 $visit->assertNotBeforeAppointmentDay();
@@ -344,7 +346,7 @@ class ServiceOrderController extends Controller
 
                     'medical_visit_id' => $visit->id,
 
-                    'ordered_by_doctor_id' => $visit->doctor_id,
+                    'ordered_by_doctor_id' => $actorDoctorId ?? $visit->doctor_id,
 
                     'ordered_at' => now(),
 

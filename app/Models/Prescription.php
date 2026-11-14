@@ -72,6 +72,11 @@ class Prescription extends Model
         return $this->hasOne(Payable::class)->latestOfMany();
     }
 
+    public function payables(): HasMany
+    {
+        return $this->hasMany(Payable::class);
+    }
+
     public function pricedTotal(): ?string
     {
         $items = $this->items;

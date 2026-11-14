@@ -84,25 +84,23 @@ class ClinicalDocumentTest extends TestCase
     public function test_verifier_options_use_active_technicians_and_detail_shows_name(): void
     {
         $item = $this->item();
-        $technician = \App\Models\Employee::where('employee_code', 'NV000002')->firstOrFail();
-        $inactive = \App\Models\Employee::where('employee_code', 'NV000003')->firstOrFail();
         $doctor = Doctor::where('doctor_code', 'BS000001')->firstOrFail();
+        $inactive = Doctor::where('doctor_code', 'BS000002')->firstOrFail();
         $inactive->update(['status' => 'INACTIVE']);
         $this->get(route('admin.service-order-items.service-results.create', $item))->assertOk()
-            ->assertSee($technician->employee_code.' - '.$technician->full_name)
-            ->assertDontSee($inactive->employee_code.' - '.$inactive->full_name)
-            ->assertDontSee($doctor->doctor_code.' - '.$doctor->full_name);
+            ->assertSee($doctor->doctor_code.' - '.$doctor->full_name)
+            ->assertDontSee($inactive->doctor_code.' - '.$inactive->full_name);
         $this->post(route('admin.service-order-items.service-results.store', $item), [
-            'result_summary' => 'Kết quả kiểm thử', 'verified_by_user_id' => $doctor->user_id, 'confirm_create' => 1,
+            'result_summary' => 'Kết quả kiểm thử', 'verified_by_user_id' => $inactive->user_id, 'confirm_create' => 1,
         ])->assertSessionHasErrors('verified_by_user_id');
         $this->post(route('admin.service-order-items.service-results.store', $item), [
-            'result_summary' => 'Kết quả kiểm thử', 'verified_by_user_id' => $technician->user_id, 'confirm_create' => 1,
+            'result_summary' => 'Kết quả kiểm thử', 'verified_by_user_id' => $doctor->user_id, 'confirm_create' => 1,
         ])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $result = $item->result()->sole();
-        $this->assertSame($technician->user_id, $result->verified_by_user_id);
-        $this->get(route('admin.service-results.index', ['q' => $technician->full_name]))->assertOk()
-            ->assertSee('Kết quả kiểm thử')->assertSee($technician->employee_code.' - '.$technician->full_name);
-        $this->get(route('admin.service-results.edit', $result))->assertOk()->assertSee($technician->employee_code.' - '.$technician->full_name);
+        $this->assertSame($doctor->user_id, $result->verified_by_user_id);
+        $this->get(route('admin.service-results.index', ['q' => $doctor->full_name]))->assertOk()
+            ->assertSee('Kết quả kiểm thử')->assertSee($doctor->doctor_code.' - '.$doctor->full_name);
+        $this->get(route('admin.service-results.edit', $result))->assertOk()->assertSee($doctor->doctor_code.' - '.$doctor->full_name);
         $html = $this->get(route('admin.service-orders.show', $item->service_order_id))->assertOk()->getContent();
         $document = new \DOMDocument;
         $previous = libxml_use_internal_errors(true);
@@ -111,8 +109,8 @@ class ClinicalDocumentTest extends TestCase
         libxml_use_internal_errors($previous);
         $rows = (new \DOMXPath($document))->query('//div[contains(@class,"related-row")][span[normalize-space()="Người xác nhận"]]/strong');
         $this->assertCount(1, $rows);
-        $this->assertSame($technician->full_name, trim($rows->item(0)->textContent));
-        $this->get(route('admin.service-results.show', $result))->assertOk()->assertSee($technician->full_name);
+        $this->assertSame($doctor->full_name, trim($rows->item(0)->textContent));
+        $this->get(route('admin.service-results.show', $result))->assertOk()->assertSee($doctor->full_name);
     }
 
     public function test_existing_doctor_verifier_is_preserved_for_historical_results(): void
@@ -127,15 +125,15 @@ class ClinicalDocumentTest extends TestCase
         $this->assertSame($doctor->user_id, $result->fresh()->verified_by_user_id);
     }
 
-    public function test_nurse_and_inactive_technician_cannot_be_new_verifiers(): void
+    public function test_employee_and_inactive_doctor_cannot_be_new_verifiers(): void
     {
         $item = $this->item();
         $nurse = \App\Models\Employee::where('employee_code', 'NV000001')->firstOrFail();
-        $technician = \App\Models\Employee::where('employee_code', 'NV000002')->firstOrFail();
-        $technician->update(['status' => 'INACTIVE']);
-        foreach ([$nurse, $technician] as $employee) {
+        $doctor = Doctor::where('doctor_code', 'BS000002')->firstOrFail();
+        $doctor->update(['status' => 'INACTIVE']);
+        foreach ([$nurse->user_id, $doctor->user_id] as $userId) {
             $this->post(route('admin.service-order-items.service-results.store', $item), [
-                'result_summary' => 'Kết quả', 'verified_by_user_id' => $employee->user_id, 'confirm_create' => 1,
+                'result_summary' => 'Kết quả', 'verified_by_user_id' => $userId, 'confirm_create' => 1,
             ])->assertSessionHasErrors('verified_by_user_id');
         }
         $this->assertFalse($item->result()->exists());

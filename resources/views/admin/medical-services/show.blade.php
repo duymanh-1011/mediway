@@ -160,6 +160,11 @@
 
             </div>
 
+            <div class="detail-row">
+                <div class="detail-label">Mẫu phiếu kết quả</div>
+                <div class="detail-value">{{ $medicalService->resultTemplate?->name ?? 'Chưa gán mẫu' }}</div>
+            </div>
+
 
             <div class="detail-row">
 

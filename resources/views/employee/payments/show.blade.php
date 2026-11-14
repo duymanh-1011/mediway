@@ -213,7 +213,7 @@
         <div class="subsection">
             <h3>Nội dung khoản thu</h3>
             <p>{{ $payable->displayContent() }}</p>
-            @if ($latestTransaction && $latestTransaction->transaction_result === 'SUCCESS' && $latestTransaction->payment_method === 'CASH' && $hasReceiptRoute && app(\App\Support\EmployeeAccess::class)->allows(auth()->user(), 'payment.view'))
+            @if ($latestTransaction && $latestTransaction->transaction_result === 'SUCCESS' && $latestTransaction->payment_method === 'CASH' && $hasReceiptRoute && app(\App\Support\EmployeeAccess::class)->allows(auth()->user(), 'payment.view', session('employee_workspace_mode')))
                 <p><a class="receipt-btn" href="{{ route('employee.payments.receipt', $latestTransaction->id) }}" target="_blank" rel="noopener noreferrer">Xem hóa đơn</a></p>
             @endif
         </div>
@@ -244,7 +244,7 @@
                             @if ($transaction->payment_content)<p><strong>Nội dung:</strong> {{ $transaction->payment_content }}</p>@endif
                             @if ($transaction->failure_reason)<p><strong>Lý do lỗi:</strong> {{ $transaction->failure_reason }}</p>@endif
                             @if ($transaction->notes)<p><strong>Ghi chú:</strong> {{ $transaction->notes }}</p>@endif
-                            @if ($transaction->transaction_result === 'SUCCESS' && $transaction->payment_method === 'CASH' && $hasReceiptRoute && app(\App\Support\EmployeeAccess::class)->allows(auth()->user(), 'payment.view'))
+                            @if ($transaction->transaction_result === 'SUCCESS' && $transaction->payment_method === 'CASH' && $hasReceiptRoute && app(\App\Support\EmployeeAccess::class)->allows(auth()->user(), 'payment.view', session('employee_workspace_mode')))
                                 <a class="receipt-btn" href="{{ route('employee.payments.receipt', $transaction->id) }}" target="_blank" rel="noopener noreferrer">Xem hóa đơn</a>
                             @endif
                         </article>

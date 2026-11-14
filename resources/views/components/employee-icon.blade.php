@@ -13,6 +13,7 @@
         @case('lock') <rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3m-4 4v3"/> @break
         @case('help') <circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .7-1.5 1.2-1.5 2.5m0 3h.01"/> @break
         @case('arrow') <path d="M5 12h14m-5-5 5 5-5 5"/> @break
+        @case('switch') <path d="M20 8a8 8 0 0 0-13-3L4 8m0-5v5h5m-5 8a8 8 0 0 0 13 3l3-3m0 5v-5h-5"/> @break
         @case('shield') <path d="M12 3 4 6v5c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-3Z"/><path d="m9 12 2 2 4-4"/> @break
         @case('briefcase') <rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18m-10 0v2h2v-2"/> @break
         @case('contact') <rect x="3" y="4" width="18" height="16" rx="2"/><path d="m4 6 8 6 8-6"/> @break

@@ -7,7 +7,7 @@ use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceStatus;
 use App\Services\DoctorVisitReadiness;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,7 +17,7 @@ class DoctorVisitReadinessTest extends TestCase
 
     public function test_reports_missing_clinical_content_without_changing_visit(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $visit = MedicalVisit::where('visit_code', 'LK000001')->firstOrFail()->replicate();
         $visit->visit_code = 'LKREADINESS1';
         $visit->appointment_id = null;
@@ -35,7 +35,7 @@ class DoctorVisitReadinessTest extends TestCase
 
     public function test_requires_diagnosis_conclusion_and_no_unresolved_service(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $original = MedicalVisit::where('visit_code', 'LK000001')->firstOrFail();
         $visit = $original->replicate();
         $visit->visit_code = 'LKREADINESS2';

@@ -21,11 +21,10 @@ class WorkspaceController extends Controller
     {
         $employee = app(EmployeeAccess::class)->employee($request->user());
 
-        return match ($request->session()->get('employee_workspace_mode')) {
-            'reception' => redirect()->route('employee.reception.index'),
-            'cashier' => redirect()->route('employee.payments.index'),
-            default => view('employee.home', compact('employee')),
-        };
+        $workspace = $request->session()->get('employee_workspace_mode');
+        return in_array($workspace, ['reception', 'cashier'], true)
+            ? view('employee.dashboard', compact('employee', 'workspace'))
+            : view('employee.home', compact('employee'));
     }
 
     public function selectWorkspace(Request $request): RedirectResponse
@@ -37,13 +36,7 @@ class WorkspaceController extends Controller
             'workspace.in' => 'Chức năng được chọn không hợp lệ.',
         ]);
 
-        $current = $request->session()->get('employee_workspace_mode');
-        if ($current !== null && $current !== $data['workspace']) {
-            abort(403, 'Bạn đã chọn chức năng cho phiên đăng nhập này. Vui lòng đăng xuất nếu cần đổi chức năng.');
-        }
-
         $request->session()->put('employee_workspace_mode', $data['workspace']);
-        $request->session()->regenerate();
 
         return redirect()->route('employee.home');
     }

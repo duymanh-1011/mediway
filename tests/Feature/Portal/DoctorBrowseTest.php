@@ -8,7 +8,7 @@ use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\ExaminationRoom;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Tests\TestCase;
@@ -85,7 +85,7 @@ class DoctorBrowseTest extends TestCase
                 ->setTime(8, 0, 0)
         );
 
-        $this->seed(DatabaseSeeder::class);        // M06_TEST_PROFILE_FIXTURE_20261030
+        $this->seed(WorkflowFixtureSeeder::class);        // M06_TEST_PROFILE_FIXTURE_20261030
         \Illuminate\Support\Facades\DB::table('patient_details')
             ->whereIn(
                 'patient_id',

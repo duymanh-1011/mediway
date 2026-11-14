@@ -5,6 +5,23 @@ import { initializeServiceOrderPicker } from './service-order-picker.js';
 initializeResponsiveTables('.f08 table[data-mobile-records]');
 initializeServiceOrderPicker();
 
+document.querySelectorAll('[data-workspace-dialog]').forEach((button) => {
+    const dialog = document.getElementById(button.dataset.workspaceDialog);
+    if (!dialog) return;
+
+    button.addEventListener('click', () => {
+        if (typeof dialog.showModal === 'function') {
+            if (!dialog.open) dialog.showModal();
+            return;
+        }
+
+        const description = document.getElementById(dialog.getAttribute('aria-describedby'));
+        if (window.confirm(description.textContent)) {
+            dialog.querySelector('form[method="post"]').requestSubmit();
+        }
+    });
+});
+
 // Sau khi lưu, trở lại đúng phần của đúng lượt khám; không lưu nội dung bệnh án trong trình duyệt.
 const doctorWorkspace = document.querySelector('[data-doctor-workspace]');
 const doctorReturn = document.querySelector('[data-doctor-return]');

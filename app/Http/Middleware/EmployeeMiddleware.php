@@ -23,8 +23,7 @@ class EmployeeMiddleware
             if ($request->expectsJson()) abort(403, 'Tài khoản không có quyền truy cập khu vực nhân viên.');
             return response()->view('employee.forbidden', ['message' => 'Tài khoản không có quyền truy cập khu vực nhân viên hoặc đã ngừng hoạt động.'], 403);
         }
-        // The chooser and selector endpoint are the only employee workspace routes
-        // available before a choice is made. The selection cannot be changed until logout.
+        // Các chức năng yêu cầu chọn đúng không gian làm việc cho phiên hiện tại.
         if (! $request->routeIs('employee.home', 'employee.workspace.select')) {
             $workspace = $request->session()->get('employee_workspace_mode');
             if (! in_array($workspace, ['reception', 'cashier'], true)) {

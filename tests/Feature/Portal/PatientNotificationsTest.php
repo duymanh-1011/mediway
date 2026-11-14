@@ -6,7 +6,7 @@ use App\Models\Appointment;
 use App\Models\Payable;
 use App\Models\PaymentStatus;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,7 +16,7 @@ class PatientNotificationsTest extends TestCase
 
     public function test_notifications_only_include_current_patients_appointments_and_support_category_filter(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
         $other = User::where('business_code', 'BN000002')->firstOrFail();
@@ -33,7 +33,7 @@ class PatientNotificationsTest extends TestCase
 
     public function test_unread_popup_opens_an_outstanding_charge_and_marks_it_read(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
         $other = User::where('business_code', 'BN000002')->firstOrFail();

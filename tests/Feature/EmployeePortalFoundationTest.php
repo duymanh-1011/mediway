@@ -5,8 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\ServiceOrderItem;
 use App\Support\EmployeeAccess;
-use Database\Seeders\DatabaseSeeder;
-use Database\Seeders\EmployeeDemoExpansionSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
+use Database\Seeders\AdditionalEmployeeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -18,7 +18,7 @@ class EmployeePortalFoundationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
     }
 
@@ -46,7 +46,7 @@ class EmployeePortalFoundationTest extends TestCase
 
     public function test_expanded_demo_accounts_can_log_in_and_reseeding_preserves_existing_records(): void
     {
-        $this->seed(EmployeeDemoExpansionSeeder::class);
+        $this->seed(AdditionalEmployeeSeeder::class);
         $accounts = [
             'NV000005' => ['RECEPTIONIST', 'employee.home'],
             'NV000006' => ['CASHIER', 'employee.home'],
@@ -63,7 +63,7 @@ class EmployeePortalFoundationTest extends TestCase
         $user->update(['password' => 'MatKhauMauDaDoi@123']);
         $user->employee->detail()->update(['department' => 'Bộ phận đã đổi']);
 
-        $this->seed(EmployeeDemoExpansionSeeder::class);
+        $this->seed(AdditionalEmployeeSeeder::class);
 
         $this->assertSame(8, \App\Models\Employee::count());
         $this->assertSame('Bộ phận đã đổi', $user->employee->detail()->value('department'));
@@ -105,8 +105,9 @@ class EmployeePortalFoundationTest extends TestCase
         $this->assertFalse($access->allows($user, 'queue.call', 'reception'));
         $this->actingAs($user)->get(route('employee.home'))->assertOk()->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
         $this->post(route('employee.workspace.select'), ['workspace' => 'reception'])->assertRedirect(route('employee.home'));
-        $this->get(route('employee.home'))->assertRedirect(route('employee.reception.index'));
-        $this->post(route('employee.workspace.select'), ['workspace' => 'cashier'])->assertForbidden();
+        $this->get(route('employee.home'))->assertOk()->assertSee(route('employee.reception.index'));
+        $this->post(route('employee.workspace.select'), ['workspace' => 'cashier'])
+            ->assertRedirect(route('employee.home'))->assertSessionHas('employee_workspace_mode', 'cashier');
     }
 
     public function test_every_legacy_employee_classification_can_choose_either_workspace(): void
@@ -133,7 +134,7 @@ class EmployeePortalFoundationTest extends TestCase
                 ->assertRedirect(route('employee.home'));
             $this->get(route('employee.home'))->assertOk()->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
             $this->post(route('employee.workspace.select'), ['workspace' => 'cashier'])->assertRedirect(route('employee.home'));
-            $this->get(route('employee.home'))->assertRedirect(route('employee.payments.index'));
+            $this->get(route('employee.home'))->assertOk()->assertSee(route('employee.payments.index'));
             $this->post(route('employee.logout'))->assertRedirect(route('public.home'));
             $this->assertGuest();
         }
@@ -223,7 +224,7 @@ class EmployeePortalFoundationTest extends TestCase
         $this->assertNull($access->employee($user));
     }
 
-    public function test_capability_middleware_uses_the_locked_workspace_not_employee_classification(): void
+    public function test_capability_middleware_uses_the_selected_workspace_not_employee_classification(): void
     {
         \Illuminate\Support\Facades\Route::middleware(['web', \App\Http\Middleware\EmployeeMiddleware::class.':reception.check_in'])
             ->post('/employee-test-capability', fn () => response('allowed'));
@@ -231,7 +232,8 @@ class EmployeePortalFoundationTest extends TestCase
         $this->actingAsEmployeeWorkspace($user, 'reception')->post('/employee-test-capability')->assertOk();
         $user->employee->detail->update(['employee_type' => 'CASHIER']);
         $this->post('/employee-test-capability')->assertOk();
-        $this->post(route('employee.workspace.select'), ['workspace' => 'cashier'])->assertForbidden();
+        $this->post(route('employee.workspace.select'), ['workspace' => 'cashier'])->assertRedirect(route('employee.home'));
+        $this->post('/employee-test-capability')->assertForbidden();
     }
 
     public function test_admin_cannot_change_type_with_unfinished_assigned_service(): void

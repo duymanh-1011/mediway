@@ -1,12 +1,14 @@
 @php
-    $doctor = $doctor
-        ?? request()->attributes->get('current_doctor');
+    $doctor = request()->attributes->get('current_doctor') ?? ($doctor ?? null);
 
     $doctorName = $doctor?->full_name ?? 'Bác sĩ';
 
     $doctorInitial = mb_strtoupper(
         mb_substr(trim($doctorName), 0, 1)
     );
+    $workspace = session('doctor_workspace_mode');
+    $isServices = $workspace === 'services';
+    $workspaceLabel = $isServices ? 'Bác sĩ thực hiện dịch vụ' : 'Bác sĩ khám bệnh';
 @endphp
 
 <header class="employee-header">
@@ -29,7 +31,7 @@
                 </span>
 
                 <span class="employee-account__text">
-                    <small>Bác sĩ</small>
+                    <small>{{ $workspaceLabel }}</small>
 
                     <strong>
                         {{ $doctorName }}
@@ -37,6 +39,12 @@
                 </span>
 
             </a>
+
+            @if (in_array($workspace, ['examination', 'services'], true))
+                <x-workspace-switch :action="route('doctor.workspace.select')"
+                    :workspace="$isServices ? 'examination' : 'services'"
+                    :label="$isServices ? 'Bác sĩ khám bệnh' : 'Bác sĩ thực hiện dịch vụ'" />
+            @endif
 
             <form method="post" action="{{ route('doctor.logout') }}">
                 @csrf

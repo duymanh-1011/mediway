@@ -3,8 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\MedicalVisit;
+use App\Models\DoctorSchedule;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,7 +16,7 @@ class DoctorVisitPortalTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
     }
 
@@ -46,6 +47,30 @@ class DoctorVisitPortalTest extends TestCase
         $doctor->doctor->update(['status' => 'INACTIVE']);
         $this->flushSession();
         $this->actingAs($doctor)->get(route('doctor.home'))->assertForbidden();
+    }
+
+    public function test_doctor_switches_workspace_in_the_same_session_and_only_sees_their_schedule(): void
+    {
+        $user = User::where('business_code', 'BS000001')->firstOrFail();
+        $own = DoctorSchedule::where('doctor_id', $user->doctor->id)->firstOrFail();
+        $other = DoctorSchedule::where('doctor_id', '!=', $user->doctor->id)->firstOrFail();
+        $month = '2027-01';
+        $own->update(['work_date' => $month.'-08']);
+        $other->update(['work_date' => $month.'-09']);
+        $schedule = route('doctor.schedule', ['month' => $month]);
+
+        $this->actingAsDoctorWorkspace($user)->get($schedule)
+            ->assertOk()->assertSee('08/01/2027')->assertDontSee('09/01/2027');
+        $this->get(route('doctor.home'))->assertOk()->assertSee('Lịch làm việc')->assertDontSee('Danh sách lượt khám');
+        $this->post(route('doctor.workspace.select'), ['workspace' => 'services'])
+            ->assertRedirect(route('doctor.home'))->assertSessionHas('doctor_workspace_mode', 'services');
+        $this->get(route('doctor.home'))->assertOk()->assertSee('Nhóm dịch vụ')->assertSee('Lịch làm việc');
+        $this->get(route('doctor.services.index'))->assertOk()->assertSee('Chuyển sang Bác sĩ khám bệnh');
+        $this->get($schedule)->assertOk()->assertSee('08/01/2027')->assertDontSee('09/01/2027');
+        $this->post(route('doctor.workspace.select'), ['workspace' => 'examination'])
+            ->assertRedirect(route('doctor.home'))->assertSessionHas('doctor_workspace_mode', 'examination');
+        $this->get($schedule)->assertOk();
+        $this->get(route('doctor.services.index'))->assertForbidden();
     }
 
     public function test_clinical_form_stays_open_and_keeps_input_after_validation(): void

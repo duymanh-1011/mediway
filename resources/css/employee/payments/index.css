@@ -99,19 +99,6 @@
             line-height: 1.7;
         }
 
-        /* FILTERS */
-
-        .f08 .f08-grid {
-            display: grid;
-            grid-template-columns: repeat(3,
-                    minmax(0, 1fr));
-            gap: 16px;
-        }
-
-        .f08 .f08-field {
-            min-width: 0;
-        }
-
         .f08 label {
             display: block;
             font-size: 12px;
@@ -139,14 +126,6 @@
             outline: 3px solid #c8dcff;
             border-color: var(--accent);
             background: #fff;
-        }
-
-        .f08 .f08-actions {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            flex-wrap: wrap;
-            margin-top: 19px;
         }
 
         /* BUTTONS */
@@ -483,21 +462,12 @@
         /* RESPONSIVE */
 
         @media (max-width: 1024px) {
-            .f08 .f08-grid {
-                grid-template-columns: repeat(2,
-                        minmax(0, 1fr));
-            }
-
             .f08 .f08-panel {
                 padding: 19px;
             }
         }
 
         @media (max-width: 600px) {
-            .f08 .f08-grid {
-                grid-template-columns: 1fr;
-            }
-
             .f08 .f08-panel {
                 padding: 16px;
                 border-radius: 15px;
@@ -509,15 +479,6 @@
 
             .f08 .f08-hero h1 {
                 font-size: 24px;
-            }
-
-            .f08 .f08-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .f08 .f08-actions .f08-btn {
-                width: 100%;
             }
 
             .f08 .f08-foot {

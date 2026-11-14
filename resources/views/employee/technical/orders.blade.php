@@ -1,4 +1,4 @@
-@extends('employee.layout')
+@extends(request()->routeIs('doctor.*') ? 'doctor.layout' : 'employee.layout')
 @section('title', $service->name)
 @section('content')
 <div class="tech-page">
@@ -10,13 +10,13 @@
         'description' => 'Xem các phiếu chỉ định và tiến độ thực hiện của dịch vụ này.',
     ])
 
-    <form class="employee-card tech-filter" method="post" action="{{ $filterUrl }}" autocomplete="off" aria-label="Lọc chỉ định dịch vụ">
+    <form class="employee-card workspace-filter" method="post" action="{{ $filterUrl }}" autocomplete="off" aria-label="Lọc chỉ định dịch vụ">
         @csrf
-        <label class="tech-filter__search">Tìm chỉ định
+        <label class="workspace-filter__field workspace-filter__field--search">Tìm chỉ định
             <input type="search" name="q" value="{{ old('q', $filters['q']) }}" maxlength="100" placeholder="Mã phiếu, tên, mã hoặc SĐT bệnh nhân">
             @error('q')<span class="field-error">{{ $message }}</span>@enderror
         </label>
-        <label>Trạng thái
+        <label class="workspace-filter__field">Trạng thái
             <select name="status">
                 <option value="">Tất cả trạng thái</option>
                 @foreach (\App\Models\ServiceOrderItem::TECHNICAL_STAGES as $stage => $label)
@@ -24,13 +24,10 @@
                 @endforeach
             </select>
         </label>
-        <label>Ngày chỉ định
+        <label class="workspace-filter__field">Ngày chỉ định
             <input type="date" name="date" value="{{ $filters['date'] ?? '' }}">
         </label>
-        <div class="tech-actions">
-            <button type="submit" class="portal-btn portal-btn--primary">Lọc danh sách</button>
-            <a class="portal-btn portal-btn--secondary" href="{{ $ordersUrl }}">Xóa bộ lọc</a>
-        </div>
+        <x-workspace-filter-actions :reset-url="$ordersUrl" />
     </form>
 
     <section aria-labelledby="technical-list-title">

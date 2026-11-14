@@ -10,5 +10,14 @@
         'COMPLETED' => 'completed',
         default => 'neutral',
     };
+    if ($hasBeenCalled ?? false) {
+        $tone = 'examining';
+    }
+    $label = match (true) {
+        $hasBeenCalled ?? false => 'Đã gọi',
+        $code === 'WAITING_FOR_RETURN' => 'Chờ đọc kết quả',
+        $code !== null => \App\Models\AdminDisplay::label($code),
+        default => 'Chưa cập nhật trạng thái',
+    };
 @endphp
-<span class="doctor-visit-status doctor-visit-status--{{ $tone }}" data-visit-status="{{ $code }}">{{ $code ? \App\Models\AdminDisplay::label($code) : 'Chưa cập nhật trạng thái' }}</span>
+<span class="doctor-visit-status doctor-visit-status--{{ $tone }}" data-visit-status="{{ $code }}">{{ $label }}</span>

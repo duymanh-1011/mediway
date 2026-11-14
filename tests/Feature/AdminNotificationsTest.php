@@ -9,7 +9,7 @@ use App\Models\ServiceOrderProgress;
 use App\Models\ServiceStatus;
 use App\Models\User;
 use App\Models\VisitStatus;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
@@ -21,7 +21,7 @@ class AdminNotificationsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         app()->setLocale('vi');

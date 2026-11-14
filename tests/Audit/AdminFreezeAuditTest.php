@@ -12,7 +12,7 @@ use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceStatus;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -26,7 +26,7 @@ class AdminFreezeAuditTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(now()->setDate(2026, 10, 24)->setTime(10, 0));
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
     }

@@ -1,11 +1,34 @@
 @extends('doctor.layout')
 @section('title', 'Chi tiết lượt khám')
 @section('breadcrumb', 'Chi tiết lượt khám')
+@include('doctor.examination.assets')
 @section('content')
 <section class="tech-page tech-detail-page doctor-visit" data-doctor-workspace data-visit-id="{{ $record->id }}">
-    <a class="portal-btn portal-btn--secondary tech-back" href="{{ route('doctor.visits.index') }}">← Quay lại lượt khám</a>
+    <div class="doctor-visit__toolbar">
+        <a class="portal-btn portal-btn--secondary" href="{{ $backUrl }}">← Quay lại hàng đợi</a>
+        @if ($queueControls)
+            <div class="doctor-visit__queue-actions" aria-label="Thao tác hàng đợi">
+                @foreach ($queueControls['actions'] as $action)
+                    @php($label = ['call' => 'Gọi bệnh nhân', 'recall' => 'Gọi lại', 'start' => 'Bắt đầu khám'][$action])
+                    @include('doctor.examination.confirm', [
+                        'dialogId' => $action.'-'.$queueControls['queue']->id,
+                        'label' => $label,
+                        'heading' => 'Xác nhận '.mb_strtolower($label),
+                        'variant' => $action === 'recall' ? 'secondary' : 'primary',
+                        'visit' => $record,
+                        'queue' => $queueControls['queue'],
+                        'url' => route($action === 'start' ? 'doctor.examination.visits.start' : 'doctor.examination.queue.'.$action, [$record->examinationRoom, $queueControls['queue']]),
+                        'expected' => $queueControls['expected'] + ['from_visit' => 1],
+                    ])
+                @endforeach
+            </div>
+        @endif
+    </div>
     <section class="tech-panel tech-detail-panel doctor-visit__hero"><p class="portal-eyebrow">HỒ SƠ KHÁM BỆNH</p><h1>{{ $record->patient?->full_name ?? 'Chưa cập nhật' }}</h1>
-        <p class="doctor-visit__meta"><span>Mã lượt khám: <strong>{{ $record->visit_code }}</strong></span>@include('doctor.visits._status', ['visit' => $record])</p>
+        <p class="doctor-visit__meta">
+            <span>Mã lượt khám: <strong>{{ $record->visit_code }}</strong></span>
+            @include('doctor.visits._status', ['visit' => $record, 'hasBeenCalled' => ($queueControls['expected']['expected_status'] ?? null) === 'CALLED'])
+        </p>
         <h2>Thông tin lượt khám</h2><dl class="tech-facts">
             <div><dt>Mã bệnh nhân</dt><dd>{{ $record->patient?->patient_code ?? '—' }}</dd></div>
             <div><dt>Bác sĩ phụ trách</dt><dd>{{ $record->doctor?->full_name ?? 'Chưa cập nhật' }}</dd></div>
@@ -15,10 +38,6 @@
             <div><dt>Lịch hẹn</dt><dd>{{ $record->appointment?->appointment_code ?? 'Không có lịch hẹn' }}</dd></div>
         </dl>
     </section>
-    {{-- Các liên kết đưa đến đúng phần trong cùng trang và vẫn dùng được khi tắt JavaScript. --}}
-    <nav class="doctor-visit__quick" aria-label="Chuyển nhanh trong lượt khám">
-        <a href="#noi-dung-kham">Nội dung khám</a><a href="#chan-doan">Chẩn đoán</a><a href="#dich-vu">Dịch vụ &amp; kết quả</a><a href="#don-thuoc">Đơn thuốc</a><a href="#ket-luan">Kết luận</a>
-    </nav>
     @if($conclusionLocked)<p class="portal-alert">Đã lưu kết luận khám. Hồ sơ và kết luận khám chỉ còn được xem.</p>@elseif($prescriptionLocked)<p class="portal-alert">Đã tạo đơn thuốc. Nội dung khám, chẩn đoán và chỉ định dịch vụ chỉ còn được xem.</p>@endif
     <section id="noi-dung-kham" class="tech-panel doctor-visit__section"><h2>Nội dung khám</h2>
         @if($canEditBeforePrescription)
@@ -95,10 +114,9 @@
             @if($order->instructions)<p><strong>Hướng dẫn:</strong> {{ $order->instructions }}</p>@endif
             @foreach($order->items as $item)<div class="doctor-visit__item"><p><strong>{{ $item->medicalService?->name ?? 'Dịch vụ' }}</strong> · Trạng thái dịch vụ: {{ \App\Models\AdminDisplay::label($item->serviceStatus?->name, 'service') }}</p>
                 @unless($item->result?->hasContent())<p>Chưa có kết quả.</p>@endunless
-                @if($item->result?->result_summary)<p>{{ $item->result->result_summary }}</p>@endif
-                @if($item->result?->result_conclusion)<p>{{ $item->result->result_conclusion }}</p>@endif
-                @if($item->result && ($rows = $item->result->parameterDisplayRows())) @foreach($rows as $row)<p><strong>{{ $row['label'] }}:</strong> {{ $row['value'] }}</p>@endforeach @endif
-                @if($item->result && ($rows = $item->result->technicalDetailRows())) @foreach($rows as $row)<p><strong>{{ $row['label'] }}:</strong> {{ $row['value'] }}</p>@endforeach @endif
+                @if ($item->result?->hasContent())
+                    @include('doctor.visits._service-result', ['result' => $item->result])
+                @endif
                 @php($hasPdf = $item->result?->hasDocument('pdf') ?? false)
                 @php($hasImage = $item->result?->hasDocument('image') ?? false)
                 @if($hasPdf || $hasImage)

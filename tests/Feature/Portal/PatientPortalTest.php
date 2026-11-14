@@ -7,7 +7,7 @@ use App\Models\Patient;
 use App\Models\PatientPasswordResetChallenge;
 use App\Models\User;
 use App\Services\PatientPasswordResetService;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -19,7 +19,7 @@ class PatientPortalTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         config(['portal.demo_otp_phone' => '0902000001', 'portal.esms.enabled' => false]);
         $this->withoutVite();
     }

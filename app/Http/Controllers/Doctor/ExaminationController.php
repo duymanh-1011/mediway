@@ -16,6 +16,7 @@ use App\Models\Specialty;
 use App\Services\Doctor\ExaminationQueueWorkflow;
 use App\Services\Doctor\ExaminationVisitCompletion;
 use App\Support\Doctor\DoctorAccess;
+use App\Support\SessionSearch;
 use Closure;
 use Illuminate\Database\ConcurrencyErrorDetector;
 use Illuminate\Database\Eloquent\Builder;
@@ -41,7 +42,7 @@ class ExaminationController extends Controller
         'CALLED' => 'Đã gọi',
         'IN_EXAMINATION' => 'Đang khám',
         'WAITING_FOR_SERVICE' => 'Chờ thực hiện dịch vụ',
-        'RETURNING' => 'Chờ quay lại khám',
+        'RETURNING' => 'Chờ đọc kết quả',
         'COMPLETED' => 'Hoàn tất',
     ];
 
@@ -109,7 +110,7 @@ class ExaminationController extends Controller
             ->with('specialty')
             ->where('status', 'ACTIVE')
             ->addSelect([
-                'waiting_count' => $this->waitingCount($doctor, $date),
+                'waiting_count' => $this->waitingCount($date),
             ])
             ->when($filters['q'] ?? null, fn ($query, $term) => $query->where(fn ($room) => $room
                 ->where('room_code', 'like', '%'.$term.'%')
@@ -121,6 +122,8 @@ class ExaminationController extends Controller
 
         $schedules = DoctorSchedule::whereDate('work_date', $date)->where('status', 'ACTIVE')
             ->with('doctor:id,full_name')
+            ->whereHas('doctor')
+            ->whereColumn('start_time', '<', 'end_time')
             ->whereIn(
                 'examination_room_id',
                 $rooms->modelKeys()
@@ -148,22 +151,47 @@ class ExaminationController extends Controller
                 'specialties',
                 'schedules',
                 'workStatus',
-                'now',
                 'date',
                 'filters'
             )
         );
     }
-    public function queue(Request $request, ExaminationRoom $room, ExaminationVisitCompletion $completion): View
+    public function filterQueue(Request $request, ExaminationRoom $room): RedirectResponse
+    {
+        $data = $request->validate([
+            ...$this->queueFilterRules(),
+            'q' => ['nullable', 'string', 'max:100'],
+        ]);
+        $search = new SessionSearch($request, 'doctor.examination.rooms.'.$room->id);
+        $term = trim($data['q'] ?? '');
+        unset($data['q']);
+
+        return redirect()->route('doctor.examination.rooms.queue', [
+            'room' => $room,
+            ...array_filter($data),
+            ...$search->remember($term),
+        ]);
+    }
+
+    private function queueFilterRules(): array
+    {
+        return [
+            'date' => ['nullable', 'date_format:Y-m-d'],
+            'status' => ['nullable', 'string', Rule::in(array_keys(self::EXAMINATION_STATUS_LABELS))],
+            'shift' => ['nullable', Rule::in(array_keys(config('doctor_schedules.shifts', [])))],
+        ];
+    }
+
+    public function queue(Request $request, ExaminationRoom $room): View
     {
         $doctor = $request->attributes->get('current_doctor');
         $shifts = array_keys(config('doctor_schedules.shifts', []));
         $filters = $request->validate([
-            'date' => ['nullable', 'date_format:Y-m-d'],
+            ...$this->queueFilterRules(),
             'q' => ['nullable', 'string', 'max:100'],
-            'status' => ['nullable', 'string', Rule::in(array_keys(self::EXAMINATION_STATUS_LABELS))],
-            'shift' => ['nullable', Rule::in($shifts)],
         ]);
+        $search = new SessionSearch($request, 'doctor.examination.rooms.'.$room->id);
+        $filters['q'] ??= $search->keyword();
         $date = $filters['date'] ?? today()->toDateString();
         app(DoctorAccess::class)->assertRoom($doctor, $room, $date);
         // Hiển thị mọi lượt khám trong phòng và ngày được chọn.
@@ -185,7 +213,8 @@ class ExaminationController extends Controller
                     'patient',
                     fn ($patient) => $patient->where(fn ($match) => $match
                         ->where('full_name', 'like', '%'.$term.'%')
-                        ->orWhereHas('user', fn ($user) => $user->where('phone', 'like', '%'.$term.'%')))
+                        ->orWhereHas('user', fn ($user) => $user->where('phone', 'like', '%'.$term.'%'))
+                        ->orWhereHas('detail', fn ($detail) => $detail->where('citizen_id_number', $term)))
                 )
             );
 
@@ -199,10 +228,6 @@ class ExaminationController extends Controller
                 'status',
                 'medicalVisit' => fn ($query) => $visibleVisit($query)
                     ->withServiceProgress()
-                    ->withMax('serviceOrders', 'id')
-                    ->withMax([
-                        'queues as latest_examination_queue_id' => fn ($queue) => $queue->whereIn('queue_type', self::QUEUE_TYPES),
-                    ], 'id')
                     ->with([
                         'status',
                         'patient:id,patient_code,full_name',
@@ -218,17 +243,18 @@ class ExaminationController extends Controller
             ->orderBy('queue_number')
             ->orderBy('id')
             ->paginate(15)
-            ->withQueryString();
+            ->appends([
+                'date' => $filters['date'] ?? null,
+                'status' => $filters['status'] ?? null,
+                'shift' => $filters['shift'] ?? null,
+                ...$search->navigation(),
+            ]);
 
         // Giữ bảo vệ hiện có nếu lượt khám được điều chuyển
         // giữa lúc phân trang và eager loading.
         $visibleQueues = $queues->getCollection()->filter(fn ($queue) => $queue->medicalVisit !== null);
         $queues->setCollection($visibleQueues->values());
         $examinationStatusLabels = self::EXAMINATION_STATUS_LABELS;
-        $actions = self::ACTIONS;
-        $canStart = $this->hasD02VisitDetails();
-        $canComplete = $completion->hasClinicalEligibility();
-        $canOperate = app(DoctorAccess::class)->canExamine($request->user(), $doctor);
 
         return view(
             'doctor.examination.queue',
@@ -240,10 +266,7 @@ class ExaminationController extends Controller
                 'date',
                 'shifts',
                 'filters',
-                'actions',
-                'canStart',
-                'canComplete',
-                'canOperate'
+                'search'
             )
         );
     }
@@ -341,6 +364,7 @@ class ExaminationController extends Controller
             ],
             'expected_calls' => ['required', 'integer', 'min:0'],
             'expected_phase' => ['required', 'string', 'regex:/\A[0-9a-f]{64}\z/'],
+            'from_visit' => ['sometimes', 'accepted'],
         ]);
         $doctor = $request->attributes->get('current_doctor');
         $queue = $this->roomQueue($doctor, $room)->findOrFail($queueId);
@@ -406,7 +430,9 @@ class ExaminationController extends Controller
             }
             $before = $queue->only(['queue_status_id', 'call_count', 'called_at', 'service_started_at']);
             $before['visit_status_id'] = $visit->visit_status_id;
-            $nextUrl = null;
+            $nextUrl = isset($data['from_visit'])
+                ? route(self::VISIT_DETAILS_ROUTE, ['visit' => $visit])
+                : null;
             if ($action === 'start') {
                 $nextUrl = route(self::VISIT_DETAILS_ROUTE, ['visit' => $visit]);
                 $workflow->startLocked($queue, $status);
@@ -453,22 +479,21 @@ class ExaminationController extends Controller
             !== ClinicalVisitController::class.'@show';
     }
 
-    private function waitingCount(Doctor $doctor, string $date): Builder
+    private function waitingCount(string $date): Builder
     {
+        $stage = $this->queueStage();
+
         return ExaminationRoomQueue::query()
-            ->selectRaw('count(distinct medical_visit_id)')
-            ->whereHas('medicalVisit', fn ($visit) => $visit
-                ->whereColumn('medical_visits.examination_room_id', 'examination_rooms.id')
-                ->whereDate('checked_in_at', $date)
-                ->where(fn ($stage) => $stage
-                    ->where(fn ($initial) => $initial
-                        ->where('examination_room_queues.queue_type', 'INITIAL_EXAM')
-                        ->whereNull('examination_started_at')
-                        ->whereHas('status', fn ($status) => $status->where('name', 'WAITING')))
-                    ->orWhere(fn ($return) => $return
-                        ->where('examination_room_queues.queue_type', 'RETURN_AFTER_SERVICE')
-                        ->whereHas('status', fn ($status) => $status->where('name', 'WAITING_FOR_SERVICE')))))
-            ->whereHas('status', fn ($status) => $status->where('name', 'WAITING')->where('is_active', true));
+            ->join('medical_visits as waiting_visits', 'waiting_visits.id', '=', 'examination_room_queues.medical_visit_id')
+            ->selectRaw('count(distinct waiting_visits.patient_id)')
+            ->whereColumn('waiting_visits.examination_room_id', 'examination_rooms.id')
+            ->whereDate('waiting_visits.checked_in_at', $date)
+            ->whereIn('examination_room_queues.queue_type', self::QUEUE_TYPES)
+            ->whereDoesntHave('medicalVisit.payables', fn ($payables) => $payables
+                ->where('payment_type', 'EXAMINATION_FEE')
+                ->whereDoesntHave('paymentStatus', fn ($status) => $status->where('name', 'PAID')))
+            ->whereHas('status', fn ($status) => $status->whereIn('name', ['WAITING', 'CALLED'])->where('is_active', true))
+            ->whereRaw('('.$stage->toSql().') in (?, ?, ?)', [...$stage->getBindings(), 'WAITING', 'CALLED', 'RETURNING']);
     }
 
     private function queueStage(): Builder

@@ -5,7 +5,7 @@ namespace Tests\Feature\Portal;
 use App\Models\DoctorSchedule;
 use App\Models\User;
 use App\Support\Portal\BookingProfileGate;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -21,7 +21,7 @@ class BookingProfileCompletenessTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(now()->setDate(2026, 10, 27)->setTime(8, 0));
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->patient = User::where('business_code', 'BN000001')->firstOrFail();
         $this->patient->patient->detail->update([

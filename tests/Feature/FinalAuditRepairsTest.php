@@ -22,7 +22,7 @@ use App\Models\Specialty;
 use App\Models\User;
 use App\Models\VisitStatus;
 use Carbon\Carbon;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -39,7 +39,7 @@ class FinalAuditRepairsTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(now()->setDate(2026, 10, 23)->setTime(7, 0));
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
     }

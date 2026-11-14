@@ -5,7 +5,6 @@
     <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a><span aria-hidden="true">/</span><span>Dịch vụ</span><span aria-hidden="true">/</span><a href="{{ route('admin.service-result-templates.index') }}">Mẫu phiếu kết quả</a><span aria-hidden="true">/</span><strong aria-current="page">{{ $template->exists ? 'Cập nhật' : 'Thêm mới' }}</strong>
 @endsection
 @section('content')
-    @include('admin.layouts.partials.service-catalog-tabs')
     <div class="page-header"><div><h1 class="page-title">{{ $template->exists ? 'Sửa mẫu phiếu kết quả' : 'Thêm mẫu phiếu kết quả' }}</h1><p class="page-description">Khai báo các trường dữ liệu. Khi cập nhật mẫu, các phiếu đã lập vẫn giữ nguyên cấu trúc cũ.</p></div><a class="admin-btn admin-btn-secondary" href="{{ route('admin.service-result-templates.index') }}">← Quay lại</a></div>
     @if ($template->exists && $template->medicalServices()->exists())<div class="alert">Mẫu này đang được gán cho {{ $template->medicalServices()->count() }} dịch vụ.</div>@endif
     <form method="post" action="{{ $template->exists ? route('admin.service-result-templates.update', $template) : route('admin.service-result-templates.store') }}">

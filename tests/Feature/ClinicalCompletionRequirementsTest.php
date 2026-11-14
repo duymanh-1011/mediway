@@ -10,7 +10,7 @@ use App\Models\ServiceResult;
 use App\Models\ServiceStatus;
 use App\Models\User;
 use App\Models\VisitStatus;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +23,7 @@ class ClinicalCompletionRequirementsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         Storage::fake('local');
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());

@@ -9,7 +9,7 @@ use App\Models\Patient;
 use App\Models\Payable;
 use App\Models\User;
 use App\Models\VisitStatus;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Database\QueryException;
@@ -25,7 +25,7 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         // Exercise compatibility with a historical NURSE record explicitly.
         Employee::where('employee_code', 'NV000001')->firstOrFail()->detail()->update(['employee_type' => 'NURSE']);
         $this->withoutVite();

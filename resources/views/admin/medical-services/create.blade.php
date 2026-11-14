@@ -17,8 +17,6 @@
 @endsection
 
 @section('content')
-    @include('admin.layouts.partials.service-catalog-tabs')
-
     <div class="page-header">
 
         <div>

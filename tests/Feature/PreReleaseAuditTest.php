@@ -10,7 +10,7 @@ use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
 use App\Models\ServiceStatus;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +23,7 @@ class PreReleaseAuditTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
     }
 

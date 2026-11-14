@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\Disease;
 use App\Models\MedicalVisit;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,7 +15,7 @@ class DiagnosisLocalizationTest extends TestCase
 
     public function test_vietnamese_severity_saves_the_existing_code_and_remains_readable(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $admin = User::where('business_code', 'QT000001')->firstOrFail();
         $visit = MedicalVisit::where('visit_code', 'LK000005')->firstOrFail();

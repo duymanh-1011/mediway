@@ -5,7 +5,6 @@
     <a href="{{ route('admin.dashboard') }}">Bảng điều khiển</a><span aria-hidden="true">/</span><span>Dịch vụ</span><span aria-hidden="true">/</span><strong aria-current="page">Mẫu phiếu kết quả</strong>
 @endsection
 @section('content')
-    @include('admin.layouts.partials.service-catalog-tabs')
     <div class="page-header"><div><h1 class="page-title">Mẫu phiếu kết quả</h1><p class="page-description">Tạo và quản lý cấu trúc phiếu dùng chung. Gán mẫu cho dịch vụ để nhân viên ghi kết quả theo đúng biểu mẫu.</p></div><a class="admin-btn admin-btn-primary" href="{{ route('admin.service-result-templates.create') }}">Thêm mẫu phiếu</a></div>
     <div class="card">
         <h2 class="card-title">Danh sách mẫu</h2>

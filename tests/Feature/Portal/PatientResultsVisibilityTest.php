@@ -8,7 +8,7 @@ use App\Models\ServiceResult;
 use App\Models\Prescription;
 use App\Models\User;
 use App\Models\VisitStatus;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,7 +18,7 @@ class PatientResultsVisibilityTest extends TestCase
 
     public function test_doctor_notes_are_shown_on_own_prescription_views_and_print(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
         $other = User::where('business_code', 'BN000002')->firstOrFail();
@@ -37,7 +37,7 @@ class PatientResultsVisibilityTest extends TestCase
 
     public function test_patient_sees_own_completed_visit_prescription_without_publication_and_cannot_open_others(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
         $other = User::where('business_code', 'BN000002')->firstOrFail();
@@ -60,7 +60,7 @@ class PatientResultsVisibilityTest extends TestCase
 
     public function test_prescription_quantities_are_easy_to_read_without_losing_decimals(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
         $prescription = Prescription::whereHas('medicalVisit', fn ($query) => $query->where('patient_id', $patient->patient->id))->with('items')->firstOrFail();
@@ -73,7 +73,7 @@ class PatientResultsVisibilityTest extends TestCase
 
     public function test_prescription_document_shows_patient_information_and_places_advice_after_the_medicine_table(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $user = User::where('business_code', 'BN000001')->firstOrFail();
         $patient = $user->patient;
@@ -116,7 +116,7 @@ class PatientResultsVisibilityTest extends TestCase
 
     public function test_prescription_is_accessible_before_visit_completion(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         \Illuminate\Support\Facades\Storage::fake('local');
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
@@ -145,7 +145,7 @@ class PatientResultsVisibilityTest extends TestCase
 
     public function test_patient_sees_completed_service_results_and_own_visit_results(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
         $other = User::where('business_code', 'BN000002')->firstOrFail();
@@ -197,7 +197,7 @@ class PatientResultsVisibilityTest extends TestCase
 
     public function test_legacy_completed_visit_only_recovers_the_time_of_a_recorded_transition(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
         $visit = $patient->patient->medicalVisits()->whereHas('status', fn ($status) => $status->where('name', 'COMPLETED'))->firstOrFail();

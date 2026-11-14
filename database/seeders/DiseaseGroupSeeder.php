@@ -10,19 +10,19 @@ class DiseaseGroupSeeder extends Seeder
     public function run(): void
     {
         $groups = [
-            ['NBHH', 'Hô hấp - Tai Mũi Họng'],
-            ['NBTM', 'Tim mạch'],
-            ['NBTH', 'Tiêu hóa'],
-            ['NBCD', 'Chuyển hóa'],
-            ['NBDL', 'Da liễu'],
+            ['NBHH', 'Hô hấp - Tai Mũi Họng', 'Các bệnh đường hô hấp và tai mũi họng.'],
+            ['NBTM', 'Tim mạch', 'Các bệnh về tim, mạch máu và huyết áp.'],
+            ['NBTH', 'Tiêu hóa', 'Các bệnh về thực quản, dạ dày và đường ruột.'],
+            ['NBCD', 'Chuyển hóa', 'Các bệnh liên quan đến rối loạn chuyển hóa.'],
+            ['NBDL', 'Da liễu', 'Các bệnh về da, tóc và móng.'],
         ];
 
-        foreach ($groups as [$code, $name]) {
+        foreach ($groups as [$code, $name, $description]) {
             DB::table('disease_groups')->updateOrInsert(
                 ['disease_group_code' => $code],
                 [
                     'name' => $name,
-                    'description' => null,
+                    'description' => $description,
                     'status' => 'ACTIVE',
                     'notes' => null,
                     'created_at' => now(),

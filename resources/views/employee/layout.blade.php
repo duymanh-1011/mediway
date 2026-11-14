@@ -9,21 +9,14 @@
 </head>
 <body class="portal-body employee-body">
 @php
-    $isDoctorWorkspace = request()->routeIs('doctor.*');
-    $workspaceMode = session($isDoctorWorkspace ? 'doctor_workspace_mode' : 'employee_workspace_mode');
-    $workspaceLabel = $isDoctorWorkspace ? 'Bác sĩ' : 'Nhân viên';
-    $homeRoute = $isDoctorWorkspace ? 'doctor.home' : 'employee.home';
-    $logoutRoute = $isDoctorWorkspace ? 'doctor.logout' : 'employee.logout';
-    $navigation = $isDoctorWorkspace
-        ? ($workspaceMode === 'examination'
-            ? [['Bác sĩ khám bệnh', 'doctor.home', 'doctor.home', 'user']]
-            : [['Bác sĩ thực hiện dịch vụ', 'doctor.services.index', 'doctor.services.index', 'services']])
-        : ($workspaceMode === 'cashier'
-            ? [['Nhân viên thu ngân', 'employee.payments.index', 'employee.payments.index', 'payment']]
-            : [['Nhân viên tiếp đón', 'employee.reception.index', 'employee.reception.index', 'reception']]);
-    $sectionPatterns = $isDoctorWorkspace
-        ? ['doctor.services.index' => ['doctor.services.*', 'doctor.laboratory.*', 'doctor.imaging.*']]
-        : ['employee.reception.index' => ['employee.walk-in.*', 'employee.appointments.*'], 'employee.payments.index' => 'employee.payments.*'];
+    $workspaceMode = session('employee_workspace_mode');
+    $isCashier = $workspaceMode === 'cashier';
+    $workspaceLabel = $isCashier ? 'Nhân viên thu ngân' : 'Nhân viên tiếp đón';
+    $homeRoute = 'employee.home';
+    $navigation = $isCashier
+        ? [['Thu ngân và thanh toán', 'employee.payments.index', 'employee.payments.index', 'payment']]
+        : [['Tiếp đón bệnh nhân', 'employee.reception.index', 'employee.reception.index', 'reception']];
+    $sectionPatterns = ['employee.reception.index' => ['employee.reception.*', 'employee.walk-in.*', 'employee.appointments.*'], 'employee.payments.index' => 'employee.payments.*'];
     $activeSection = collect($navigation)->first(fn ($item) => request()->routeIs($item[2], ...(array) ($sectionPatterns[$item[2]] ?? [])));
     $pageTitle = trim($__env->yieldContent('title'));
 @endphp
@@ -31,11 +24,14 @@
     <div class="employee-header__inner">
         <a class="portal-brand" href="{{ route($homeRoute) }}" aria-label="Mediway - tổng quan {{ mb_strtolower($workspaceLabel) }}"><span aria-hidden="true">✦</span> Mediway</a>
         <div class="employee-header__right">
-            <a class="employee-account" href="{{ $isDoctorWorkspace ? route('doctor.home') : route('employee.profile') }}" aria-label="Tài khoản của {{ $employee->full_name }}">
+            <a class="employee-account" href="{{ route('employee.profile') }}" aria-label="Tài khoản của {{ $employee->full_name }}">
                 <span class="employee-account__avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr(trim($employee->full_name), 0, 1)) }}</span>
                 <span class="employee-account__text"><small>{{ $workspaceLabel }}</small><strong>{{ $employee->full_name }}</strong></span>
             </a>
-            <form method="post" action="{{ route($logoutRoute) }}">@csrf<button type="submit" class="portal-btn portal-btn--secondary employee-logout">Đăng xuất</button></form>
+            <x-workspace-switch :action="route('employee.workspace.select')"
+                :workspace="$isCashier ? 'reception' : 'cashier'"
+                :label="$isCashier ? 'Nhân viên tiếp đón' : 'Nhân viên thu ngân'" />
+            <form method="post" action="{{ route('employee.logout') }}">@csrf<button type="submit" class="portal-btn portal-btn--secondary employee-logout">Đăng xuất</button></form>
         </div>
     </div>
 </header>
@@ -52,13 +48,29 @@
                 @foreach ($navigation as [$label, $href, $routeName, $icon])
                     <a class="employee-nav__item {{ ($activeSection[2] ?? null) === $routeName ? 'is-active' : '' }}" href="{{ $href === '#' ? '#' : route($href) }}" @if($href === '#') aria-disabled="true" @elseif(request()->routeIs($routeName)) aria-current="page" @elseif(($activeSection[2] ?? null) === $routeName) aria-current="location" @endif><x-employee-icon :name="$icon" /><span>{{ $label }}</span></a>
                 @endforeach
-                @unless($isDoctorWorkspace)
                     <p class="employee-nav__label">TÀI KHOẢN</p>
                     <a class="employee-nav__item {{ request()->routeIs('employee.profile*') ? 'is-active' : '' }}" href="{{ route('employee.profile') }}" @if(request()->routeIs('employee.profile*')) aria-current="page" @endif><x-employee-icon name="user" /><span>Hồ sơ cá nhân</span></a>
-                @endunless
             </nav>
         </details>
-        <div class="employee-sidebar__help"><x-employee-icon name="help" /><div><strong>Cần hỗ trợ?</strong><p>Thông tin và hướng dẫn sử dụng Mediway.</p><a href="{{ route('public.support') }}">Xem hỗ trợ <span aria-hidden="true">→</span></a></div></div>
+        <x-workspace-guidance
+            :context="$workspaceLabel"
+            :stages="$isCashier ? [
+                'Trước khi thu tiền' => [
+                    'Đối chiếu đúng bệnh nhân, khoản thu và số tiền.',
+                    'Kiểm tra phương thức thanh toán trước khi xác nhận.',
+                ],
+                'Sau khi ghi nhận thanh toán' => [
+                    'Kiểm tra giao dịch thành công rồi gửi biên lai cho bệnh nhân.',
+                ],
+            ] : [
+                'Trước khi tiếp nhận' => [
+                    'Đối chiếu hồ sơ bệnh nhân và kiểm tra đã có lịch hẹn hay chưa.',
+                ],
+                'Sau khi tiếp nhận' => [
+                    'Thông báo phòng khám và hướng dẫn thanh toán phí khám tại quầy nếu còn khoản phải thu.',
+                ],
+            ]"
+        />
     </aside>
     <main class="employee-main" id="main-content">
         <nav class="employee-breadcrumb" aria-label="Đường dẫn">
@@ -68,10 +80,10 @@
                 @else
                     <li><a href="{{ route($homeRoute) }}">Tổng quan</a></li>
                 @endif
-                @if(!$isDoctorWorkspace && request()->routeIs('employee.profile.edit'))
+                @if(request()->routeIs('employee.profile.edit'))
                     <li><a href="{{ route('employee.profile') }}">Hồ sơ cá nhân</a></li>
                     <li><span aria-current="page">Chỉnh sửa</span></li>
-                @elseif(!$isDoctorWorkspace && request()->routeIs('employee.profile'))
+                @elseif(request()->routeIs('employee.profile'))
                     <li><span aria-current="page">Hồ sơ cá nhân</span></li>
                 @elseif($activeSection)
                     @if(request()->routeIs($activeSection[2]))

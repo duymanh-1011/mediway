@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class DoctorSeeder extends Seeder
 {
-    public function run(bool $includePracticeData = false): void
+    public function run(bool $includeExtraAccounts = false): void
     {
         $doctors = [
             ['code' => 'BS000001', 'name' => 'Nguyễn Văn Bình', 'dob' => '1978-03-10', 'gender' => 'Nam', 'specialty' => 'CKTMH'],
@@ -15,7 +15,7 @@ class DoctorSeeder extends Seeder
             ['code' => 'BS000003', 'name' => 'Lê Minh Đức', 'dob' => '1984-12-02', 'gender' => 'Nam', 'specialty' => 'CKNOI'],
         ];
 
-        if ($includePracticeData) {
+        if ($includeExtraAccounts) {
             $doctors = [...$doctors,
                 ['code' => 'BS000004', 'name' => 'Phan Ngọc Linh', 'dob' => '1986-05-14', 'gender' => 'Nữ', 'specialty' => 'CKTH'],
                 ['code' => 'BS000005', 'name' => 'Vũ Hoài Anh', 'dob' => '1988-08-09', 'gender' => 'Nữ', 'specialty' => 'CKDL'],

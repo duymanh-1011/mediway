@@ -10,7 +10,7 @@ use App\Models\ServiceOrderItem;
 use App\Models\ServiceStatus;
 use App\Models\User;
 use App\Support\TechnicalServiceStatus;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,7 +21,7 @@ class EmployeeTechnicalStatusTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
     }
 

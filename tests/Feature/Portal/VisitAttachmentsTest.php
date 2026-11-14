@@ -5,7 +5,7 @@ namespace Tests\Feature\Portal;
 use App\Models\MedicalVisit;
 use App\Models\ServiceResult;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -16,7 +16,7 @@ class VisitAttachmentsTest extends TestCase
 
     public function test_attachments_follow_their_visit_and_cannot_be_accessed_by_another_patient(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         Storage::fake('local');
         $patient = User::where('business_code', 'BN000001')->firstOrFail();
@@ -60,7 +60,7 @@ class VisitAttachmentsTest extends TestCase
 
     public function test_personal_documents_are_available_in_profile_not_as_visit_attachments(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         Storage::fake('local');
         $patient = User::where('business_code', 'BN000001')->firstOrFail();

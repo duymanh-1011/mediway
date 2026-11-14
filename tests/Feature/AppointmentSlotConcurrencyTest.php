@@ -10,7 +10,7 @@ use App\Models\ExaminationRoom;
 use App\Models\MedicalVisit;
 use App\Models\Patient;
 use App\Models\Specialty;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +35,7 @@ class AppointmentSlotConcurrencyTest extends TestCase
             $this->markTestSkipped('Cần MySQL và hai kết nối độc lập để xác minh khóa hàng.');
         }
         $this->assertSame('mediway_codex_test_20261019', DB::getDatabaseName());
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(WorkflowFixtureSeeder::class);
         foreach (['overlap', 'capacity', 'duplicate', 'duplicate_checkin'] as $index => $scenario) {
             $schedule = DoctorSchedule::create([
                 'doctor_id' => Doctor::where('doctor_code', 'BS000001')->value('id'),

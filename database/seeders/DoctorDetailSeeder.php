@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class DoctorDetailSeeder extends Seeder
 {
-    public function run(bool $includePracticeData = false): void
+    public function run(bool $includeExtraAccounts = false): void
     {
         $details = [
             [
@@ -18,6 +18,7 @@ class DoctorDetailSeeder extends Seeder
                 'field' => 'Tai Mũi Họng',
                 'license' => 'GPHN-BS-0001',
                 'experience' => 14,
+                'address' => 'Số 258 đường Võ Chí Công, phường Tây Hồ, Hà Nội',
             ],
             [
                 'code' => 'BS000002',
@@ -27,6 +28,7 @@ class DoctorDetailSeeder extends Seeder
                 'field' => 'Tim mạch',
                 'license' => 'GPHN-BS-0002',
                 'experience' => 13,
+                'address' => 'Số 136 đường Nguyễn Ngọc Nại, phường Phương Liệt, Hà Nội',
             ],
             [
                 'code' => 'BS000003',
@@ -36,48 +38,49 @@ class DoctorDetailSeeder extends Seeder
                 'field' => 'Nội tổng quát',
                 'license' => 'GPHN-BS-0003',
                 'experience' => 12,
+                'address' => 'Số 336 đường Nguyễn Trãi, phường Thanh Xuân, Hà Nội',
             ],
         ];
 
-        if ($includePracticeData) {
+        if ($includeExtraAccounts) {
             $details = [...$details,
                 [
                     'code' => 'BS000004', 'qualification' => 'Bác sĩ chuyên khoa', 'degree' => 'Bác sĩ CKI',
                     'position' => 'Bác sĩ điều trị', 'field' => 'Tiêu hóa', 'license' => 'GPHN-BS-0004', 'experience' => 11,
+                    'address' => 'Số 58 đường Phú Xá, phường Phú Thượng, Hà Nội',
                 ],
                 [
                     'code' => 'BS000005', 'qualification' => 'Bác sĩ chuyên khoa', 'degree' => 'Bác sĩ CKI',
                     'position' => 'Bác sĩ điều trị', 'field' => 'Da liễu', 'license' => 'GPHN-BS-0005', 'experience' => 9,
+                    'address' => 'Số 85 phố Dịch Vọng Hậu, phường Cầu Giấy, Hà Nội',
                 ],
                 [
                     'code' => 'BS000006', 'qualification' => 'Bác sĩ chuyên khoa', 'degree' => 'Bác sĩ CKI',
                     'position' => 'Bác sĩ điều trị', 'field' => 'Tai Mũi Họng', 'license' => 'GPHN-BS-0006', 'experience' => 12,
+                    'address' => 'Số 525 phố Kim Mã, phường Giảng Võ, Hà Nội',
                 ],
             ];
         }
 
         foreach ($details as $detail) {
-            $doctorId = DB::table('doctors')
+            $doctor = DB::table('doctors')
                 ->where('doctor_code', $detail['code'])
-                ->value('id');
+                ->first(['id', 'full_name']);
 
             DB::table('doctor_details')->updateOrInsert(
-                ['doctor_id' => $doctorId],
+                ['doctor_id' => $doctor->id],
                 [
+                    ...SeededContact::forProfile($doctor->full_name, $detail['address']),
                     'citizen_id_number' => null,
                     'citizen_id_issue_date' => null,
                     'citizen_id_issue_place' => null,
-                    'email' => null,
-                    'hometown' => null,
-                    'permanent_address' => null,
-                    'current_address' => null,
                     'nationality' => 'Việt Nam',
                     'ethnicity' => 'Kinh',
-                    'education_level' => null,
+                    'education_level' => 'Đại học',
 
                     'professional_qualification' => $detail['qualification'],
                     'academic_title_degree' => $detail['degree'],
-                    'professional_title' => null,
+                    'professional_title' => 'Bác sĩ',
                     'current_position' => $detail['position'],
                     'current_workplace' => 'Mediway Demo Hospital',
 
@@ -86,7 +89,7 @@ class DoctorDetailSeeder extends Seeder
                     'specialized_fields' => $detail['field'],
 
                     'professional_skills' => null,
-                    'languages' => null,
+                    'languages' => 'Tiếng Việt',
 
                     'practice_license_number' => $detail['license'],
                     'practice_license_issue_date' => null,

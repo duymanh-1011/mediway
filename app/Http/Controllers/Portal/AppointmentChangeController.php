@@ -5,14 +5,8 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\AppointmentStatus;
-use App\Models\AppointmentTimeSlot;
 use App\Models\AuditLog;
-use App\Models\Doctor;
-use App\Models\DoctorSchedule;
-use App\Models\Patient;
 use App\Support\Portal\AppointmentChangePolicy;
-use App\Services\AppointmentOverlap;
-use App\Support\Portal\PatientBookingWindow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -97,172 +91,6 @@ class AppointmentChangeController extends Controller
             ->with('success', 'Hủy lịch hẹn thành công.');
     }
 
-    public function rescheduleForm(Appointment $appointment): View
-    {
-        $this->assertOwner($appointment);
-
-        $appointment->load(
-            'appointmentStatus',
-            'appointmentTimeSlot.doctorSchedule'
-        );
-
-        $problem = $this->policy->problem(
-            $appointment,
-            'reschedule'
-        );
-
-        $slots = AppointmentTimeSlot::query()
-            ->with([
-                'doctorSchedule.doctor',
-                'doctorSchedule.specialty',
-                'doctorSchedule.examinationRoom',
-            ])
-            ->where('status', 'ACTIVE')
-            ->where('id', '!=', $appointment->appointment_time_slot_id)
-            ->whereHas('doctorSchedule', function ($query) use ($appointment) {
-                $query
-                    ->where('doctor_id', $appointment->doctor_id)
-                    ->where('specialty_id', $appointment->specialty_id)
-                    ->where('status', 'ACTIVE')
-                    ->whereDate('work_date', '>=', PatientBookingWindow::firstDate())
-                    ->whereDate('work_date', '<=', PatientBookingWindow::lastDate());
-            })
-            ->get()
-            ->filter(
-                fn (AppointmentTimeSlot $slot) => $this->validTarget($slot)
-            )
-            ->sortBy(
-                fn(AppointmentTimeSlot $slot) =>
-                $slot->doctorSchedule->work_date->format('Y-m-d')
-                    . ' ' . $slot->start_time
-            )
-            ->values();
-
-        return view(
-            'portal.appointments.reschedule',
-            compact('appointment', 'problem', 'slots')
-        );
-    }
-
-    public function reschedule(
-        Request $request,
-        Appointment $appointment
-    ): RedirectResponse {
-        $this->assertOwner($appointment);
-
-        $data = $request->validate([
-            'appointment_time_slot_id' => [
-                'required',
-                'integer',
-                'exists:appointment_time_slots,id',
-            ],
-        ]);
-
-        $this->assertAllowed($appointment, 'reschedule');
-
-        $targetId = (int) $data['appointment_time_slot_id'];
-
-        if ($targetId === (int) $appointment->appointment_time_slot_id) {
-            throw ValidationException::withMessages([
-                'appointment_time_slot_id' =>
-                'Vui lòng chọn khung giờ khác.',
-            ]);
-        }
-
-        $targetScheduleId = AppointmentTimeSlot::query()
-            ->findOrFail($targetId)
-            ->doctor_schedule_id;
-
-        DB::transaction(function () use (
-            $appointment,
-            $targetId,
-            $targetScheduleId
-        ): void {
-            // Khóa ca và khung giờ trước khi kiểm tra điều kiện đặt lại lịch.
-            $schedule = DoctorSchedule::query()
-                ->whereKey($targetScheduleId)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            $slot = AppointmentTimeSlot::query()
-                ->whereKey($targetId)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            $doctor = Doctor::query()
-                ->whereKey($schedule->doctor_id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            $schedule->setRelation('doctor', $doctor);
-            $slot->setRelation('doctorSchedule', $schedule);
-
-            $patient = Patient::query()
-                ->whereKey(Auth::user()?->patient?->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($patient->status !== 'ACTIVE') {
-                throw ValidationException::withMessages([
-                    'appointment' =>
-                    'Hồ sơ bệnh nhân không còn hoạt động.',
-                ]);
-            }
-
-            $locked = Appointment::query()
-                ->whereKey($appointment->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            $this->assertOwner($locked);
-            $this->assertAllowed($locked, 'reschedule');
-
-            if ((int) $locked->appointment_time_slot_id === $targetId) {
-                throw ValidationException::withMessages([
-                    'appointment_time_slot_id' =>
-                    'Lịch đã được đổi sang khung giờ này.',
-                ]);
-            }
-
-            if (
-                (int) $slot->doctor_schedule_id !== (int) $schedule->id
-                || (int) $schedule->doctor_id !== (int) $locked->doctor_id
-                || (int) $schedule->specialty_id !== (int) $locked->specialty_id
-                || ! $this->validTarget($slot)
-            ) {
-                throw ValidationException::withMessages([
-                    'appointment_time_slot_id' =>
-                    'Khung giờ mới nằm ngoài thời gian đặt lịch hoặc đã ngừng nhận lịch.',
-                ]);
-            }
-
-            AppointmentOverlap::ensureAvailable($patient->id, $slot, $locked->id);
-            PatientBookingWindow::ensureAllows($schedule, $slot);
-
-            $old = $this->snapshot($locked);
-
-            $locked->update([
-                'appointment_date' =>
-                $schedule->work_date->format('Y-m-d'),
-                'appointment_time_slot_id' => $slot->id,
-                'doctor_id' => $schedule->doctor_id,
-                'specialty_id' => $schedule->specialty_id,
-                'examination_room_id' =>
-                $schedule->examination_room_id,
-                'checkin_token' => (string) Str::uuid(),
-            ]);
-
-            $this->writeAudit('UPDATE', $locked, $old);
-        }, 3);
-
-        return redirect()
-            ->route('patient.appointments.show', $appointment)
-            ->with(
-                'success',
-                'Đổi lịch thành công. Vui lòng kiểm tra ngày và giờ mới.'
-            );
-    }
-
     private function assertOwner(Appointment $appointment): void
     {
         $patient = Auth::user()?->patient;
@@ -285,27 +113,6 @@ class AppointmentChangeController extends Controller
                 'appointment' => $message,
             ]);
         }
-    }
-
-    private function validTarget(AppointmentTimeSlot $slot): bool
-    {
-        $schedule = $slot->doctorSchedule;
-
-        if (
-            ! $schedule
-            || $slot->status !== 'ACTIVE'
-            || $schedule->status !== 'ACTIVE'
-            || $schedule->doctor?->status !== 'ACTIVE'
-            || $schedule->specialty?->status !== 'ACTIVE'
-            || $schedule->examinationRoom?->status !== 'ACTIVE'
-            || ! $schedule->doctor->canPracticeSpecialty(
-                (int) $schedule->specialty_id
-            )
-        ) {
-            return false;
-        }
-
-        return PatientBookingWindow::allows($schedule, $slot);
     }
 
     private function snapshot(Appointment $appointment): array
@@ -342,9 +149,7 @@ class AppointmentChangeController extends Controller
             'old_values' => $old,
             'new_values' => $this->snapshot($appointment),
             'description' =>
-            'Bệnh nhân '
-                . ($action === 'CANCEL' ? 'hủy' : 'đổi')
-                . ' lịch hẹn ' . $appointment->appointment_code,
+            'Bệnh nhân hủy lịch hẹn ' . $appointment->appointment_code,
             'ip_address' => request()->ip(),
             'user_agent' => Str::limit(
                 (string) request()->userAgent(),

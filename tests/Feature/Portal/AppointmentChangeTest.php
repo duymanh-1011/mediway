@@ -108,22 +108,12 @@ class AppointmentChangeTest extends TestCase
         )->firstOrFail();
     }
 
-    private function approve(int $minutes = 60): void
+    private function approve(): void
     {
         // Chỉ bật giả lập bên trong bài test.
         config()->set(
             'patient_appointments.self_service_approved',
             true
-        );
-
-        config()->set(
-            'patient_appointments.cancel_cutoff_minutes',
-            $minutes
-        );
-
-        config()->set(
-            'patient_appointments.reschedule_cutoff_minutes',
-            $minutes
         );
     }
 
@@ -135,17 +125,14 @@ class AppointmentChangeTest extends TestCase
             route('patient.appointments.show', $appointment)
         )->assertOk()
             ->assertSee('Hủy lịch khám')
-            ->assertSee('Đổi lịch khám');
+            ->assertDontSee('Đổi lịch khám');
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('patient.appointments.reschedule.form'));
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('patient.appointments.reschedule'));
 
         $this->get(
             route('patient.appointments.cancel.form', $appointment)
         )->assertOk()
             ->assertSee('Chưa thể xác nhận hủy lịch');
-
-        $this->get(
-            route('patient.appointments.reschedule.form', $appointment)
-        )->assertOk()
-            ->assertSee('Chưa thể xác nhận đổi lịch');
 
         $this->post(
             route('patient.appointments.cancel', $appointment),
@@ -187,37 +174,19 @@ class AppointmentChangeTest extends TestCase
         );
     }
 
-    public function test_approved_patient_can_reschedule(): void
+    public function test_upcoming_booking_has_a_direct_cancel_action(): void
     {
-        $old = $this->slot(1);
-        $new = $this->slot(2);
-
-        $appointment = $this->booked($old);
-        $oldToken = $appointment->checkin_token;
-
+        $appointment = $this->booked($this->slot());
         $this->approve();
 
-        $this->post(
-            route('patient.appointments.reschedule', $appointment),
-            ['appointment_time_slot_id' => $new->id]
-        )->assertRedirect(
-            route('patient.appointments.show', $appointment)
-        );
-
-        $appointment->refresh();
-
-        $this->assertSame(
-            $new->id,
-            $appointment->appointment_time_slot_id
-        );
-
-        $this->assertNotSame(
-            $oldToken,
-            $appointment->checkin_token
-        );
+        $this->get(route('patient.appointments'))
+            ->assertOk()
+            ->assertSee(route('patient.appointments.cancel.form', $appointment))
+            ->assertSee('Hủy lịch khám')
+            ->assertDontSee('Đổi lịch');
     }
 
-    public function test_other_patient_cannot_change_appointment(): void
+    public function test_other_patient_cannot_cancel_appointment(): void
     {
         $appointment = $this->booked($this->slot());
 
@@ -228,42 +197,16 @@ class AppointmentChangeTest extends TestCase
             route('patient.appointments.cancel.form', $appointment)
         )->assertNotFound();
 
-        $this->get(
-            route('patient.appointments.reschedule.form', $appointment)
-        )->assertNotFound();
-
         $this->post(
             route('patient.appointments.cancel', $appointment),
             ['cancellation_reason' => 'Muốn hủy lịch của người khác.']
         )->assertNotFound();
     }
 
-    public function test_reschedule_accepts_a_slot_with_other_bookings(): void
-    {
-        $old = $this->slot(1);
-        $target = $this->slot(2);
 
-        $appointment = $this->booked($old);
-        $this->booked($target, 'BN000002');
-
-        $this->actingAs($this->user('BN000001'));
-        $this->approve();
-
-        $this->post(
-            route('patient.appointments.reschedule', $appointment),
-            ['appointment_time_slot_id' => $target->id]
-        )->assertSessionHasNoErrors();
-
-        $this->assertSame(
-            $target->id,
-            $appointment->fresh()->appointment_time_slot_id
-        );
-    }
-
-    public function test_checked_in_appointment_cannot_change(): void
+    public function test_checked_in_appointment_cannot_cancel(): void
     {
         $appointment = $this->booked($this->slot());
-        $target = $this->slot(2);
         $originalDate = $appointment->appointment_date->format('Y-m-d');
         $originalSlot = $appointment->appointment_time_slot_id;
 
@@ -283,11 +226,6 @@ class AppointmentChangeTest extends TestCase
             ['cancellation_reason' => 'Muốn hủy sau tiếp nhận.']
         )->assertSessionHasErrors('appointment');
 
-        $this->post(route('patient.appointments.reschedule', $appointment), [
-            'appointment_time_slot_id' => $target->id,
-            'appointment_date' => $target->doctorSchedule->work_date->format('Y-m-d'),
-        ])->assertSessionHasErrors('appointment');
-
         $this->assertSame($originalDate, $appointment->fresh()->appointment_date->format('Y-m-d'));
         $this->assertSame($originalSlot, $appointment->fresh()->appointment_time_slot_id);
 
@@ -297,33 +235,20 @@ class AppointmentChangeTest extends TestCase
         );
     }
 
-    public function test_reschedule_rejects_appointment_with_a_visit_even_when_booked(): void
-    {
-        $old = $this->slot(1);
-        $target = $this->slot(2);
-        $appointment = $this->booked($old);
-        $visit = \App\Models\MedicalVisit::query()->firstOrFail()->replicate();
-        $visit->visit_code = 'TEST-RESCHEDULE-VISIT';
-        $visit->appointment_id = $appointment->id;
-        $visit->patient_id = $appointment->patient_id;
-        $visit->save();
-        $date = $appointment->appointment_date->format('Y-m-d');
-        $this->approve();
-
-        $this->post(route('patient.appointments.reschedule', $appointment), [
-            'appointment_time_slot_id' => $target->id,
-            'appointment_date' => $target->doctorSchedule->work_date->format('Y-m-d'),
-        ])->assertSessionHasErrors('appointment');
-
-        $this->assertSame($date, $appointment->fresh()->appointment_date->format('Y-m-d'));
-        $this->assertSame($old->id, $appointment->fresh()->appointment_time_slot_id);
-    }
 
     public function test_cutoff_blocks_late_cancellation(): void
     {
         $appointment = $this->booked($this->slot(1));
 
-        $this->approve(1500);
+        $this->approve();
+        $this->assertSame(120, (int) config('patient_appointments.cancel_cutoff_minutes'));
+
+        $start = \Illuminate\Support\Carbon::parse(
+            $appointment->appointment_date->format('Y-m-d')
+            . ' ' . $appointment->appointmentTimeSlot->start_time,
+            config('app.timezone')
+        );
+        $this->travelTo($start->copy()->subMinutes(119));
 
         $this->post(
             route('patient.appointments.cancel', $appointment),
@@ -334,6 +259,42 @@ class AppointmentChangeTest extends TestCase
             'BOOKED',
             $appointment->fresh()->appointmentStatus->name
         );
+    }
+
+    public function test_cancellation_is_allowed_just_over_two_hours_before_start(): void
+    {
+        $appointment = $this->booked($this->slot(1));
+        $this->approve();
+
+        $start = \Illuminate\Support\Carbon::parse(
+            $appointment->appointment_date->format('Y-m-d')
+            . ' ' . $appointment->appointmentTimeSlot->start_time,
+            config('app.timezone')
+        );
+        $this->travelTo($start->copy()->subMinutes(121));
+
+        $this->get(
+            route('patient.appointments.cancel.form', $appointment)
+        )->assertOk()
+            ->assertSee('Xác nhận hủy lịch');
+    }
+
+    public function test_cancellation_is_allowed_at_the_two_hour_cutoff(): void
+    {
+        $appointment = $this->booked($this->slot(1));
+        $this->approve();
+
+        $start = \Illuminate\Support\Carbon::parse(
+            $appointment->appointment_date->format('Y-m-d')
+            . ' ' . $appointment->appointmentTimeSlot->start_time,
+            config('app.timezone')
+        );
+        $this->travelTo($start->copy()->subMinutes(120));
+
+        $this->get(
+            route('patient.appointments.cancel.form', $appointment)
+        )->assertOk()
+            ->assertSee('Xác nhận hủy lịch');
     }
 
     public function test_generated_slot_flows_through_patient_booking_reception_cashier_and_queue(): void

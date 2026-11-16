@@ -2,3 +2,11 @@
 
 /* Tóm tắt lịch hẹn trên trang bệnh nhân. */
 .appointment-ticket{display:flex;flex-wrap:wrap;justify-content:space-between;gap:18px;margin-bottom:26px;padding:20px;border:1px solid #d9e5f5;border-radius:12px;background:#f1f6ff}.appointment-ticket>div{display:grid;gap:4px;min-width:0}.appointment-ticket span{color:#526175;font-size:11px;font-weight:700;letter-spacing:.08em}.appointment-ticket strong{color:#172033;font-size:19px;overflow-wrap:anywhere}.appointment-ticket p{margin:0;color:#1d4ed8;font-size:14px;font-weight:600}.appointment-panel__body .appointment-section-label{color:#526175}.appointment-empty{min-height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center}@media(max-width:599px){.appointment-ticket{padding:16px}.appointment-ticket strong{font-size:17px}}
+/* Patient appointment page: keep help below the main panel. */
+@media(min-width:900px){.appointment-layout{grid-template-columns:minmax(0,1fr)}}
+.appointment-help{margin-top:20px}
+.appointment-panel__actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:12px;margin-top:22px}
+.appointment-panel__actions p{flex-basis:100%;margin:0;color:#64748b;font-size:13px;text-align:right}
+.appointment-cancel-action{display:inline-flex;min-height:42px;align-items:center;justify-content:center;padding:0 16px;border:1px solid #fecaca;border-radius:9px;background:#fff1f2;color:#be123c!important;font-size:14px;font-weight:700;text-decoration:none}
+.appointment-cancel-action:hover{background:#ffe4e6}
+.appointment-cancel-action.is-disabled{border-color:#e2e8f0;background:#f1f5f9;color:#64748b!important;cursor:not-allowed}

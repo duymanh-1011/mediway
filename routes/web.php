@@ -229,10 +229,6 @@ Route::prefix('tai-khoan')->name('patient.')->group(function () {
             Route::get('/lich-hen/{appointment}/huy', [PortalAppointmentChangeController::class, 'cancelForm'])->name('appointments.cancel.form');
             // M07 - Xử lý hủy lịch
             Route::post('/lich-hen/{appointment}/huy', [PortalAppointmentChangeController::class, 'cancel'])->name('appointments.cancel');
-            // M07 - Hiển thị trang đổi lịch
-            Route::get('/lich-hen/{appointment}/doi-lich', [PortalAppointmentChangeController::class, 'rescheduleForm'])->name('appointments.reschedule.form');
-            // M07 - Xử lý đổi lịch
-            Route::post('/lich-hen/{appointment}/doi-lich', [PortalAppointmentChangeController::class, 'reschedule'])->name('appointments.reschedule');
             // Chi tiết lịch hẹn
             Route::get('/lich-hen/{appointment}', [PortalAppointmentController::class, 'show'])->name('appointments.show');
             // M08 - Lịch khám và hàng đợi

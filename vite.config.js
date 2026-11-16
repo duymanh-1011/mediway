@@ -27,7 +27,6 @@ export default defineConfig({
             'resources/css/payments-index.css',
             'resources/js/portal/payments-sync.js',
             'resources/css/appointments-cancel.css',
-            'resources/css/appointments-reschedule.css',
         ],
             refresh: true,
         }),

@@ -66,6 +66,25 @@ class DoctorBrowseTest extends TestCase
             ->assertDontSeeText('khung giờ còn đặt được');
     }
 
+    public function test_patient_booking_page_requires_a_searchable_choice_before_showing_slots(): void
+    {
+        $doctor = $this->activeDoctors(1)->firstOrFail();
+        $schedule = $this->createSchedule($doctor);
+        $slot = $this->createSlot($schedule);
+
+        $this->get(route('patient.doctors.index'))
+            ->assertOk()
+            ->assertSee('data-booking-open="specialty"', false)
+            ->assertSee('data-booking-open="doctor"', false)
+            ->assertSee('data-booking-open="room"', false)
+            ->assertSee('data-booking-option data-kind="specialty" data-id="'.$schedule->specialty_id.'"', false)
+            ->assertSee('data-booking-option data-kind="doctor" data-id="'.$doctor->id.'"', false)
+            ->assertSee('data-booking-option data-kind="room" data-id="'.$schedule->examination_room_id.'"', false)
+            ->assertSee('data-booking-schedule-step hidden', false)
+            ->assertSee('data-slot-date="'.$schedule->work_date->toDateString().'"', false)
+            ->assertSee(route('patient.appointments.create', $slot));
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

@@ -4,24 +4,10 @@
     @vite('resources/css/doctors-index.css')
 @endpush
 
-@section('title', 'Tra cứu bác sĩ và lịch khám - Mediway')
+@section('title', 'Đặt lịch khám - Mediway')
 
 @section('content')
     @php
-        $hasFilters = filled($specialtyId)
-            || filled($doctorId)
-            || filled($date);
-
-        $selectedSpecialty = $specialties->firstWhere(
-            'id',
-            $specialtyId
-        );
-
-        $selectedDoctor = $doctors->firstWhere(
-            'id',
-            $doctorId
-        );
-
         $doctorCards = $schedules
             ->groupBy('doctor_id')
             ->map(function ($items) {
@@ -59,6 +45,12 @@
             })
             ->values();
 
+        $bookingSpecialties = $schedules->pluck('specialty')->filter()->unique('id')->sortBy('name')->values();
+        $bookingDoctors = $schedules->pluck('doctor')->filter()->unique('id')->sortBy('full_name')->values();
+        $bookingRooms = $schedules->pluck('examinationRoom')->filter()->unique('id')->sortBy('name')->values();
+        $initialBookingKind = $doctorId ? 'doctor' : ($specialtyId ? 'specialty' : null);
+        $initialBookingId = $doctorId ?: $specialtyId;
+
         $weekdays = [
             'Chủ nhật',
             'Thứ 2',
@@ -84,16 +76,113 @@
                 <a class="appointment-back" href="{{ route('patient.appointments') }}">← Quay lại lịch khám</a>
                 <p class="portal-eyebrow">ĐẶT LỊCH KHÁM</p>
 
-                <h1>Tra cứu bác sĩ và lịch khám</h1>
+                <h1>Đặt lịch khám</h1>
 
                 <p class="portal-lead">
-                    Bạn có thể đặt đến hết ngày kia. Nếu khám trong ngày, hãy đặt trước khi ca chiều của bác sĩ bắt đầu.
+                    Bạn có thể đặt lịch từ hôm nay đến 4 ngày tiếp theo. Chọn chuyên khoa, bác sĩ hoặc phòng khám phù hợp, sau đó chọn ngày và khung giờ còn nhận lịch.
                 </p>
             </div>
         </section>
 
+        <section class="mw-booking-flow portal-shell" data-booking-flow
+            data-initial-kind="{{ $initialBookingKind ?? '' }}"
+            data-initial-id="{{ $initialBookingId ?? '' }}">
+            <div class="mw-booking-progress" aria-label="Các bước đặt lịch">
+                <span class="is-active" data-booking-progress-selection aria-disabled="true">Chọn phương thức</span>
+                <span data-booking-progress-schedule>Chọn lịch khám</span>
+            </div>
+
+            <section class="mw-booking-step" data-booking-selection-step aria-labelledby="booking-method-title">
+                <div class="mw-booking-step__heading">
+                    <div>
+                        <h2 id="booking-method-title">Bạn muốn đặt lịch khám theo phương thức nào?</h2>
+                        <p>Chọn một phương thức. Bạn có thể đổi lựa chọn bất cứ lúc nào.</p>
+                    </div>
+                </div>
+                <div class="mw-booking-methods" role="group" aria-label="Phương thức đặt lịch khám">
+                    <button class="mw-booking-method" type="button" data-booking-open="specialty">
+                        <span class="mw-booking-method__icon" aria-hidden="true">✚</span>
+                        <span class="mw-booking-method__copy"><strong>Theo chuyên khoa</strong><small>Tìm lịch khám thuộc chuyên khoa</small></span>
+                        <span class="mw-booking-method__arrow" aria-hidden="true">›</span>
+                    </button>
+                    <button class="mw-booking-method" type="button" data-booking-open="doctor">
+                        <span class="mw-booking-method__icon" aria-hidden="true">♙</span>
+                        <span class="mw-booking-method__copy"><strong>Theo bác sĩ</strong><small>Tìm lịch của bác sĩ bạn mong muốn</small></span>
+                        <span class="mw-booking-method__arrow" aria-hidden="true">›</span>
+                    </button>
+                    <button class="mw-booking-method" type="button" data-booking-open="room">
+                        <span class="mw-booking-method__icon" aria-hidden="true">⌂</span>
+                        <span class="mw-booking-method__copy"><strong>Theo phòng khám</strong><small>Tìm lịch tại phòng khám bạn muốn</small></span>
+                        <span class="mw-booking-method__arrow" aria-hidden="true">›</span>
+                    </button>
+                </div>
+                <div class="mw-booking-selection" data-booking-selection hidden>
+                    <div class="mw-booking-selection__mark" aria-hidden="true">✓</div>
+                    <div class="mw-booking-selection__copy">
+                        <small data-booking-selected-kind></small>
+                        <strong data-booking-selected-name></strong>
+                        <span data-booking-selected-detail></span>
+                    </div>
+                    <button type="button" class="mw-booking-change" data-booking-change>Đổi lựa chọn</button>
+                </div>
+                <p class="mw-booking-flow__error" data-booking-flow-error role="alert" hidden>Vui lòng chọn chuyên khoa, bác sĩ hoặc phòng khám để tiếp tục.</p>
+                <div class="mw-booking-flow__actions">
+                    <button type="button" class="mw-btn mw-btn--primary" data-booking-continue disabled>Tiếp tục</button>
+                </div>
+            </section>
+
+            <dialog class="mw-booking-dialog" data-booking-dialog aria-labelledby="mw-booking-dialog-title">
+                <div class="mw-booking-dialog__header">
+                    <div><p class="portal-eyebrow">CHỌN LỊCH KHÁM</p><h2 id="mw-booking-dialog-title" data-booking-dialog-title>Chọn thông tin</h2></div>
+                    <button type="button" class="mw-booking-dialog__close" data-booking-dialog-close aria-label="Đóng cửa sổ">×</button>
+                </div>
+                <div class="mw-booking-dialog__body">
+                    <label class="mw-booking-search"><span aria-hidden="true">⌕</span><input type="search" data-booking-search aria-label="Tìm kiếm chuyên khoa, bác sĩ hoặc phòng khám" placeholder="Nhập tên để tìm kiếm" autocomplete="off"></label>
+                    <p class="mw-booking-dialog__count" data-booking-option-count aria-live="polite"></p>
+                    <div class="mw-booking-options" data-booking-options>
+                        @foreach ($bookingSpecialties as $item)
+                            @php
+                                $specialtyDescription = trim((string) ($item->description ?? ''));
+                                $specialtySearchText = collect([
+                                    $item->name,
+                                    $item->description,
+                                    $item->pre_visit_instructions,
+                                ])->filter()->implode(' ');
+                            @endphp
+                            <button type="button" class="mw-booking-option" data-booking-option data-kind="specialty" data-id="{{ $item->id }}" data-name="{{ $item->name }}" data-detail="{{ $specialtyDescription ?: 'Tìm bác sĩ theo chuyên khoa này' }}" data-search="{{ $specialtySearchText }}">
+                                <span class="mw-booking-option__icon" aria-hidden="true">✚</span><span><strong>{{ $item->name }}</strong><small>{{ $specialtyDescription ?: 'Tìm bác sĩ theo chuyên khoa này' }}</small></span><span class="mw-booking-option__arrow" aria-hidden="true">›</span>
+                            </button>
+                        @endforeach
+                        @foreach ($bookingDoctors as $item)
+                            @php
+                                $doctorDetail = $item->specialty?->name ? 'Chuyên khoa ' . $item->specialty->name : 'Xem lịch khám của bác sĩ';
+                            @endphp
+                            <button type="button" class="mw-booking-option" data-booking-option data-kind="doctor" data-id="{{ $item->id }}" data-name="{{ $item->full_name }}" data-detail="{{ $doctorDetail }}" data-search="{{ $item->full_name }} {{ $item->specialty?->name }}">
+                                <span class="mw-booking-option__icon" aria-hidden="true">♙</span><span><strong>{{ $item->full_name }}</strong><small>{{ $doctorDetail }}</small></span><span class="mw-booking-option__arrow" aria-hidden="true">›</span>
+                            </button>
+                        @endforeach
+                        @foreach ($bookingRooms as $item)
+                            @php
+                                $roomSpecialties = $schedules->where('examination_room_id', $item->id)->pluck('specialty.name')->filter()->unique()->implode(' · ');
+                                $roomDetail = collect([
+                                    $item->room_number ? 'Phòng ' . $item->room_number : null,
+                                    $item->building,
+                                    $roomSpecialties ? 'Chuyên khoa ' . $roomSpecialties : null,
+                                ])->filter()->implode(' · ');
+                            @endphp
+                            <button type="button" class="mw-booking-option" data-booking-option data-kind="room" data-id="{{ $item->id }}" data-name="{{ $item->name }}" data-detail="{{ $roomDetail ?: 'Xem lịch khám tại phòng này' }}" data-search="{{ $item->name }} {{ $item->room_number }} {{ $item->building }} {{ $roomSpecialties }}">
+                                <span class="mw-booking-option__icon" aria-hidden="true">⌂</span><span><strong>{{ $item->name }}</strong><small>{{ $roomDetail ?: 'Xem lịch khám tại phòng này' }}</small></span><span class="mw-booking-option__arrow" aria-hidden="true">›</span>
+                            </button>
+                        @endforeach
+                    </div>
+                    <p class="mw-booking-options-empty" data-booking-options-empty hidden>Không tìm thấy lựa chọn phù hợp.</p>
+                </div>
+            </dialog>
+            <noscript><p class="mw-booking-flow__error">Vui lòng bật JavaScript để chọn cách tìm và khung giờ khám.</p></noscript>
+        </section>
+
         {{-- BỘ LỌC --}}
-        <section class="mw-filters">
+        <section class="mw-filters" hidden>
             <div class="portal-shell">
                 <div class="mw-filter-card">
                     <h2>Bộ lọc lịch khám</h2>
@@ -225,35 +314,18 @@
         </section>
 
         {{-- KẾT QUẢ --}}
-        <section class="mw-results">
+        <section class="mw-results" data-booking-schedule-step hidden>
             <div class="portal-shell">
 
-                <div class="mw-context">
-                    @if ($hasFilters)
-                        <strong>Kết quả đang áp dụng:</strong>
-
-                        @if ($specialtyId)
-                            Chuyên khoa:
-                            {{ $selectedSpecialty?->name ?? 'Đã chọn' }}.
-                        @endif
-
-                        @if ($doctorId)
-                            Bác sĩ:
-                            {{ $selectedDoctor?->full_name ?? 'Đã chọn' }}.
-                        @endif
-
-                        @if ($date)
-                                        Ngày:
-                                        {{
-                            \Illuminate\Support\Carbon::parse($date)
-                                ->format('d/m/Y')
-                                        }}.
-                        @endif
-                    @else
-                        <strong>Các lịch đang nhận đặt.</strong>
-                        Mỗi bác sĩ hiển thị một lần; chọn bác sĩ để
-                        xem các ngày và ca làm việc.
-                    @endif
+                <div class="mw-booking-result-head">
+                    <div>
+                        <h2>Chọn lịch khám</h2>
+                        <p>Chọn ngày và khung giờ còn nhận lịch phù hợp với phương thức đã chọn.</p>
+                        <p data-booking-result-summary></p>
+                    </div>
+                    <div class="mw-booking-result-actions">
+                        <button type="button" class="mw-btn" data-booking-change>Đổi lựa chọn</button>
+                    </div>
                 </div>
 
                 @if ($doctorCards->isEmpty())
@@ -267,7 +339,7 @@
                     </div>
                 @else
 
-                    <div class="mw-list">
+                    <div class="mw-list" data-booking-doctor-list>
 
                         @foreach ($doctorCards as $card)
                                         @php
@@ -275,7 +347,7 @@
                                             $days = $card['days'];
                                         @endphp
 
-                                        <article class="mw-doctor" data-doctor-card>
+                                        <article class="mw-doctor" data-doctor-card data-doctor-id="{{ $doctor->id }}">
 
                                             {{-- THÔNG TIN BÁC SĨ --}}
                                             <div class="mw-doctor-head">
@@ -535,7 +607,7 @@
                                                                                                                                                     ->first()['schedule'];
                                                                                                                                         @endphp
 
-                                                                                                                                        <div class="mw-shift">
+                                                                                                                                        <div class="mw-shift" data-shift>
 
                                                                                                                                             <div class="mw-shift-meta">
 
@@ -594,6 +666,9 @@
                                                                                                                                                                                                 class="mw-slot {{ $bookable ? '' : 'is-' . $entry['state'] }}"
                                                                                                                                                                                                 data-slot
                                                                                                                                                                                                 data-state="{{ $entry['state'] }}"
+                                                                                                                                                                                                data-doctor-id="{{ $shift->doctor_id }}"
+                                                                                                                                                                                                data-specialty-id="{{ $shift->specialty_id }}"
+                                                                                                                                                                                                data-room-id="{{ $shift->examination_room_id }}"
                                                                                                                                                                                                 data-book-until-ts="{{ $entry['deadline']->timestamp }}"
                                                                                                                                                                                                 data-slot-label="{{ substr((string) $slot->start_time, 0, 5) }} – {{ substr((string) $slot->end_time, 0, 5) }}"
                                                                                                                                                                                                 data-slot-day="{{ $dayDate->format('d/m/Y') }}"
@@ -666,6 +741,11 @@
 
                     </div>
                 @endif
+
+                <div class="mw-empty mw-booking-no-results" data-booking-no-results hidden>
+                    <h3>Không tìm thấy lịch phù hợp</h3>
+                    <p>Thử chọn ngày khác hoặc đổi chuyên khoa, bác sĩ hay phòng khám.</p>
+                </div>
 
             </div>
         </section>
@@ -1018,11 +1098,15 @@
                         period.querySelectorAll('[data-slot]')
                     );
 
-                    const open = slots.filter(
+                    const visibleSlots = slots.filter(
+                        btn => !btn.hidden
+                    );
+
+                    const open = visibleSlots.filter(
                         btn => !btn.disabled
                     ).length;
 
-                    const allPast = slots.every(
+                    const allPast = visibleSlots.length > 0 && visibleSlots.every(
                         btn => btn.dataset.state === 'past'
                     );
 
@@ -1068,7 +1152,7 @@
 
                     tab.classList.toggle(
                         'is-unavailable',
-                        !panel.querySelector('[data-slot]:not(:disabled)')
+                        !panel.querySelector('[data-slot]:not(:disabled):not([hidden])')
                     );
                 });
 
@@ -1076,7 +1160,7 @@
                  * Cập nhật trạng thái bác sĩ
                  */
                 const remaining = card.querySelectorAll(
-                    '[data-slot]:not(:disabled)'
+                    '[data-slot]:not(:disabled):not([hidden])'
                 ).length;
 
                 const status = card.querySelector(

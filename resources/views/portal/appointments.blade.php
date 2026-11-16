@@ -12,6 +12,14 @@
         @if ($unavailable)
             <x-portal.alert type="error">Không thể tải thông tin khám lúc này. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.</x-portal.alert>
         @else
+            @php
+                $isUpcomingBooked = $appointment?->appointmentStatus?->name === 'BOOKED';
+                $upcomingCancelProblem = $isUpcomingBooked
+                    ? app(\App\Support\Portal\AppointmentChangePolicy::class)
+                        ->problem($appointment, 'cancel')
+                    : null;
+                $canCancelUpcoming = $isUpcomingBooked && $upcomingCancelProblem === null;
+            @endphp
             <div class="appointment-layout">
                 <section class="appointment-panel" aria-labelledby="upcoming-title">
                     <div class="appointment-panel__header">
@@ -38,15 +46,25 @@
                                 <div class="appointment-field"><dt>Chuyên khoa</dt><dd>{{ $appointment->specialty?->name ?? 'Chưa có thông tin' }}</dd></div>
                                 <div class="appointment-field appointment-field--wide"><dt>Phòng khám</dt><dd>{{ $appointment->examinationRoom?->name ?? 'Chưa có thông tin' }}</dd></div>
                             </dl>
+                            @if ($isUpcomingBooked)
+                                <div class="appointment-panel__actions">
+                                    @if ($canCancelUpcoming)
+                                        <a class="appointment-cancel-action" href="{{ route('patient.appointments.cancel.form', $appointment) }}">Hủy lịch khám</a>
+                                    @else
+                                        <span class="appointment-cancel-action is-disabled" aria-disabled="true">Hủy lịch khám</span>
+                                        @if ($upcomingCancelProblem)
+                                            <p>{{ $upcomingCancelProblem }}</p>
+                                        @endif
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     @else
                         <div class="appointment-empty"><span aria-hidden="true">▦</span><h3>Chưa có lịch khám sắp tới</h3><p>Bạn chưa có lịch khám sắp tới.</p></div>
                     @endif
                 </section>
-                <aside class="appointment-sidebar">
-                    <div class="appointment-help"><strong>Cần hỗ trợ?</strong><p>Liên hệ Mediway nếu bạn cần hỗ trợ về lịch khám.</p><a href="{{ route('public.support') }}">Xem thông tin hỗ trợ <span aria-hidden="true">→</span></a></div>
-                </aside>
             </div>
+            <div class="appointment-help"><strong>Cần hỗ trợ?</strong><p>Liên hệ Mediway nếu bạn cần hỗ trợ về lịch khám.</p><a href="{{ route('public.support') }}">Xem thông tin hỗ trợ <span aria-hidden="true">→</span></a></div>
         @endif
     </div>
 </section>

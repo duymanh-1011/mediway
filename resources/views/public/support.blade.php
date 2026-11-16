@@ -40,9 +40,9 @@
             <x-portal.button variant="secondary" :href="route('public.care-process')" aria-label="Xem thêm về quy trình đặt lịch khám">Xem thêm →</x-portal.button>
         </details>
         <details>
-            <summary>Tôi xem hoặc thay đổi lịch hẹn ở đâu?</summary>
+            <summary>Tôi xem hoặc hủy lịch hẹn ở đâu?</summary>
             <p>Đăng nhập và mở Lịch khám, sau đó chọn danh sách tất cả lịch hẹn và mở lịch bạn muốn kiểm tra. Trang chi tiết cho biết thông tin và trạng thái hiện tại của lịch hẹn.</p>
-            <p>Nếu cần thay đổi kế hoạch, hãy kiểm tra các lựa chọn hủy hoặc đổi lịch được hiển thị. Các thao tác này phụ thuộc trạng thái và điều kiện của từng lịch; đọc kỹ thông tin trước khi xác nhận và kiểm tra lại kết quả sau khi thực hiện.</p>
+            <p>Nếu không thể đến khám, bạn có thể hủy lịch đã đặt trước giờ khám ít nhất 2 tiếng, với điều kiện lịch chưa được tiếp nhận. Đọc kỹ thông tin trước khi xác nhận và kiểm tra lại trạng thái sau khi thực hiện.</p>
             <x-portal.button variant="secondary" :href="route('patient.appointments')" aria-label="Xem thêm lịch hẹn của bạn">Xem thêm →</x-portal.button>
         </details>
         <details>

@@ -177,7 +177,7 @@ class DoctorController extends Controller
             ->withQualifiedDoctor()
             ->with([
                 'doctor:id,specialty_id,full_name,status',
-                'specialty:id,name,status',
+                'specialty:id,name,status,description,pre_visit_instructions',
                 'examinationRoom:id,name,room_number,building,status',
 
                 'appointmentTimeSlots' => fn($query) =>

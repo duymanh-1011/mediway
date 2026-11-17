@@ -2,89 +2,36 @@
 
 namespace App\Console\Commands;
 
-use App\Models\MedicalService;
-use App\Models\ServiceResultTemplate;
-use App\Support\ServiceResultTemplateGroupMap;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
+use App\Models\MedicalService;
 
 class AssignServiceResultTemplates extends Command
 {
     protected $signature = 'medical-services:assign-result-templates
-        {--apply : Gán các mẫu khớp rõ ràng; mặc định chỉ xem trước}';
+        {--apply : Không còn hỗ trợ; mẫu phải được gán thủ công trong trang quản trị}';
 
-    protected $description = 'Xem trước hoặc gán mẫu kết quả cho dịch vụ chưa có mẫu theo đúng một nhóm dịch vụ đã biết.';
+    protected $description = 'Liệt kê dịch vụ cần được gán mẫu kết quả thủ công trong trang quản trị.';
 
     public function handle(): int
     {
         $apply = (bool) $this->option('apply');
-        $templates = ServiceResultTemplate::query()
-            ->where('is_active', true)
-            ->get(['id', 'name'])
-            ->keyBy('name');
+        if ($apply) {
+            $this->error('Đã tắt tự động gán mẫu. Hãy gán dịch vụ thủ công trong trang Quản trị → Mẫu phiếu kết quả.');
 
-        $matched = 0;
-        $assigned = 0;
-        $unmatched = 0;
-
-        MedicalService::query()
-            ->whereNull('service_result_template_id')
-            ->with('serviceGroups:id,service_group_code')
-            ->orderBy('id')
-            ->chunkById(100, function ($services) use ($apply, $templates, &$matched, &$assigned, &$unmatched): void {
-                foreach ($services as $service) {
-                    $codes = $service->serviceGroups->pluck('service_group_code')->all();
-                    $templateName = ServiceResultTemplateGroupMap::templateName($codes);
-                    $template = $templateName ? $templates->get($templateName) : null;
-
-                    if (! $template) {
-                        $unmatched++;
-                        $this->line(sprintf(
-                            'Cần gán thủ công: %s — %s (nhóm: %s)',
-                            $service->service_code,
-                            $service->name,
-                            $codes === [] ? 'chưa có nhóm' : implode(', ', $codes)
-                        ));
-
-                        continue;
-                    }
-
-                    $matched++;
-                    $this->line(sprintf(
-                        '%s: %s — %s → %s',
-                        $apply ? 'Sẽ gán' : 'Xem trước',
-                        $service->service_code,
-                        $service->name,
-                        $template->name
-                    ));
-
-                    if (! $apply) {
-                        continue;
-                    }
-
-                    $updated = DB::transaction(function () use ($service, $template): int {
-                        $locked = MedicalService::query()
-                            ->whereKey($service->id)
-                            ->lockForUpdate()
-                            ->first();
-                        if (! $locked || $locked->service_result_template_id !== null) {
-                            return 0;
-                        }
-
-                        $locked->update(['service_result_template_id' => $template->id]);
-
-                        return 1;
-                    });
-
-                    $assigned += $updated;
-                }
-            });
-
-        $this->newLine();
-        $this->info('Khớp mẫu: '.$matched.'; đã gán: '.$assigned.'; cần gán thủ công: '.$unmatched.'.');
-        if (! $apply) {
-            $this->comment('Chưa thay đổi dữ liệu. Rà soát danh sách trên, sau đó chạy lại với --apply trên database đã sao lưu nếu đồng ý.');
+            return self::FAILURE;
         }
+
+        $services = MedicalService::query()
+            ->where('status', 'ACTIVE')
+            ->whereDoesntHave('resultTemplates', fn ($query) => $query
+                ->where('service_result_templates.is_active', true)
+                ->whereDate('service_result_templates.effective_from', '<=', today()->toDateString())
+                ->where(fn ($query) => $query->whereNull('service_result_templates.effective_until')
+                    ->orWhereDate('service_result_templates.effective_until', '>=', today()->toDateString())))
+            ->orderBy('service_code')
+            ->get(['service_code', 'name']);
+        foreach ($services as $service) $this->line($service->service_code.' — '.$service->name);
+        $this->info('Còn '.$services->count().' dịch vụ đang hoạt động chưa có mẫu hiệu lực hôm nay. Danh sách chỉ để tham khảo, không có dữ liệu nào bị thay đổi.');
 
         return self::SUCCESS;
     }

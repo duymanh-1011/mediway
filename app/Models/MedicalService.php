@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MedicalService extends Model
@@ -19,7 +18,6 @@ class MedicalService extends Model
         'estimated_duration_minutes',
         'preparation_instructions',
         'precautions',
-        'service_result_template_id',
         'display_order',
         'status',
     ];
@@ -56,8 +54,26 @@ class MedicalService extends Model
         );
     }
 
-    public function resultTemplate(): BelongsTo
+    public function resultTemplates(): BelongsToMany
     {
-        return $this->belongsTo(ServiceResultTemplate::class, 'service_result_template_id');
+        return $this->belongsToMany(
+            ServiceResultTemplate::class,
+            'medical_service_result_templates',
+            'medical_service_id',
+            'service_result_template_id'
+        )->withTimestamps();
+    }
+
+    /** Return active templates assigned to this service and valid on the supplied date. */
+    public function resultTemplatesAt(string $date): \Illuminate\Support\Collection
+    {
+        return $this->resultTemplates()
+            ->where('service_result_templates.is_active', true)
+            ->where(fn ($query) => $query->whereNull('service_result_templates.effective_from')
+                ->orWhereDate('service_result_templates.effective_from', '<=', $date))
+            ->where(fn ($query) => $query->whereNull('service_result_templates.effective_until')
+                ->orWhereDate('service_result_templates.effective_until', '>=', $date))
+            ->orderByDesc('service_result_templates.effective_from')
+            ->get();
     }
 }

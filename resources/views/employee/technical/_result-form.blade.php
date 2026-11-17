@@ -1,6 +1,8 @@
 @if ($canEnterResult)
-    @if (! $resultTemplate || ! $resultTemplate->is_active)
-        <div class="portal-alert portal-alert--warning">Dịch vụ này chưa được gán mẫu phiếu kết quả đang hoạt động. Vui lòng liên hệ quản trị viên.</div>
+    @if ($templateAmbiguous)
+        <div class="portal-alert portal-alert--warning">Có nhiều mẫu kết quả cùng hiệu lực vào ngày {{ \Illuminate\Support\Carbon::parse($serviceDate)->format('d/m/Y') }}. Vui lòng liên hệ quản trị viên để điều chỉnh thời gian áp dụng.</div>
+    @elseif (! $resultTemplate || ! $resultTemplate->is_active)
+        <div class="portal-alert portal-alert--warning">Chưa có mẫu kết quả áp dụng cho dịch vụ vào ngày {{ \Illuminate\Support\Carbon::parse($serviceDate)->format('d/m/Y') }}. Vui lòng liên hệ quản trị viên.</div>
     @else
         @php
             $resultFormHasErrors = $errors->any();

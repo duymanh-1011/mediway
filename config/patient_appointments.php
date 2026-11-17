@@ -10,7 +10,4 @@ return [
     'cancel_cutoff_minutes' => env(
         'PATIENT_APPOINTMENT_CANCEL_CUTOFF_MINUTES', 120
     ),
-    'reschedule_cutoff_minutes' => env(
-        'PATIENT_APPOINTMENT_RESCHEDULE_CUTOFF_MINUTES', 120
-    ),
 ];

@@ -232,7 +232,7 @@ class TechnicalServiceController extends Controller
         $title = $this->isDoctorWorkspace($request) ? 'Bác sĩ thực hiện dịch vụ' : 'Thực hiện dịch vụ';
         $routePrefix = $this->routePrefix($request);
         $record = $this->scopedItems($employee, $this->shortcutGroups($request))
-            ->with(['medicalService.serviceGroups', 'medicalService.resultTemplate', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.status', 'performer', 'performerDoctor', 'payable.paymentStatus', 'result'])
+            ->with(['medicalService.serviceGroups', 'serviceStatus', 'serviceOrder.medicalVisit.patient', 'serviceOrder.medicalVisit.status', 'performer', 'performerDoctor', 'payable.paymentStatus', 'result'])
             ->findOrFail($item);
         $serviceGroups = $record->medicalService?->serviceGroups;
         // Không tự đoán biểu mẫu khi dịch vụ có nhiều nhóm hoặc chưa có nhóm.
@@ -255,12 +255,13 @@ class TechnicalServiceController extends Controller
             ])
             : route($catalogPrefix.'.index');
 
-        $resultTemplate = $record->medicalService?->resultTemplate;
-        $templateVersion = $resultTemplate
-            ? hash('sha256', json_encode([$resultTemplate->id, $resultTemplate->name, $resultTemplate->fields], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR))
-            : null;
+        $serviceDate = ($record->started_at ?? now())->toDateString();
+        $availableTemplates = $record->medicalService?->resultTemplatesAt($serviceDate) ?? collect();
+        $resultTemplate = $availableTemplates->count() === 1 ? $availableTemplates->first() : null;
+        $templateAmbiguous = $availableTemplates->count() > 1;
+        $templateVersion = $resultTemplate?->versionFingerprint();
 
-        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'supportsDetails', 'hideUploads', 'groupCode', 'listQuery', 'backUrl', 'isDoctorWorkspace', 'resultTemplate', 'templateVersion'));
+        return view('employee.technical.show', compact('employee', 'title', 'routePrefix', 'record', 'supportsParameters', 'supportsDetails', 'hideUploads', 'groupCode', 'listQuery', 'backUrl', 'isDoctorWorkspace', 'resultTemplate', 'templateVersion', 'templateAmbiguous', 'serviceDate'));
     }
 
     // Chỉ tạo bản xem từ dữ liệu đã lưu trong phạm vi nhân viên được phép xem.
@@ -307,7 +308,7 @@ class TechnicalServiceController extends Controller
         abort_unless($visitId, 404);
         $visit = MedicalVisit::with('status')->whereKey($visitId)->lockForUpdate()->firstOrFail();
         $visit->assertServiceDataWritable();
-        $record = $items->with(['serviceStatus', 'serviceOrder', 'payable.paymentStatus', 'medicalService.resultTemplate', 'result'])->lockForUpdate()->firstOrFail();
+        $record = $items->with(['serviceStatus', 'serviceOrder', 'payable.paymentStatus', 'medicalService', 'result'])->lockForUpdate()->firstOrFail();
 
         return [$record, $employee];
     }
@@ -342,6 +343,17 @@ class TechnicalServiceController extends Controller
             }
             $status = ServiceStatus::where('name', 'PROCESSING')->where('is_active', true)->first();
             if (! $status) throw ValidationException::withMessages(['service' => 'Chưa cấu hình trạng thái đang thực hiện.']);
+            $medicalService = $record->medical_service_id
+                ? MedicalService::whereKey($record->medical_service_id)->lockForUpdate()->first()
+                : null;
+            $templates = $medicalService?->resultTemplatesAt(now()->toDateString()) ?? collect();
+            if ($templates->count() !== 1) {
+                throw ValidationException::withMessages([
+                    'service' => $templates->isEmpty()
+                        ? 'Dịch vụ chưa được gán một mẫu kết quả đang có hiệu lực hôm nay. Vui lòng liên hệ quản trị viên.'
+                        : 'Có nhiều mẫu kết quả cùng hiệu lực cho dịch vụ này. Vui lòng liên hệ quản trị viên để điều chỉnh thời gian áp dụng.',
+                ]);
+            }
             $assignment = $employee instanceof Doctor
                 ? ['performed_by_doctor_id' => $employee->id]
                 : ['performed_by_employee_id' => $employee->id];
@@ -445,12 +457,22 @@ class TechnicalServiceController extends Controller
             if (! hash_equals(ServiceResult::editVersion($result), $data['result_version'])) {
                 throw ValidationException::withMessages(['service' => 'Kết quả đã thay đổi. Vui lòng tải lại trang trước khi lưu.']);
             }
-            $templateId = $record->medicalService?->service_result_template_id;
-            $template = $templateId ? ServiceResultTemplate::whereKey($templateId)->lockForUpdate()->first() : null;
-            if (! $template || ! $template->is_active) {
-                throw ValidationException::withMessages(['service' => 'Dịch vụ chưa được gán mẫu phiếu kết quả đang hoạt động. Vui lòng liên hệ quản trị viên.']);
+            $medicalService = $record->medical_service_id
+                ? MedicalService::whereKey($record->medical_service_id)->lockForUpdate()->first()
+                : null;
+            $serviceDate = ($record->started_at ?? now())->toDateString();
+            $matchingTemplates = $medicalService?->resultTemplatesAt($serviceDate) ?? collect();
+            if ($matchingTemplates->count() > 1) {
+                throw ValidationException::withMessages(['service' => 'Có nhiều mẫu kết quả cùng hiệu lực cho dịch vụ này. Vui lòng nhờ quản trị viên điều chỉnh khoảng thời gian các mẫu.']);
             }
-            $currentTemplateVersion = hash('sha256', json_encode([$template->id, $template->name, $template->fields], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+            if ($matchingTemplates->isEmpty()) {
+                throw ValidationException::withMessages(['service' => 'Chưa có mẫu kết quả được gán cho dịch vụ trong ngày thực hiện. Vui lòng liên hệ quản trị viên.']);
+            }
+            $template = ServiceResultTemplate::whereKey($matchingTemplates->first()->id)->lockForUpdate()->first();
+            if (! $template || ! $template->is_active) {
+                throw ValidationException::withMessages(['service' => 'Mẫu kết quả không còn hoạt động. Vui lòng tải lại trang hoặc liên hệ quản trị viên.']);
+            }
+            $currentTemplateVersion = $template->versionFingerprint();
             if (! hash_equals($currentTemplateVersion, $data['template_version'])) {
                 throw ValidationException::withMessages(['service' => 'Mẫu phiếu vừa được cập nhật. Vui lòng tải lại trang trước khi nhập kết quả.']);
             }
@@ -511,7 +533,13 @@ class TechnicalServiceController extends Controller
             }
             $paths = $documents->store($request, 'service-results/'.$record->id, ClinicalDocument::RESULT_FILES);
             $values = ['resulted_at' => now(), ...$paths];
-            $values['template_snapshot'] = ['id' => $template->id, 'name' => $template->name, 'fields' => $fields];
+            $values['template_snapshot'] = [
+                'id' => $template->id,
+                'name' => $template->name,
+                'fields' => $fields,
+                'effective_from' => $template->effective_from?->toDateString(),
+                'effective_until' => $template->effective_until?->toDateString(),
+            ];
             $values['template_values'] = $normalizedTemplateValues;
             if (filled($normalizedTemplateValues['conclusion'] ?? null)) {
                 $values['result_conclusion'] = $normalizedTemplateValues['conclusion'];

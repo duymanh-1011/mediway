@@ -1,9 +1,11 @@
 import { installPortalHistoryReload } from './portal-history.js';
 import { initializePendingForms } from './form-pending.js';
 import { initializeNotificationToast } from './portal-notification-toast.js';
+import { initializePatientBookingFlow } from './patient-booking-flow.js';
 
 installPortalHistoryReload(window);
 initializePendingForms();
+initializePatientBookingFlow();
 
 const menu = document.querySelector('[data-portal-menu]');
 const navigation = document.getElementById(menu?.getAttribute('aria-controls'));

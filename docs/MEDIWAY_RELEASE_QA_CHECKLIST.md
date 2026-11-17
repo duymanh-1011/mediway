@@ -22,7 +22,7 @@ Checklist theo từng tác nhân và giao diện phía dưới là các mục ng
 | Hạng mục | Kết quả |
 |---|---|
 | Bộ PHP `tests/Feature`, SQLite trong bộ nhớ | 601 bài: 583 đạt, 18 bỏ qua, 0 thất bại; 10.414 assertions. Chạy sau các sửa đổi cuối bằng runner tạm xử lý lỗi `is_readable()` của PHP Windows; runner đã được dọn sau khi chạy. |
-| Đặt lịch/chọn khung/giờ tiếp nhận | AppointmentBookingSelectionTest, AppointmentPaymentDateTest, AppointmentReceptionRulesTest: 27/27 đạt. Các test đặt lịch/đổi lịch/mua thuốc bị ảnh hưởng sau cập nhật: 28/28 đạt. |
+| Đặt lịch/chọn khung/giờ tiếp nhận | AppointmentBookingSelectionTest, AppointmentPaymentDateTest, AppointmentReceptionRulesTest: 27/27 đạt. Các test đặt lịch/hủy lịch/mua thuốc bị ảnh hưởng sau cập nhật: 28/28 đạt. |
 | Tiếp nhận và phân quyền workspace nhân viên | EmployeePortalFoundationTest + WalkInReceptionTest: 41/41 đạt. |
 | Thanh toán | EmployeePayableReadOnlyTest + EmployeePaymentCollectionTest + EmployeePaymentReceiptTest: 43/43 đạt. |
 | Luồng bác sĩ khám bệnh | 59/59 đạt ở nhóm D01, khám, chẩn đoán, kê đơn, kết luận, quyền truy cập và hoàn tất. |

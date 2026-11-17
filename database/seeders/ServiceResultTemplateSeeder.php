@@ -2,9 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\MedicalService;
 use App\Models\ServiceResultTemplate;
-use App\Support\ServiceResultTemplateGroupMap;
 use Illuminate\Database\Seeder;
 
 class ServiceResultTemplateSeeder extends Seeder
@@ -41,25 +39,16 @@ class ServiceResultTemplateSeeder extends Seeder
             ],
         ];
 
-        $records = [];
         foreach ($templates as $name => $fields) {
-            $records[$name] = ServiceResultTemplate::firstOrCreate(
+            ServiceResultTemplate::firstOrCreate(
                 ['name' => $name],
-                ['description' => 'Mẫu có thể điều chỉnh theo quy trình chuyên môn của cơ sở.', 'fields' => $fields, 'is_active' => true]
+                [
+                    'description' => 'Mẫu có thể điều chỉnh theo quy trình chuyên môn của cơ sở.',
+                    'fields' => $fields,
+                    'is_active' => true,
+                    'effective_from' => today(),
+                ]
             );
-        }
-
-        foreach (MedicalService::with('serviceGroups')->get() as $service) {
-            if ($service->service_result_template_id !== null) {
-                continue;
-            }
-
-            $codes = $service->serviceGroups->pluck('service_group_code');
-            $templateName = ServiceResultTemplateGroupMap::templateName($codes->all());
-            $template = $templateName ? ($records[$templateName] ?? null) : null;
-            if ($template) {
-                $service->forceFill(['service_result_template_id' => $template->id])->save();
-            }
         }
     }
 }

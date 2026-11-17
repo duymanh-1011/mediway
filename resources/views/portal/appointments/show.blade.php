@@ -127,9 +127,8 @@
             $addressLabel = 'Địa chỉ';
         }
 
-        // Giữ nguyên chính sách hủy / đổi lịch từ backend.
+        // Kiểm tra chính sách hủy lịch từ backend.
         $canCancel = false;
-        $canReschedule = false;
 
         if (
             $statusCode === 'BOOKED'
@@ -142,11 +141,6 @@
             $canCancel = $policy->problem(
                 $appointment,
                 'cancel'
-            ) === null;
-
-            $canReschedule = $policy->problem(
-                $appointment,
-                'reschedule'
             ) === null;
         }
     @endphp
@@ -446,7 +440,7 @@
                             </h3>
 
                             <p>
-                                Bạn không thể hủy hoặc đổi lại
+                                Bạn không thể hủy lại
                                 lịch hẹn đã hủy.
                             </p>
 
@@ -475,13 +469,14 @@
 
                         </div>
 
-                    @elseif (!$canCancel && !$canReschedule)
+                    @elseif (!$canCancel)
 
                         <div class="mw-info-box" role="status">
 
                             <p>
                                 Lịch hẹn hiện không đủ điều kiện
-                                hủy hoặc đổi. Nếu cần hỗ trợ,
+                                hủy. Cần hủy trước giờ khám ít nhất 2 tiếng.
+                                Nếu cần hỗ trợ,
                                 vui lòng liên hệ bệnh viện.
                             </p>
 
@@ -495,22 +490,6 @@
                     <nav class="mw-paper-actions" aria-label="Thao tác lịch hẹn">
 
                         @if ($isBooked)
-
-                            @if ($canReschedule)
-
-                                <a class="mw-paper-button primary main"
-                                    href="{{ route('patient.appointments.reschedule.form', $appointment) }}">
-                                    Đổi lịch khám
-                                </a>
-
-                            @else
-
-                                <span class="mw-paper-button disabled main" aria-disabled="true">
-                                    Đổi lịch khám
-                                </span>
-
-                            @endif
-
                             @if ($canCancel)
 
                                 <a class="mw-paper-button danger main"

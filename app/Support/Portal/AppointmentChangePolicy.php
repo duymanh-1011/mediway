@@ -7,12 +7,12 @@ class AppointmentChangePolicy
     public function enabled(string $action): bool
     {
         if (
-            ! in_array($action, ['cancel', 'reschedule'], true)
+            $action !== 'cancel'
             || config('patient_appointments.self_service_approved') !== true
         ) {
             return false;
         }
-        $value = config("patient_appointments.{$action}_cutoff_minutes");
+        $value = config('patient_appointments.cancel_cutoff_minutes');
         return (is_int($value) && $value >= 0)
             || (is_string($value) && ctype_digit($value));
     }
@@ -41,11 +41,11 @@ class AppointmentChangePolicy
             $schedule->work_date->format('Y-m-d')
             . ' ' . $slot->start_time
         );
-        $minutes = (int) config("patient_appointments.{$action}_cutoff_minutes");
-        if (now()->greaterThanOrEqualTo(
+        $minutes = (int) config('patient_appointments.cancel_cutoff_minutes');
+        if (now()->greaterThan(
             $start->copy()->subMinutes($minutes)
         )) {
-            return 'Đã quá hạn hủy hoặc đổi lịch.';
+            return 'Đã quá hạn hủy lịch.';
         }
         return null;
     }

@@ -135,10 +135,10 @@
                                             && $startsAt !== null
                                             && $startsAt->lessThanOrEqualTo(now());
 
-                                        $canRequestChange =
+                                        $canCancel =
                                             $statusName === 'BOOKED'
-                                            && !$hasStarted
-                                            && !$hasMedicalVisit;
+                                            && app(\App\Support\Portal\AppointmentChangePolicy::class)
+                                                ->problem($appointment, 'cancel') === null;
 
                                         if ($isAutoNoShow) {
                                             $statusLabel = 'Tự động hủy · Vắng khám';
@@ -351,21 +351,24 @@
 
                                                 @elseif ($statusName === 'CANCELLED')
                                                     Lịch đã hủy, không thể tiếp tục
-                                                    hủy hoặc đổi lịch.
+                                                    hủy lịch.
 
                                                 @elseif ($isOverduePending)
                                                     Vui lòng liên hệ quầy tiếp nhận để được hướng dẫn.
 
                                                 @elseif ($hasStarted)
                                                     Giờ khám đã bắt đầu.
-                                                    Không thể tự đổi hoặc hủy lịch này.
+                                                    Không thể tự hủy lịch này.
 
                                                 @elseif ($statusName === 'COMPLETED')
                                                     Lượt khám đã hoàn tất.
 
-                                                @elseif ($canRequestChange)
-                                                    Có thể yêu cầu hủy hoặc đổi lịch
-                                                    nếu đáp ứng chính sách của bệnh viện.
+                                                @elseif ($canCancel)
+                                                    Có thể hủy lịch trước giờ khám ít nhất 2 tiếng.
+
+                                                @elseif ($statusName === 'BOOKED')
+                                                    Chỉ có thể hủy trước giờ khám ít nhất 2 tiếng
+                                                    và khi chưa được tiếp nhận.
 
                                                 @else
                                                     Xem chi tiết để theo dõi
@@ -382,14 +385,7 @@
                                                     Xem chi tiết
                                                 </a>
 
-                                                @if ($canRequestChange)
-                                                    <a
-                                                        class="ah-btn ah-btn--primary"
-                                                        href="{{ route('patient.appointments.reschedule.form', $appointment) }}"
-                                                    >
-                                                        Đổi lịch
-                                                    </a>
-
+                                                @if ($canCancel)
                                                     <a
                                                         class="ah-btn ah-btn--danger"
                                                         href="{{ route('patient.appointments.cancel.form', $appointment) }}"

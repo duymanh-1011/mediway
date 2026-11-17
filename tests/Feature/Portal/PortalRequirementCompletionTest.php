@@ -316,18 +316,16 @@ class PortalRequirementCompletionTest extends TestCase
 
     /*
     |--------------------------------------------------------------------------
-    | M07 - chưa có cutoff nên phải tiếp tục disable
+    | M07 - xác nhận chính sách tự hủy lịch
     |--------------------------------------------------------------------------
     */
 
-    public function test_cancel_and_reschedule_stay_disabled_until_policy_is_approved(): void
+    public function test_patient_appointment_routes_keep_cancellation_only(): void
     {
         foreach (
             [
                 'patient.appointments.cancel.form',
                 'patient.appointments.cancel',
-                'patient.appointments.reschedule.form',
-                'patient.appointments.reschedule',
             ] as $routeName
         ) {
             $this->assertTrue(
@@ -343,5 +341,8 @@ class PortalRequirementCompletionTest extends TestCase
 
         $this->assertFalse($policy->enabled('cancel'));
         $this->assertFalse($policy->enabled('reschedule'));
+        $this->assertFalse(
+            \Illuminate\Support\Facades\Route::has('patient.appointments.reschedule.form')
+        );
     }
 }

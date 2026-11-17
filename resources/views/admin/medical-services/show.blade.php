@@ -159,7 +159,14 @@
 
             <div class="detail-row">
                 <div class="detail-label">Mẫu phiếu kết quả</div>
-                <div class="detail-value">{{ $medicalService->resultTemplate?->name ?? 'Chưa gán mẫu' }}</div>
+                <div class="detail-value">
+                    @forelse ($medicalService->resultTemplates as $resultTemplate)
+                        <div>{{ $resultTemplate->name }} ({{ $resultTemplate->effective_from?->format('d/m/Y') ?? '—' }} – {{ $resultTemplate->effective_until?->format('d/m/Y') ?? 'không thời hạn' }})</div>
+                    @empty
+                        Chưa gán mẫu
+                    @endforelse
+                    <a href="{{ route('admin.service-result-templates.index') }}">Quản lý và gán mẫu</a>
+                </div>
             </div>
 
 

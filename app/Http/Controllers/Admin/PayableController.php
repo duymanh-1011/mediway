@@ -304,6 +304,9 @@ class PayableController extends Controller
             if ($oldStatus === $newStatus->name) {
                 return;
             }
+            if (\App\Models\QrPayment::blocks($payable)) {
+                throw ValidationException::withMessages(['payment_status_id' => 'Hãy xử lý phiếu QR tại quầy trước khi thay đổi khoản thu.']);
+            }
 
             $oldValues = ['payment_status_id' => $payable->payment_status_id, 'payment_status' => $oldStatus,
                 'paid_at' => $payable->paid_at?->format('Y-m-d H:i:s')];
@@ -336,6 +339,9 @@ class PayableController extends Controller
                     ? ServiceOrderItem::with(['serviceStatus', 'serviceOrder'])->whereKey($payable->service_order_item_id)->lockForUpdate()->firstOrFail()
                     : null;
                 $lockedPayable = Payable::with('paymentStatus')->whereKey($payable->id)->lockForUpdate()->firstOrFail();
+                if (\App\Models\QrPayment::blocks($lockedPayable)) {
+                    throw ValidationException::withMessages(['cancel_reason' => 'Hãy xử lý phiếu QR tại quầy trước khi hủy khoản thu.']);
+                }
                 if ($lockedPayable->payment_type === 'EXAMINATION_FEE' && $visit->appointment_id && $visit->status?->name === 'WAITING' && ! $visit->queues()->exists()) {
                     throw ValidationException::withMessages(['cancel_reason' => 'Không thể hủy phí khám khi lượt khám đang chờ thanh toán.']);
                 }

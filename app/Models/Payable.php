@@ -77,6 +77,15 @@ class Payable extends Model
             ->whereDoesntHave('transactions', fn ($transaction) => $transaction->where('transaction_result', 'SUCCESS'));
     }
 
+    public function scopeOutstandingServiceFeesForVisit(Builder $query, MedicalVisit $visit): Builder
+    {
+        return $query->outstandingForPatient()->where('medical_visit_id', $visit->id)->where('payment_type', 'SERVICE_FEE')
+            ->whereHas('serviceOrderItem', fn (Builder $items) => $items
+                ->whereHas('serviceOrder', fn (Builder $orders) => $orders->where('medical_visit_id', $visit->id)->where('status', '!=', 'CANCELLED'))
+                ->whereHas('serviceStatus', fn (Builder $status) => $status->where('name', '!=', 'CANCELLED'))
+                ->whereHas('medicalService'));
+    }
+
     public function prescription(): BelongsTo
     {
         return $this->belongsTo(Prescription::class, 'prescription_id');

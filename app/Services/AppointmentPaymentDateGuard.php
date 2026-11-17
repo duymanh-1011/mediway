@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Payable;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 
 class AppointmentPaymentDateGuard
@@ -18,7 +19,7 @@ class AppointmentPaymentDateGuard
      * Không thay thế các kiểm tra:
      * quyền, trạng thái, số tiền, chống thu trùng.
      */
-    public function unavailableReason(Payable $payable): ?string
+    public function unavailableReason(Payable $payable, ?CarbonInterface $at = null): ?string
     {
         $payable->loadMissing('medicalVisit.appointment');
 
@@ -59,9 +60,8 @@ class AppointmentPaymentDateGuard
             ->appointment_date
             ->format('Y-m-d');
 
-        $today = CarbonImmutable::now(
-            self::TIMEZONE
-        )->format('Y-m-d');
+        $today = ($at?->toImmutable() ?? CarbonImmutable::now())
+            ->setTimezone(self::TIMEZONE)->toDateString();
 
         if ($scheduledDate === $today) {
             return null;
@@ -85,9 +85,9 @@ class AppointmentPaymentDateGuard
     /**
      * Backend bắt buộc từ chối khoản sai ngày.
      */
-    public function assertCanPay(Payable $payable): void
+    public function assertCanPay(Payable $payable, ?CarbonInterface $at = null): void
     {
-        $reason = $this->unavailableReason($payable);
+        $reason = $this->unavailableReason($payable, $at);
 
         if ($reason !== null) {
             throw ValidationException::withMessages([

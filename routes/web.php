@@ -75,6 +75,9 @@ Route::get('/tin-tuc/{slug}', [PublicController::class, 'article'])->name('publi
 
 require __DIR__ . '/employee-reception.php';
 
+Route::post('/webhooks/payos', [\App\Http\Controllers\Employee\QrPaymentController::class, 'webhook'])
+    ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)->name('payments.webhooks.payos');
+
 Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\EmployeeMiddleware::class, \Illuminate\Session\Middleware\AuthenticateSession::class])->group(function () {
     Route::get('/', [\App\Http\Controllers\Employee\WorkspaceController::class, 'home'])->name('home');
     Route::post('/chon-chuc-nang', [\App\Http\Controllers\Employee\WorkspaceController::class, 'selectWorkspace'])->name('workspace.select');
@@ -109,6 +112,21 @@ Route::prefix('nhan-vien')->name('employee.')->middleware([\App\Http\Middleware\
     Route::post('/thanh-toan/{payable}/ghi-nhan', [\App\Http\Controllers\Employee\PaymentCollectionController::class, 'store'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.collect')->name('payments.collect.store');
     Route::get('/thanh-toan/{payable}', [\App\Http\Controllers\Employee\PayableController::class, 'show'])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.show');
     Route::get('/thanh-toan/giao-dich/{transaction}/bien-lai', [\App\Http\Controllers\Employee\PaymentReceiptController::class, 'show',])->middleware(\App\Http\Middleware\EmployeeMiddleware::class . ':payment.view')->name('payments.receipt');
+
+    Route::prefix('thanh-toan/qr')->name('payments.qr.')->controller(\App\Http\Controllers\Employee\QrPaymentController::class)->group(function (): void {
+        Route::middleware(\App\Http\Middleware\EmployeeMiddleware::class.':payment.collect')->group(function (): void {
+            Route::get('/luot-kham/{visit}', 'create')->name('create');
+            Route::post('/luot-kham/{visit}', 'store')->name('store');
+            Route::post('/{payment}/mo-phong', 'simulate')->name('simulate');
+            Route::post('/{payment}/kiem-tra', 'verify')->middleware('throttle:10,1')->name('verify');
+            Route::post('/{payment}/huy', 'cancel')->name('cancel');
+        });
+        Route::middleware(\App\Http\Middleware\EmployeeMiddleware::class.':payment.view')->group(function (): void {
+            Route::get('/{payment}', 'show')->name('show');
+            Route::get('/{payment}/trang-thai', 'status')->name('status');
+            Route::get('/{payment}/bien-lai', 'receipt')->name('receipt');
+        });
+    });
 });
 
 // Các chức năng bác sĩ dùng chung phiên đăng nhập và kiểm tra chế độ theo từng route.

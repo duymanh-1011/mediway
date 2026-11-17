@@ -4,7 +4,8 @@
      * Không ghi dữ liệu hoặc tạo giao dịch trong view.
      */
 
-    $rawPaidAt = $transaction->paid_at
+    $receiptNumber = $receiptNumber ?? $transaction->transaction_code;
+    $rawPaidAt = $receiptPaidAt ?? $transaction->paid_at
         ?? $transaction->confirmed_at
         ?? ($receiptType === 'prescription' ? null : $transaction->created_at);
 
@@ -14,7 +15,7 @@
         : null;
 
     $amount = (int) round(
-        (float) ($transaction->amount ?? 0)
+        (float) ($receiptAmount ?? $transaction->amount ?? 0)
     );
 
     $amountFormatted = number_format(
@@ -156,7 +157,7 @@
     $money = static fn ($value) => $value === null ? '—' : number_format((float) $value, 0, ',', '.');
     $isMedicine = $receiptType === 'prescription';
     $isExam = $receiptType === 'exam';
-    $examFee = data_get($receiptData ?? $receipt ?? [], 'exam_fee_amount', $payable->amount);
+    $examFee = data_get($receiptData ?? $receipt ?? [], 'exam_fee_amount', $payable->amount ?? $amount);
     $payerAmount = data_get($receiptData ?? $receipt ?? [], 'patient_payable_amount');
     $insurance = data_get($receiptData ?? $receipt ?? [], 'insurance_allocation');
     $insuranceLabels = [
@@ -184,11 +185,11 @@
         'Số điện thoại' => $patient->user?->phone,
         'Địa chỉ' => $patient->detail?->current_address ?: $patient->detail?->permanent_address,
     ];
-    $identifiers = ['Số giao dịch:' => $transaction->transaction_code, 'Mã bệnh nhân:' => $patient->patient_code];
+    $identifiers = ['Số giao dịch:' => $receiptNumber, 'Mã bệnh nhân:' => $patient->patient_code] + ($receiptIdentifiers ?? []);
     if ($isMedicine) {
         $identifiers['Mã đơn thuốc:'] = $prescription->prescription_code;
     }
-    $rows = match ($receiptType) {
+    $rows = $receiptLines ?? match ($receiptType) {
         'exam' => [['Phí khám bệnh', 'Lần', 1, $examFee, $examFee]],
         // Mỗi khoản thu dịch vụ lưu giá chỉ định, không có số lượng riêng.
         'service' => [[$serviceItem->medicalService->name, $serviceItem->medicalService->unit, null,
@@ -201,7 +202,7 @@
 @endphp
 
 <x-print.document
-    :title="'Phiếu thu '.$transaction->transaction_code"
+    :title="'Phiếu thu '.$receiptNumber"
     heading="HÓA ĐƠN"
     brand-subtitle="Chứng từ thanh toán"
     :facility="[$clinicName, $visit->examinationRoom?->name, $clinicAddress, $clinicPhone]"
@@ -238,10 +239,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($rows as [$label, $unit, $quantity, $price, $total])
+                    @foreach ($rows as $line)
+                        @php([$label, $unit, $quantity, $price, $total] = $line)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <th scope="row">{{ $label }}</th>
+                            <th scope="row">
+                                {{ $label }}
+                                @if (isset($line[5]))<br><small>{{ $line[5] }}</small>@endif
+                            </th>
                             <td>{{ $unit ?: '—' }}</td>
                             <td>{{ $quantity !== null ? str_replace('.', ',', (string) (float) $quantity) : '—' }}</td>
                             <td class="print-table-number">{{ $money($price) }}</td>

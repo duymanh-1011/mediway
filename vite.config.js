@@ -10,6 +10,7 @@ export default defineConfig({
             'resources/css/employee/payments/show.css',
             'resources/css/employee/payments/collect.css',
             'resources/js/employee/payments/collect.js',
+            'resources/js/employee/payments/qr.js',
             'resources/css/employee.css',
             'resources/js/employee.js',
             'resources/css/doctor-examination.css',

@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payable;
+use App\Models\QrPayment;
 use App\Services\AppointmentPaymentDateGuard;
 use App\Services\PaymentCollectionService;
+use App\Services\QrPaymentService;
 use App\Support\EmployeeAccess;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PaymentCollectionController extends Controller
 {
@@ -76,23 +79,35 @@ class PaymentCollectionController extends Controller
             'Khoản thu không còn đủ điều kiện thanh toán.'
         );
 
-        return view(
-            'employee.payments.collect',
-            compact(
-                'payable',
-                'employee',
-                'backQuery'
-            )
-        );
+        $isService = $payable->payment_type === 'SERVICE_FEE';
+        $payables = $isService
+            ? Payable::query()->outstandingServiceFeesForVisit($payable->medicalVisit)
+                ->with('serviceOrderItem.medicalService')->orderBy('id')->get()
+            : collect([$payable]);
+
+        $activeQr = QrPayment::supports($payable)
+            ? QrPayment::blocking()->where('medical_visit_id', $payable->medical_visit_id)->with('items')->first()
+            : null;
+        $reservedIds = $activeQr?->items->pluck('payable_id')->map(fn ($id) => (int) $id)->all() ?? [];
+        $qrAvailable = QrPayment::supports($payable) && ! $activeQr && QrPaymentService::driver() !== null;
+
+        return response()->view('employee.payments.collect', compact(
+            'payable', 'payables', 'employee', 'backQuery', 'isService', 'activeQr', 'reservedIds', 'qrAvailable'
+        ))->header('Cache-Control', 'private, no-store');
     }
 
     public function store(
         Request $request,
         Payable $payable,
         PaymentCollectionService $service,
-        AppointmentPaymentDateGuard $dateGuard
+        AppointmentPaymentDateGuard $dateGuard,
+        QrPaymentService $qrService
     ) {
         $employee = $this->cashier($request);
+        $methods = ['CASH'];
+        if (QrPayment::supports($payable) && QrPaymentService::driver()) {
+            $methods[] = 'QR';
+        }
 
         $data = $request->validate(
             [
@@ -100,8 +115,10 @@ class PaymentCollectionController extends Controller
                 'amount' => ['prohibited'],
                 'payment_method' => [
                     'required',
-                    Rule::in(['CASH']),
+                    Rule::in($methods),
                 ],
+                'payable_ids' => [Rule::requiredIf($request->input('payment_method') === 'QR' || $request->has('selection_submitted')), 'array', 'min:1', 'max:100'],
+                'payable_ids.*' => ['required', 'integer', 'distinct', 'min:1'],
                 'provider_transaction_code' => [
                     'nullable',
                     'string',
@@ -116,7 +133,7 @@ class PaymentCollectionController extends Controller
                     'nullable',
                     'string',
                 ],
-                'confirm_payment' => ['accepted'],
+                'confirm_payment' => ['exclude_unless:payment_method,CASH', 'accepted'],
             ],
             [
                 'collected_by_employee_id.prohibited' =>
@@ -129,7 +146,11 @@ class PaymentCollectionController extends Controller
                 'Vui lòng chọn phương thức thanh toán.',
 
                 'payment_method.in' =>
-                'Hiện chỉ hỗ trợ thanh toán tiền mặt.',
+                'Phương thức thanh toán này chưa khả dụng cho khoản thu.',
+
+                'payable_ids.required' => 'Vui lòng chọn ít nhất một khoản thu.',
+                'payable_ids.min' => 'Vui lòng chọn ít nhất một khoản thu.',
+                'payable_ids.max' => 'Vui lòng chọn tối đa 100 khoản thu mỗi lần thanh toán.',
 
                 'provider_transaction_code.string' =>
                 'Mã tham chiếu không hợp lệ.',
@@ -162,23 +183,40 @@ class PaymentCollectionController extends Controller
         $data['collected_by_employee_id'] = $employee->id;
 
         $backQuery = PayableController::navigationQuery($request);
+        $parameters = ['payable' => $payable->id, ...$backQuery];
+        $ids = array_map('intval', $data['payable_ids'] ?? [$payable->id]);
+        $isService = $payable->payment_type === 'SERVICE_FEE';
 
         try {
-            $service->collect($request, $payable, $data);
-        } catch (\Illuminate\Validation\ValidationException $exception) {
-            return redirect()->route('employee.payments.show', array_merge(['payable' => $payable->id], $backQuery))
+            if (! $isService && $ids !== [(int) $payable->id]) {
+                throw ValidationException::withMessages(['payable_ids' => 'Vui lòng thanh toán riêng khoản thu này.']);
+            }
+
+            if ($data['payment_method'] === 'QR') {
+                if ($isService && Payable::query()->where('medical_visit_id', $payable->medical_visit_id)
+                    ->where('payment_type', 'SERVICE_FEE')->whereKey($ids)->count() !== count($ids)) {
+                    throw ValidationException::withMessages(['payable_ids' => 'Chọn các khoản phí dịch vụ trong cùng lượt khám.']);
+                }
+
+                return to_route('employee.payments.qr.show', $qrService->create($payable->medicalVisit, $employee, $ids));
+            }
+
+            $transaction = $isService && isset($data['payable_ids'])
+                ? $service->collectServiceFees($request, $payable->medicalVisit, $ids, $data)
+                : $service->collect($request, $payable, $data);
+        } catch (ValidationException $exception) {
+            if ($request->has('payable_ids')) {
+                return to_route('employee.payments.collect.create', $parameters)->withErrors($exception->errors())->withInput();
+            }
+
+            return to_route('employee.payments.show', $parameters)
                 ->withErrors($exception->errors());
         }
 
-        return redirect()->route(
-            'employee.payments.show',
-            array_merge(
-                ['payable' => $payable->id],
-                $backQuery
-            )
-        )->with(
-            'success',
-            'Đã ghi nhận thanh toán tiền mặt thành công.'
-        );
+        $response = $transaction->cash_payment_batch_id
+            ? to_route('employee.payments.receipt', $transaction)
+            : to_route('employee.payments.show', ['payable' => $transaction->payable_id, ...$backQuery]);
+
+        return $response->with('success', 'Đã ghi nhận thanh toán tiền mặt thành công.');
     }
 }

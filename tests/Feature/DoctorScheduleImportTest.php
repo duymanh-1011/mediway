@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Appointment;
+use App\Models\AppointmentStatus;
 use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use App\Models\User;
@@ -55,7 +57,7 @@ class DoctorScheduleImportTest extends TestCase
             ->assertOk()->assertSee('Quản lý lịch tháng')->assertDontSee('Thêm khung giờ');
     }
 
-    public function test_configured_hours_apply_to_new_shifts_and_preserve_existing_bookable_hours(): void
+    public function test_configured_hours_apply_to_new_shifts_and_replace_unbooked_hours(): void
     {
         $this->travelTo(now()->setDate(2090, 2, 1)->setTime(17, 0));
         $doctor = $this->sample->doctor;
@@ -74,16 +76,77 @@ class DoctorScheduleImportTest extends TestCase
         $this->get($settings)->assertOk()->assertSee('value="17:30"', false);
 
         $cells = $service->forMonth($actor, $doctor->id, '2090-02')['days'];
-        $this->assertSame('13:30:00', $cells['2090-02-02']['shifts']['AFTERNOON']['start']);
+        $this->assertSame('17:30:00', $cells['2090-02-02']['shifts']['AFTERNOON']['start']);
         $this->assertSame('17:30:00', $cells['2090-02-01']['shifts']['AFTERNOON']['start']);
+        $this->assertSame(['17:30:00', '18:00:00', '18:30:00'], $old->appointmentTimeSlots()->orderBy('start_time')->pluck('start_time')->all());
 
         $new = $service->updateShift($actor, $doctor->id, '2090-02-01', 'AFTERNOON', 'WORKING', null,
             $this->sample->specialty_id, $this->sample->examination_room_id);
         $this->assertSame(['17:30:00', '18:00:00', '18:30:00'], $new->appointmentTimeSlots()->orderBy('start_time')->pluck('start_time')->all());
-        $this->assertTrue(PatientBookingWindow::allows($old, $old->appointmentTimeSlots()->firstOrFail()));
+        $this->assertTrue(PatientBookingWindow::allows($old->fresh(), $old->appointmentTimeSlots()->firstOrFail()));
         $this->assertTrue(PatientBookingWindow::allows($new, $new->appointmentTimeSlots()->firstOrFail()));
         $this->travel(30)->minutes();
         $this->assertFalse(PatientBookingWindow::allows($new, $new->appointmentTimeSlots()->orderByDesc('start_time')->firstOrFail()));
+    }
+
+    public function test_changed_hours_keep_booked_slots_and_report_shifts_that_cannot_be_changed(): void
+    {
+        $this->travelTo(now()->setDate(2090, 2, 1)->setTime(9, 0));
+        $doctor = $this->sample->doctor;
+        $service = app(DoctorMonthlyScheduleService::class);
+        $template = Appointment::firstOrFail();
+        $shifts = [];
+        $bookings = [];
+        foreach (['2090-02-02' => '15:00:00', '2090-02-03' => '16:30:00'] as $date => $time) {
+            $shift = $service->updateShift(auth()->user(), $doctor->id, $date, 'AFTERNOON', 'WORKING', null,
+                $this->sample->specialty_id, $this->sample->examination_room_id);
+            $slot = $shift->appointmentTimeSlots()->where('start_time', $time)->sole();
+            $booking = $template->replicate()->fill([
+                'appointment_code' => 'LH-HOURS-'.$slot->id, 'checkin_token' => 'HOURS-'.$slot->id,
+                'appointment_time_slot_id' => $slot->id, 'appointment_date' => $date,
+                'appointment_status_id' => AppointmentStatus::where('name', 'BOOKED')->value('id'),
+            ]);
+            $booking->save();
+            $bookings[] = [$booking, $slot->id];
+            $shifts[] = $shift;
+        }
+
+        $settings = route('admin.doctor-schedules.month.shift-hours.edit');
+        $this->put(route('admin.doctor-schedules.month.shift-hours.update'), [
+            'morning_start' => '07:30', 'morning_end' => '11:30', 'afternoon_start' => '13:30', 'afternoon_end' => '16:00',
+        ])->assertRedirect($settings)->assertSessionHasNoErrors();
+        $this->get($settings)->assertOk()->assertSeeText('1 ca vẫn dùng giờ cũ')->assertSeeText('03/02/2090');
+        $this->assertSame('16:00:00', $shifts[0]->fresh()->end_time);
+        $this->assertSame('17:00:00', $shifts[1]->fresh()->end_time);
+        foreach ($bookings as [$booking, $slotId]) {
+            $this->assertSame($slotId, $booking->fresh()->appointment_time_slot_id);
+        }
+        $this->assertFalse($shifts[0]->appointmentTimeSlots()->where('start_time', '16:30:00')->exists());
+    }
+
+    public function test_final_shift_hours_are_checked_together_against_room_assignments(): void
+    {
+        $this->travelTo(now()->setDate(2090, 2, 1)->setTime(9, 0));
+        $doctor = $this->sample->doctor;
+        $service = app(DoctorMonthlyScheduleService::class);
+        $create = fn ($date, $code) => $service->updateShift(auth()->user(), $doctor->id, $date, $code, 'WORKING', null,
+            $this->sample->specialty_id, $this->sample->examination_room_id);
+        $morning = $create('2090-02-02', 'MORNING');
+        $afternoon = $create('2090-02-02', 'AFTERNOON');
+        $blocked = $create('2090-02-03', 'AFTERNOON');
+        $legacy = $this->sample->replicate()->fill(['work_date' => '2090-02-03', 'start_time' => '18:00:00', 'end_time' => '19:00:00']);
+        $legacy->save();
+
+        $settings = route('admin.doctor-schedules.month.shift-hours.edit');
+        $this->put(route('admin.doctor-schedules.month.shift-hours.update'), [
+            'morning_start' => '07:30', 'morning_end' => '14:00', 'afternoon_start' => '14:00', 'afternoon_end' => '23:00',
+        ])->assertRedirect($settings)->assertSessionHasNoErrors();
+        $this->assertSame('14:00:00', $morning->fresh()->end_time);
+        $this->assertSame('14:00:00', $afternoon->fresh()->start_time);
+        $this->assertSame('23:00:00', $afternoon->fresh()->end_time);
+        $this->assertSame('17:00:00', $blocked->fresh()->end_time);
+        $this->assertSame('18:00:00', $legacy->fresh()->start_time);
+        $this->get($settings)->assertOk()->assertSeeText('Giờ mới trùng lịch bác sĩ hoặc phòng khám.');
     }
 
     public function test_changed_hours_require_a_new_excel_preview_before_confirming(): void

@@ -56,7 +56,10 @@ class EmployeePaymentCollectionTest extends TestCase
         $this->assertSame($user->employee->id, $transaction->collected_by_employee_id);
         $this->assertSame('PAID', $payable->fresh()->paymentStatus->name);
         $this->assertDatabaseHas('audit_logs', ['user_id' => $user->id, 'entity_type' => 'payment_transactions', 'entity_id' => $transaction->id]);
-        $this->get(route('employee.payments.show', $payable))->assertOk()->assertSee($user->employee->employee_code)->assertSee($transaction->transaction_code)->assertSeeText('Đã ghi nhận thanh toán tiền mặt thành công.', false);
+        $receiptUrl = route('employee.payments.receipt', $transaction);
+        $this->get(route('employee.payments.show', $payable))->assertOk()->assertSee($user->employee->employee_code)
+            ->assertSee($transaction->transaction_code)->assertSeeText('Đã ghi nhận thanh toán tiền mặt thành công.', false)
+            ->assertSee('href="'.$receiptUrl.'">Xem hóa đơn', false)->assertDontSee('href="'.$receiptUrl.'" target=', false);
         $this->from(route('employee.payments.collect.create', $payable))
             ->post(route('employee.payments.collect.store', $payable), $this->payload())
             ->assertRedirect(route('employee.payments.show', $payable))
@@ -76,9 +79,12 @@ class EmployeePaymentCollectionTest extends TestCase
     {
         $payable = $this->payable();
         $this->actingAs($this->cashier());
-        foreach ([['collected_by_employee_id' => 1], ['amount' => -1], ['amount' => 999999999], ['payment_method' => 'QR']] as $input) {
+        foreach ([['collected_by_employee_id' => 1], ['amount' => -1], ['amount' => 999999999]] as $input) {
             $this->post(route('employee.payments.collect.store', $payable), $this->payload($input))->assertSessionHasErrors(array_keys($input));
         }
+        config(['services.cashier_qr.driver' => 'demo']);
+        $this->post(route('employee.payments.collect.store', $payable), $this->payload(['payment_method' => 'QR']))
+            ->assertSessionHasErrors('payable_ids');
         $this->assertSame(0, $payable->transactions()->where('transaction_result', 'SUCCESS')->count());
     }
 

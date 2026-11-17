@@ -442,4 +442,240 @@
             }
         }
 
-.f08-collect-note { margin-top: 6px; }
+.f08-collect .f08-methods,
+.f08-collect .f08-cash-fields {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    margin: 0 0 18px;
+}
+
+.f08-collect [hidden] {
+    display: none !important;
+}
+
+.f08-collect .f08-methods legend {
+    margin-bottom: 8px;
+    color: #334b65;
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.f08-collect .f08-method-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.f08-collect .f08-method-options label,
+.f08-collect .f08-select-all {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+}
+
+.f08-collect .f08-method-options label {
+    min-height: 45px;
+    padding: 9px 12px;
+    border: 1px solid var(--f08-border);
+    border-radius: 10px;
+    color: var(--f08-navy);
+    font-weight: 650;
+}
+
+.f08-collect .f08-method-options label:has(input:checked) {
+    border-color: #9fc0ff;
+    background: #eef5ff;
+    color: #1d4ed8;
+}
+
+.f08-collect .f08-method-options input,
+.f08-collect .f08-payment-line input,
+.f08-collect .f08-select-all input {
+    flex: none;
+    margin: 0;
+    width: 17px;
+    height: 17px;
+    accent-color: var(--f08-blue);
+}
+
+.f08-collect .f08-select-all {
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: #eef5ff;
+    color: #204b96;
+    font-weight: 650;
+}
+
+.f08-collect .f08-payment-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    margin: 0;
+    padding: 12px 0;
+    border-bottom: 1px solid #edf1f6;
+    color: var(--f08-navy);
+    font-size: 13px;
+}
+
+.f08-collect .f08-payment-line:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.f08-collect .f08-payment-line:has(input[type='checkbox']:enabled) {
+    cursor: pointer;
+}
+
+.f08-collect .f08-payment-line-body {
+    min-width: 0;
+}
+
+.f08-collect .f08-payment-line small {
+    display: block;
+    margin-top: 4px;
+    color: var(--f08-muted);
+    overflow-wrap: anywhere;
+}
+
+.f08-collect .f08-payment-line-amount {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.f08-collect .f08-active-qr,
+.f08-collect .f08-qr-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.f08-collect .f08-qr-instructions {
+    padding: 12px 14px;
+    border-radius: 9px;
+    background: #eef5ff;
+    color: #334b65;
+}
+
+.f08-collect .f08-qr-status {
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #eef5ff;
+    color: #1e40af;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.f08-collect .f08-qr-status.is-paid {
+    background: #eafaf2;
+    color: #047857;
+}
+
+.f08-collect .f08-qr-status.is-warning {
+    background: #fff3d8;
+    color: #834813;
+}
+
+.f08-collect .f08-qr-code {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--f08-border);
+    border-radius: 12px;
+    background: #f8fbff;
+    color: #334b65;
+    text-align: center;
+}
+
+.f08-collect .f08-qr-code canvas {
+    display: block;
+    width: min(100%, 248px);
+    height: auto;
+    border: 1px solid var(--f08-border);
+    border-radius: 8px;
+}
+
+.f08-collect .f08-qr-code p {
+    margin: 0;
+}
+
+.f08-collect--with-panel {
+    container-type: inline-size;
+}
+
+.f08-collect--with-panel .f08-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+}
+
+.f08-collect--with-panel .f08-column {
+    margin-bottom: 0;
+}
+
+.f08-collect--with-panel .f08-card-title {
+    margin-bottom: 16px;
+}
+
+.f08-collect--with-panel .f08-money-box {
+    margin-bottom: 16px;
+    padding: 14px;
+}
+
+.f08-collect .f08-qr-fees {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--f08-border);
+}
+
+.f08-collect .f08-qr-fee-list {
+    max-height: 22rem;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.f08-collect .f08-qr-fee-list .f08-payment-line:first-child {
+    padding-top: 0;
+}
+
+.f08-collect .f08-qr-panel {
+    display: grid;
+    gap: 14px;
+}
+
+.f08-collect .f08-qr-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr));
+    gap: 10px;
+}
+
+.f08-collect .f08-qr-actions form {
+    display: flex;
+    min-width: 0;
+}
+
+.f08-collect .f08-qr-actions .f08-btn {
+    width: 100%;
+    white-space: normal;
+    text-align: center;
+}
+
+@container (max-width: 640px) {
+    .f08-collect--with-panel .f08-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .f08-collect--with-panel .f08-patient-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px 16px;
+    }
+}
+
+@media (max-width: 600px) {
+    .f08-collect .f08-method-options { grid-template-columns: 1fr; }
+}

@@ -224,6 +224,9 @@
                                                     <span class="transaction-method">
                                                         {{ \App\Models\AdminDisplay::label($transaction->payment_method) }}
                                                     </span>
+                                                    @if ($transaction->qr_order_code)
+                                                        <br><small>Phiếu QR {{ $transaction->qr_order_code }}</small>
+                                                    @endif
                                                 </td>
 
 

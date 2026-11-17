@@ -2,26 +2,46 @@
 
 namespace App\Services;
 
+use App\Models\CashPaymentBatch;
 use App\Models\MedicalVisit;
-use App\Models\ExaminationRoomQueue;
-use App\Models\QueueStatus;
 use App\Models\Payable;
 use App\Models\PaymentStatus;
 use App\Models\PaymentTransaction;
+use App\Models\QrPayment;
 use App\Models\ServiceOrderItem;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 
 class PaymentCollectionService
 {
-    public function collect(Request $request, Payable $payable, array $validated): PaymentTransaction
+    public function collectServiceFees(Request $request, MedicalVisit $visit, array $ids, array $data): PaymentTransaction
+    {
+        return DB::transaction(function () use ($request, $visit, $ids, $data): PaymentTransaction {
+            $visit = MedicalVisit::whereKey($visit->id)->lockForUpdate()->firstOrFail();
+            $payables = Payable::query()->outstandingServiceFeesForVisit($visit)->whereKey($ids)->orderBy('id')->get();
+
+            if ($payables->isEmpty() || $payables->count() !== count($ids)) {
+                throw ValidationException::withMessages(['payable_ids' => 'Có khoản thu không còn đủ điều kiện. Vui lòng kiểm tra lại các dịch vụ trong lượt khám này.']);
+            }
+
+            $batch = $payables->count() > 1 ? CashPaymentBatch::create([
+                'medical_visit_id' => $visit->id,
+                'receipt_code' => 'GD'.Str::ulid(),
+            ]) : null;
+
+            return $payables->map(fn (Payable $payable) => $this->collect($request, $payable, $data, $batch))->first();
+        }, 3);
+    }
+
+    public function collect(Request $request, Payable $payable, array $validated, ?CashPaymentBatch $batch = null): PaymentTransaction
     {
         if (($validated['payment_method'] ?? null) !== 'CASH') {
-            throw ValidationException::withMessages(['payment_method' => 'Thanh toán QR chưa có cơ chế xác minh tiền về.']);
+            throw ValidationException::withMessages(['payment_method' => 'Dùng chức năng Thanh toán QR để xác minh giao dịch chuyển khoản.']);
         }
         $paidStatus = PaymentStatus::query()
             ->where(
@@ -50,7 +70,8 @@ class PaymentCollectionService
                     $request,
                     $payable,
                     $paidStatus,
-                    $validated
+                    $validated,
+                    $batch
                 ) {
                     /*
                     |--------------------------------------------------------------------------
@@ -80,6 +101,10 @@ class PaymentCollectionService
 
                     if ((int) $lockedPayable->medical_visit_id !== (int) $visit->id) {
                         throw ValidationException::withMessages(['payment_date' => 'Lượt khám của khoản thu đã thay đổi. Vui lòng thử lại.']);
+                    }
+
+                    if (QrPayment::blocks($lockedPayable)) {
+                        throw ValidationException::withMessages(['payment_method' => 'Khoản thu đang thuộc một phiếu QR. Hãy xử lý phiếu QR trước khi thu tiền mặt.']);
                     }
 
                     if ($lockedPayable->payment_type === 'SERVICE_FEE' && (
@@ -129,7 +154,7 @@ class PaymentCollectionService
                     | Sinh mã giao dịch GDxxxxxx
                     |--------------------------------------------------------------------------
                     */
-                    $transactionCode = 'GD'.(string) \Illuminate\Support\Str::ulid();
+                    $transactionCode = 'GD'.Str::ulid();
 
                     $now = now();
 
@@ -143,6 +168,7 @@ class PaymentCollectionService
                             'transaction_code' => $transactionCode,
 
                             'payable_id' => $lockedPayable->id,
+                            'cash_payment_batch_id' => $batch?->id,
 
                             /*
                             | Không nhận số tiền từ form.
@@ -190,26 +216,7 @@ class PaymentCollectionService
                         'paid_at' => $now,
                     ]);
 
-                    // Tiếp nhận từ lịch hẹn chỉ vào hàng đợi sau khi phí khám được thu.
-                    // Lượt khám cũ đã có hàng đợi hoặc đã bắt đầu không bị tạo trùng.
-                    if ($lockedPayable->payment_type === 'EXAMINATION_FEE' && ($visit->appointment_id || $visit->reception_source === 'WALK_IN')
-                        && $visit->status?->name === 'WAITING'
-                        && ! $visit->queues()->where('queue_type', 'INITIAL_EXAM')->exists()) {
-                        $visit->assertExaminationFeePaid();
-                        if (($visit->appointment_id && ! $visit->appointment?->isScheduledForToday())
-                            || (! $visit->appointment_id && ! $visit->checked_in_at?->isToday())) {
-                            throw ValidationException::withMessages(['payment_method' => 'Không thể xếp hàng cho lịch khám khác ngày. Vui lòng kiểm tra lại lịch hẹn trước khi thu phí.']);
-                        }
-                        $waiting = QueueStatus::where('name', 'WAITING')->where('is_active', true)->first();
-                        if (! $waiting) {
-                            throw ValidationException::withMessages(['payment_method' => 'Chưa cấu hình trạng thái hàng đợi đang chờ.']);
-                        }
-                        ExaminationRoomQueue::create([
-                            'medical_visit_id' => $visit->id, 'queue_status_id' => $waiting->id,
-                            'queue_number' => app(ExaminationQueueNumber::class)->reserve($visit), 'queue_type' => 'INITIAL_EXAM',
-                            'queued_at' => now(), 'call_count' => 0,
-                        ]);
-                    }
+                    app(ExaminationFeeService::class)->enqueueAfterPayment($lockedPayable);
 
                     /*
                     |--------------------------------------------------------------------------
@@ -272,6 +279,8 @@ class PaymentCollectionService
 
             'payable_code' => $payable
                 ->payable_code,
+
+            'cash_payment_batch_id' => $transaction->cash_payment_batch_id,
 
             'amount' => $transaction
                 ->amount,

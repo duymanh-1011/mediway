@@ -43,6 +43,14 @@ Boost provides your agent 15+ tools and skills that help agents build Laravel ap
 
 ## Contributing
 
+### Thanh toán dịch vụ bằng QR tại quầy
+
+Chạy `npm install`, `npm run build` và `php artisan migrate` để cập nhật dự án. Trên Laragon, thêm `CASHIER_QR_DRIVER=demo` vào `.env` khi `APP_ENV=local`. Sau khi đổi cấu hình, chạy `php artisan config:clear`.
+
+Đăng nhập vào chức năng **Thu ngân**, mở một khoản phí khám hoặc phí dịch vụ và chọn **Thanh toán QR**. Phí khám dùng một mã riêng. Với phí dịch vụ, Mediway tính tổng các dịch vụ được chọn trong cùng lượt khám. Trong chế độ demo, bấm **Mô phỏng đã nhận tiền** để kiểm tra biên lai và trạng thái khoản thu.
+
+Để nhận thanh toán thật, cấu hình `CASHIER_QR_DRIVER=payos`, ba khóa `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` và `APP_URL` của máy chủ. Đăng ký URL HTTPS công khai kết thúc bằng `/webhooks/payos` trên trang quản trị payOS. Cài đặt dịch vụ được mô tả trong [tài liệu API payOS](https://payos.vn/docs/api/). Với phiếu **Cần đối soát**, kiểm tra tiền thực nhận tại payOS theo mã tham chiếu trước khi tiếp tục thu.
+
 ### Lịch hẹn Patient Portal
 
 Theo cấu hình mặc định, bệnh nhân có thể tự hủy lịch khi còn ít nhất 120 phút trước giờ bắt đầu. Chức năng đổi lịch của bệnh nhân đã được gỡ bỏ. Lịch BOOKED chưa có lượt tiếp nhận được tự hủy khi đã qua giờ bắt đầu lịch hẹn, cộng thời gian chờ nếu có. Với thời gian chờ mặc định 0 phút, lịch 10:00 còn có thể tiếp nhận lúc 10:00:00 và hết hạn ngay sau đó. Có thể cấu hình quyền tự hủy và thời hạn bằng PATIENT_APPOINTMENT_SELF_SERVICE_APPROVED và PATIENT_APPOINTMENT_CANCEL_CUTOFF_MINUTES trong .env.example.

@@ -490,15 +490,10 @@
 
                                                         @elseif ($canPay && $hasCollectRoute)
 
-                                                                                    <a class="f08-pay-btn" href="{{ route(
+                                                            <a class="f08-pay-btn" href="{{ route(
                                                                 'employee.payments.collect.create',
                                                                 $collectParameters
-                                                            ) }}" title="Ghi nhận thanh toán tiền mặt">
-                                                                                        <span aria-hidden="true">
-                                                                                            ＋
-                                                                                        </span>
-                                                                                        Thanh toán
-                                                                                    </a>
+                                                            ) }}">Thanh toán</a>
 
                                                         @elseif ($canPay)
 

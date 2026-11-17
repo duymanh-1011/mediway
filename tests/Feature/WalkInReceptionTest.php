@@ -44,6 +44,43 @@ class WalkInReceptionTest extends TestCase
         return Employee::where('employee_code', 'NV000001')->firstOrFail()->user;
     }
 
+    public function test_saving_existing_evening_configuration_reopens_the_room_for_walk_in_reception(): void
+    {
+        $this->travelTo(now()->setTime(21, 0));
+        $this->schedule->update(['shift_code' => 'AFTERNOON', 'start_time' => '13:30:00', 'end_time' => '17:00:00']);
+        app(\App\Services\DoctorScheduleSlots::class)->generate($this->schedule);
+        DB::table('doctor_shift_settings')->where('id', 1)->update(['hours' => json_encode([
+            'AFTERNOON' => ['start' => '13:30:00', 'end' => '23:00:00'],
+        ])]);
+
+        $admin = User::where('business_code', 'QT000001')->firstOrFail();
+        $this->actingAs($admin)->get(route('admin.visits.walk-in.create'))->assertOk()
+            ->assertViewHas('schedules', fn ($schedules) => $schedules->isEmpty());
+        $this->put(route('admin.doctor-schedules.month.shift-hours.update'), [
+            'morning_start' => '07:30', 'morning_end' => '11:30', 'afternoon_start' => '13:30', 'afternoon_end' => '23:00',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('23:00:00', $this->schedule->fresh()->end_time);
+
+        $this->flushSession();
+        $this->actingAsDoctorWorkspace($this->schedule->doctor->user)->get(route('doctor.schedule', ['month' => now()->format('Y-m')]))
+            ->assertOk()->assertSeeText('13:30 – 23:00');
+        $this->flushSession();
+        $this->actingAsEmployeeWorkspace($this->receptionist(), 'reception')->get(route('employee.walk-in.create'))
+            ->assertOk()->assertSeeText($this->schedule->examinationRoom->name)->assertSeeText($this->schedule->doctor->full_name)
+            ->assertViewHas('schedules', fn ($schedules) => $schedules->contains('id', $this->schedule->id));
+        $patient = Patient::where('patient_code', 'BN000005')->firstOrFail();
+        $this->post(route('employee.walk-in.search'), ['identifier' => $patient->patient_code])->assertRedirect();
+        $this->post(route('employee.walk-in.store'), [
+            'patient_mode' => 'existing', 'patient_id' => $patient->id, 'schedule_id' => $this->schedule->id,
+            'confirm_reception' => 1, 'request_token' => (string) Str::uuid(),
+        ])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('medical_visits', [
+            'patient_id' => $patient->id, 'doctor_id' => $this->schedule->doctor_id,
+            'examination_room_id' => $this->schedule->examination_room_id, 'reception_source' => 'WALK_IN',
+            'checked_in_at' => now()->toDateTimeString(),
+        ]);
+    }
+
     public function test_reception_dashboard_and_appointment_list_have_distinct_purposes(): void
     {
         $this->actingAs($this->receptionist())->get(route('employee.reception.index'))->assertOk()

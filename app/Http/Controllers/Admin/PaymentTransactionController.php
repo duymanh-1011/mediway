@@ -44,6 +44,7 @@ class PaymentTransactionController extends Controller
                 '=',
                 'payment_transactions.collected_by_employee_id'
             )
+            ->leftJoin('qr_payments', 'qr_payments.id', '=', 'payment_transactions.qr_payment_id')
             ->select([
                 'payment_transactions.*',
                 'payables.payable_code',
@@ -51,6 +52,7 @@ class PaymentTransactionController extends Controller
                 'medical_visits.visit_code',
                 'employees.employee_code',
                 'employees.full_name as collector_name',
+                'qr_payments.order_code as qr_order_code',
             ]);
 
         /*
@@ -83,6 +85,9 @@ class PaymentTransactionController extends Controller
                         'like',
                         '%'.$keyword.'%'
                     );
+                if (ctype_digit($keyword) && strlen($keyword) <= 10) {
+                    $subQuery->orWhere('qr_payments.order_code', (int) $keyword);
+                }
             });
         }
 
@@ -298,6 +303,7 @@ class PaymentTransactionController extends Controller
             PaymentTransaction::query()
                 ->with([
                     'payable.paymentStatus',
+                    'qrPayment',
                 ])
                 ->findOrFail($id);
 

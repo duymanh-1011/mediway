@@ -28,6 +28,10 @@ class DashboardController extends Controller
         $completedSeries = $this->dailyTotals(DB::table('service_order_items')->join('service_statuses', 'service_statuses.id', '=', 'service_order_items.service_status_id')
             ->where('service_statuses.name', 'COMPLETED')->where('completed_at', '>=', $from)->where('completed_at', '<', $until), 'completed_at');
         $successfulPayments = DB::table('payment_transactions')->where('transaction_result', 'SUCCESS');
+        $dailyPayments = (clone $successfulPayments)->whereDate('confirmed_at', $selectedDate);
+        $dailySuccessfulPayments = (clone $dailyPayments)->whereNull('qr_payment_id')->whereNull('cash_payment_batch_id')->count()
+            + (clone $dailyPayments)->distinct()->count('qr_payment_id')
+            + $dailyPayments->distinct()->count('cash_payment_batch_id');
         $revenueSeries = $this->dailyTotals((clone $successfulPayments)->where('confirmed_at', '>=', $from)->where('confirmed_at', '<', $until), 'confirmed_at', 'SUM(amount)');
 
         $dailyRows = collect(range(0, 6))->map(function (int $offset) use ($start, $appointmentSeries, $visitSeries, $serviceSeries, $completedSeries, $revenueSeries): array {
@@ -64,7 +68,7 @@ class DashboardController extends Controller
             'dailyAppointments' => (int) ($appointmentSeries[$selectedDate] ?? 0), 'dailyVisits' => (int) ($visitSeries[$selectedDate] ?? 0),
             'dailyServices' => (int) ($serviceSeries[$selectedDate] ?? 0), 'dailyCompletedServices' => (int) ($completedSeries[$selectedDate] ?? 0),
             'dailyRevenue' => $revenueSeries[$selectedDate] ?? 0,
-            'dailySuccessfulPayments' => (clone $successfulPayments)->whereDate('confirmed_at', $selectedDate)->count(),
+            'dailySuccessfulPayments' => $dailySuccessfulPayments,
             'dailyUnpaidCount' => (clone $unpaid)->count(), 'dailyUnpaidAmount' => (clone $unpaid)->sum('payables.amount'),
             'totalPatients' => DB::table('patients')->count(), 'totalDoctors' => DB::table('doctors')->count(), 'totalEmployees' => DB::table('employees')->count(),
             'recentAuditLogs' => $recentAuditLogs,

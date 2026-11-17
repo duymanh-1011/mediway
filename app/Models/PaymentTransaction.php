@@ -12,6 +12,8 @@ class PaymentTransaction extends Model
     protected $fillable = [
         'transaction_code',
         'payable_id',
+        'qr_payment_id',
+        'cash_payment_batch_id',
         'amount',
         'payment_method',
         'transaction_result',
@@ -41,6 +43,16 @@ class PaymentTransaction extends Model
             Payable::class,
             'payable_id'
         );
+    }
+
+    public function qrPayment(): BelongsTo
+    {
+        return $this->belongsTo(QrPayment::class);
+    }
+
+    public function cashPaymentBatch(): BelongsTo
+    {
+        return $this->belongsTo(CashPaymentBatch::class);
     }
 
     /**

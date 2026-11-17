@@ -42,9 +42,10 @@ class PaymentReceiptController extends Controller
             'Không tìm thấy biên lai hợp lệ.'
         );
 
-        // Chỉ đọc những quan hệ đã được khai báo trong model.
+        $receipt = app(\App\Support\Payments\ReceiptViewData::class);
+
         return response()->view('employee.payments.receipt', [
-            ...app(\App\Support\Payments\ReceiptViewData::class)->build($transaction),
+            ...($transaction->cash_payment_batch_id ? $receipt->buildForCashBatch($transaction) : $receipt->build($transaction)),
             'employee' => $employee,
         ])->header('Cache-Control', 'private, no-store');
     }

@@ -43,9 +43,15 @@ class DoctorMonthlyScheduleController extends Controller
 
     public function updateShiftHours(Request $request)
     {
-        $this->shiftHours->update($request->only('morning_start', 'morning_end', 'afternoon_start', 'afternoon_end'));
+        ['updated' => $updated, 'skipped' => $skipped] = $this->shiftHours->update(
+            $request->only('morning_start', 'morning_end', 'afternoon_start', 'afternoon_end')
+        );
 
-        return redirect()->route('admin.doctor-schedules.month.shift-hours.edit')->with('success', 'Đã lưu giờ làm việc mặc định.');
+        return redirect()->route('admin.doctor-schedules.month.shift-hours.edit')->with([
+            'success' => $updated > 0 ? "Đã lưu giờ làm việc và cập nhật {$updated} ca bác sĩ." : 'Đã lưu giờ làm việc mặc định.',
+            'shift_hours_skipped' => array_slice($skipped, 0, 10),
+            'shift_hours_skipped_count' => count($skipped),
+        ]);
     }
 
     public function show(Request $request, Doctor $doctor)
@@ -70,7 +76,7 @@ class DoctorMonthlyScheduleController extends Controller
 
     public function template(Request $request)
     {
-        abort_unless(class_exists(ZipArchive::class), 503, 'PHP cần bật extension zip để tạo mẫu Excel.');
+        abort_unless(class_exists(ZipArchive::class), 503, 'PHP chưa bật extension ZIP để tạo mẫu Excel. Hãy bật extension=zip trong php.ini và khởi động lại máy chủ PHP.');
         $month = $request->validate(['month' => 'sometimes|required|date_format:Y-m'])['month'] ?? today()->format('Y-m');
 
         return response()->streamDownload(function () use ($month): void {

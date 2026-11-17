@@ -12,10 +12,24 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">Giờ làm việc mặc định</h1>
-            <p class="page-description">Giờ này áp dụng khi xếp ca mới hoặc nhập ca mới từ Excel. Các ca đã xếp giữ giờ đã lưu.</p>
+            <p class="page-description">Giờ làm việc áp dụng cho ca mới và cập nhật các ca sáng, chiều đã phân từ hôm nay. Hệ thống sẽ báo các ca cần giữ giờ cũ để bảo vệ lịch hẹn, lượt đang khám và phân công phòng.</p>
         </div>
         <a class="admin-btn admin-btn-secondary" href="{{ route('admin.doctor-schedules.month.index') }}">Quay lại</a>
     </div>
+
+    @if (session('shift_hours_skipped_count'))
+        <div class="alert alert-error" role="status">
+            <p><strong>{{ session('shift_hours_skipped_count') }} ca vẫn dùng giờ cũ</strong></p>
+            <ul class="admin-alert-list">
+                @foreach (session('shift_hours_skipped', []) as $shift)
+                    <li>{{ $shift['date'] }} · {{ $shift['doctor'] }} · {{ $shift['shift'] }}. {{ $shift['reason'] }}</li>
+                @endforeach
+            </ul>
+            @if (session('shift_hours_skipped_count') > 10)
+                <p>Đang hiển thị 10 ca đầu tiên.</p>
+            @endif
+        </div>
+    @endif
 
     <form class="form-grid" method="POST" action="{{ route('admin.doctor-schedules.month.shift-hours.update') }}">
         @csrf

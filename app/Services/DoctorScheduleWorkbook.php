@@ -150,7 +150,7 @@ class DoctorScheduleWorkbook
     private function checkArchive(string $path): void
     {
         if (! class_exists(ZipArchive::class)) {
-            $this->invalid('PHP chưa bật extension zip để đọc file Excel.');
+            $this->invalid('PHP chưa bật extension ZIP để đọc tệp Excel. Hãy bật extension=zip trong php.ini và khởi động lại máy chủ PHP.');
         }
         $archive = new ZipArchive;
         if ($archive->open($path, ZipArchive::RDONLY) !== true) {

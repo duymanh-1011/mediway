@@ -131,7 +131,7 @@
 
 
                 <div>
-                    <span>Số tiền</span>
+                    <span>{{ $transaction->qr_payment_id ? 'Số tiền của khoản thu' : 'Số tiền' }}</span>
 
                     <strong class="transaction-amount">
                         {{ number_format(
@@ -161,6 +161,9 @@
             <div class="transaction-info-grid">
 
                 <div>
+                    @if ($transaction->qrPayment)
+                        <span>Phiếu QR chung {{ $transaction->qrPayment->order_code }} · {{ number_format($transaction->qrPayment->amount, 0, ',', '.') }} ₫</span>
+                    @endif
                     <span>Mã giao dịch nhà cung cấp</span>
 
                     <strong>

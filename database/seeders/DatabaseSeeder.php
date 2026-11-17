@@ -43,5 +43,10 @@ class DatabaseSeeder extends Seeder
             ServiceStatusSeeder::class,
             PaymentStatusSeeder::class,
         ]);
+
+        // The populated defense dataset is intended for local environments only.
+        if ($includeExtraAccounts && app()->environment('local')) {
+            $this->call(DefenseDatasetSeeder::class);
+        }
     }
 }

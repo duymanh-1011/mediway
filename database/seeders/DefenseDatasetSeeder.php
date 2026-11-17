@@ -626,6 +626,70 @@ class DefenseDatasetSeeder extends Seeder
             ]);
             $this->inserted += 3;
         }
+
+        // Assign templates to the original catalog by exact service code.
+        // This also covers a fresh database where the legacy FK was empty.
+        foreach ($this->baseServiceTemplateMap() as $serviceCode => $templateKey) {
+            $serviceId = DB::table('medical_services')->where('service_code', $serviceCode)->value('id');
+            if (! $serviceId) {
+                throw new RuntimeException("Thiếu dịch vụ {$serviceCode}; không thể gán mẫu kết quả.");
+            }
+            if (DB::table('medical_service_result_templates')->where('medical_service_id', $serviceId)->exists()) {
+                continue;
+            }
+            if (! isset($templateIds[$templateKey])) {
+                throw new RuntimeException("Thiếu mẫu kết quả '{$templateKey}' cho dịch vụ {$serviceCode}.");
+            }
+
+            DB::table('medical_service_result_templates')->insert([
+                'medical_service_id' => $serviceId,
+                'service_result_template_id' => $templateIds[$templateKey],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $this->inserted++;
+        }
+    }
+
+    /** Explicit mapping for the original services; never infer by display name. */
+    private function baseServiceTemplateMap(): array
+    {
+        return [
+            'DVXN001' => 'BIOCHEM',
+            'DVXN002' => 'BIOCHEM',
+            'DVXN003' => 'BIOCHEM',
+            'DVXN004' => 'URINE',
+            'DVXN005' => 'BIOCHEM',
+            'DVXN006' => 'BIOCHEM',
+            'DVXN007' => 'BIOCHEM',
+            'DVCD001' => 'XRAY',
+            'DVCD002' => 'XRAY',
+            'DVCD003' => 'ULTRASOUND',
+            'DVCD004' => 'XRAY',
+            'DVCD005' => 'CTMRI',
+            'DVCD006' => 'CTMRI',
+            'DVSA001' => 'ULTRASOUND',
+            'DVSA002' => 'ULTRASOUND',
+            'DVSA003' => 'ULTRASOUND',
+            'DVTDCN001' => 'ECG',
+            'DVTDCN002' => 'ENDOSCOPY',
+            'DVTDCN003' => 'FUNCTION',
+            'DVTDCN004' => 'FUNCTION',
+            'DVTDCN005' => 'FUNCTION',
+            'DVNS001' => 'ENDOSCOPY',
+            'DVNS002' => 'ENDOSCOPY',
+            'DVNS003' => 'ENDOSCOPY',
+            'DVTT001' => 'PROCEDURE',
+            'DVTT002' => 'PROCEDURE',
+            'DVTT003' => 'PROCEDURE',
+            'DVTT004' => 'PROCEDURE',
+            'DVPHCN001' => 'REHAB',
+            'DVPHCN002' => 'REHAB',
+            'DVPHCN003' => 'REHAB',
+            'DVCSSK001' => 'CARE',
+            'DVCSSK002' => 'CARE',
+            'DVCSSK003' => 'CARE',
+        ];
     }
 
     private function seedDiseaseGroupsAndDiseases(): void

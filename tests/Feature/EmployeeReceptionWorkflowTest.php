@@ -102,7 +102,7 @@ class EmployeeReceptionWorkflowTest extends TestCase
         $this->get($slip)->assertForbidden();
     }
 
-    public function test_cancelled_appointment_is_rejected_but_employee_classification_does_not_revoke_workspace(): void
+    public function test_cancelled_appointment_is_rejected_and_reception_workspace_can_check_in(): void
     {
         $appointment = $this->booked();
         $employee = Employee::where('employee_code', 'NV000001')->firstOrFail();
@@ -110,7 +110,6 @@ class EmployeeReceptionWorkflowTest extends TestCase
         $this->actingAsEmployeeWorkspace($employee->user, 'reception')->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])->assertSessionHasErrors('appointment');
         $this->assertFalse($appointment->medicalVisit()->exists());
         $appointment->update(['appointment_status_id' => AppointmentStatus::where('name', 'BOOKED')->value('id')]);
-        $employee->detail->update(['employee_type' => 'CASHIER']);
         $this->post(route('employee.appointments.check-in', $appointment), ['confirm_reception' => 1])->assertSessionHasNoErrors();
         $this->assertTrue($appointment->medicalVisit()->exists());
     }
@@ -125,12 +124,11 @@ class EmployeeReceptionWorkflowTest extends TestCase
         $this->assertSame('BOOKED', $appointment->fresh()->appointmentStatus->name);
     }
 
-    public function test_service_rechecks_employee_account_after_classification_changes(): void
+    public function test_service_rechecks_employee_account_for_reception_check_in(): void
     {
         $appointment = $this->booked();
         $employee = Employee::where('employee_code', 'NV000001')->firstOrFail();
         $staleUser = $employee->user;
-        $employee->detail->update(['employee_type' => 'CASHIER']);
         try {
             $visit = app(AppointmentReceptionService::class)->checkIn($appointment, $staleUser, true);
             $this->assertNotNull($visit->id);

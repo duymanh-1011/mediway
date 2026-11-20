@@ -55,7 +55,6 @@ if (($argv[1] ?? '') === 'worker') {
     exit;
 }
 
-Employee::where('employee_code', 'NV000002')->firstOrFail()->detail->update(['employee_type' => 'RECEPTIONIST']);
 $schedule = DoctorSchedule::create([
     'doctor_id' => Doctor::where('doctor_code', 'BS000001')->value('id'),
     'specialty_id' => Specialty::where('specialty_code', 'CKTMH')->value('id'),

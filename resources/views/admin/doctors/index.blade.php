@@ -25,6 +25,12 @@
         <a href="{{ route('admin.doctors.create') }}" class="admin-btn admin-btn-primary">Thêm bác sĩ</a>
     </div>
 
+    <div class="stats-grid">
+        <div class="mini-card"><div class="mini-card-label">Tổng bác sĩ</div><div class="mini-card-value">{{ $totalDoctors }}</div></div>
+        <div class="mini-card"><div class="mini-card-label">Đang hoạt động</div><div class="mini-card-value success">{{ $activeDoctors }}</div></div>
+        <div class="mini-card"><div class="mini-card-label">Ngừng hoạt động</div><div class="mini-card-value danger">{{ $inactiveDoctors }}</div></div>
+    </div>
+
     @if(session('success'))
         <div class="dx-alert">{{ session('success') }}</div>
     @endif

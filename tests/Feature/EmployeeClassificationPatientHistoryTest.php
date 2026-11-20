@@ -3,18 +3,16 @@
 namespace Tests\Feature;
 
 use App\Models\Employee;
-use App\Models\EmployeeType;
 use App\Models\MedicalVisit;
-use App\Models\Patient;
 use App\Models\Payable;
+use App\Models\Patient;
 use App\Models\User;
 use App\Models\VisitStatus;
+use App\Support\EmployeeAccess;
 use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use DOMDocument;
 use DOMXPath;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -26,8 +24,6 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
     {
         parent::setUp();
         $this->seed(WorkflowFixtureSeeder::class);
-        // Exercise compatibility with a historical NURSE record explicitly.
-        Employee::where('employee_code', 'NV000001')->firstOrFail()->detail()->update(['employee_type' => 'NURSE']);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
     }
@@ -46,7 +42,7 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
     private function employeeData(): array
     {
         return ['full_name' => 'Nhân viên kiểm thử', 'phone' => '0987654321', 'password' => 'TemporaryTest123',
-            'password_confirmation' => 'TemporaryTest123', 'status' => 'ACTIVE', 'employee_type' => 'RECEPTIONIST'];
+            'password_confirmation' => 'TemporaryTest123', 'status' => 'ACTIVE'];
     }
 
     private function addVisit(Patient $patient, string $code, string $date): MedicalVisit
@@ -59,157 +55,39 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
         return $visit;
     }
 
-    public function test_catalog_forms_and_filters_use_one_standard_classification(): void
+    public function test_employee_profile_no_longer_has_department_or_employee_type_fields(): void
     {
-        $this->assertSame(['RECEPTIONIST', 'NURSE', 'CASHIER', 'SERVICE_TECHNICIAN'], EmployeeType::orderBy('display_order')->pluck('code')->all());
-        foreach (['admin.employees.create' => [], 'admin.employees.edit' => [Employee::firstOrFail()]] as $route => $parameters) {
-            $xpath = $this->xpath($this->get(route($route, $parameters))->assertOk()->getContent());
-            $this->assertCount(1, $xpath->query('//select[@name="employee_type" and @required]'));
-            $this->assertCount($route === 'admin.employees.create' ? 4 : 5, $xpath->query('//select[@name="employee_type"]/option'));
-            $this->assertCount(0, $xpath->query('//input[@name="employee_type"]|//datalist[@id="employee-type-suggestions"]'));
+        $employee = Employee::firstOrFail();
+        $this->assertFalse(Schema::hasTable('employee_types'));
+        $this->assertFalse(Schema::hasColumn('employee_details', 'department'));
+        $this->assertFalse(Schema::hasColumn('employee_details', 'employee_type'));
+
+        foreach ([route('admin.employees.index'), route('admin.employees.create'), route('admin.employees.edit', $employee)] as $url) {
+            $html = $this->get($url)->assertOk()->getContent();
+            $xpath = $this->xpath($html);
+            $this->assertCount(0, $xpath->query('//*[@name="employee_type" or @name="department"]'));
+            $this->assertStringNotContainsString('Loại nhân viên', strip_tags($html));
         }
-        $this->post(route('admin.employees.store'), [...$this->employeeData(), 'employee_type' => 'NURSE'])->assertSessionHasErrors('employee_type');
-        $this->get(route('admin.employees.index'))->assertOk()->assertSee('Nhân viên tiếp đón');
-        $response = $this->get(route('admin.employees.index', ['employee_type' => 'NURSE']))->assertOk();
-        $this->assertSame(['NV000001'], $response->viewData('employees')->pluck('employee_code')->all());
-        $this->get(route('admin.employees.index', ['employee_type' => 'RECEPTIONIST']))->assertOk()->assertSee('Không tìm thấy nhân viên phù hợp.');
     }
 
-    public function test_migration_merges_legacy_technicians_and_admin_lists_one_type(): void
-    {
-        $migration = require database_path('migrations/2026_11_07_200000_merge_legacy_technician_types.php');
-        $migration->down();
-        $lab = Employee::where('employee_code', 'NV000002')->firstOrFail();
-        $imaging = Employee::where('employee_code', 'NV000003')->firstOrFail();
-        $lab->detail()->update(['employee_type' => 'LAB_TECHNICIAN', 'position' => 'Kỹ thuật viên xét nghiệm', 'department' => 'Khoa Xét nghiệm']);
-        $imaging->detail()->update(['employee_type' => 'IMAGING_TECHNICIAN', 'position' => 'Kỹ thuật viên CĐHA', 'department' => 'Khoa tự đặt']);
-        $before = $imaging->detail()->firstOrFail();
-
-        $migration->up();
-        $this->assertSame($before->id, $imaging->detail()->firstOrFail()->id);
-        $this->assertSame('Khoa tự đặt', $imaging->detail()->firstOrFail()->department);
-        $this->assertSame('Dịch vụ y tế', $lab->detail()->firstOrFail()->department);
-        foreach ([$lab, $imaging] as $employee) {
-            $this->assertSame('SERVICE_TECHNICIAN', $employee->detail()->firstOrFail()->employee_type);
-            $this->assertSame('Kỹ thuật viên dịch vụ y tế', $employee->detail()->firstOrFail()->position);
-        }
-        $this->assertDatabaseMissing('employee_types', ['code' => 'LAB_TECHNICIAN']);
-        $this->assertDatabaseMissing('employee_types', ['code' => 'IMAGING_TECHNICIAN']);
-
-        $response = $this->get(route('admin.employees.index', ['employee_type' => 'SERVICE_TECHNICIAN']))->assertOk()
-            ->assertSee('Kỹ thuật viên dịch vụ y tế');
-        $this->assertEqualsCanonicalizing(['NV000002', 'NV000003'], $response->viewData('employees')->pluck('employee_code')->all());
-        $form = $this->xpath($this->get(route('admin.employees.edit', $lab))->assertOk()->getContent());
-        $this->assertCount(1, $form->query('//select[@name="employee_type"]/option[@value="SERVICE_TECHNICIAN" and @selected]'));
-        $this->put(route('admin.employees.update', $lab), [
-            'full_name' => $lab->full_name,
-            'status' => 'ACTIVE',
-            'employee_type' => 'SERVICE_TECHNICIAN',
-            'expected_employee_type' => 'SERVICE_TECHNICIAN',
-        ])->assertSessionHasNoErrors();
-        $this->assertSame('SERVICE_TECHNICIAN', $lab->detail->fresh()->employee_type);
-    }
-
-    public function test_create_and_update_persist_valid_classification_without_expanding_account_role(): void
-    {
-        $this->post(route('admin.employees.store'), $this->employeeData())->assertSessionHasNoErrors()->assertRedirect();
-        $employee = Employee::where('full_name', 'Nhân viên kiểm thử')->firstOrFail();
-        $this->assertSame('RECEPTIONIST', $employee->detail->employee_type);
-        $this->assertSame('Employee', $employee->user->role->name);
-        $this->assertSame('RECEPTIONIST', $employee->detail->type->code);
-        $this->put(route('admin.employees.update', $employee), ['full_name' => $employee->full_name, 'status' => 'ACTIVE', 'employee_type' => ' lab_technician ', 'expected_employee_type' => 'RECEPTIONIST', 'employee_type_change_reason' => 'Điều chuyển công tác'])->assertSessionHasNoErrors();
-        $this->assertSame('SERVICE_TECHNICIAN', $employee->detail->fresh()->employee_type);
-    }
-
-    public function test_technician_type_rollback_preserves_profiles_and_can_be_reapplied(): void
-    {
-        $addType = require database_path('migrations/2026_11_07_190000_add_service_technician_employee_type.php');
-        $mergeTypes = require database_path('migrations/2026_11_07_200000_merge_legacy_technician_types.php');
-        $details = DB::table('employee_details')->where('employee_type', 'SERVICE_TECHNICIAN')->orderBy('id');
-        $before = $details->get()->all();
-        $this->assertNotEmpty($before);
-
-        $mergeTypes->down();
-        $addType->down();
-
-        $this->assertDatabaseHas('employee_types', ['code' => 'LAB_TECHNICIAN']);
-        $this->assertDatabaseHas('employee_types', ['code' => 'IMAGING_TECHNICIAN']);
-        $this->assertDatabaseHas('employee_types', ['code' => 'SERVICE_TECHNICIAN']);
-        $this->assertEquals($before, $details->get()->all());
-
-        $addType->up();
-        $mergeTypes->up();
-
-        $this->assertDatabaseMissing('employee_types', ['code' => 'LAB_TECHNICIAN']);
-        $this->assertDatabaseMissing('employee_types', ['code' => 'IMAGING_TECHNICIAN']);
-        $this->assertEquals($before, $details->get()->all());
-
-        $details->update(['employee_type' => null]);
-        $addType->down();
-        $this->assertDatabaseMissing('employee_types', ['code' => 'SERVICE_TECHNICIAN']);
-    }
-
-    public function test_missing_unknown_and_array_types_are_rejected_without_partial_writes(): void
+    public function test_removed_employee_classification_is_rejected_but_workspaces_remain_available(): void
     {
         $count = User::count();
-        $employee = Employee::firstOrFail();
-        $oldType = $employee->detail->employee_type;
-        foreach ([null, '', 'UNRECOGNIZED', ['NURSE']] as $type) {
-            $this->post(route('admin.employees.store'), [...$this->employeeData(), 'employee_type' => $type])->assertSessionHasErrors('employee_type');
-            $this->put(route('admin.employees.update', $employee), ['full_name' => $employee->full_name, 'status' => $employee->status, 'employee_type' => $type])->assertSessionHasErrors('employee_type');
-            $this->assertSame($oldType, $employee->detail->fresh()->employee_type);
-            $this->assertSame($count, User::count());
-        }
-    }
+        $this->post(route('admin.employees.store'), [...$this->employeeData(), 'employee_type' => 'RECEPTIONIST', 'department' => 'Lễ tân'])
+            ->assertSessionHasErrors(['employee_type', 'department']);
+        $this->assertSame($count, User::count());
 
-    public function test_database_rejects_unknown_classification_even_outside_forms(): void
-    {
-        $this->expectException(QueryException::class);
-        DB::table('employee_details')->where('id', Employee::firstOrFail()->detail->id)->update(['employee_type' => 'UNRECOGNIZED']);
-    }
+        $employee = Employee::where('employee_code', 'NV000001')->firstOrFail();
+        $this->put(route('admin.employees.update', $employee), [
+            'full_name' => $employee->full_name,
+            'status' => 'ACTIVE',
+            'employee_type' => 'CASHIER',
+            'department' => 'Thu ngân',
+        ])->assertSessionHasErrors(['employee_type', 'department']);
 
-    public function test_used_classification_cannot_be_deleted(): void
-    {
-        $this->expectException(QueryException::class);
-        EmployeeType::whereKey('NURSE')->delete();
+        $this->assertTrue(app(EmployeeAccess::class)->allows($employee->user, 'reception.check_in', 'reception'));
+        $this->assertTrue(app(EmployeeAccess::class)->allows($employee->user, 'payment.collect', 'cashier'));
     }
-
-    public function test_catalog_migration_preserves_legacy_labels_nulls_and_record_timestamps(): void
-    {
-        if (DB::getDriverName() !== 'sqlite') {
-            $this->markTestSkipped('DDL rollback fixture is isolated to SQLite memory.');
-        }
-        $migration = require database_path('migrations/2026_10_24_090000_add_employee_type_catalog.php');
-        $migration->down();
-        $ids = DB::table('employee_details')->orderBy('id')->pluck('id');
-        DB::table('employee_details')->where('id', $ids[0])->update(['employee_type' => ' Điều dưỡng ']);
-        DB::table('employee_details')->where('id', $ids[1])->update(['employee_type' => null]);
-        DB::table('employee_details')->where('id', $ids[2])->update(['employee_type' => 'IMAGING_TECHNICIAN']);
-        $before = DB::table('employee_details')->orderBy('id')->get()->map(fn ($row) => (array) $row)->all();
-        $migration->up();
-        $after = DB::table('employee_details')->orderBy('id')->get()->map(fn ($row) => (array) $row)->all();
-        $before[0]['employee_type'] = 'NURSE';
-        $this->assertSame($before, $after);
-    }
-
-    public function test_catalog_migration_refuses_unknown_legacy_values_without_deleting_them(): void
-    {
-        if (DB::getDriverName() !== 'sqlite') {
-            $this->markTestSkipped('DDL rollback fixture is isolated to SQLite memory.');
-        }
-        $migration = require database_path('migrations/2026_10_24_090000_add_employee_type_catalog.php');
-        $migration->down();
-        DB::table('employee_details')->where('employee_type', 'NURSE')->update(['employee_type' => 'Legacy unknown']);
-        try {
-            $migration->up();
-            $this->fail('Unknown history must not be guessed.');
-        } catch (\RuntimeException $exception) {
-            $this->assertStringContainsString('loại nhân viên cũ', $exception->getMessage());
-        }
-        $this->assertFalse(Schema::hasTable('employee_types'));
-        $this->assertDatabaseHas('employee_details', ['employee_type' => 'Legacy unknown']);
-    }
-
     public function test_patient_history_is_scoped_to_patient_for_every_filter(): void
     {
         $patient = Patient::firstOrFail();
@@ -303,7 +181,7 @@ class EmployeeClassificationPatientHistoryTest extends TestCase
         $html = $this->get(route('admin.employees.index'))->assertOk()
             ->assertDontSee('Chức vụ chỉ xem trong hồ sơ')->getContent();
         $headers = $this->xpath($html)->query('//main//table/thead/tr/th');
-        $this->assertSame(['STT', 'Mã nhân viên', 'Họ và tên', 'Số điện thoại', 'Phòng ban', 'Loại nhân viên', 'Trạng thái', 'Thao tác'],
+        $this->assertSame(['STT', 'Mã nhân viên', 'Họ và tên', 'Số điện thoại', 'Trạng thái', 'Thao tác'],
             array_map(fn ($node) => trim($node->textContent), iterator_to_array($headers)));
         $this->get(route('admin.employees.show', $employee))->assertOk()->assertSee('Chức vụ chỉ xem trong hồ sơ');
         $this->get(route('admin.employees.edit', $employee))->assertOk()->assertSee('Chức vụ chỉ xem trong hồ sơ');

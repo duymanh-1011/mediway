@@ -18,10 +18,16 @@
         <div>
             <h1 class="page-title">Quản lý nhân viên</h1>
             <p class="ei-description">
-                Tra cứu nhân viên theo phòng ban, loại nhân viên và trạng thái.
+                Tra cứu nhân viên theo mã, họ tên, thông tin liên hệ và trạng thái.
             </p>
         </div>
         <a href="{{ route('admin.employees.create') }}" class="admin-btn admin-btn-primary">Thêm nhân viên</a>
+    </div>
+
+    <div class="stats-grid">
+        <div class="mini-card"><div class="mini-card-label">Tổng nhân viên</div><div class="mini-card-value">{{ $totalEmployees }}</div></div>
+        <div class="mini-card"><div class="mini-card-label">Đang hoạt động</div><div class="mini-card-value success">{{ $activeEmployees }}</div></div>
+        <div class="mini-card"><div class="mini-card-label">Ngừng hoạt động</div><div class="mini-card-value danger">{{ $inactiveEmployees }}</div></div>
     </div>
 
     @if(session('success'))
@@ -30,41 +36,15 @@
 
     @component('admin.layouts.partials.filter-panel', [
         'title' => 'Bộ lọc nhân viên',
-        'description' => 'Lọc theo từ khóa, phòng ban, loại nhân viên và trạng thái.',
+        'description' => 'Lọc theo từ khóa và trạng thái hồ sơ.',
     ])
-        <form data-filter-fields="4" action="{{ route('admin.employees.index') }}" method="GET" class="ei-filters admin-filter-form">
+        <form data-filter-fields="2" action="{{ route('admin.employees.index') }}" method="GET" class="ei-filters admin-filter-form">
             <div class="ei-field ei-search admin-filter-field">
                 <label for="search">Tìm kiếm</label>
                 <input type="text" id="search" name="search"
                        maxlength="150" value="{{ $search }}"
                        placeholder="Mã nhân viên, họ tên, SĐT, chức vụ...">
 @error('search')<div class="field-error">{{ $message }}</div>@enderror
-            </div>
-
-            <div class="ei-field admin-filter-field">
-                <label for="department">Phòng ban</label>
-                <select id="department" name="department">
-                    <option value="">Tất cả phòng ban</option>
-                    @foreach($departments as $option)
-                        <option value="{{ $option }}" @selected($department === $option)>
-                            {{ $option }}
-                        </option>
-                    @endforeach
-                </select>
-@error('department')<div class="field-error">{{ $message }}</div>@enderror
-            </div>
-
-            <div class="ei-field admin-filter-field">
-                <label for="employee_type">Loại nhân viên</label>
-                <select id="employee_type" name="employee_type">
-                    <option value="">Tất cả loại</option>
-                    @foreach($employeeTypes as $option)
-                        <option value="{{ $option->code }}" @selected($employeeType === $option->code)>
-                            {{ $option->name }}
-                        </option>
-                    @endforeach
-                </select>
-@error('employee_type')<div class="field-error">{{ $message }}</div>@enderror
             </div>
 
             <div class="ei-field admin-filter-field">
@@ -104,8 +84,6 @@
                         <th>Mã nhân viên</th>
                         <th>Họ và tên</th>
                         <th>Số điện thoại</th>
-                        <th>Phòng ban</th>
-                        <th>Loại nhân viên</th>
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
                     </tr>
@@ -117,8 +95,6 @@
                             <td><strong>@include('admin.layouts.partials.record-code', ['code' => $employee->employee_code])</strong></td>
                             <td>{{ $employee->full_name }}</td>
                             <td>{{ $employee->user?->phone ?? '-' }}</td>
-                            <td>{{ $employee->detail?->department ?: 'Chưa cập nhật' }}</td>
-                            <td>{{ \App\Models\AdminDisplay::label(\App\Support\EmployeeAccess::typeCode($employee->detail?->employee_type)) }}</td>
                             <td>
                                 @include('admin.layouts.partials.status-badge', ['badgeCode' => $employee->status])
                             </td>
@@ -133,7 +109,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="ei-empty">
+                            <td colspan="6" class="ei-empty">
                                 Không tìm thấy nhân viên phù hợp.
                             </td>
                         </tr>

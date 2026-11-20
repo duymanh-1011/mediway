@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\AdminDisplay;
-use App\Models\EmployeeType;
 use App\Models\MedicalVisit;
 use App\Models\Payable;
 use App\Models\ServiceResult;
@@ -130,16 +129,16 @@ class AdminViewsTest extends TestCase
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
 
         $this->from(route('admin.employees.create'))->post(route('admin.employees.store'), [
-            'full_name' => 'Nhân viên kiểm thử', 'status' => 'ACTIVE', 'department' => str_repeat('a', 121),
+            'full_name' => 'Nhân viên kiểm thử', 'status' => 'ACTIVE', 'employee_type' => 'CASHIER', 'department' => 'Thu ngân',
         ])->assertRedirect(route('admin.employees.create'))->assertSessionHasErrors([
             'phone' => 'Vui lòng chọn tài khoản nhân viên có sẵn hoặc nhập số điện thoại mới.',
-            'department' => 'phòng ban không được quá 120 ký tự.',
+            'department' => 'Phòng ban không còn là thông tin phân loại hồ sơ nhân viên.',
+            'employee_type' => 'Loại nhân viên đã được gỡ bỏ; mọi nhân viên được phép làm việc ở quầy tiếp đón và thu ngân.',
         ]);
 
-        $this->withViewErrors(session('errors')->getBag('default')->getMessages())
-            ->view('admin.employees.create', ['availableUsers' => collect(), 'employeeTypes' => EmployeeType::orderBy('display_order')->get()])
-            ->assertSee('phòng ban không được quá 120 ký tự.')
-            ->assertDontSee('tài khoản Employee');
+        $html = $this->get(route('admin.employees.create'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('name="department"', $html);
+        $this->assertStringNotContainsString('name="employee_type"', $html);
     }
 
     public function test_localization_translates_reception_sources_and_historical_descriptions_without_rewriting_data(): void
@@ -191,6 +190,18 @@ class AdminViewsTest extends TestCase
         $this->assertSame('← Quay lại', trim($backLink->item(0)->textContent));
         $this->assertCount(1, $pages['edit']->query('//main//form[@action="'.route('admin.service-results.update', $result->id).'"]//button[@type="submit" and contains(@class,"admin-btn-primary")]'));
         $this->assertCount(0, $pages['edit']->query('//nav[contains(@class,"admin-breadcrumb")]//a[contains(@class,"admin-btn")]'));
+    }
+
+    public function test_shared_admin_confirmation_dialog_is_centered(): void
+    {
+        $this->seed(WorkflowFixtureSeeder::class);
+        $this->withoutVite();
+        $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail())
+            ->get(route('admin.medicines.index'))->assertOk()
+            ->assertSee('<dialog id="admin-confirm-dialog" class="admin-confirm-dialog"', false);
+
+        $styles = file_get_contents(resource_path('css/admin-presentation.css'));
+        $this->assertMatchesRegularExpression('/\.admin-confirm-dialog\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0;[^}]*margin:\s*auto;/s', $styles);
     }
 
     private function interfaceText(string $html): string

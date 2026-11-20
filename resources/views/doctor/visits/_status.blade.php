@@ -15,7 +15,6 @@
     }
     $label = match (true) {
         $hasBeenCalled ?? false => 'Đã gọi',
-        $code === 'WAITING_FOR_RETURN' => 'Chờ đọc kết quả',
         $code !== null => \App\Models\AdminDisplay::label($code),
         default => 'Chưa cập nhật trạng thái',
     };

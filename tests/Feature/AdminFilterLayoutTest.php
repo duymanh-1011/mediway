@@ -35,7 +35,7 @@ class AdminFilterLayoutTest extends TestCase
         }
         $pages['admin.doctor-schedules.month.index'] = route('admin.doctor-schedules.month.index');
         $pages['admin.service-groups.show'] = route('admin.service-groups.show', ServiceGroup::where('service_group_code', 'XN')->firstOrFail());
-        $pages['admin.disease-groups.show'] = route('admin.disease-groups.show', DiseaseGroup::where('disease_group_code', 'NBHH')->firstOrFail());
+        $pages['admin.disease-groups.show'] = route('admin.disease-groups.show', DiseaseGroup::where('disease_group_code', 'ICD10')->firstOrFail());
         $pages['admin.dashboard'] = route('admin.dashboard');
         $pages['admin.patients.show'] = route('admin.patients.show', Patient::firstOrFail());
         foreach ($pages as $name => $url) {
@@ -101,7 +101,7 @@ class AdminFilterLayoutTest extends TestCase
             ->assertViewHas('users', fn ($users): bool => $users->total() > 1);
     }
 
-    public function test_employee_type_labels_are_vietnamese_without_changing_values(): void
+    public function test_employee_classification_fields_are_removed_from_the_admin_flow(): void
     {
         $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
@@ -110,8 +110,10 @@ class AdminFilterLayoutTest extends TestCase
         $text = html_entity_decode(strip_tags(preg_replace('/<script\b[^>]*>[\s\S]*?<\/script>/i', '', $html)));
         $this->assertStringNotContainsString('CASHIER', $text);
         $this->assertStringNotContainsString('LAB_TECHNICIAN', $text);
-        $this->assertStringContainsString('Nhân viên thu ngân', $text);
-        $this->assertStringContainsString('value="CASHIER"', $html);
+        $this->assertStringNotContainsString('Loại nhân viên', $text);
+        $this->assertStringNotContainsString('Phòng ban', $text);
+        $this->assertStringNotContainsString('name="employee_type"', $html);
+        $this->assertStringNotContainsString('name="department"', $html);
     }
 
     public function test_patient_search_uses_session_references_for_phone_and_citizen_id(): void
@@ -143,15 +145,15 @@ class AdminFilterLayoutTest extends TestCase
         $this->get($index.'?search_ref=expired')->assertRedirect($index);
     }
 
-    public function test_employee_form_displays_vietnamese_but_persists_the_original_code(): void
+    public function test_employee_edit_form_has_no_removed_classification_fields(): void
     {
         $this->seed(WorkflowFixtureSeeder::class);
         $this->withoutVite();
         $this->actingAs(User::where('business_code', 'QT000001')->firstOrFail());
         $employee = Employee::where('employee_code', 'NV000004')->firstOrFail();
-        $this->get(route('admin.employees.edit', $employee))->assertOk()->assertSee('value="CASHIER" selected', false)->assertSee('Nhân viên thu ngân');
-        $this->put(route('admin.employees.update', $employee), ['full_name' => $employee->full_name, 'status' => $employee->status, 'employee_type' => 'Nhân viên thu ngân'])->assertSessionHasNoErrors();
-        $this->assertSame('CASHIER', $employee->detail->fresh()->employee_type);
-        $this->assertSame('Loại tùy chỉnh', AdminDisplay::employeeTypeCode('Loại tùy chỉnh'));
+        $html = $this->get(route('admin.employees.edit', $employee))->assertOk()->getContent();
+        $this->assertStringNotContainsString('name="employee_type"', $html);
+        $this->assertStringNotContainsString('name="department"', $html);
+        $this->put(route('admin.employees.update', $employee), ['full_name' => $employee->full_name, 'status' => $employee->status])->assertSessionHasNoErrors();
     }
 }

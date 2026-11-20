@@ -22,9 +22,7 @@ class EmployeeDetail extends Model
         'ethnicity',
         'education_level',
         'professional_qualification',
-        'department',
         'position',
-        'employee_type',
         'hire_date',
         'termination_date',
         'years_of_service',
@@ -54,8 +52,4 @@ class EmployeeDetail extends Model
         return $this->belongsTo(Employee::class);
     }
 
-    public function type(): BelongsTo
-    {
-        return $this->belongsTo(EmployeeType::class, 'employee_type', 'code');
-    }
 }

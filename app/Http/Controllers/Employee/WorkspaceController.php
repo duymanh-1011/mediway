@@ -59,7 +59,7 @@ class WorkspaceController extends Controller
             'email' => ['nullable', 'email', 'max:150'],
             'current_address' => ['nullable', 'string', 'max:255'],
             'permanent_address' => ['nullable', 'string', 'max:255'],
-            'employee_type' => ['prohibited'], 'role_id' => ['prohibited'],
+            'department' => ['prohibited'], 'employee_type' => ['prohibited'], 'role_id' => ['prohibited'],
             'employee_code' => ['prohibited'], 'user_id' => ['prohibited'], 'status' => ['prohibited'],
         ], [
             'email.email' => 'Email không đúng định dạng.',

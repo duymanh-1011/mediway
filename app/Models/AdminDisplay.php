@@ -2,15 +2,8 @@
 
 namespace App\Models;
 
-use App\Support\EmployeeAccess;
-
 final class AdminDisplay
 {
-    public const EMPLOYEE_TYPES = EmployeeAccess::TYPES + [
-        'IMAGING_TECHNICIAN' => 'Kỹ thuật viên chẩn đoán hình ảnh',
-        'LAB_TECHNICIAN' => 'Kỹ thuật viên xét nghiệm', 'NURSE' => 'Điều dưỡng',
-    ];
-
     public const LABELS = [
         'ACTIVE' => 'Đang hoạt động', 'INACTIVE' => 'Ngừng hoạt động', 'LOCKED' => 'Đã khóa',
         'ALLOWED' => 'Cho phép', 'DENIED' => 'Không cho phép', 'YES' => 'Có', 'NO' => 'Không',
@@ -65,14 +58,7 @@ final class AdminDisplay
             return 'Chờ xác nhận thanh toán';
         }
 
-        return self::EMPLOYEE_TYPES[$code ?? ''] ?? self::LABELS[$code ?? ''] ?? ($code ?: '—');
-    }
-
-    public static function employeeTypeCode(string $label): string
-    {
-        $code = array_search(trim($label), self::EMPLOYEE_TYPES, true);
-
-        return $code === false ? $label : $code;
+        return self::LABELS[$code ?? ''] ?? ($code ?: '—');
     }
 
     public static function text(?string $text): string

@@ -22,7 +22,7 @@
             <span class="required">*</span>
         </label>
 
-        @include('admin.layouts.partials.business-code', ['field' => 'room_code', 'record' => $room ?? null])
+        @include('admin.layouts.partials.business-code', ['field' => 'room_code', 'record' => $examinationRoom ?? null])
 
         @error('room_code')
             <div class="field-error">

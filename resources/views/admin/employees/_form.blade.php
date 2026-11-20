@@ -2,9 +2,6 @@
 @php
     $editing = isset($employee);
     $detail = $editing ? $employee->detail : null;
-    $employeeTypeValue = old('employee_type', $detail?->employee_type);
-    $employeeTypeValue = is_string($employeeTypeValue) ? \App\Support\EmployeeAccess::typeCode(\App\Models\AdminDisplay::employeeTypeCode($employeeTypeValue)) : '';
-
     $selectedUserId = old('user_id', '');
 
     $personalFields = [
@@ -21,9 +18,7 @@
     ];
 
     $workFields = [
-        ['name' => 'department', 'label' => 'Phòng ban', 'max' => 120],
         ['name' => 'position', 'label' => 'Chức vụ', 'max' => 120],
-        ['name' => 'employee_type', 'label' => 'Loại nhân viên', 'max' => 80],
         ['name' => 'primary_shift', 'label' => 'Ca làm việc chính', 'max' => 80],
         ['name' => 'work_location', 'label' => 'Nơi làm việc', 'max' => 180],
     ];
@@ -273,25 +268,13 @@
 
 <div class="em-section em-section-gap">
     <h2>Thông tin công việc</h2>
-    <p>Phòng ban, chức vụ, loại nhân viên và thời gian làm việc.</p>
+    <p>Chức vụ và thông tin bố trí công việc. Mọi nhân viên được cấp quyền sử dụng chức năng tiếp đón và thu ngân.</p>
 </div>
 
 <div class="em-grid">
     @foreach($workFields as $field)
         <div class="em-field">
-            <label for="{{ $field['name'] }}">
-                {{ $field['label'] }}
-                @if($field['name'] === 'employee_type')<span>*</span>@endif
-            </label>
-
-            @if($field['name'] === 'employee_type')
-                <select id="employee_type" name="employee_type" required aria-required="true">
-                    <option value="">Chọn loại nhân viên</option>
-                    @foreach($employeeTypes as $type)
-                        <option value="{{ $type->code }}" @selected($employeeTypeValue === $type->code)>{{ $type->name }}</option>
-                    @endforeach
-                </select>
-            @else
+            <label for="{{ $field['name'] }}">{{ $field['label'] }}</label>
             <input
                 type="text"
                 id="{{ $field['name'] }}"
@@ -299,7 +282,6 @@
                 maxlength="{{ $field['max'] }}"
                 value="{{ old($field['name'], $detail?->{$field['name']}) }}"
             >
-            @endif
 
             @error($field['name'])
                 <small class="em-error">{{ \App\Models\AdminDisplay::text($message) }}</small>

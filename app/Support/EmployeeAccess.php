@@ -7,21 +7,6 @@ use App\Models\User;
 
 final class EmployeeAccess
 {
-    public const SERVICE_TECHNICIAN = 'SERVICE_TECHNICIAN';
-
-    public const TYPES = [
-        'RECEPTIONIST' => 'Nhân viên tiếp đón',
-        'CASHIER' => 'Nhân viên thu ngân',
-        self::SERVICE_TECHNICIAN => 'Kỹ thuật viên dịch vụ y tế',
-    ];
-
-    public const TECHNICIAN_CODES = [self::SERVICE_TECHNICIAN, 'LAB_TECHNICIAN', 'IMAGING_TECHNICIAN'];
-
-    public static function typeCode(?string $type): ?string
-    {
-        return in_array($type, self::TECHNICIAN_CODES, true) ? self::SERVICE_TECHNICIAN : $type;
-    }
-
     public static function homeRoute(Employee $employee): string
     {
         return 'employee.home';

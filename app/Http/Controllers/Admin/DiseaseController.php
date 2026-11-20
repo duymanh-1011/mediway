@@ -100,6 +100,7 @@ class DiseaseController extends Controller
 
         $diseases =
             $query
+                ->commonDemoFirst()
                 ->orderBy('name')
                 ->paginate(10)
                 ->withQueryString();

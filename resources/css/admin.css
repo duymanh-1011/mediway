@@ -3119,6 +3119,28 @@ body.admin-ui .admin-content .admin-booking-choices select:disabled { background
 .alert-success { color: #065f46; background: #ecfdf5; border-color: #a7f3d0; }
 .alert-error, .alert-danger { color: #9f1239; background: #fff1f2; border-color: #fecdd3; }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 22px; }
+
+/* Keep the summary cards visually consistent across the main admin directories. */
+body[data-admin-page="service-result-templates-index"] .mini-card,
+body[data-admin-page="patients-index"] .mini-card,
+body[data-admin-page="doctors-index"] .mini-card,
+body[data-admin-page="employees-index"] .mini-card { padding: 16px 18px; background: #fff; border: 1px solid #e2e8f0; border-radius: 11px; }
+body[data-admin-page="service-result-templates-index"] .mini-card-label,
+body[data-admin-page="patients-index"] .mini-card-label,
+body[data-admin-page="doctors-index"] .mini-card-label,
+body[data-admin-page="employees-index"] .mini-card-label { margin-bottom: 7px; color: #64748b; font-size: var(--admin-font-small); }
+body[data-admin-page="service-result-templates-index"] .mini-card-value,
+body[data-admin-page="patients-index"] .mini-card-value,
+body[data-admin-page="doctors-index"] .mini-card-value,
+body[data-admin-page="employees-index"] .mini-card-value { color: #0f172a; font-size: 26px; font-weight: 700; }
+body[data-admin-page="service-result-templates-index"] .mini-card-value.success,
+body[data-admin-page="patients-index"] .mini-card-value.success,
+body[data-admin-page="doctors-index"] .mini-card-value.success,
+body[data-admin-page="employees-index"] .mini-card-value.success { color: #059669; }
+body[data-admin-page="service-result-templates-index"] .mini-card-value.danger,
+body[data-admin-page="patients-index"] .mini-card-value.danger,
+body[data-admin-page="doctors-index"] .mini-card-value.danger,
+body[data-admin-page="employees-index"] .mini-card-value.danger { color: #dc2626; }
 .stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; }
 .stat-label { font-size: var(--admin-font-body); color: #64748b; }
 .stat-value { font-size: 26px; font-weight: 700; margin-top: 5px; }

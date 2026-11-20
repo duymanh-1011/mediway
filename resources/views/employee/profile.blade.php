@@ -37,7 +37,6 @@
             <div class="employee-card__heading"><span class="employee-card__icon"><x-employee-icon name="briefcase" /></span><div><h2>Thông tin công việc</h2><p>Vị trí và đơn vị công tác của bạn</p></div></div>
             <dl class="employee-profile__facts employee-profile__facts--work">
                 <div><dt>Chức năng khả dụng</dt><dd>Tiếp đón và thu ngân</dd></div>
-                <div><dt>Phòng ban</dt><dd>{{ $detail?->department ?: 'Chưa cập nhật' }}</dd></div>
                 <div><dt>Chức danh</dt><dd>{{ $detail?->position ?: 'Chưa cập nhật' }}</dd></div>
                 <div><dt>Ngày tuyển dụng</dt><dd>{{ $detail?->hire_date?->format('d/m/Y') ?? 'Chưa cập nhật' }}</dd></div>
                 <div><dt>Địa điểm làm việc</dt><dd>{{ $detail?->work_location ?: 'Chưa cập nhật' }}</dd></div>

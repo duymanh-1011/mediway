@@ -54,7 +54,7 @@ class CleanDatabaseSeederTest extends TestCase
         $this->assertDatabaseHas('examination_rooms', ['room_code' => 'PKTMH01']);
         $this->assertDatabaseHas('service_groups', ['service_group_code' => 'SA']);
         $this->assertDatabaseHas('medical_services', ['service_code' => 'DVCD003']);
-        $this->assertNotNull(DB::table('medical_services')->where('service_code', 'DVCD003')->value('service_result_template_id'));
+        $this->assertDatabaseHas('service_result_templates', ['name' => 'Phiếu chẩn đoán hình ảnh']);
         $this->assertDatabaseHas('medicines', ['medicine_code' => 'TH001', 'price_per_unit' => 360]);
         $this->assertDatabaseHas('doctor_shift_settings', ['id' => 1]);
     }

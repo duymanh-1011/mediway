@@ -57,7 +57,7 @@ class PatientController extends Controller
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:500'],
-            'status' => ['nullable', 'in:ACTIVE'],
+            'status' => ['nullable', 'in:ACTIVE,INACTIVE'],
         ]);
         $search = new SessionSearch($request, 'admin.patients');
 
@@ -72,7 +72,8 @@ class PatientController extends Controller
         $sessionSearch = new SessionSearch($request, 'admin.patients');
         $search = $sessionSearch->keyword() ?? '';
         $status = (string) $request->query('status', '');
-        $urlFilters = ['status' => $status === 'ACTIVE' ? $status : null, ...$sessionSearch->navigation()];
+        $status = in_array($status, ['ACTIVE', 'INACTIVE'], true) ? $status : '';
+        $urlFilters = ['status' => $status !== '' ? $status : null, ...$sessionSearch->navigation()];
         if ($request->query->has('search') || ($request->query->has(SessionSearch::PARAMETER) && $search === '')) {
             return redirect()->route('admin.patients.index', $urlFilters)
                 ->header('Referrer-Policy', 'no-referrer')
@@ -109,10 +110,7 @@ class PatientController extends Controller
                         });
                 });
             })
-            ->when(
-                $status === 'ACTIVE',
-                fn ($query) => $query->where('status', 'ACTIVE')
-            )
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->orderByDesc('id')
             ->paginate(10)
             ->appends($urlFilters);
@@ -121,7 +119,11 @@ class PatientController extends Controller
             'patients',
             'search',
             'status'
-        ))->header('Cache-Control', 'private, no-store');
+        ) + [
+            'totalPatients' => Patient::count(),
+            'activePatients' => Patient::where('status', 'ACTIVE')->count(),
+            'inactivePatients' => Patient::where('status', 'INACTIVE')->count(),
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     public function create()

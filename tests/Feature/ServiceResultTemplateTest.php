@@ -32,6 +32,8 @@ class ServiceResultTemplateTest extends TestCase
             'name' => $template->name,
             'description' => $template->description,
             'is_active' => '1',
+            'effective_from' => $template->effective_from?->toDateString() ?? today()->toDateString(),
+            'medical_service_ids' => $template->medicalServices()->pluck('medical_services.id')->all(),
             'fields' => [
                 ['key' => 'measurements', 'label' => 'Các chỉ số xét nghiệm', 'type' => 'measurements', 'required' => '1'],
                 ['key' => 'comment', 'label' => 'Nhận xét', 'type' => 'textarea', 'required' => '0'],
@@ -57,13 +59,13 @@ class ServiceResultTemplateTest extends TestCase
     {
         $template = ServiceResultTemplate::where('name', 'Phiếu xét nghiệm')->firstOrFail();
         $template->update(['fields' => [['key' => 'custom', 'label' => 'Trường riêng', 'type' => 'text', 'required' => true]]]);
-        $service = MedicalService::whereNotNull('service_result_template_id')->firstOrFail();
-        $service->update(['service_result_template_id' => $template->id]);
+        $service = MedicalService::where('service_code', 'DVXN001')->firstOrFail();
+        $template->medicalServices()->syncWithoutDetaching([$service->id]);
 
         $this->seed(ServiceResultTemplateSeeder::class);
 
         $this->assertSame('custom', $template->fresh()->fields[0]['key']);
-        $this->assertSame($template->id, $service->fresh()->service_result_template_id);
+        $this->assertTrue($service->fresh()->resultTemplates()->whereKey($template->id)->exists());
     }
 
     public function test_result_template_assignment_defaults_to_preview_and_only_maps_unambiguous_groups(): void
@@ -76,16 +78,14 @@ class ServiceResultTemplateTest extends TestCase
         $ambiguous->serviceGroups()->attach([$lab->id, $imaging->id]);
 
         $this->assertSame(0, Artisan::call('medical-services:assign-result-templates'));
-        $this->assertNull($clearMatch->fresh()->service_result_template_id);
-        $this->assertNull($ambiguous->fresh()->service_result_template_id);
-        $this->assertStringContainsString('Chưa thay đổi dữ liệu', Artisan::output());
+        $this->assertCount(0, $clearMatch->fresh()->resultTemplates);
+        $this->assertCount(0, $ambiguous->fresh()->resultTemplates);
+        $this->assertStringContainsString('không có dữ liệu nào bị thay đổi', Artisan::output());
 
-        $this->assertSame(0, Artisan::call('medical-services:assign-result-templates', ['--apply' => true]));
-        $this->assertSame(
-            ServiceResultTemplate::where('name', 'Phiếu xét nghiệm')->value('id'),
-            $clearMatch->fresh()->service_result_template_id
-        );
-        $this->assertNull($ambiguous->fresh()->service_result_template_id);
+        $this->assertSame(1, Artisan::call('medical-services:assign-result-templates', ['--apply' => true]));
+        $this->assertStringContainsString('Đã tắt tự động gán mẫu', Artisan::output());
+        $this->assertCount(0, $clearMatch->fresh()->resultTemplates);
+        $this->assertCount(0, $ambiguous->fresh()->resultTemplates);
     }
 
     private function unmappedService(string $code, string $name): MedicalService

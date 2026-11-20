@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Models\ServiceOrderItem;
 use App\Support\EmployeeAccess;
 use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use Database\Seeders\AdditionalEmployeeSeeder;
@@ -29,44 +28,34 @@ class EmployeePortalFoundationTest extends TestCase
         $this->get(route('employee.home'))->assertOk()->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
         $this->post(route('employee.logout'))->assertRedirect(route('public.home'));
         $nurse = User::where('business_code', 'NV000001')->firstOrFail();
-        $nurse->employee->detail()->update(['employee_type' => 'NURSE']);
         $this->post(route('patient.login.store'), ['phone' => $nurse->phone, 'password' => 'Mediway@123'])->assertRedirect(route('employee.home'));
         $this->get(route('employee.home'))->assertOk()->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
     }
 
-    public function test_sample_receptionist_and_cashier_have_separate_departments(): void
+    public function test_employee_profiles_no_longer_depend_on_departments_or_types(): void
     {
-        $receptionist = User::where('business_code', 'NV000001')->firstOrFail()->employee->detail;
-        $cashier = User::where('business_code', 'NV000004')->firstOrFail()->employee->detail;
-        $this->assertSame('RECEPTIONIST', $receptionist->employee_type);
-        $this->assertSame('Lễ tân', $receptionist->department);
-        $this->assertSame('CASHIER', $cashier->employee_type);
-        $this->assertSame('Thu ngân', $cashier->department);
+        $this->assertFalse(\Illuminate\Support\Facades\Schema::hasTable('employee_types'));
+        $this->assertFalse(\Illuminate\Support\Facades\Schema::hasColumn('employee_details', 'department'));
+        $this->assertFalse(\Illuminate\Support\Facades\Schema::hasColumn('employee_details', 'employee_type'));
     }
 
     public function test_expanded_demo_accounts_can_log_in_and_reseeding_preserves_existing_records(): void
     {
         $this->seed(AdditionalEmployeeSeeder::class);
-        $accounts = [
-            'NV000005' => ['RECEPTIONIST', 'employee.home'],
-            'NV000006' => ['CASHIER', 'employee.home'],
-            'NV000007' => ['SERVICE_TECHNICIAN', 'employee.home'],
-            'NV000008' => ['SERVICE_TECHNICIAN', 'employee.home'],
-        ];
-        foreach ($accounts as $code => [$type, $destination]) {
+        $accounts = ['NV000005', 'NV000006', 'NV000007', 'NV000008'];
+        foreach ($accounts as $code) {
             $user = User::where('business_code', $code)->firstOrFail();
-            $this->assertSame($type, $user->employee->detail->employee_type);
             $this->post(route('patient.login.store'), ['phone' => $user->phone, 'password' => 'Mediway@123'])
-                ->assertRedirect(route($destination));
+                ->assertRedirect(route('employee.home'));
             $this->post(route('employee.logout'))->assertRedirect(route('public.home'));
         }
         $user->update(['password' => 'MatKhauMauDaDoi@123']);
-        $user->employee->detail()->update(['department' => 'Bộ phận đã đổi']);
+        $address = $user->employee->detail->current_address;
 
         $this->seed(AdditionalEmployeeSeeder::class);
 
         $this->assertSame(8, \App\Models\Employee::count());
-        $this->assertSame('Bộ phận đã đổi', $user->employee->detail()->value('department'));
+        $this->assertSame($address, $user->employee->detail->fresh()->current_address);
         $this->assertTrue(Hash::check('MatKhauMauDaDoi@123', $user->fresh()->password));
     }
 
@@ -110,26 +99,22 @@ class EmployeePortalFoundationTest extends TestCase
             ->assertRedirect(route('employee.home'))->assertSessionHas('employee_workspace_mode', 'cashier');
     }
 
-    public function test_every_legacy_employee_classification_can_choose_either_workspace(): void
+    public function test_employees_can_choose_both_workspaces_independently_of_profile_data(): void
     {
         $user = User::where('business_code', 'NV000002')->firstOrFail();
         $detail = $user->employee->detail;
         $access = app(EmployeeAccess::class);
-        foreach (array_keys(EmployeeAccess::TYPES) as $type) {
-            $detail->update(['employee_type' => $type]);
-            $this->assertTrue($access->allows($user, 'reception.check_in', 'reception'));
-            $this->assertTrue($access->allows($user, 'payment.collect', 'cashier'));
-            $this->assertFalse($access->allows($user, 'queue.call', 'reception'));
-            $this->flushSession()->actingAs($user)->get(route('employee.home'))->assertOk()
-                ->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
-        }
+        $this->assertTrue($access->allows($user, 'reception.check_in', 'reception'));
+        $this->assertTrue($access->allows($user, 'payment.collect', 'cashier'));
+        $this->assertFalse($access->allows($user, 'queue.call', 'reception'));
+        $this->actingAs($user)->get(route('employee.home'))->assertOk()
+            ->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
     }
 
-    public function test_each_supported_employee_type_can_log_in_and_out(): void
+    public function test_all_employee_accounts_can_log_in_and_switch_to_cashier_workspace(): void
     {
-        $user = User::where('business_code', 'NV000002')->firstOrFail();
-        foreach (array_keys(EmployeeAccess::TYPES) as $type) {
-            $user->employee->detail()->update(['employee_type' => $type]);
+        foreach (['NV000001', 'NV000002', 'NV000003', 'NV000004'] as $code) {
+            $user = User::where('business_code', $code)->firstOrFail();
             $this->post(route('patient.login.store'), ['phone' => $user->phone, 'password' => 'Mediway@123'])
                 ->assertRedirect(route('employee.home'));
             $this->get(route('employee.home'))->assertOk()->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
@@ -144,7 +129,6 @@ class EmployeePortalFoundationTest extends TestCase
     {
         $user = User::where('business_code', 'NV000002')->firstOrFail();
         $this->actingAsEmployeeWorkspace($user, 'reception')->put(route('employee.profile.update'), ['employee_type' => 'CASHIER', 'email' => 'test@example.com'])->assertSessionHasErrors('employee_type');
-        $this->assertSame('SERVICE_TECHNICIAN', $user->employee->detail->fresh()->employee_type);
         $this->put(route('employee.profile.update'), ['email' => 'test@example.com', 'current_address' => 'Địa chỉ kiểm thử'])->assertRedirect(route('employee.profile'));
         $this->assertSame('test@example.com', $user->employee->detail->fresh()->email);
     }
@@ -194,7 +178,6 @@ class EmployeePortalFoundationTest extends TestCase
         $this->actingAs($user)->get(route('employee.home'))->assertOk()
             ->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân')
             ->assertDontSee(route('employee.services.index'));
-        $user->employee->detail->update(['employee_type' => 'CASHIER']);
         $this->get(route('employee.home'))->assertOk()->assertSee('Nhân viên tiếp đón')->assertSee('Nhân viên thu ngân');
     }
 
@@ -230,118 +213,9 @@ class EmployeePortalFoundationTest extends TestCase
             ->post('/employee-test-capability', fn () => response('allowed'));
         $user = User::where('business_code', 'NV000002')->firstOrFail();
         $this->actingAsEmployeeWorkspace($user, 'reception')->post('/employee-test-capability')->assertOk();
-        $user->employee->detail->update(['employee_type' => 'CASHIER']);
         $this->post('/employee-test-capability')->assertOk();
         $this->post(route('employee.workspace.select'), ['workspace' => 'cashier'])->assertRedirect(route('employee.home'));
         $this->post('/employee-test-capability')->assertForbidden();
     }
 
-    public function test_admin_cannot_change_type_with_unfinished_assigned_service(): void
-    {
-        $admin = User::where('business_code', 'QT000001')->firstOrFail();
-        $employee = User::where('business_code', 'NV000002')->firstOrFail()->employee;
-        $item = \App\Models\ServiceOrderItem::firstOrFail();
-        $pending = \App\Models\ServiceStatus::where('name', 'PENDING')->firstOrFail();
-        $item->update(['performed_by_employee_id' => $employee->id, 'service_status_id' => $pending->id]);
-        $this->actingAs($admin)->put(route('admin.employees.update', $employee), [
-            'full_name' => $employee->full_name, 'status' => 'ACTIVE', 'employee_type' => 'CASHIER', 'expected_employee_type' => 'SERVICE_TECHNICIAN', 'employee_type_change_reason' => 'Điều chuyển công tác',
-        ])->assertSessionHasErrors('employee_type');
-        $this->assertSame('SERVICE_TECHNICIAN', $employee->detail->fresh()->employee_type);
-    }
-
-    public function test_admin_cannot_change_cashier_type_with_a_pending_assigned_payment(): void
-    {
-        $admin = User::where('business_code', 'QT000001')->firstOrFail();
-        $employee = User::where('business_code', 'NV000004')->firstOrFail()->employee;
-        $transaction = \App\Models\PaymentTransaction::where('collected_by_employee_id', $employee->id)->firstOrFail();
-        $transaction->update(['transaction_result' => 'PENDING']);
-        $this->actingAs($admin)->put(route('admin.employees.update', $employee), [
-            'full_name' => 'Tên không được lưu', 'status' => 'ACTIVE', 'employee_type' => 'RECEPTIONIST',
-            'expected_employee_type' => 'CASHIER',
-            'employee_type_change_reason' => 'Điều chuyển công tác',
-        ])->assertSessionHasErrors('employee_type');
-        $this->assertSame('CASHIER', $employee->detail->fresh()->employee_type);
-        $this->assertNotSame('Tên không được lưu', $employee->fresh()->full_name);
-    }
-
-    public function test_all_six_admin_type_changes_preserve_identity_and_update_permissions(): void
-    {
-        $admin = User::where('business_code', 'QT000001')->firstOrFail();
-        $employee = User::where('business_code', 'NV000002')->firstOrFail()->employee;
-        ServiceOrderItem::where('performed_by_employee_id', $employee->id)->unresolved()->update(['performed_by_employee_id' => null]);
-        $userId = $employee->user_id;
-        $code = $employee->employee_code;
-        $capabilities = ['RECEPTIONIST' => 'reception.check_in', 'SERVICE_TECHNICIAN' => 'services.process', 'CASHIER' => 'payment.collect'];
-        foreach ($capabilities as $from => $oldCapability) {
-            foreach ($capabilities as $to => $newCapability) {
-                if ($from === $to) continue;
-                $employee->detail()->update(['employee_type' => $from]);
-                $this->actingAs($admin)->put(route('admin.employees.update', $employee), [
-                    'full_name' => $employee->full_name, 'status' => 'ACTIVE', 'employee_type' => $to,
-                    'expected_employee_type' => $from,
-                    'employee_type_change_reason' => 'Điều chuyển công tác',
-                ])->assertSessionHasNoErrors();
-                $employee->refresh();
-                $this->assertSame($to, $employee->detail->employee_type);
-                $this->assertSame($userId, $employee->user_id);
-                $this->assertSame($code, $employee->employee_code);
-                $this->assertFalse(app(EmployeeAccess::class)->allows($employee->user, 'services.process', 'reception'));
-                $this->assertFalse(app(EmployeeAccess::class)->allows($employee->user, 'services.process', 'cashier'));
-                $this->assertTrue(app(EmployeeAccess::class)->allows($employee->user, 'reception.check_in', 'reception'));
-                $this->assertTrue(app(EmployeeAccess::class)->allows($employee->user, 'payment.collect', 'cashier'));
-            }
-        }
-    }
-
-    public function test_stale_admin_form_cannot_overwrite_another_type_change(): void
-    {
-        $admin = User::where('business_code', 'QT000001')->firstOrFail();
-        $employee = User::where('business_code', 'NV000002')->firstOrFail()->employee;
-        $employee->detail()->update(['employee_type' => 'CASHIER']);
-        $this->actingAs($admin)->put(route('admin.employees.update', $employee), [
-            'full_name' => $employee->full_name, 'status' => 'ACTIVE', 'employee_type' => 'RECEPTIONIST',
-            'expected_employee_type' => 'SERVICE_TECHNICIAN',
-        ])->assertSessionHasErrors('employee_type');
-        $this->assertSame('CASHIER', $employee->detail->fresh()->employee_type);
-    }
-
-    public function test_type_change_requires_reason_and_records_it_in_audit_log(): void
-    {
-        $admin = User::where('business_code', 'QT000001')->firstOrFail();
-        $employee = User::where('business_code', 'NV000002')->firstOrFail()->employee;
-        ServiceOrderItem::where('performed_by_employee_id', $employee->id)->unresolved()->update(['performed_by_employee_id' => null]);
-        $data = ['full_name' => $employee->full_name, 'status' => 'ACTIVE', 'employee_type' => 'CASHIER',
-            'expected_employee_type' => 'SERVICE_TECHNICIAN'];
-        $this->actingAs($admin)->put(route('admin.employees.update', $employee), $data)
-            ->assertSessionHasErrors('employee_type_change_reason');
-        $this->assertSame('SERVICE_TECHNICIAN', $employee->detail->fresh()->employee_type);
-        $this->put(route('admin.employees.update', $employee), $data + ['employee_type_change_reason' => 'Chuyển bộ phận'])
-            ->assertSessionHasNoErrors();
-        $log = \App\Models\AuditLog::where('entity_type', 'employee_details')->where('entity_id', $employee->detail->id)
-            ->where('user_id', $admin->id)->latest('id')->firstOrFail();
-        $this->assertSame('SERVICE_TECHNICIAN', $log->old_values['employee_type']);
-        $this->assertSame('CASHIER', $log->new_values['employee_type']);
-        $this->assertSame('Chuyển bộ phận', $log->new_values['employee_type_change_reason']);
-        $this->assertContains(['label' => 'Lý do đổi loại nhân viên', 'value' => 'Chuyển bộ phận'],
-            app(\App\Models\AuditValuePresenter::class)->rows($log->new_values));
-    }
-
-    public function test_saving_same_type_does_not_require_a_change_reason_or_record_a_type_change(): void
-    {
-        $admin = User::where('business_code', 'QT000001')->firstOrFail();
-        $employee = User::where('business_code', 'NV000002')->firstOrFail()->employee;
-        foreach (array_keys(EmployeeAccess::TYPES) as $type) {
-            $employee->detail()->update(['employee_type' => $type]);
-            $lastId = \App\Models\AuditLog::max('id') ?? 0;
-            $this->actingAs($admin)->put(route('admin.employees.update', $employee), [
-                'full_name' => $employee->full_name, 'status' => 'ACTIVE', 'employee_type' => $type,
-                'expected_employee_type' => $type,
-            ])->assertSessionHasNoErrors();
-            $logs = \App\Models\AuditLog::where('id', '>', $lastId)->where('entity_type', 'employee_details')->get();
-            foreach ($logs as $log) {
-                $this->assertArrayNotHasKey('employee_type', $log->new_values ?? []);
-            }
-            $this->assertSame($type, $employee->detail->fresh()->employee_type);
-        }
-    }
 }

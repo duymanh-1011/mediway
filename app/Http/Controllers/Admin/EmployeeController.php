@@ -7,15 +7,12 @@ use App\Http\Requests\Admin\StoreEmployeeRequest;
 use App\Http\Requests\Admin\UpdateEmployeeRequest;
 use App\Models\Employee;
 use App\Models\EmployeeDetail;
-use App\Models\EmployeeType;
 use App\Models\Role;
 use App\Models\User;
-use App\Support\EmployeeAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -33,9 +30,7 @@ class EmployeeController extends Controller
         'ethnicity',
         'education_level',
         'professional_qualification',
-        'department',
         'position',
-        'employee_type',
         'hire_date',
         'termination_date',
         'years_of_service',
@@ -68,14 +63,10 @@ class EmployeeController extends Controller
         $request->validate([
             'search' => ['nullable', 'string', 'max:150'],
             'status' => ['nullable', 'in:ACTIVE,INACTIVE'],
-            'department' => ['nullable', 'string', 'max:120'],
-            'employee_type' => ['nullable', 'string', Rule::exists('employee_types', 'code')],
         ]);
 
         $search = trim((string) $request->query('search', ''));
         $status = (string) $request->query('status', '');
-        $department = (string) $request->query('department', '');
-        $employeeType = EmployeeAccess::typeCode((string) $request->query('employee_type', ''));
 
         $employees = Employee::query()
             ->with(['user', 'detail'])
@@ -103,48 +94,19 @@ class EmployeeController extends Controller
                 $status !== '',
                 fn ($query) => $query->where('status', $status)
             )
-            ->when(
-                $department !== '',
-                fn ($query) => $query->whereHas(
-                    'detail',
-                    fn ($detailQuery) => $detailQuery->where(
-                        'department',
-                        $department
-                    )
-                )
-            )
-            ->when(
-                $employeeType !== '',
-                fn ($query) => $query->whereHas(
-                    'detail',
-                    fn ($detailQuery) => $detailQuery->whereIn(
-                        'employee_type',
-                        $employeeType === EmployeeAccess::SERVICE_TECHNICIAN ? EmployeeAccess::TECHNICIAN_CODES : [$employeeType]
-                    )
-                )
-            )
             ->orderByDesc('id')
             ->paginate(10)
             ->withQueryString();
 
-        $departments = EmployeeDetail::query()
-            ->whereNotNull('department')
-            ->where('department', '<>', '')
-            ->distinct()
-            ->orderBy('department')
-            ->pluck('department');
-
-        $employeeTypes = EmployeeType::whereIn('code', array_keys(EmployeeAccess::TYPES))->orderBy('display_order')->get();
-
         return view('admin.employees.index', compact(
             'employees',
             'search',
-            'status',
-            'department',
-            'employeeType',
-            'departments',
-            'employeeTypes'
-        ));
+            'status'
+        ) + [
+            'totalEmployees' => Employee::count(),
+            'activeEmployees' => Employee::where('status', 'ACTIVE')->count(),
+            'inactiveEmployees' => Employee::where('status', 'INACTIVE')->count(),
+        ]);
     }
 
     /**
@@ -153,9 +115,8 @@ class EmployeeController extends Controller
     public function create()
     {
         $availableUsers = $this->availableEmployeeUsers();
-        $employeeTypes = EmployeeType::whereIn('code', array_keys(EmployeeAccess::TYPES))->orderBy('display_order')->get();
 
-        return view('admin.employees.create', compact('availableUsers', 'employeeTypes'));
+        return view('admin.employees.create', compact('availableUsers'));
     }
 
     /**
@@ -274,11 +235,8 @@ class EmployeeController extends Controller
     public function edit(Employee $employee)
     {
         $employee->load(['user', 'detail']);
-        $types = array_keys(EmployeeAccess::TYPES);
-        if ($employee->detail?->employee_type === 'NURSE') $types[] = 'NURSE';
-        $employeeTypes = EmployeeType::whereIn('code', $types)->orderBy('display_order')->get();
 
-        return view('admin.employees.edit', compact('employee', 'employeeTypes'));
+        return view('admin.employees.edit', compact('employee'));
     }
 
     /**
@@ -354,37 +312,6 @@ class EmployeeController extends Controller
                     $detail = new EmployeeDetail([
                         'employee_id' => $lockedEmployee->id,
                     ]);
-                }
-
-                $originalType = (string) ($detail->employee_type ?? '');
-                $typeChanged = EmployeeAccess::typeCode($originalType) !== $data['employee_type'];
-                $hasExpectedType = $request->exists('expected_employee_type');
-                $expectedType = (string) ($data['expected_employee_type'] ?? '');
-                if (($hasExpectedType && $expectedType !== $originalType)
-                    || ($typeChanged && ! $hasExpectedType)) {
-                    throw ValidationException::withMessages(['employee_type' => 'Thông tin loại nhân viên đã thay đổi hoặc biểu mẫu đã cũ. Vui lòng tải lại trang.']);
-                }
-
-                if ($typeChanged && trim($data['employee_type_change_reason'] ?? '') === '') {
-                    throw ValidationException::withMessages(['employee_type_change_reason' => 'Vui lòng nhập lý do đổi loại nhân viên.']);
-                }
-                if ($detail->exists && $typeChanged) {
-                    $pending = \App\Models\ServiceOrderItem::where('performed_by_employee_id', $lockedEmployee->id)
-                        ->whereHas('serviceStatus', fn ($query) => $query->whereNotIn('name', ['COMPLETED', 'CANCELLED']))
-                        ->lockForUpdate()->exists();
-                    $pendingPayment = \App\Models\PaymentTransaction::where('collected_by_employee_id', $lockedEmployee->id)
-                        ->where('transaction_result', 'PENDING')->lockForUpdate()->exists();
-                    if ($pending || $pendingPayment) {
-                        $unfinished = [];
-                        if ($pending) $unfinished[] = 'dịch vụ được giao chưa hoàn tất';
-                        if ($pendingPayment) $unfinished[] = 'giao dịch thanh toán đang chờ';
-                        throw ValidationException::withMessages(['employee_type' => 'Nhân viên còn '.implode(' và ', $unfinished).'. Hãy hoàn tất hoặc bàn giao trước khi đổi loại.']);
-                    }
-                }
-
-                // Giữ nguyên mã cũ nếu loại công việc không đổi.
-                if (! $typeChanged) {
-                    $data['employee_type'] = $originalType;
                 }
 
                 $newFiles = $this->storeUploadedFiles(

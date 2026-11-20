@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreDiseaseGroupRequest;
 use App\Http\Requests\Admin\UpdateDiseaseGroupRequest;
+use App\Models\Disease;
 use App\Models\DiseaseGroup;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Query\Builder;
@@ -199,6 +200,10 @@ class DiseaseGroupController extends Controller
                 )
                 ->count();
 
+        $commonDiseaseOrder = collect(Disease::COMMON_DEMO_CODES)
+            ->map(fn (string $code, int $priority): string => 'WHEN ? THEN '.$priority)
+            ->implode(' ');
+
         $diseases =
             DB::table('diseases')
                 ->where(
@@ -219,6 +224,10 @@ class DiseaseGroupController extends Controller
                         ->orWhere('alternative_name', 'like', "%{$keyword}%")
                 ))
                 ->when($status, fn (Builder $query): Builder => $query->where('status', $status))
+                ->orderByRaw(
+                    'CASE disease_code '.$commonDiseaseOrder.' ELSE '.count(Disease::COMMON_DEMO_CODES).' END',
+                    Disease::COMMON_DEMO_CODES
+                )
                 ->orderBy('name')
                 ->orderBy('id')
                 ->paginate(10)

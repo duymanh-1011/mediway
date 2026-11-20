@@ -24,6 +24,12 @@
         <a href="{{ route('admin.patients.create') }}" class="admin-btn admin-btn-primary">Thêm bệnh nhân</a>
     </div>
 
+    <div class="stats-grid">
+        <div class="mini-card"><div class="mini-card-label">Tổng bệnh nhân</div><div class="mini-card-value">{{ $totalPatients }}</div></div>
+        <div class="mini-card"><div class="mini-card-label">Đang hoạt động</div><div class="mini-card-value success">{{ $activePatients }}</div></div>
+        <div class="mini-card"><div class="mini-card-label">Ngừng hoạt động</div><div class="mini-card-value danger">{{ $inactivePatients }}</div></div>
+    </div>
+
     @if(session('success'))
         <div class="pt-alert pt-success">{{ session('success') }}</div>
     @endif
@@ -55,8 +61,9 @@
             <div class="pt-field admin-filter-field">
                 <label for="status">Trạng thái hồ sơ</label>
                 <select id="status" name="status">
-                    <option value="">Tất cả</option>
+                    <option value="">Tất cả trạng thái</option>
                     <option value="ACTIVE" @selected($status === 'ACTIVE')>Đang hoạt động</option>
+                    <option value="INACTIVE" @selected($status === 'INACTIVE')>Ngừng hoạt động</option>
                 </select>
 @error('status')<div class="field-error">{{ $message }}</div>@enderror
             </div>

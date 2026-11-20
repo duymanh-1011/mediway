@@ -82,7 +82,7 @@ class DoctorVisitIntegrationTest extends TestCase
         $this->flushSession()->actingAsDoctorWorkspace($doctor, 'services');
         $this->post(route('doctor.services.save', $item), [
             'result_version' => ServiceResult::editVersion(null),
-            'template_version' => hash('sha256', json_encode([$service->resultTemplate->id, $service->resultTemplate->name, $service->resultTemplate->fields], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)),
+            'template_version' => $service->resultTemplatesAt($order->ordered_at->toDateString())->sole()->versionFingerprint(),
             'confirm_result' => '1', 'result_summary' => 'Kết quả liên kết kiểm thử',
             'template_values' => [
                 'specimen' => 'Mẫu kiểm thử',

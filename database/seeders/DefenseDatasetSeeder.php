@@ -8,12 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
-/**
- * Adds a repeatable fixed dataset for the project defense environment.
- * It never removes data and never creates visits, appointments, queues, orders,
- * prescriptions, or payments. Existing room records only have their display
- * name normalized to the requested numbered format.
- */
+
 class DefenseDatasetSeeder extends Seeder
 {
     private const INITIAL_PASSWORD = 'Mediway@123';
@@ -45,6 +40,9 @@ class DefenseDatasetSeeder extends Seeder
 
             return ['before' => $before, 'after' => $this->counts()];
         });
+
+        // The larger local demo catalog is created above, so price it after insertion.
+        $this->call(ReferenceMedicinePriceSeeder::class);
 
         if ($this->command) {
             $this->command->info('Đã đồng bộ bộ dữ liệu phục vụ bảo vệ; có thể chạy lại an toàn.');
@@ -155,10 +153,9 @@ class DefenseDatasetSeeder extends Seeder
         $employeeRows = DB::table('employees')->join('employee_details', 'employee_details.employee_id', '=', 'employees.id')
             ->where('employees.employee_code', 'like', 'NV9%')
             ->where('employee_details.email', 'like', '%@%.mediway.test')
-            ->get(['employees.id', 'employees.employee_code', 'employee_details.employee_type']);
+            ->get(['employees.id', 'employees.employee_code']);
         foreach ($employeeRows as $employee) {
             $sequence = (int) substr($employee->employee_code, 3);
-            $reception = $employee->employee_type === 'RECEPTIONIST';
             DB::table('employee_details')->where('employee_id', $employee->id)->update([
                 'citizen_id_number' => $this->citizenId('048', $sequence),
                 'citizen_id_issue_place' => 'Công an thành phố Hà Nội',
@@ -168,16 +165,11 @@ class DefenseDatasetSeeder extends Seeder
                 'current_address' => $this->personAddress($sequence + 400),
                 'ethnicity' => 'Kinh',
                 'education_level' => 'Đại học',
-                'professional_qualification' => $reception ? 'Quản trị bệnh viện' : 'Kế toán',
-                'position' => $reception ? 'Nhân viên tiếp đón' : 'Nhân viên thu ngân',
-                'department' => $reception ? 'Tiếp đón' : 'Tài chính - kế toán',
+                'professional_qualification' => 'Nghiệp vụ quản lý y tế',
+                'position' => 'Nhân viên',
                 'work_location' => 'Bệnh viện Mediway',
-                'job_description' => $reception
-                    ? 'Tiếp nhận, hướng dẫn và hỗ trợ người bệnh trong quá trình đăng ký khám.'
-                    : 'Tiếp nhận thanh toán và đối chiếu các khoản thu của người bệnh.',
-                'professional_skills' => $reception
-                    ? 'Tiếp nhận hồ sơ, hướng dẫn quy trình và hỗ trợ tra cứu thông tin.'
-                    : 'Thu ngân, đối soát giao dịch và lập phiếu thu.',
+                'job_description' => 'Hỗ trợ tiếp đón người bệnh, tra cứu lịch hẹn và ghi nhận thanh toán theo phân công trong ca.',
+                'professional_skills' => 'Tiếp nhận hồ sơ, hướng dẫn quy trình, thu ngân và đối soát các khoản thu.',
                 'notes' => null,
                 'updated_at' => now(),
             ]);
@@ -212,7 +204,6 @@ class DefenseDatasetSeeder extends Seeder
             $description = preg_replace('/\s+Dữ liệu dịch vụ và giá chỉ dùng cho .+$/u', '', (string) $service->description);
             DB::table('medical_services')->where('id', $service->id)->update(['description' => $description, 'updated_at' => now()]);
         });
-        DB::table('disease_groups')->where('disease_group_code', 'like', 'ICD%')->update(['notes' => null]);
         DB::table('diseases')->whereIn('disease_code', array_column($this->diseaseCatalog(), 0))
             ->where('description', 'like', 'Bản ghi danh mục tham khảo%')->update([
             'description' => 'Phân loại bệnh theo mã ICD-10.',
@@ -439,9 +430,7 @@ class DefenseDatasetSeeder extends Seeder
             $nameIndex = 100 + $seq;
             $female = $seq % 2 === 0;
             $name = $this->personName($nameIndex, $female);
-            $type = $newCount % 2 === 0 ? 'RECEPTIONIST' : 'CASHIER';
-            $department = $type === 'RECEPTIONIST' ? 'Tiếp đón' : 'Thu ngân';
-            $position = $type === 'RECEPTIONIST' ? 'Nhân viên tiếp đón' : 'Nhân viên thu ngân';
+            $position = 'Nhân viên';
             $address = $this->personAddress($seq + 400);
             $userId = $this->createUser($code, $phone, $roleId);
             $employeeId = DB::table('employees')->insertGetId([
@@ -467,21 +456,15 @@ class DefenseDatasetSeeder extends Seeder
                 'nationality' => 'Việt Nam',
                 'ethnicity' => 'Kinh',
                 'education_level' => 'Đại học',
-                'professional_qualification' => $type === 'RECEPTIONIST' ? 'Quản trị bệnh viện' : 'Kế toán',
-                'department' => $department,
+                'professional_qualification' => 'Nghiệp vụ quản lý y tế',
                 'position' => $position,
-                'employee_type' => $type,
                 'hire_date' => sprintf('%04d-%02d-%02d', 2018 + (($seq - 1) % 9), (($seq - 1) % 12) + 1, (($seq - 1) % 27) + 1),
                 'termination_date' => null,
                 'years_of_service' => null,
                 'primary_shift' => $seq % 2 === 0 ? 'Ca sáng' : 'Ca chiều',
                 'work_location' => 'Bệnh viện Mediway',
-                'job_description' => $type === 'RECEPTIONIST'
-                    ? 'Tiếp nhận, hướng dẫn và hỗ trợ người bệnh trong quá trình đăng ký khám.'
-                    : 'Tiếp nhận thanh toán và đối chiếu các khoản thu của người bệnh.',
-                'professional_skills' => $type === 'RECEPTIONIST'
-                    ? 'Tiếp nhận hồ sơ, hướng dẫn quy trình và hỗ trợ tra cứu thông tin.'
-                    : 'Thu ngân, đối soát giao dịch và lập phiếu thu.',
+                'job_description' => 'Hỗ trợ tiếp đón người bệnh, tra cứu lịch hẹn và ghi nhận thanh toán theo phân công trong ca.',
+                'professional_skills' => 'Tiếp nhận hồ sơ, hướng dẫn quy trình, thu ngân và đối soát các khoản thu.',
                 'avatar_path' => null,
                 'citizen_id_front_path' => null,
                 'citizen_id_back_path' => null,
@@ -695,9 +678,9 @@ class DefenseDatasetSeeder extends Seeder
     private function seedDiseaseGroupsAndDiseases(): void
     {
         $groups = [
-            ['ICD01', 'I', 'Bệnh nhiễm trùng và ký sinh trùng', 'A00-B99'],
+            ['ICD01', 'I', 'Một số bệnh nhiễm trùng và ký sinh trùng', 'A00-B99'],
             ['ICD02', 'II', 'U tân sinh', 'C00-D48'],
-            ['ICD03', 'III', 'Bệnh máu và cơ quan tạo máu', 'D50-D89'],
+            ['ICD03', 'III', 'Bệnh máu, cơ quan tạo máu và một số rối loạn liên quan đến cơ chế miễn dịch', 'D50-D89'],
             ['ICD04', 'IV', 'Bệnh nội tiết, dinh dưỡng và chuyển hóa', 'E00-E90'],
             ['ICD05', 'V', 'Rối loạn tâm thần và hành vi', 'F00-F99'],
             ['ICD06', 'VI', 'Bệnh hệ thần kinh', 'G00-G99'],
@@ -707,32 +690,32 @@ class DefenseDatasetSeeder extends Seeder
             ['ICD10', 'X', 'Bệnh hệ hô hấp', 'J00-J99'],
             ['ICD11', 'XI', 'Bệnh hệ tiêu hóa', 'K00-K93'],
             ['ICD12', 'XII', 'Bệnh da và mô dưới da', 'L00-L99'],
-            ['ICD13', 'XIII', 'Bệnh cơ xương khớp và mô liên kết', 'M00-M99'],
-            ['ICD14', 'XIV', 'Bệnh hệ tiết niệu - sinh dục', 'N00-N99'],
+            ['ICD13', 'XIII', 'Bệnh hệ cơ-xương-khớp và mô liên kết', 'M00-M99'],
+            ['ICD14', 'XIV', 'Bệnh hệ tiết niệu-sinh dục', 'N00-N99'],
             ['ICD15', 'XV', 'Thai nghén, sinh đẻ và hậu sản', 'O00-O99'],
             ['ICD16', 'XVI', 'Một số tình trạng bắt nguồn từ chu sinh', 'P00-P96'],
-            ['ICD17', 'XVII', 'Dị tật bẩm sinh và bất thường nhiễm sắc thể', 'Q00-Q99'],
-            ['ICD18', 'XVIII', 'Triệu chứng, dấu hiệu và kết quả lâm sàng bất thường', 'R00-R99'],
-            ['ICD19', 'XIX', 'Chấn thương, ngộ độc và hậu quả của nguyên nhân bên ngoài', 'S00-T98'],
+            ['ICD17', 'XVII', 'Dị tật bẩm sinh, biến dạng và bất thường nhiễm sắc thể', 'Q00-Q99'],
+            ['ICD18', 'XVIII', 'Triệu chứng, dấu hiệu và những bất thường lâm sàng, cận lâm sàng, không phân loại mục khác', 'R00-R99'],
+            ['ICD19', 'XIX', 'Tổn thương, ngộ độc và một số hậu quả khác do nguyên nhân bên ngoài', 'S00-T98'],
             ['ICD20', 'XX', 'Nguyên nhân bên ngoài gây bệnh và tử vong', 'V01-Y98'],
-            ['ICD21', 'XXI', 'Yếu tố ảnh hưởng tình trạng sức khỏe và tiếp xúc dịch vụ y tế', 'Z00-Z99'],
+            ['ICD21', 'XXI', 'Các yếu tố liên quan đến tình trạng sức khỏe và tiếp cận dịch vụ y tế', 'Z00-Z99'],
             ['ICD22', 'XXII', 'Mã cho mục đích đặc biệt', 'U00-U99'],
         ];
 
         foreach ($groups as [$code, $chapter, $name, $range]) {
-            if (DB::table('disease_groups')->where('disease_group_code', $code)->exists()) {
-                continue;
-            }
-            DB::table('disease_groups')->insert([
-                'disease_group_code' => $code,
-                'name' => "ICD-10 Chương {$chapter} - {$name}",
-                'description' => "Nhóm phân loại tham khảo ICD-10 ({$range}); mã cụ thể cần được nhân viên y tế kiểm tra trước khi sử dụng.",
+            $exists = DB::table('disease_groups')->where('disease_group_code', $code)->exists();
+            DB::table('disease_groups')->updateOrInsert(
+                ['disease_group_code' => $code],
+                [
+                'name' => $name,
+                'description' => "ICD-10 Chương {$chapter} ({$range}) theo Thông tư 06/2026/TT-BYT.",
                 'status' => 'ACTIVE',
-                'notes' => null,
+                'notes' => 'Nguồn: https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/4/06-byt-kem.pdf',
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
-            $this->inserted++;
+                ]
+            );
+            if (! $exists) $this->inserted++;
         }
 
         $groupIds = DB::table('disease_groups')->pluck('id', 'disease_group_code')->all();
@@ -740,22 +723,22 @@ class DefenseDatasetSeeder extends Seeder
             if (! isset($groupIds[$groupCode])) {
                 throw new RuntimeException("Thiếu nhóm bệnh {$groupCode}; dừng để tránh tạo bệnh không có nhóm.");
             }
-            if (DB::table('diseases')->where('disease_code', $code)->exists()) {
-                continue;
-            }
-            DB::table('diseases')->insert([
-                'disease_code' => $code,
+            $exists = DB::table('diseases')->where('disease_code', $code)->exists();
+            DB::table('diseases')->updateOrInsert(
+                ['disease_code' => $code],
+                [
                 'disease_group_id' => $groupIds[$groupCode],
                 'name' => $name,
                 'alternative_name' => $alternative,
-                'description' => 'Phân loại bệnh theo mã ICD-10.',
+                'description' => 'Mã bệnh ICD-10 theo danh mục ban hành kèm Thông tư 06/2026/TT-BYT.',
                 'common_symptoms' => null,
                 'professional_notes' => null,
                 'status' => 'ACTIVE',
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
-            $this->inserted++;
+                ]
+            );
+            if (! $exists) $this->inserted++;
         }
     }
 

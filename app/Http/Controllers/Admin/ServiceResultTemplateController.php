@@ -14,10 +14,29 @@ use Illuminate\View\View;
 
 class ServiceResultTemplateController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $keyword = trim((string) $request->query('keyword', ''));
+        $status = $request->query('status');
+        $query = ServiceResultTemplate::query();
+
+        if ($keyword !== '') {
+            $query->where(function ($builder) use ($keyword): void {
+                $builder->where('name', 'like', "%{$keyword}%")
+                    ->orWhere('description', 'like', "%{$keyword}%");
+            });
+        }
+        if (in_array($status, ['active', 'inactive'], true)) {
+            $query->where('is_active', $status === 'active');
+        }
+
         return view('admin.service-result-templates.index', [
-            'templates' => ServiceResultTemplate::withCount('medicalServices')->orderBy('name')->paginate(15),
+            'templates' => $query->withCount('medicalServices')->orderBy('name')->paginate(15)->withQueryString(),
+            'keyword' => $keyword,
+            'status' => $status,
+            'totalTemplates' => ServiceResultTemplate::count(),
+            'activeTemplates' => ServiceResultTemplate::where('is_active', true)->count(),
+            'inactiveTemplates' => ServiceResultTemplate::where('is_active', false)->count(),
         ]);
     }
 
@@ -65,6 +84,34 @@ class ServiceResultTemplateController extends Controller
             'services' => $this->serviceOptions(),
             'selectedServiceIds' => $serviceResultTemplate->medicalServices->modelKeys(),
         ]);
+    }
+
+    public function show(ServiceResultTemplate $serviceResultTemplate): View
+    {
+        $serviceResultTemplate->load(['medicalServices:id,service_code,name,status' => fn ($query) => $query->orderBy('name')]);
+
+        return view('admin.service-result-templates.show', compact('serviceResultTemplate'));
+    }
+
+    public function setStatus(Request $request, ServiceResultTemplate $serviceResultTemplate): RedirectResponse
+    {
+        $data = $request->validate(['is_active' => ['required', 'boolean']]);
+        $activate = (bool) $data['is_active'];
+
+        DB::transaction(function () use ($serviceResultTemplate, $activate): void {
+            $template = ServiceResultTemplate::whereKey($serviceResultTemplate->id)->lockForUpdate()->firstOrFail();
+            if ($template->is_active === $activate) return;
+
+            if ($activate) {
+                $serviceIds = $template->medicalServices()->orderBy('medical_services.id')->pluck('medical_services.id')->map(fn ($id): int => (int) $id)->all();
+                $this->lockServices($serviceIds);
+                $this->assertNoOverlappingAssignments($serviceIds, $template->effective_from?->toDateString() ?? today()->toDateString(), $template->effective_until?->toDateString(), $template->id);
+            }
+
+            $template->update(['is_active' => $activate]);
+        }, 3);
+
+        return to_route('admin.service-result-templates.index')->with('success', $activate ? 'Đã kích hoạt mẫu phiếu.' : 'Đã ngừng hoạt động mẫu phiếu. Các phiếu kết quả đã lập vẫn được giữ nguyên.');
     }
 
     public function update(Request $request, ServiceResultTemplate $serviceResultTemplate): RedirectResponse
@@ -136,6 +183,7 @@ class ServiceResultTemplateController extends Controller
         $conflict = DB::table('medical_service_result_templates as assignments')
             ->join('service_result_templates as templates', 'templates.id', '=', 'assignments.service_result_template_id')
             ->whereIn('assignments.medical_service_id', $serviceIds)
+            ->where('templates.is_active', true)
             ->when($ignoreTemplateId, fn ($query) => $query->where('templates.id', '!=', $ignoreTemplateId))
             ->where(function ($query) use ($effectiveFrom): void {
                 $query->whereNull('templates.effective_until')

@@ -157,7 +157,7 @@ class AdminFreezeAuditTest extends TestCase
         $response = $this->post(route('admin.employees.store'), [
             'full_name' => 'Nhân viên kiểm thử mật khẩu', 'phone' => '0988888888',
             'password' => $password, 'password_confirmation' => $password,
-            'status' => 'ACTIVE', 'employee_type' => 'RECEPTIONIST',
+            'status' => 'ACTIVE',
         ]);
         $user = User::where('phone', '0988888888')->first();
         if (! $user) {

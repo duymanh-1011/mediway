@@ -124,7 +124,11 @@ class DoctorController extends Controller
             'specialties',
             'search',
             'status'
-        ));
+        ) + [
+            'totalDoctors' => Doctor::count(),
+            'activeDoctors' => Doctor::where('status', 'ACTIVE')->count(),
+            'inactiveDoctors' => Doctor::where('status', 'INACTIVE')->count(),
+        ]);
     }
 
     public function create()

@@ -28,13 +28,9 @@ class EmployeeTechnicalParametersTest extends TestCase
 
     private function saveResult(string $group, $item, array $data)
     {
-        $item->loadMissing('medicalService.resultTemplate');
-        $template = $item->medicalService->resultTemplate;
+        $template = $item->medicalService->resultTemplatesAt($item->serviceOrder->ordered_at->toDateString())->sole();
         $this->assertInstanceOf(ServiceResultTemplate::class, $template);
-        $templateVersion = hash('sha256', json_encode(
-            [$template->id, $template->name, $template->fields],
-            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
-        ));
+        $templateVersion = $template->versionFingerprint();
         $templateValues = $data['template_values'] ?? [];
         $hasContent = collect(['result_summary', 'result_conclusion', 'technique'])
             ->contains(fn ($field) => is_string($data[$field] ?? null) && trim($data[$field]) !== '')
@@ -374,10 +370,14 @@ class EmployeeTechnicalParametersTest extends TestCase
     public function test_wrong_group_unassigned_other_technician_and_unpaid_are_blocked(): void
     {
         $item = $this->pendingItem();
+        $item->medicalService->resultTemplates()->detach();
         $lab = User::where('business_code', 'BS000001')->firstOrFail();
         $imaging = User::where('business_code', 'BS000002')->firstOrFail();
         $this->actingAsDoctorWorkspace($lab, 'services')->post(route('doctor.laboratory.start', $item->id))->assertSessionHasErrors('service');
         $this->assertSame('PENDING', $item->fresh()->serviceStatus->name);
+        $item->medicalService->resultTemplates()->syncWithoutDetaching([
+            ServiceResultTemplate::where('name', 'Phiếu xét nghiệm')->value('id'),
+        ]);
         $item->update(['performed_by_doctor_id' => $imaging->doctor->id]);
         $this->get(route('doctor.laboratory.show', $item->id))->assertNotFound();
         $this->saveResult('laboratory', $item, ['result_summary' => 'Sai quyền'])->assertNotFound();
@@ -512,8 +512,8 @@ class EmployeeTechnicalParametersTest extends TestCase
     {
         $item = $this->startLaboratory();
         $showUrl = route('doctor.laboratory.show', $item->id);
-        $template = $item->medicalService->resultTemplate;
-        $templateVersion = hash('sha256', json_encode([$template->id, $template->name, $template->fields], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+        $template = $item->medicalService->resultTemplatesAt($item->serviceOrder->ordered_at->toDateString())->sole();
+        $templateVersion = $template->versionFingerprint();
         $payload = [
             'result_version' => ServiceResult::editVersion(null),
             'template_version' => $templateVersion,

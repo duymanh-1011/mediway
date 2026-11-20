@@ -51,7 +51,7 @@ class EmployeeReceptionReadTest extends TestCase
         $this->post(route('admin.queues.call', $queue))->assertRedirect(route('admin.login'));
     }
 
-    public function test_role_and_current_employee_type_are_enforced_on_each_request(): void
+    public function test_role_and_selected_workspace_are_enforced_on_each_request(): void
     {
         $this->get(route('employee.appointments.index'))->assertRedirect(route('patient.login'));
         foreach (['NV000002', 'NV000003', 'NV000004'] as $code) {
@@ -67,7 +67,6 @@ class EmployeeReceptionReadTest extends TestCase
         $user = $this->receptionist();
         $this->flushSession();
         $this->actingAsEmployeeWorkspace($user, 'reception')->get(route('employee.appointments.index'))->assertOk();
-        $user->employee->detail->update(['employee_type' => 'CASHIER']);
         $this->get(route('employee.appointments.index'))->assertOk();
         $this->post(route('employee.appointments.filter'), ['q' => ''])->assertRedirect();
         $this->flushSession();

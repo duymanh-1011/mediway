@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Disease;
 use App\Models\DiseaseGroup;
 use App\Models\User;
+use Database\Seeders\DiseaseGroupSeeder;
+use Database\Seeders\DiseaseSeeder;
 use Tests\Fixtures\Seeders\WorkflowFixtureSeeder;
 use DOMDocument;
 use DOMXPath;
@@ -25,7 +27,7 @@ class DiseaseCatalogNavigationTest extends TestCase
 
     private function group(): DiseaseGroup
     {
-        return DiseaseGroup::where('disease_group_code', 'NBHH')->firstOrFail();
+        return DiseaseGroup::where('disease_group_code', 'ICD10')->firstOrFail();
     }
 
     private function document(string $html): DOMXPath
@@ -71,7 +73,7 @@ class DiseaseCatalogNavigationTest extends TestCase
     public function test_create_preselects_group_keeps_old_input_and_returns_to_group(): void
     {
         $group = $this->group();
-        $other = DiseaseGroup::where('disease_group_code', 'NBTM')->firstOrFail();
+        $other = DiseaseGroup::where('disease_group_code', 'ICD01')->firstOrFail();
         $url = route('admin.diseases.create', ['disease_group_id' => $group->id]);
         $response = $this->get($url)->assertOk()->assertViewHas('selectedDiseaseGroup', fn ($selected): bool => $selected->id === $group->id)
             ->assertSee('href="'.route('admin.disease-groups.show', $group).'"', false);
@@ -85,7 +87,7 @@ class DiseaseCatalogNavigationTest extends TestCase
     public function test_group_filter_and_pagination_never_include_other_groups(): void
     {
         $group = $this->group();
-        $other = DiseaseGroup::where('disease_group_code', 'NBTM')->firstOrFail();
+        $other = DiseaseGroup::where('disease_group_code', 'ICD01')->firstOrFail();
         for ($number = 1; $number <= 25; $number++) {
             Disease::create(['disease_code' => 'TEST'.$number, 'disease_group_id' => $group->id, 'name' => 'Bệnh phân trang '.str_pad((string) $number, 2, '0', STR_PAD_LEFT), 'status' => 'ACTIVE']);
         }
@@ -125,5 +127,25 @@ class DiseaseCatalogNavigationTest extends TestCase
     {
         $this->getJson(route('admin.disease-groups.show', [$this->group(), 'status' => 'UNKNOWN']))->assertUnprocessable()->assertJsonValidationErrors('status');
         $this->getJson(route('admin.disease-groups.show', [$this->group(), 'keyword' => ['bad']]))->assertUnprocessable()->assertJsonValidationErrors('keyword');
+    }
+
+    public function test_seeded_disease_catalog_uses_official_icd10_chapters_and_prioritizes_common_demo_diagnoses(): void
+    {
+        $this->seed(DiseaseGroupSeeder::class);
+        $this->seed(DiseaseSeeder::class);
+
+        $this->assertSame(22, DiseaseGroup::where('status', 'ACTIVE')->where('disease_group_code', 'like', 'ICD%')->count());
+        $this->assertSame('Bệnh truyền nhiễm và ký sinh trùng', DiseaseGroup::where('disease_group_code', 'ICD01')->value('name'));
+        $this->assertSame('Tổn thương, ngộ độc và một số hậu quả khác do nguyên nhân bên ngoài', DiseaseGroup::where('disease_group_code', 'ICD19')->value('name'));
+        $this->assertSame('Triệu chứng, dấu hiệu và những bất thường về lâm sàng, cận lâm sàng, không phân loại mục khác', DiseaseGroup::where('disease_group_code', 'ICD18')->value('name'));
+        $this->assertSame('Các yếu tố liên quan đến tình trạng sức khỏe và tiếp cận dịch vụ y tế', DiseaseGroup::where('disease_group_code', 'ICD21')->value('name'));
+        $this->assertSame('ICD09', Disease::where('disease_code', 'I10')->firstOrFail()->diseaseGroup->disease_group_code);
+        $this->assertSame('ICD04', Disease::where('disease_code', 'E11.9')->firstOrFail()->diseaseGroup->disease_group_code);
+        $this->assertSame('ICD10', Disease::where('disease_code', 'J00')->firstOrFail()->diseaseGroup->disease_group_code);
+        $this->assertSame('Bệnh trào ngược dạ dày-thực quản không kèm viêm thực quản', Disease::where('disease_code', 'K21.9')->value('name'));
+
+        $response = $this->get(route('admin.diseases.index'))->assertOk();
+        $this->assertSame(['I10', 'E11.9', 'J00'], $response->viewData('diseases')->take(3)->pluck('disease_code')->all());
+        $this->assertStringContainsString('Thông tư 06/2026/TT-BYT', DiseaseGroup::where('disease_group_code', 'ICD09')->value('description'));
     }
 }

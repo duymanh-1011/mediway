@@ -58,7 +58,6 @@ class EmployeePayableReadOnlyTest extends TestCase
                 ->assertDontSee('Thông tin giao dịch gần nhất');
         }
         $cashier = $this->account('NV000002');
-        $cashier->employee->detail()->update(['employee_type' => 'SERVICE_TECHNICIAN']);
         $this->flushSession();
         $this->actingAsEmployeeWorkspace($cashier, 'cashier')->get(route('employee.payments.show', $payable))->assertOk();
         $this->post(route('employee.workspace.select'), ['workspace' => 'reception'])->assertRedirect(route('employee.home'));
@@ -108,16 +107,13 @@ class EmployeePayableReadOnlyTest extends TestCase
         $this->assertSame('Tiền thuốc', (new Payable(['payment_type' => 'MEDICINE_FEE']))->displayContent());
     }
 
-    public function test_each_employee_type_can_choose_cashier_but_other_roles_cannot_open_cashier_list(): void
+    public function test_employee_can_choose_cashier_workspace_but_other_roles_cannot_open_cashier_list(): void
     {
-        foreach (['SERVICE_TECHNICIAN', 'RECEPTIONIST'] as $type) {
-            $user = $this->account('NV000002');
-            $user->employee->detail()->update(['employee_type' => $type]);
-            $this->actingAsEmployeeWorkspace($user, 'cashier')
-                ->get(route('employee.payments.index'))
-                ->assertOk();
-            $this->post(route('employee.payments.filter'), ['q' => 'PT000012'])->assertRedirect();
-        }
+        $user = $this->account('NV000002');
+        $this->actingAsEmployeeWorkspace($user, 'cashier')
+            ->get(route('employee.payments.index'))
+            ->assertOk();
+        $this->post(route('employee.payments.filter'), ['q' => 'PT000012'])->assertRedirect();
 
         foreach (['BN000001', 'QT000001'] as $code) {
             $this->flushSession()->actingAs(User::where('business_code', $code)->firstOrFail())
@@ -267,13 +263,12 @@ class EmployeePayableReadOnlyTest extends TestCase
         $this->assertSame($transactionCount, PaymentTransaction::count());
     }
 
-    public function test_selected_workspace_ignores_legacy_type_but_revocation_takes_effect_immediately(): void
+    public function test_selected_workspace_remains_available_until_employee_is_revoked(): void
     {
         $cashier = $this->account('NV000004');
         $this->actingAs($cashier)
             ->get(route('employee.payments.index'))->assertOk();
 
-        $cashier->employee->detail()->update(['employee_type' => 'SERVICE_TECHNICIAN']);
         $this->get(route('employee.payments.index'))->assertOk();
         $cashier->employee->update(['status' => 'INACTIVE']);
         $this->get(route('employee.payments.index'))->assertForbidden();

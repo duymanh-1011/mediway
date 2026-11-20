@@ -497,8 +497,9 @@ Route::prefix('admin')
             Route::patch('catalog/{catalog}/{id}/status', [CatalogStatusController::class, 'update'])->whereNumber('id')->name('catalog.status');
             Route::patch('service-groups/{serviceGroup}/activate', [ServiceGroupController::class, 'activate'])->name('service-groups.activate');
             Route::patch('medical-services/{medicalService}/activate', [MedicalServiceController::class, 'activate'])->name('medical-services.activate');
+            Route::patch('service-result-templates/{serviceResultTemplate}/status', [\App\Http\Controllers\Admin\ServiceResultTemplateController::class, 'setStatus'])->name('service-result-templates.status');
             Route::resource('service-result-templates', \App\Http\Controllers\Admin\ServiceResultTemplateController::class)
-                ->only(['index', 'create', 'store', 'edit', 'update']);
+                ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
             /*
             |--------------------------------------------------------------------------

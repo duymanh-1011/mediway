@@ -13,6 +13,7 @@ class WorkflowFixtureSeeder extends Seeder
     public function run(bool $includePracticeData = false): void
     {
         $this->callWith(DatabaseSeeder::class, ['includeExtraAccounts' => $includePracticeData]);
+        $this->call(ServiceResultTemplateAssignmentSeeder::class);
 
         $this->call(PersonalHealthRecordSeeder::class);
         $this->callWith(DoctorScheduleSeeder::class, ['includePracticeData' => $includePracticeData]);

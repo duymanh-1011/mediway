@@ -2,21 +2,12 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\AdminDisplay;
-use App\Support\EmployeeAccess;
 use App\Rules\PasswordByteLimit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreEmployeeRequest extends FormRequest
 {
-    protected function prepareForValidation(): void
-    {
-        if (is_string($this->input('employee_type'))) {
-            $this->merge(['employee_type' => EmployeeAccess::typeCode(strtoupper(trim(AdminDisplay::employeeTypeCode($this->input('employee_type')))))]);
-        }
-    }
-
     public function authorize(): bool
     {
         return true;
@@ -146,25 +137,16 @@ class StoreEmployeeRequest extends FormRequest
             ],
 
             // Thông tin công việc.
-            'department' => [
-                'nullable',
-                'string',
-                'max:120',
-            ],
-
             'position' => [
                 'nullable',
                 'string',
                 'max:120',
             ],
 
-            'employee_type' => [
-                'required',
-                'string',
-                'max:80',
-                Rule::exists('employee_types', 'code'),
-                Rule::in(array_keys(EmployeeAccess::TYPES)),
-            ],
+            'department' => ['prohibited'],
+            'employee_type' => ['prohibited'],
+            'expected_employee_type' => ['prohibited'],
+            'employee_type_change_reason' => ['prohibited'],
 
             'hire_date' => [
                 'nullable',
@@ -248,8 +230,8 @@ class StoreEmployeeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'employee_type.required' => 'Vui lòng chọn loại nhân viên.',
-            'employee_type.exists' => 'Loại nhân viên không hợp lệ. Vui lòng chọn lại từ danh sách.',
+            'department.prohibited' => 'Phòng ban không còn là thông tin phân loại hồ sơ nhân viên.',
+            'employee_type.prohibited' => 'Loại nhân viên đã được gỡ bỏ; mọi nhân viên được phép làm việc ở quầy tiếp đón và thu ngân.',
             'user_id.exists' => 'Tài khoản được chọn không tồn tại.',
 
             'user_id.unique' => 'Tài khoản đã được liên kết với nhân viên khác.',

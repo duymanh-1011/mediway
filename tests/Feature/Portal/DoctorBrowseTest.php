@@ -81,7 +81,7 @@ class DoctorBrowseTest extends TestCase
             ->assertSee('data-booking-option data-kind="doctor" data-id="'.$doctor->id.'"', false)
             ->assertSee('data-booking-option data-kind="room" data-id="'.$schedule->examination_room_id.'"', false)
             ->assertSee('data-booking-schedule-step hidden', false)
-            ->assertSee('data-slot-date="'.$schedule->work_date->toDateString().'"', false)
+            ->assertSee('data-day-panel="'.$schedule->work_date->toDateString().'"', false)
             ->assertSee(route('patient.appointments.create', $slot));
     }
 

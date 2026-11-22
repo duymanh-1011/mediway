@@ -22,15 +22,15 @@ class DoctorVisitFilterTest extends TestCase
         $this->actingAs(User::where('business_code', 'BS000001')->firstOrFail());
     }
 
-    public function test_search_finds_visits_for_all_doctors(): void
+    public function test_search_is_limited_to_the_logged_in_doctors_visits(): void
     {
         $own = MedicalVisit::where('visit_code', 'LK000001')->firstOrFail();
         $other = MedicalVisit::where('visit_code', 'LK000002')->firstOrFail();
         foreach ([$own->visit_code, $own->patient->patient_code, $own->patient->full_name] as $term) {
             $this->get(route('doctor.visits.index', ['q' => ' '.$term.' ']))->assertOk()->assertSee($own->visit_code)->assertDontSee($other->visit_code);
         }
-        $this->get(route('doctor.visits.index', ['q' => $other->patient->patient_code]))->assertOk()->assertSee($other->visit_code);
-        $this->get(route('doctor.visits.show', $other->id))->assertOk();
+        $this->get(route('doctor.visits.index', ['q' => $other->patient->patient_code]))->assertOk()->assertDontSee($other->visit_code);
+        $this->get(route('doctor.visits.show', $other->id))->assertNotFound();
     }
 
     public function test_dates_status_and_combined_filters_are_applied(): void

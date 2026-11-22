@@ -12,11 +12,6 @@
             <div>
                 <h1>Phòng khám</h1>
 
-                <p>
-                    Lịch phân công ngày
-                    {{ \Carbon\CarbonImmutable::parse($date)->format('d/m/Y') }}.
-                    Số lượt chờ lấy từ dữ liệu tiếp nhận thực tế.
-                </p>
                 <p>Lịch làm việc của bạn · <strong>{{ $workStatus }}</strong></p>
             </div>
         </div>
@@ -95,6 +90,8 @@
                                     ->unique('doctor_id')
                                     ->pluck('doctor')
                                     ->filter();
+                                $canAccessQueue = collect($schedules->get($room->id, []))
+                                    ->contains(fn ($schedule) => (int) $schedule->doctor_id === (int) $doctor->id);
                                 $waitingCount = data_get($room, 'waiting_count');
                                 $statusClass = match (strtoupper((string) $room->status)) {
                                     'ACTIVE' => 'active',
@@ -148,7 +145,7 @@
                                 </td>
 
                                 <td>
-                                    @if ($waitingCount !== null)
+                                    @if ($canAccessQueue && $waitingCount !== null)
 
                                         <span class="doctor-rooms__waiting">
                                             {{ $waitingCount }}
@@ -186,9 +183,7 @@
                 </table>
             </div>
 
-            @if (method_exists($rooms, 'links'))
-                <x-portal.pagination :paginator="$rooms" />
-            @endif
+            <x-doctor.list-pagination :paginator="$rooms" label="phòng khám" />
 
         </section>
 

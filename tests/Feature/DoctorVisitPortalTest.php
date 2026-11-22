@@ -29,9 +29,9 @@ class DoctorVisitPortalTest extends TestCase
             ->assertRedirect(route('doctor.home'));
         $this->get(route('doctor.home'))->assertOk()->assertSee('Bác sĩ khám bệnh')->assertSee('Bác sĩ thực hiện dịch vụ');
         $this->post(route('doctor.workspace.select'), ['workspace' => 'examination'])->assertRedirect(route('doctor.home'));
-        $this->get(route('doctor.visits.index'))->assertOk()->assertSee($own->visit_code)->assertSee($other->visit_code);
+        $this->get(route('doctor.visits.index'))->assertOk()->assertSee($own->visit_code)->assertDontSee($other->visit_code);
         $this->get(route('doctor.visits.show', $own->id))->assertOk()->assertSee($own->patient->full_name);
-        $this->get(route('doctor.visits.show', $other->id))->assertOk();
+        $this->get(route('doctor.visits.show', $other->id))->assertNotFound();
     }
 
     public function test_non_doctors_and_inactive_doctors_cannot_access_visits(): void

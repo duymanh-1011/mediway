@@ -11,6 +11,7 @@ use App\Models\Disease;
 use App\Models\MedicalVisit;
 use App\Services\DoctorClinicalVersion;
 use App\Services\DoctorPrescriptionLock;
+use App\Support\Doctor\DoctorAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -74,6 +75,10 @@ class ClinicalController extends Controller
     {
         // Khóa lượt trước khi kiểm tra trạng thái để tránh ghi đè đồng thời.
         $record = MedicalVisit::whereKey($id)->lockForUpdate()->firstOrFail();
+        app(DoctorAccess::class)->assertVisitOwner(
+            $request->attributes->get('current_doctor'),
+            $record
+        );
         $record = $record->lockForClinicalWrite();
         // Cùng khóa lượt khám với tạo đơn để kiểm tra lại tại thời điểm ghi.
         DoctorPrescriptionLock::assertUnlocked($record);

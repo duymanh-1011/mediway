@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\StorePrescriptionRequest;
 use App\Models\MedicalVisit;
 use App\Models\Medicine;
 use App\Services\DoctorPrescriptionLock;
+use App\Support\Doctor\DoctorAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,8 +19,9 @@ class PrescriptionController extends Controller
 {
     public function create(Request $request, int $visit): View|RedirectResponse
     {
-        $doctor = $request->user()->doctor;
+        $doctor = $request->attributes->get('current_doctor');
         $record = MedicalVisit::whereKey($visit)
+            ->where('doctor_id', $doctor->id)
             ->with(['patient', 'status', 'appointment', 'prescription'])->firstOrFail();
         if ($record->conclusion()->exists()) {
             return redirect()->route('doctor.visits.show', $record)->withErrors(['conclusion_lock' => DoctorPrescriptionLock::CONCLUSION_MESSAGE]);
@@ -33,10 +35,12 @@ class PrescriptionController extends Controller
 
     public function store(StorePrescriptionRequest $request, int $visit, AdminPrescriptionController $admin): RedirectResponse
     {
-        DB::transaction(function () use ($request, $visit, $admin): void {
+        $doctor = $request->attributes->get('current_doctor');
+        DB::transaction(function () use ($request, $visit, $admin, $doctor): void {
             // Khóa lượt được phân công trước khi gọi chung nghiệp vụ tạo đơn hiện có.
             $record = MedicalVisit::whereKey($visit)
                 ->lockForUpdate()->firstOrFail();
+            app(DoctorAccess::class)->assertVisitOwner($doctor, $record);
             $record = $record->lockForClinicalWrite();
             // Kết luận và đơn dùng cùng khóa lượt để tránh lưu song song sai thứ tự.
             DoctorPrescriptionLock::assertConclusionUnlocked($record);
@@ -51,8 +55,10 @@ class PrescriptionController extends Controller
 
     public function print(Request $request, int $visit)
     {
+        $doctor = $request->attributes->get('current_doctor');
         // Lấy đúng lượt khám trước khi truy vấn đơn và thông tin bệnh nhân.
         $record = MedicalVisit::whereKey($visit)
+            ->where('doctor_id', $doctor->id)
             ->with(['patient.user', 'patient.detail', 'examinationRoom', 'diagnoses.disease', 'prescription.doctor', 'prescription.items.medicine'])
             ->firstOrFail();
         $prescription = $record->prescription;

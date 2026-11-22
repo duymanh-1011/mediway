@@ -64,7 +64,7 @@ class DoctorPrescriptionConclusionTest extends TestCase
         $this->flushSession()->actingAs($visit->patient->user)->get(route('patient.prescriptions'))->assertOk()->assertSee($prescription->prescription_code);
     }
 
-    public function test_prescription_rejects_invalid_input_and_allows_other_doctors_visit(): void
+    public function test_prescription_rejects_invalid_input_and_another_doctors_visit(): void
     {
         $visit = $this->visit();
         $foreign = MedicalVisit::where('visit_code', 'LK000005')->firstOrFail();
@@ -72,8 +72,8 @@ class DoctorPrescriptionConclusionTest extends TestCase
         $this->post(route('doctor.visits.prescriptions.store', $visit), ['items' => [[...$this->item($medicine), 'quantity' => 0]], 'confirm_create' => '1'])->assertSessionHasErrors('items.0.quantity');
         $foreign->update(['appointment_id' => null, 'visit_status_id' => VisitStatus::where('name', 'IN_EXAMINATION')->value('id')]);
         $medicine->update(['price_per_unit' => 2000]);
-        $this->post(route('doctor.visits.prescriptions.store', $foreign), ['items' => [$this->item($medicine)], 'confirm_create' => '1'])->assertSessionHasNoErrors();
-        $this->assertSame(User::where('business_code', 'BS000001')->firstOrFail()->doctor->id, $foreign->fresh()->prescription->doctor_id);
+        $this->post(route('doctor.visits.prescriptions.store', $foreign), ['items' => [$this->item($medicine)], 'confirm_create' => '1'])->assertNotFound();
+        $this->assertNull($foreign->fresh()->prescription);
         $this->assertNull($visit->fresh()->prescription);
     }
 
@@ -289,8 +289,8 @@ class DoctorPrescriptionConclusionTest extends TestCase
             ->assertSessionHasErrors('conclusion_lock');
         $this->assertSame('Kết luận kiểm thử', $conclusion->fresh()->professional_conclusion);
         $foreign = MedicalVisit::where('visit_code', 'LK000005')->firstOrFail();
-        $this->put(route('doctor.visits.conclusion.save', $foreign), $payload)->assertSessionHasNoErrors();
-        $this->assertSame(User::where('business_code', 'BS000001')->firstOrFail()->doctor->id, $foreign->fresh()->conclusion->doctor_id);
+        $this->put(route('doctor.visits.conclusion.save', $foreign), $payload)->assertNotFound();
+        $this->assertNull($foreign->fresh()->conclusion);
         $visit->update(['visit_status_id' => VisitStatus::where('name', 'COMPLETED')->value('id')]);
         $this->put($url, [...$payload, 'record_version' => DoctorClinicalVersion::of($conclusion->fresh())])->assertSessionHasErrors('visit');
     }

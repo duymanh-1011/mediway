@@ -54,7 +54,7 @@ class DoctorVisitCompletionTest extends TestCase
         $this->post(route('doctor.visits.complete', $visit))->assertSessionHasErrors('visit');
     }
 
-    public function test_missing_conclusion_and_invalid_status_prevent_completion_for_all_doctors(): void
+    public function test_missing_conclusion_and_invalid_status_prevent_completion_and_other_doctors_are_denied(): void
     {
         $visit = $this->readyVisit();
         $visit->conclusion()->delete();
@@ -62,7 +62,7 @@ class DoctorVisitCompletionTest extends TestCase
         $this->assertSame('IN_EXAMINATION', $visit->fresh()->status->name);
         $this->flushSession();
         $this->actingAsDoctorWorkspace(User::where('business_code', 'BS000002')->firstOrFail())
-            ->post(route('doctor.visits.complete', $visit))->assertSessionHasErrors('visit');
+            ->post(route('doctor.visits.complete', $visit))->assertNotFound();
         $visit->update(['visit_status_id' => VisitStatus::where('name', 'WAITING')->value('id')]);
         $this->flushSession();
         $this->actingAsDoctorWorkspace(User::where('business_code', 'BS000001')->firstOrFail())

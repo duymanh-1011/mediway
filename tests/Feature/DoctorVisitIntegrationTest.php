@@ -104,7 +104,7 @@ class DoctorVisitIntegrationTest extends TestCase
             ->assertSee('Kết quả liên kết kiểm thử')->assertSee('Chỉ số liên kết')->assertSee('Thông tin kỹ thuật');
         $this->get(route('patient.results.service-print', $result))->assertOk()->assertSee('Kết quả liên kết kiểm thử');
         $this->flushSession()->actingAs($otherPatient)->get(route('patient.results.service-print', $result))->assertNotFound();
-        $this->flushSession()->actingAsDoctorWorkspace(User::where('business_code', 'BS000002')->firstOrFail())->get(route('doctor.visits.show', $visit))->assertOk();
+        $this->flushSession()->actingAsDoctorWorkspace(User::where('business_code', 'BS000002')->firstOrFail())->get(route('doctor.visits.show', $visit))->assertNotFound();
         $this->flushSession()->actingAsEmployeeWorkspace(User::where('business_code', 'NV000001')->firstOrFail(), 'reception')
             ->get(route('employee.services.show', $item))->assertForbidden();
 

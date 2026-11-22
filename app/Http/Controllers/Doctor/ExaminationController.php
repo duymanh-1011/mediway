@@ -23,7 +23,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\Cursor;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
@@ -72,32 +71,6 @@ class ExaminationController extends Controller
             'specialty' => ['nullable', 'integer', 'exists:specialties,id'],
         ]);
 
-        $cursor = $request->query('cursor');
-
-        if ($cursor !== null) {
-            $parameters = is_string($cursor)
-                ? json_decode(
-                    base64_decode(
-                        strtr($cursor, '-_', '+/'),
-                        true
-                    ) ?: '',
-                    true
-                )
-                : null;
-
-            abort_unless(
-                is_string($parameters['room_code'] ?? null)
-                    && is_bool($parameters['_pointsToNextItems'] ?? null),
-                422,
-                'Mốc phân trang không hợp lệ.'
-            );
-
-            $cursor = new Cursor(
-                ['room_code' => $parameters['room_code']],
-                $parameters['_pointsToNextItems']
-            );
-        }
-
         $now = now('Asia/Ho_Chi_Minh');
         $date = $now->toDateString();
 
@@ -117,7 +90,7 @@ class ExaminationController extends Controller
                 ->orWhere('name', 'like', '%'.$term.'%')))
             ->when($filters['specialty'] ?? null, fn ($query, $id) => $query->where('specialty_id', $id))
             ->orderBy('room_code')
-            ->cursorPaginate(12, cursor: $cursor)
+            ->paginate(12)
             ->appends($filters);
 
         $schedules = DoctorSchedule::whereDate('work_date', $date)->where('status', 'ACTIVE')
@@ -162,6 +135,13 @@ class ExaminationController extends Controller
             ...$this->queueFilterRules(),
             'q' => ['nullable', 'string', 'max:100'],
         ]);
+        $doctor = $request->attributes->get('current_doctor');
+        $access = app(DoctorAccess::class);
+        abort_unless($room->status === 'ACTIVE', 404);
+        if (! $access->hasRoomAssignment($doctor, $room, $data['date'] ?? today()->toDateString())) {
+            return redirect()->route('doctor.examination.rooms.index')
+                ->withErrors(['room' => $access->roomAccessMessage($doctor)]);
+        }
         $search = new SessionSearch($request, 'doctor.examination.rooms.'.$room->id);
         $term = trim($data['q'] ?? '');
         unset($data['q']);
@@ -182,7 +162,7 @@ class ExaminationController extends Controller
         ];
     }
 
-    public function queue(Request $request, ExaminationRoom $room): View
+    public function queue(Request $request, ExaminationRoom $room): View|RedirectResponse
     {
         $doctor = $request->attributes->get('current_doctor');
         $shifts = array_keys(config('doctor_schedules.shifts', []));
@@ -193,11 +173,23 @@ class ExaminationController extends Controller
         $search = new SessionSearch($request, 'doctor.examination.rooms.'.$room->id);
         $filters['q'] ??= $search->keyword();
         $date = $filters['date'] ?? today()->toDateString();
-        app(DoctorAccess::class)->assertRoom($doctor, $room, $date);
-        // Hiển thị mọi lượt khám trong phòng và ngày được chọn.
+        $access = app(DoctorAccess::class);
+        abort_unless($room->status === 'ACTIVE', 404);
+        if (! $access->hasRoomAssignment($doctor, $room, $date)) {
+            return redirect()->route('doctor.examination.rooms.index')
+                ->withErrors(['room' => $access->roomAccessMessage($doctor)]);
+        }
+        // Chỉ hiển thị lượt khám thuộc bác sĩ được phân công tại phòng trong ngày đó.
         $visibleVisit = fn ($visit) => $visit
             ->where('examination_room_id', $room->id)
+            ->where('doctor_id', $doctor->id)
             ->whereDate('checked_in_at', $date)
+            ->where(fn ($assigned) => $assigned
+                ->whereNull('appointment_id')
+                ->orWhereHas('appointment', fn ($appointment) => $appointment
+                    ->whereColumn('appointments.doctor_id', 'medical_visits.doctor_id')
+                    ->whereColumn('appointments.examination_room_id', 'medical_visits.examination_room_id')
+                    ->whereColumn('appointments.specialty_id', 'medical_visits.specialty_id')))
             ->when(
                 $filters['shift'] ?? null,
                 fn ($query, $shift) => $query
@@ -545,6 +537,7 @@ class ExaminationController extends Controller
                         'examination_room_id',
                         $room->id
                     )
+                    ->where('doctor_id', $doctor->id)
             );
     }
 
@@ -592,6 +585,7 @@ class ExaminationController extends Controller
                 === (int) $room->id,
             404
         );
+        $access->assertVisitOwner($current, $visit);
 
         // Không khóa phòng sau khi đã khóa lượt khám,
         // tránh đảo thứ tự lock với quy trình tiếp nhận.

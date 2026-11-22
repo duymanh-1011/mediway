@@ -45,13 +45,14 @@ class DoctorClinicalWriteTest extends TestCase
         $this->assertSame('Đau đầu kiểm thử', $visit->fresh()->clinicalNote->reason_for_visit);
     }
 
-    public function test_any_doctor_can_write_open_visit_and_closed_visit_is_read_only(): void
+    public function test_doctor_cannot_write_another_doctors_visit_and_closed_visit_is_read_only(): void
     {
         $visit = $this->activeVisit();
         $foreign = MedicalVisit::where('visit_code', 'LK000005')->firstOrFail();
+        $previousReason = $foreign->clinicalNote->reason_for_visit;
         $payload = ['record_version' => DoctorClinicalVersion::of($foreign->clinicalNote), 'reason_for_visit' => 'Không được phép'];
-        $this->put(route('doctor.visits.clinical.update', $foreign->id), $payload)->assertSessionHasNoErrors();
-        $this->assertSame('Không được phép', $foreign->fresh()->clinicalNote->reason_for_visit);
+        $this->put(route('doctor.visits.clinical.update', $foreign->id), $payload)->assertNotFound();
+        $this->assertSame($previousReason, $foreign->fresh()->clinicalNote->reason_for_visit);
         $visit->update(['visit_status_id' => VisitStatus::where('name', 'COMPLETED')->value('id')]);
         $payload['record_version'] = DoctorClinicalVersion::of($visit->clinicalNote);
         $this->put(route('doctor.visits.clinical.update', $visit->id), $payload)->assertSessionHasErrors('visit');

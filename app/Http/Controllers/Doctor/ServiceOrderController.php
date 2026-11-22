@@ -9,6 +9,7 @@ use App\Models\MedicalService;
 use App\Models\MedicalVisit;
 use App\Models\ServiceOrderItem;
 use App\Services\DoctorPrescriptionLock;
+use App\Support\Doctor\DoctorAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,9 +20,10 @@ class ServiceOrderController extends Controller
 {
     public function create(Request $request, int $visit): View|RedirectResponse
     {
-        $doctor = $request->user()->doctor;
+        $doctor = $request->attributes->get('current_doctor');
         // Truy cập lượt khám dành cho bác sĩ đã đăng nhập.
         $record = MedicalVisit::whereKey($visit)
+            ->where('doctor_id', $doctor->id)
             ->with(['patient', 'doctor', 'specialty', 'examinationRoom', 'status', 'appointment'])->firstOrFail();
         if ($record->conclusion()->exists()) {
             return redirect()->route('doctor.visits.show', $record)->withErrors(['conclusion_lock' => DoctorPrescriptionLock::CONCLUSION_MESSAGE]);
@@ -36,13 +38,15 @@ class ServiceOrderController extends Controller
 
     public function store(StoreServiceOrderRequest $request, int $visit, AdminServiceOrderController $adminOrders): RedirectResponse
     {
-        $doctorId = $request->user()->doctor->id;
+        $doctor = $request->attributes->get('current_doctor');
+        $doctorId = $doctor->id;
         $serviceIds = array_map('intval', $request->validated('medical_service_ids'));
 
-        DB::transaction(function () use ($request, $visit, $doctorId, $serviceIds, $adminOrders): void {
+        DB::transaction(function () use ($request, $visit, $doctor, $doctorId, $serviceIds, $adminOrders): void {
             // Khóa lượt khám để kiểm tra lại quyền và chống gửi lặp cùng lúc.
             $record = MedicalVisit::whereKey($visit)
                 ->with('status')->lockForUpdate()->firstOrFail();
+            app(DoctorAccess::class)->assertVisitOwner($doctor, $record);
             // Kiểm tra khi đã khóa lượt, kể cả form mở trước lúc kê đơn.
             DoctorPrescriptionLock::assertUnlocked($record);
             $record->assertNotBeforeAppointmentDay();

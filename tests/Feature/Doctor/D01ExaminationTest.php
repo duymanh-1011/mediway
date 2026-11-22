@@ -88,8 +88,17 @@ final class D01ExaminationTest extends TestCase
             ->assertViewHas('queues', fn ($queues) => $queues->pluck('medical_visit_id')->contains($scheduledVisit->id)
                 && ! $queues->pluck('medical_visit_id')->contains($earlier->medical_visit_id));
         $this->get($path.'?shift=AFTERNOON')->assertOk()->assertViewHas('queues', fn ($queues) => $queues->isEmpty());
-        $this->get($path.'?date='.now()->subDay()->toDateString())->assertOk();
-        $this->get(route('doctor.examination.rooms.queue', $otherRoom))->assertOk();
+        $message = 'Vui lòng chọn phòng khám thuộc lịch làm việc của bác sĩ '.$this->user->doctor->full_name.'.';
+        $this->get($path.'?date='.now()->subDay()->toDateString())
+            ->assertRedirect(route('doctor.examination.rooms.index'))
+            ->assertSessionHasErrors(['room' => $message]);
+        $this->get(route('doctor.examination.rooms.index'))->assertOk()->assertSee($message);
+        $this->get(route('doctor.examination.rooms.queue', $otherRoom))
+            ->assertRedirect(route('doctor.examination.rooms.index'))
+            ->assertSessionHasErrors(['room' => $message]);
+        $this->post(route('doctor.examination.rooms.queue.filter', $otherRoom), ['date' => now()->toDateString()])
+            ->assertRedirect(route('doctor.examination.rooms.index'))
+            ->assertSessionHasErrors(['room' => $message]);
         $this->assertSame($before, [MedicalVisit::count(), ExaminationRoomQueue::count()]);
     }
 
@@ -126,18 +135,19 @@ final class D01ExaminationTest extends TestCase
         $this->assertSame(1, $queue->fresh()->call_count);
     }
 
-    public function test_doctor_can_view_and_call_a_visit_assigned_to_another_doctor(): void
+    public function test_doctor_cannot_view_or_call_a_visit_assigned_to_another_doctor(): void
     {
         $otherDoctorId = Doctor::whereKeyNot($this->user->doctor->id)->value('id');
         $queue = $this->queue(27, ['doctor_id' => $otherDoctorId]);
         $room = $queue->medicalVisit->examinationRoom;
-        // Không thêm thuộc tính doctor_type giả: tài khoản bác sĩ hợp lệ vẫn dùng được.
+        $this->allowFixtureDoctor();
+        // Phòng có lịch của bác sĩ hiện tại, nhưng hồ sơ lượt khám được giao cho bác sĩ khác.
         $this->actingAs($this->user)->get(route('doctor.examination.rooms.index'))->assertOk();
         $this->get(route('doctor.examination.rooms.queue', $room))->assertOk()
-            ->assertViewHas('queues', fn ($queues) => $queues->getCollection()->contains('id', $queue->id));
-        $this->post(route('doctor.examination.queue.call', [$room, $queue]), $this->snapshot($queue))->assertSessionHasNoErrors();
-        $this->assertSame('CALLED', $queue->fresh()->status->name);
-        $this->assertSame($otherDoctorId, $queue->fresh()->medicalVisit->doctor_id);
+            ->assertViewHas('queues', fn ($queues) => ! $queues->getCollection()->contains('id', $queue->id));
+        $this->post(route('doctor.examination.queue.call', [$room, $queue]), $this->snapshot($queue))->assertNotFound();
+        $this->get(route('doctor.examination.visits.show', $queue->medical_visit_id))->assertNotFound();
+        $this->assertSame('WAITING', $queue->fresh()->status->name);
     }
 
     public function test_queue_search_uses_patient_name_phone_and_exact_citizen_id_inside_room_scope(): void

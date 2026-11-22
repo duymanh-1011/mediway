@@ -88,7 +88,7 @@ class ServiceResultTemplateController extends Controller
 
     public function show(ServiceResultTemplate $serviceResultTemplate): View
     {
-        $serviceResultTemplate->load(['medicalServices:id,service_code,name,status' => fn ($query) => $query->orderBy('name')]);
+        $serviceResultTemplate->load(['medicalServices' => fn ($query) => $query->orderBy('name')]);
 
         return view('admin.service-result-templates.show', compact('serviceResultTemplate'));
     }

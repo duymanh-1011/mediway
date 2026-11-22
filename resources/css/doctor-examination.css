@@ -347,3 +347,87 @@
 .doctor-rooms-page .doctor-rooms__table col:nth-child(3) { width: 16%; }
 .doctor-rooms-page .doctor-rooms__table col:nth-child(4) { width: 26%; }
 .doctor-rooms-page .doctor-rooms__table col:nth-child(5) { width: 8%; }
+
+/* Phân trang danh sách theo cùng bố cục footer của luồng quản trị */
+.doctor-rooms-page .doctor-list-footer,
+.doctor-rooms-page .doctor-list-pages {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.doctor-rooms-page .doctor-list-footer {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #e8edf5;
+    color: #526175;
+    font-size: 12px;
+}
+
+.doctor-rooms-page .doctor-list-pages {
+    justify-content: flex-end;
+    justify-self: end;
+    gap: 8px;
+}
+
+.doctor-rooms-page .doctor-list-pages__position {
+    min-width: 86px;
+    color: #526175;
+    text-align: center;
+}
+
+.doctor-rooms-page .doctor-list-page {
+    min-width: 52px;
+    min-height: 32px;
+    padding: 6px 10px;
+    border-color: #cbd8eb;
+    border-radius: 7px;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.doctor-rooms-page a.doctor-list-page:hover {
+    transform: translateY(-1px);
+    border-color: #9db8e7;
+    background: #f2f7ff;
+    box-shadow: 0 3px 9px rgb(37 99 235 / 10%);
+}
+
+.doctor-rooms-page .doctor-list-page:focus-visible {
+    outline: 3px solid rgb(37 99 235 / 22%);
+    outline-offset: 2px;
+}
+
+.doctor-rooms-page .doctor-list-page[aria-disabled="true"] {
+    border-color: #e2e8f0;
+    background: #f8fafc;
+    color: #94a3b8;
+    cursor: default;
+    box-shadow: none;
+}
+
+@media (max-width: 600px) {
+    .doctor-rooms-page .doctor-list-footer {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .doctor-rooms-page .doctor-list-pages {
+        justify-self: end;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .doctor-rooms-page .doctor-list-page {
+        transition: none;
+    }
+
+    .doctor-rooms-page a.doctor-list-page:hover {
+        transform: none;
+    }
+}

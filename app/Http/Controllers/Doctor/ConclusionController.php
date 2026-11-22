@@ -9,6 +9,7 @@ use App\Models\ClinicalTimeline;
 use App\Models\MedicalVisit;
 use App\Services\DoctorClinicalVersion;
 use App\Services\DoctorVisitReadiness;
+use App\Support\Doctor\DoctorAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,10 +20,13 @@ class ConclusionController extends Controller
     {
         $data = $request->validated();
         $version = $request->validate(['record_version' => ['required', 'string', 'size:64']])['record_version'];
-        DB::transaction(function () use ($request, $visit, $data, $version, $readiness): void {
+        $doctor = $request->attributes->get('current_doctor');
+        DB::transaction(function () use ($request, $visit, $data, $version, $readiness, $doctor): void {
             // Khóa lượt và kiểm tra trạng thái trong giao dịch trước khi ghi hồ sơ.
             $record = MedicalVisit::whereKey($visit)
-                ->lockForUpdate()->firstOrFail()->lockForClinicalWrite();
+                ->lockForUpdate()->firstOrFail();
+            app(DoctorAccess::class)->assertVisitOwner($doctor, $record);
+            $record = $record->lockForClinicalWrite();
             $conclusion = $record->conclusion()->lockForUpdate()->first();
             // Kết luận đã lưu là chỉ đọc, kể cả khi gửi lại biểu mẫu cũ.
             if ($conclusion) {

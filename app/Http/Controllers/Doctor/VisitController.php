@@ -25,7 +25,7 @@ class VisitController extends Controller
 {
     public function index(Request $request): View|RedirectResponse
     {
-        $doctor = $request->user()->doctor;
+        $doctor = $request->attributes->get('current_doctor');
         $validator = Validator::make($request->query(), [
             'q' => ['nullable', 'string', 'max:100'],
             'date_from' => ['nullable', 'date_format:Y-m-d'],
@@ -42,8 +42,8 @@ class VisitController extends Controller
         $term = trim($filters['q'] ?? '');
         $filters['q'] = $term;
 
-        // Mọi bác sĩ đã đăng nhập được xem danh sách lượt khám.
-        $assigned = MedicalVisit::query();
+        // Mỗi bác sĩ chỉ tra cứu các lượt khám được giao cho chính mình.
+        $assigned = MedicalVisit::query()->where('doctor_id', $doctor->id);
         $hasVisits = (clone $assigned)->exists();
         $visits = $assigned
             // Dùng cùng dữ liệu tiến độ với Admin, nạp theo danh sách thay vì từng dòng.
@@ -66,13 +66,14 @@ class VisitController extends Controller
 
     public function show(Request $request, int $visit, DoctorVisitReadiness $readiness, ExaminationQueueWorkflow $queueWorkflow): View
     {
-        $doctor = $request->user()->doctor;
-        // Chỉ tài khoản bác sĩ hợp lệ đã qua middleware mới đến được đây.
+        $doctor = $request->attributes->get('current_doctor');
+        // Không để bác sĩ truy cập hồ sơ lượt khám của bác sĩ khác bằng cách đoán ID.
         $record = MedicalVisit::query()
             ->withServiceProgress()
             ->with(['doctor', 'patient', 'specialty', 'examinationRoom', 'status', 'appointment', 'clinicalNote',
                 'diagnoses.disease', 'conclusion', 'prescription.items.medicine',
                 'serviceOrders.items.medicalService', 'serviceOrders.items.serviceStatus', 'serviceOrders.items.result'])
+            ->where('doctor_id', $doctor->id)
             ->findOrFail($visit);
         $check = $readiness->check($record);
         $conclusionPrerequisites = $readiness->conclusionPrerequisites($record);
@@ -97,10 +98,12 @@ class VisitController extends Controller
 
     public function complete(Request $request, int $visit, DoctorVisitReadiness $readiness): RedirectResponse
     {
-        DB::transaction(function () use ($request, $visit, $readiness): void {
+        $doctor = $request->attributes->get('current_doctor');
+        DB::transaction(function () use ($request, $visit, $readiness, $doctor): void {
             // Khóa lượt trước khi kiểm tra quyền, tiến độ và chuyển trạng thái.
             $record = MedicalVisit::with('status')->whereKey($visit)
                 ->lockForUpdate()->firstOrFail();
+            app(\App\Support\Doctor\DoctorAccess::class)->assertVisitOwner($doctor, $record);
             $record->assertNotBeforeAppointmentDay();
             if (! in_array($record->status?->name, ['IN_EXAMINATION', 'RETURNING'], true)) {
                 throw ValidationException::withMessages(['visit' => 'Lượt khám chưa ở trạng thái cho phép hoàn tất.']);
@@ -144,7 +147,8 @@ class VisitController extends Controller
         // Tệp phải thuộc đúng kết quả và lượt khám được yêu cầu.
         $record = ServiceResult::query()->whereKey($result)
             ->whereHas('serviceOrderItem.serviceOrder.medicalVisit', fn ($query) => $query
-                ->whereKey($visit))
+                ->whereKey($visit)
+                ->where('doctor_id', $request->attributes->get('current_doctor')->id))
             ->firstOrFail();
 
         $path = $type === 'pdf' ? $record->result_pdf_path : $record->result_image_path;
